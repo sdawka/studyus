@@ -1,7 +1,41 @@
 ---
 import AppShell from '../layouts/AppShell.astro';
+import StudyFlow from '../components/study/StudyFlow.svelte';
+import { env } from 'cloudflare:workers';
+import { getDb } from '../db/client';
+import { listCourses } from '../lib/services/courses';
+import { listSessions } from '../lib/services/sessions';
+
+const db = getDb(env.DB);
+const userId = Astro.locals.user!.id;
+
+const courses = await listCourses(db, userId, { includeMastery: true });
+const sessions = await listSessions(db, userId, {});
+const openSession = sessions
+  .filter((s) => !s.endedAt)
+  .sort((a, b) => b.startedAt - a.startedAt)[0] ?? null;
+
+const courseById = new Map(courses.map((c) => [c.id, c]));
 ---
 <AppShell title="Study">
   <h1>Study</h1>
-  <p>Coming soon.</p>
+  <StudyFlow
+    client:load
+    courses={courses.map((c) => ({
+      id: c.id,
+      slug: c.slug,
+      code: c.code,
+      title: c.title,
+      mastery: c.mastery,
+      status: c.status,
+    }))}
+    openSession={openSession && {
+      id: openSession.id,
+      courseId: openSession.courseId,
+      courseCode: openSession.courseId ? courseById.get(openSession.courseId)?.code ?? null : null,
+      intendedEventType: openSession.intendedEventType,
+      plannedMinutes: openSession.plannedMinutes,
+      startedAt: openSession.startedAt,
+    }}
+  />
 </AppShell>
