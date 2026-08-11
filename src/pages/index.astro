@@ -1,0 +1,9 @@
+---
+if (!Astro.locals.user) {
+  return Astro.redirect('/login');
+}
+if (!Astro.locals.user.onboardedAt) {
+  return Astro.redirect('/onboarding');
+}
+return Astro.redirect('/dashboard');
+---

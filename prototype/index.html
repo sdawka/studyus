@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Compass — study companion prototype</title>
+<link rel="stylesheet" href="css/app.css" />
+<style>
+.hero {
+  max-width: 640px;
+  margin: 56px auto 44px;
+  text-align: center;
+}
+.hero .brandmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font: 600 18px/1 var(--font-display);
+  margin-bottom: 22px;
+}
+.hero h1 { font-size: 38px; letter-spacing: -0.025em; }
+.hero p { color: var(--muted); font-size: 16px; margin-top: 14px; max-width: 52ch; margin-inline: auto; }
+
+.screens {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+.screen-card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  text-decoration: none;
+  transition: box-shadow 0.18s, transform 0.18s, border-color 0.18s;
+}
+.screen-card:hover { box-shadow: var(--shadow-pop); transform: translateY(-2px); border-color: var(--muted); }
+.screen-card .kicker { margin-bottom: 10px; }
+.screen-card h2 { font-size: 18px; margin-bottom: 6px; }
+.screen-card p { font-size: 13.5px; color: var(--muted); line-height: 1.55; }
+.screen-card .go {
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: 550;
+  letter-spacing: 0.02em;
+  color: var(--accent-ink);
+}
+.footnote {
+  text-align: center;
+  color: var(--muted);
+  font-size: 12.5px;
+  margin-top: 40px;
+  letter-spacing: 0.01em;
+}
+@media (max-width: 900px) {
+  .screens { grid-template-columns: 1fr; max-width: 520px; }
+  .hero { margin-top: 36px; }
+  .hero h1 { font-size: 30px; }
+}
+</style>
+</head>
+<body>
+
+<main class="wrap" data-od-id="launcher-main">
+
+  <div class="hero" data-od-id="launcher-hero">
+    <span class="brandmark">
+      <svg width="26" height="26" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <circle cx="10" cy="10" r="8.2" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M13 7 L11 11 L7 13 L9 9 Z" fill="var(--accent)"/>
+      </svg>
+      Compass
+    </span>
+    <h1 data-od-id="launcher-title">Know what to study next.</h1>
+    <p>A study companion for university students: one dashboard for deadlines, notes and courses — and a per-course view that turns your mastery data into the next best task.</p>
+  </div>
+
+  <div class="screens">
+    <a class="screen-card" href="dashboard.html" data-od-id="screen-card-dashboard">
+      <p class="kicker">Screen 01</p>
+      <h2>Dashboard</h2>
+      <p>The week at a glance, all four courses with mastery, plus your notes and to-dos in one rail.</p>
+      <span class="go">Open dashboard →</span>
+    </a>
+    <a class="screen-card" href="course.html" data-od-id="screen-card-course">
+      <p class="kicker">Screen 02</p>
+      <h2>Course · CS 2110</h2>
+      <p>Knowledge-component mastery, suggested next tasks ranked for the upcoming quiz, deadlines and events.</p>
+      <span class="go">Open course →</span>
+    </a>
+    <a class="screen-card" href="planner.html" data-od-id="screen-card-planner">
+      <p class="kicker">Screen 03</p>
+      <h2>Planner</h2>
+      <p>Full month calendar of due dates, exams and classes, filterable by course, with a day agenda.</p>
+      <span class="go">Open planner →</span>
+    </a>
+  </div>
+
+  <p class="footnote">Prototype for student feedback · works on desktop web and iPad</p>
+
+</main>
+
+</body>
+</html>

@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Compass — Dashboard</title>
+<link rel="stylesheet" href="css/app.css" />
+<style>
+/* ---------- dashboard layout ---------- */
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 348px;
+  gap: 22px;
+  align-items: start;
+}
+.main { display: grid; gap: 22px; min-width: 0; }
+.rail { display: grid; gap: 22px; }
+
+/* week strip */
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+.day {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  padding: 10px 9px 12px;
+  min-height: 118px;
+  display: grid;
+  gap: 7px;
+  align-content: start;
+}
+.day.today { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.day .dh {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font: 550 11px/1.4 var(--font-body);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.day .dh .n { font: 600 15px/1 var(--font-display); letter-spacing: 0; text-transform: none; color: var(--fg); }
+.day.today .dh .n { color: var(--accent-ink); }
+.wevt {
+  display: grid;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  background: var(--bg);
+  border: 1px solid var(--hairline);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+.wevt .l { display: flex; align-items: center; gap: 5px; font-weight: 550; letter-spacing: 0.02em; font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.wevt .t { font-weight: 510; }
+.wevt.exam { background: var(--danger-soft); border-color: transparent; }
+.wevt.quiz { background: var(--warn-soft); border-color: transparent; }
+
+/* course cards */
+.courses {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.course-card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 18px 16px;
+  text-decoration: none;
+  transition: box-shadow 0.18s, transform 0.18s, border-color 0.18s;
+}
+.course-card:hover { box-shadow: var(--shadow-pop); transform: translateY(-2px); border-color: var(--muted); }
+.course-card .code {
+  display: flex; align-items: center; gap: 8px;
+  font: 600 11.5px/1 var(--font-mono);
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+.course-card h3 { font: 600 16.5px/1.3 var(--font-display); letter-spacing: -0.01em; margin: 8px 0 2px; }
+.course-card .meta { font-size: 12.5px; color: var(--muted); }
+.course-card .prog {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 14px;
+}
+.course-card .prog .bar { flex: 1; }
+.course-card .prog .pct { font: 550 12.5px/1 var(--font-body); font-variant-numeric: tabular-nums; color: var(--muted); width: 34px; text-align: right; }
+.course-card .next { margin-top: 10px; font-size: 12.5px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+
+/* rail: notes & todos */
+.addrow { display: flex; gap: 8px; margin-top: 12px; }
+.addrow input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 13px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font: 400 13.5px/1.4 var(--font-body);
+  background: var(--bg);
+  color: var(--fg);
+}
+.addrow input::placeholder { color: var(--muted); }
+.addrow input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.note {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.note:last-child { border-bottom: 0; }
+.note .dot { margin-top: 6px; }
+.note .tag { font: 600 10.5px/1.6 var(--font-mono); letter-spacing: 0.07em; color: var(--muted); display: block; }
+
+/* due soon list */
+.due .evt .when { width: 64px; }
+
+@media (max-width: 1100px) {
+  .grid { grid-template-columns: 1fr; }
+  .rail { grid-template-columns: 1fr 1fr; align-items: start; }
+}
+@media (max-width: 740px) {
+  .week { grid-template-columns: repeat(7, minmax(120px, 1fr)); overflow-x: auto; padding-bottom: 6px; }
+  .courses { grid-template-columns: 1fr; }
+  .rail { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="topnav" data-od-id="topnav">
+  <a class="brand" href="index.html" data-od-id="brand">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <circle cx="10" cy="10" r="8.2" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M13 7 L11 11 L7 13 L9 9 Z" fill="var(--accent)"/>
+    </svg>
+    Compass
+  </a>
+  <nav aria-label="Primary">
+    <a href="dashboard.html" aria-current="page" data-od-id="nav-dashboard">Dashboard</a>
+    <a href="planner.html" data-od-id="nav-planner">Planner</a>
+  </nav>
+  <div class="who"><span id="term-label">Fall term · Week 2</span><span class="avatar">M</span></div>
+</header>
+
+<main class="wrap" data-od-id="dashboard-main">
+
+  <div class="page-head">
+    <p class="kicker" id="date-kicker">Tuesday, August 11</p>
+    <h1 data-od-id="dashboard-title">Morning, Maya — two things due tomorrow.</h1>
+    <p class="sub">Quiz 2 in CS 2110 is Friday. Your plan below is already sorted for it.</p>
+  </div>
+
+  <div class="grid">
+    <div class="main">
+
+      <!-- This week -->
+      <section class="card" data-od-id="week-section">
+        <div class="card-head">
+          <h2 data-od-id="week-heading">This week</h2>
+          <div class="chips" role="group" aria-label="Filter events" id="week-filters">
+            <button class="chip" aria-pressed="true"  data-f="all">All</button>
+            <button class="chip" aria-pressed="false" data-f="graded">Quizzes &amp; exams</button>
+            <button class="chip" aria-pressed="false" data-f="assignment">Deadlines</button>
+            <button class="chip" aria-pressed="false" data-f="class">Classes</button>
+          </div>
+        </div>
+        <div class="week" id="week-strip"></div>
+      </section>
+
+      <!-- Courses -->
+      <section data-od-id="courses-section">
+        <div class="card-head" style="margin-bottom:12px;">
+          <h2 data-od-id="courses-heading">Courses</h2>
+          <span class="kicker num">12 credits</span>
+        </div>
+        <div class="courses" id="course-grid"></div>
+      </section>
+
+    </div>
+
+    <aside class="rail" data-od-id="dashboard-rail">
+
+      <!-- Notes & to-dos -->
+      <section class="card" data-od-id="notes-card">
+        <div class="card-head">
+          <h2 data-od-id="notes-heading">Notes &amp; to-dos</h2>
+          <div class="seg" role="tablist" aria-label="Notes panels" id="notes-tabs">
+            <button role="tab" aria-selected="true"  data-t="todos">To-dos</button>
+            <button role="tab" aria-selected="false" data-t="notes">Notes</button>
+          </div>
+        </div>
+        <div id="panel-todos" role="tabpanel">
+          <div id="todo-list"></div>
+          <form class="addrow" id="todo-form">
+            <input type="text" id="todo-input" placeholder="Add a to-do…" aria-label="New to-do" />
+            <button class="btn btn-primary" type="submit" data-od-id="todo-add-btn">Add</button>
+          </form>
+        </div>
+        <div id="panel-notes" role="tabpanel" hidden>
+          <div id="note-list"></div>
+          <form class="addrow" id="note-form">
+            <input type="text" id="note-input" placeholder="Jot a note…" aria-label="New note" />
+            <button class="btn btn-primary" type="submit" data-od-id="note-add-btn">Add</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Due soon -->
+      <section class="card due" data-od-id="due-soon-card">
+        <div class="card-head">
+          <h2 data-od-id="due-heading">Due soon</h2>
+          <a href="planner.html" style="font-size:12.5px; color:var(--muted);">Open planner</a>
+        </div>
+        <div id="due-list"></div>
+      </section>
+
+    </aside>
+  </div>
+
+</main>
+
+<script src="js/data.js"></script>
+<script>
+/* ============ dashboard behavior ============ */
+(function () {
+  const C = window.COMPASS;
+
+  /* ---- week strip (Mon Aug 10 – Sun Aug 16) ---- */
+  const WEEK_START = '2026-08-10';
+  const strip = document.getElementById('week-strip');
+  let weekFilter = 'all';
+
+  function matches(e) {
+    if (weekFilter === 'all') return true;
+    if (weekFilter === 'graded') return e.type === 'quiz' || e.type === 'exam';
+    if (weekFilter === 'assignment') return e.type === 'assignment';
+    if (weekFilter === 'class') return ['lecture', 'lab', 'recitation'].includes(e.type);
+    return true;
+  }
+
+  function renderWeek() {
+    strip.innerHTML = '';
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(WEEK_START + 'T00:00:00');
+      d.setDate(d.getDate() + i);
+      const iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') +
+        '-' + String(d.getDate()).padStart(2, '0');
+      const cell = document.createElement('div');
+      cell.className = 'day' + (iso === C.todayISO ? ' today' : '');
+      const wd = d.toLocaleDateString('en-US', { weekday: 'short' });
+      cell.innerHTML = '<div class="dh"><span>' + wd + '</span><span class="n num">' + d.getDate() + '</span></div>';
+      C.events.filter(e => e.date === iso && matches(e)).forEach(e => {
+        const co = C.courses[e.course];
+        const el = document.createElement('div');
+        el.className = 'wevt ' + e.type;
+        el.innerHTML =
+          '<span class="l"><span class="dot" style="background:' + co.color + '"></span>' +
+          C.TYPE_LABEL[e.type] + '</span><span class="t">' + e.title + '</span>';
+        cell.appendChild(el);
+      });
+      strip.appendChild(cell);
+    }
+  }
+
+  document.getElementById('week-filters').addEventListener('click', ev => {
+    const b = ev.target.closest('.chip');
+    if (!b) return;
+    document.querySelectorAll('#week-filters .chip').forEach(c => c.setAttribute('aria-pressed', c === b));
+    weekFilter = b.dataset.f;
+    renderWeek();
+  });
+
+  /* ---- course cards ---- */
+  const grid = document.getElementById('course-grid');
+  Object.values(C.courses).forEach(co => {
+    const next = C.upcoming(co.key, 1)[0];
+    const a = document.createElement('a');
+    a.className = 'course-card';
+    a.href = 'course.html';
+    a.setAttribute('data-od-id', 'course-card-' + co.key);
+    a.innerHTML =
+      '<span class="code"><span class="dot" style="background:' + co.color + '"></span>' + co.code + '</span>' +
+      '<h3>' + co.name + '</h3>' +
+      '<p class="meta">' + co.instructor + ' · ' + co.slot + '</p>' +
+      '<div class="prog"><div class="bar' + (co.mastery < 50 ? ' low' : '') + '"><span style="width:' + co.mastery + '%"></span></div>' +
+      '<span class="pct num">' + co.mastery + '%</span></div>' +
+      (next
+        ? '<p class="next"><strong style="font-weight:550;color:var(--fg)">' + C.TYPE_LABEL[next.type] + '</strong> ' +
+          next.title + ' · ' + C.fmt(next.date) + '</p>'
+        : '<p class="next">No upcoming items</p>');
+    grid.appendChild(a);
+  });
+
+  /* ---- to-dos (persisted) ---- */
+  const KEY = 'compass:todos';
+  let todos;
+  try { todos = JSON.parse(localStorage.getItem(KEY)) || C.todosSeed.slice(); }
+  catch (_) { todos = C.todosSeed.slice(); }
+
+  function saveTodos() { try { localStorage.setItem(KEY, JSON.stringify(todos)); } catch (_) {} }
+
+  function renderTodos() {
+    const list = document.getElementById('todo-list');
+    list.innerHTML = '';
+    todos.forEach(t => {
+      const label = document.createElement('label');
+      label.className = 'check';
+      label.innerHTML =
+        '<input type="checkbox"' + (t.done ? ' checked' : '') + ' />' +
+        '<span class="box"><svg width="11" height="9" viewBox="0 0 11 9" fill="none" aria-hidden="true">' +
+        '<path d="M1 4.5 L4 7.5 L10 1" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
+        '<span class="txt"></span>';
+      label.querySelector('.txt').textContent = t.text;
+      label.querySelector('input').addEventListener('change', ev => {
+        t.done = ev.target.checked; saveTodos(); renderTodos();
+      });
+      list.appendChild(label);
+    });
+    if (!todos.length) list.innerHTML = '<p class="empty">All clear — add your first to-do below.</p>';
+  }
+
+  document.getElementById('todo-form').addEventListener('submit', ev => {
+    ev.preventDefault();
+    const input = document.getElementById('todo-input');
+    const v = input.value.trim();
+    if (!v) return;
+    todos.unshift({ id: 't' + Date.now(), text: v, done: false });
+    input.value = '';
+    saveTodos(); renderTodos();
+  });
+
+  /* ---- notes (course + personal, persisted additions) ---- */
+  const NKEY = 'compass:notes';
+  let extraNotes;
+  try { extraNotes = JSON.parse(localStorage.getItem(NKEY)) || []; }
+  catch (_) { extraNotes = []; }
+
+  function renderNotes() {
+    const list = document.getElementById('note-list');
+    list.innerHTML = '';
+    extraNotes.concat(C.notes).forEach(n => {
+      const el = document.createElement('div');
+      el.className = 'note';
+      const co = n.course ? C.courses[n.course] : null;
+      el.innerHTML =
+        '<span class="dot" style="background:' + (co ? co.color : 'var(--border)') + '"></span>' +
+        '<span>' + (co ? '<span class="tag">' + co.code + '</span>' : '<span class="tag">Personal</span>') +
+        '<span class="ntxt"></span></span>';
+      el.querySelector('.ntxt').textContent = n.text;
+      list.appendChild(el);
+    });
+  }
+
+  document.getElementById('note-form').addEventListener('submit', ev => {
+    ev.preventDefault();
+    const input = document.getElementById('note-input');
+    const v = input.value.trim();
+    if (!v) return;
+    extraNotes.unshift({ kind: 'personal', text: v });
+    input.value = '';
+    try { localStorage.setItem(NKEY, JSON.stringify(extraNotes)); } catch (_) {}
+    renderNotes();
+  });
+
+  /* ---- tabs ---- */
+  document.getElementById('notes-tabs').addEventListener('click', ev => {
+    const b = ev.target.closest('[role="tab"]');
+    if (!b) return;
+    document.querySelectorAll('#notes-tabs [role="tab"]').forEach(t => t.setAttribute('aria-selected', t === b));
+    document.getElementById('panel-todos').hidden = b.dataset.t !== 'todos';
+    document.getElementById('panel-notes').hidden = b.dataset.t !== 'notes';
+  });
+
+  /* ---- due soon ---- */
+  const due = document.getElementById('due-list');
+  C.upcoming(null, 5).filter(e => ['assignment', 'quiz', 'exam'].includes(e.type)).slice(0, 5).forEach(e => {
+    const co = C.courses[e.course];
+    const days = C.daysUntil(e.date);
+    const urgency = days <= 1 ? 'pill-danger' : days <= 3 ? 'pill-warn' : 'pill-idle';
+    const row = document.createElement('div');
+    row.className = 'evt';
+    row.innerHTML =
+      '<span class="when">' + C.fmt(e.date, { month: 'short', day: 'numeric' }) + '</span>' +
+      '<span class="dot" style="background:' + co.color + '"></span>' +
+      '<span class="what"><span class="t">' + e.title + '</span><br/><span class="m">' + co.code + '</span></span>' +
+      '<span class="pill ' + urgency + '" style="margin-left:auto;">' +
+      (days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : 'in ' + days + 'd') + '</span>';
+    due.appendChild(row);
+  });
+
+  renderWeek(); renderTodos(); renderNotes();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Compass — Planner</title>
+<link rel="stylesheet" href="css/app.css" />
+<style>
+/* ---------- planner layout ---------- */
+.plan-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 22px;
+  align-items: start;
+}
+
+.cal-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.cal-head h2 { font-size: 21px; min-width: 170px; }
+.cal-nav { display: flex; gap: 6px; }
+.cal-nav .btn { padding: 6px 11px; }
+.cal-head .chips { margin-left: auto; }
+
+.dow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.dow span {
+  font: 600 10.5px/1.6 var(--font-body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-left: 10px;
+}
+
+.month {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.cell {
+  min-height: 96px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 7px 8px;
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+.cell:hover { border-color: var(--muted); }
+.cell.out { background: transparent; opacity: 0.45; }
+.cell.sel { border-color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); }
+.cell.today .dnum {
+  background: var(--accent);
+  color: oklch(99% 0.005 170);
+}
+.dnum {
+  width: 24px; height: 24px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  font: 550 12.5px/1 var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+.mevt {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  line-height: 1.35;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--bg);
+  overflow: hidden;
+  white-space: nowrap;
+}
+.mevt .tt { overflow: hidden; text-overflow: ellipsis; font-weight: 510; }
+.mevt.exam, .mevt.quiz { background: var(--warn-soft); }
+.mevt.exam { background: var(--danger-soft); }
+.more { font-size: 10.5px; color: var(--muted); letter-spacing: 0.02em; padding-left: 6px; }
+
+/* agenda rail */
+.agenda .evt .when { width: 46px; }
+.agenda h2 span { color: var(--muted); font-weight: 400; }
+.legend {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+}
+.legend .row { display: flex; align-items: center; gap: 9px; color: var(--muted); }
+.legend .row strong { color: var(--fg); font-weight: 550; font-size: 13px; }
+
+@media (max-width: 1100px) {
+  .plan-grid { grid-template-columns: 1fr; }
+  .agenda-rail { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+}
+@media (max-width: 740px) {
+  .cell { min-height: 74px; }
+  .mevt .tt { display: none; }
+  .mevt { width: 8px; height: 8px; padding: 0; border-radius: 50%; }
+  .agenda-rail { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="topnav" data-od-id="topnav">
+  <a class="brand" href="index.html" data-od-id="brand">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <circle cx="10" cy="10" r="8.2" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M13 7 L11 11 L7 13 L9 9 Z" fill="var(--accent)"/>
+    </svg>
+    Compass
+  </a>
+  <nav aria-label="Primary">
+    <a href="dashboard.html" data-od-id="nav-dashboard">Dashboard</a>
+    <a href="planner.html" aria-current="page" data-od-id="nav-planner">Planner</a>
+  </nav>
+  <div class="who"><span>Fall term · Week 2</span><span class="avatar">M</span></div>
+</header>
+
+<main class="wrap" data-od-id="planner-main">
+
+  <div class="page-head">
+    <p class="kicker">Planner</p>
+    <h1 data-od-id="planner-title">Everything with a date, in one place.</h1>
+    <p class="sub">Deadlines, exams and classes across all four courses. Tap a day to see its agenda.</p>
+  </div>
+
+  <div class="plan-grid">
+
+    <section class="card" data-od-id="calendar-card">
+      <div class="cal-head">
+        <h2 id="month-label" data-od-id="month-label">August 2026</h2>
+        <div class="cal-nav">
+          <button class="btn" id="prev-month" aria-label="Previous month">‹</button>
+          <button class="btn" id="today-btn">Today</button>
+          <button class="btn" id="next-month" aria-label="Next month">›</button>
+        </div>
+        <div class="chips" role="group" aria-label="Filter by course" id="course-filters">
+          <button class="chip" aria-pressed="true" data-c="all">All courses</button>
+        </div>
+      </div>
+      <div class="dow" aria-hidden="true">
+        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+      </div>
+      <div class="month" id="month-grid"></div>
+    </section>
+
+    <aside class="agenda-rail">
+      <section class="card agenda" data-od-id="agenda-card">
+        <div class="card-head">
+          <h2 data-od-id="agenda-heading">Agenda <span id="agenda-date">· Aug 11</span></h2>
+        </div>
+        <div id="agenda-list"></div>
+      </section>
+
+      <section class="card" data-od-id="legend-card">
+        <div class="card-head"><h2 data-od-id="legend-heading">Courses</h2></div>
+        <div class="legend" id="legend"></div>
+      </section>
+    </aside>
+
+  </div>
+
+</main>
+
+<script src="js/data.js"></script>
+<script>
+/* ============ planner behavior ============ */
+(function () {
+  const C = window.COMPASS;
+  let viewYear = 2026, viewMonth = 7;          /* August (0-indexed) */
+  let selected = C.todayISO;
+  let courseFilter = 'all';
+
+  const grid = document.getElementById('month-grid');
+  const label = document.getElementById('month-label');
+
+  function iso(y, m, d) {
+    return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+  }
+
+  function eventsOn(dateISO) {
+    return C.events
+      .filter(e => e.date === dateISO)
+      .filter(e => courseFilter === 'all' || e.course === courseFilter)
+      .sort((a, b) => a.time.localeCompare(b.time));
+  }
+
+  function renderMonth() {
+    grid.innerHTML = '';
+    const first = new Date(viewYear, viewMonth, 1);
+    label.textContent = first.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const lead = (first.getDay() + 6) % 7;               /* Monday-first offset */
+    const daysIn = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const daysPrev = new Date(viewYear, viewMonth, 0).getDate();
+    const cells = Math.ceil((lead + daysIn) / 7) * 7;
+
+    for (let i = 0; i < cells; i++) {
+      const dayNum = i - lead + 1;
+      let y = viewYear, m = viewMonth, d = dayNum, out = false;
+      if (dayNum < 1) { out = true; m = viewMonth - 1; d = daysPrev + dayNum; if (m < 0) { m = 11; y--; } }
+      else if (dayNum > daysIn) { out = true; m = viewMonth + 1; d = dayNum - daysIn; if (m > 11) { m = 0; y++; } }
+      const dateISO = iso(y, m, d);
+
+      const cell = document.createElement('button');
+      cell.className = 'cell' + (out ? ' out' : '') +
+        (dateISO === C.todayISO ? ' today' : '') +
+        (dateISO === selected ? ' sel' : '');
+      cell.setAttribute('aria-label', dateISO);
+      cell.innerHTML = '<span class="dnum">' + d + '</span>';
+
+      const evts = eventsOn(dateISO);
+      evts.slice(0, 3).forEach(e => {
+        const co = C.courses[e.course];
+        const el = document.createElement('span');
+        el.className = 'mevt ' + e.type;
+        el.innerHTML = '<span class="dot" style="background:' + co.color + '"></span><span class="tt">' + e.title + '</span>';
+        cell.appendChild(el);
+      });
+      if (evts.length > 3) {
+        const more = document.createElement('span');
+        more.className = 'more';
+        more.textContent = '+' + (evts.length - 3) + ' more';
+        cell.appendChild(more);
+      }
+
+      cell.addEventListener('click', () => { selected = dateISO; renderMonth(); renderAgenda(); });
+      grid.appendChild(cell);
+    }
+  }
+
+  function renderAgenda() {
+    const list = document.getElementById('agenda-list');
+    document.getElementById('agenda-date').textContent = '· ' + C.fmt(selected, { month: 'short', day: 'numeric' });
+    list.innerHTML = '';
+    const evts = eventsOn(selected);
+    if (!evts.length) {
+      list.innerHTML = '<p class="empty">Nothing scheduled — a good day for the suggested tasks on your courses.</p>';
+      return;
+    }
+    evts.forEach(e => {
+      const co = C.courses[e.course];
+      const row = document.createElement('div');
+      row.className = 'evt';
+      row.innerHTML =
+        '<span class="when">' + e.time + '</span>' +
+        '<span class="dot" style="background:' + co.color + '"></span>' +
+        '<span class="what"><span class="t">' + e.title + '</span><br/>' +
+        '<span class="m">' + co.code + ' · ' + C.TYPE_LABEL[e.type] + '</span></span>';
+      list.appendChild(row);
+    });
+  }
+
+  /* course filter chips + legend */
+  const filters = document.getElementById('course-filters');
+  const legend = document.getElementById('legend');
+  Object.values(C.courses).forEach(co => {
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.setAttribute('aria-pressed', 'false');
+    chip.dataset.c = co.key;
+    chip.innerHTML = '<span class="dot" style="background:' + co.color + ';margin-right:6px;"></span>' + co.code;
+    filters.appendChild(chip);
+
+    const row = document.createElement('div');
+    row.className = 'row';
+    const nextCount = C.upcoming(co.key).length;
+    row.innerHTML = '<span class="dot" style="background:' + co.color + '"></span>' +
+      '<span><strong>' + co.code + '</strong> · ' + nextCount + ' upcoming</span>';
+    legend.appendChild(row);
+  });
+
+  filters.addEventListener('click', ev => {
+    const b = ev.target.closest('.chip');
+    if (!b) return;
+    document.querySelectorAll('#course-filters .chip').forEach(c => c.setAttribute('aria-pressed', c === b));
+    courseFilter = b.dataset.c;
+    renderMonth(); renderAgenda();
+  });
+
+  document.getElementById('prev-month').addEventListener('click', () => {
+    viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+    renderMonth();
+  });
+  document.getElementById('next-month').addEventListener('click', () => {
+    viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+    renderMonth();
+  });
+  document.getElementById('today-btn').addEventListener('click', () => {
+    viewYear = 2026; viewMonth = 7; selected = C.todayISO;
+    renderMonth(); renderAgenda();
+  });
+
+  renderMonth(); renderAgenda();
+})();
+</script>
+</body>
+</html>

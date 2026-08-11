@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Compass — CS 2110 · Data Structures &amp; Algorithms</title>
+<link rel="stylesheet" href="css/app.css" />
+<style>
+/* ---------- course page layout ---------- */
+.crumb {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+.crumb a { color: var(--muted); text-decoration: none; }
+.crumb a:hover { color: var(--fg); text-decoration: underline; }
+
+.course-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 348px;
+  gap: 22px;
+  align-items: start;
+  margin-bottom: 22px;
+}
+.head-card { padding: 24px; }
+.head-card .code {
+  display: inline-flex; align-items: center; gap: 8px;
+  font: 600 12px/1 var(--font-mono);
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+.head-card h1 { margin: 10px 0 4px; }
+.head-card .meta { color: var(--muted); font-size: 14px; }
+.overall {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+}
+.ring { flex: none; position: relative; width: 74px; height: 74px; }
+.ring svg { transform: rotate(-90deg); display: block; }
+.ring .v {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font: 600 17px/1 var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+.overall .expl { font-size: 13.5px; color: var(--muted); max-width: 46ch; }
+.overall .expl strong { color: var(--fg); font-weight: 550; }
+
+/* suggested next */
+.suggest { padding: 20px; }
+.sug {
+  padding: 13px 0;
+  border-bottom: 1px solid var(--hairline);
+  display: grid;
+  gap: 4px;
+}
+.sug:last-child { border-bottom: 0; padding-bottom: 4px; }
+.sug .row1 { display: flex; align-items: baseline; gap: 10px; justify-content: space-between; }
+.sug .t { font-size: 14px; font-weight: 550; }
+.sug .mins { font: 550 11.5px/1.6 var(--font-mono); color: var(--muted); letter-spacing: 0.03em; flex: none; }
+.sug .why { font-size: 12.5px; color: var(--muted); }
+.sug .acts { display: flex; gap: 8px; margin-top: 7px; }
+.sug .btn { padding: 5px 12px; font-size: 12.5px; }
+.sug.done { opacity: 0.5; }
+.sug.done .t { text-decoration: line-through; }
+
+/* knowledge components */
+.kc-list { display: grid; }
+.kc {
+  border-bottom: 1px solid var(--hairline);
+}
+.kc:last-child { border-bottom: 0; }
+.kc-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) 1fr 44px 110px 20px;
+  align-items: center;
+  gap: 16px;
+  padding: 13px 2px;
+  text-align: left;
+  border-radius: var(--radius-sm);
+}
+.kc-row:hover { background: var(--bg); }
+.kc-row .name { font-size: 14px; font-weight: 510; }
+.kc-row .pct { font: 550 13px/1 var(--font-body); font-variant-numeric: tabular-nums; text-align: right; color: var(--muted); }
+.kc-row .caret { color: var(--muted); transition: transform 0.2s; justify-self: end; }
+.kc-row[aria-expanded="true"] .caret { transform: rotate(180deg); }
+.kc-detail {
+  display: none;
+  padding: 2px 2px 16px 2px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.kc-detail.open { display: grid; gap: 3px; }
+.kc-detail strong { font-weight: 550; color: var(--fg); }
+
+/* below: two columns */
+.cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  margin-top: 22px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .course-head { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+  .cols { grid-template-columns: 1fr; }
+  .kc-row { grid-template-columns: minmax(120px, 1fr) 1fr 44px 20px; }
+  .kc-row .pill { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="topnav" data-od-id="topnav">
+  <a class="brand" href="index.html" data-od-id="brand">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <circle cx="10" cy="10" r="8.2" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M13 7 L11 11 L7 13 L9 9 Z" fill="var(--accent)"/>
+    </svg>
+    Compass
+  </a>
+  <nav aria-label="Primary">
+    <a href="dashboard.html" data-od-id="nav-dashboard">Dashboard</a>
+    <a href="planner.html" data-od-id="nav-planner">Planner</a>
+  </nav>
+  <div class="who"><span>Fall term · Week 2</span><span class="avatar">M</span></div>
+</header>
+
+<main class="wrap" data-od-id="course-main">
+
+  <p class="crumb" data-od-id="course-crumb"><a href="dashboard.html">Dashboard</a> / <a href="dashboard.html">Courses</a> / CS 2110</p>
+
+  <div class="course-head">
+
+    <!-- course identity + overall mastery -->
+    <section class="card head-card" data-od-id="course-header-card">
+      <span class="code"><span class="dot" style="background:var(--c-cs)"></span>CS 2110 · 4 credits</span>
+      <h1 data-od-id="course-title">Data Structures &amp; Algorithms</h1>
+      <p class="meta">Dr. Okafor · Mon, Wed, Fri 10:00 · Gates Hall 114</p>
+      <div class="overall" data-od-id="course-overall">
+        <div class="ring" role="img" aria-label="Overall mastery 52 percent">
+          <svg width="74" height="74" viewBox="0 0 74 74" aria-hidden="true">
+            <circle cx="37" cy="37" r="32" fill="none" stroke="var(--hairline)" stroke-width="7"/>
+            <circle id="ring-fill" cx="37" cy="37" r="32" fill="none" stroke="var(--accent)" stroke-width="7"
+              stroke-linecap="round" stroke-dasharray="201" stroke-dashoffset="201"/>
+          </svg>
+          <span class="v num">52%</span>
+        </div>
+        <p class="expl">Overall mastery across 7 knowledge components. <strong>5 of 7 assessed</strong> so far — the two unopened units don't count against you yet.</p>
+      </div>
+    </section>
+
+    <!-- suggested next -->
+    <section class="card suggest" data-od-id="suggested-next-card">
+      <div class="card-head">
+        <h2 data-od-id="suggested-heading">Suggested next</h2>
+        <span class="pill pill-ok">Ranked for Quiz 2</span>
+      </div>
+      <div id="suggest-list"></div>
+    </section>
+
+  </div>
+
+  <!-- knowledge components -->
+  <section class="card" data-od-id="kc-card">
+    <div class="card-head">
+      <h2 data-od-id="kc-heading">Knowledge components</h2>
+      <span class="kicker">Tap a row for resources</span>
+    </div>
+    <div class="kc-list" id="kc-list"></div>
+  </section>
+
+  <div class="cols">
+
+    <!-- upcoming deadlines -->
+    <section class="card" data-od-id="deadlines-card">
+      <div class="card-head">
+        <h2 data-od-id="deadlines-heading">Upcoming in this course</h2>
+        <a href="planner.html" style="font-size:12.5px; color:var(--muted);">Planner</a>
+      </div>
+      <div id="deadline-list"></div>
+    </section>
+
+    <!-- assessments & instruction -->
+    <section class="card" data-od-id="events-card">
+      <div class="card-head">
+        <h2 data-od-id="events-heading">Assessments &amp; instruction</h2>
+        <div class="seg" role="tablist" aria-label="Event kind" id="evt-tabs">
+          <button role="tab" aria-selected="true"  data-k="all">All</button>
+          <button role="tab" aria-selected="false" data-k="graded">Assessments</button>
+          <button role="tab" aria-selected="false" data-k="teach">Instruction</button>
+        </div>
+      </div>
+      <div id="course-events"></div>
+    </section>
+
+  </div>
+
+</main>
+
+<script src="js/data.js"></script>
+<script>
+/* ============ course page behavior ============ */
+(function () {
+  const C = window.COMPASS;
+
+  /* ---- mastery ring (2π·32 ≈ 201) ---- */
+  requestAnimationFrame(() => {
+    const ring = document.getElementById('ring-fill');
+    ring.style.transition = 'stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1)';
+    ring.style.strokeDashoffset = String(201 * (1 - 0.52));
+  });
+
+  /* ---- suggested next (from shared ranking) ---- */
+  const sugWrap = document.getElementById('suggest-list');
+  C.rankSuggestions().forEach((s, i) => {
+    const el = document.createElement('div');
+    el.className = 'sug';
+    el.setAttribute('data-od-id', 'suggestion-' + s.kc);
+    el.innerHTML =
+      '<div class="row1"><span class="t">' + s.title + '</span><span class="mins num">' + s.mins + ' min</span></div>' +
+      '<span class="why">' + s.why + '</span>' +
+      '<div class="acts"><button class="btn btn-primary act-start">Start</button>' +
+      '<button class="btn act-done">Mark done</button></div>';
+    el.querySelector('.act-done').addEventListener('click', () => {
+      el.classList.add('done');
+      el.querySelector('.acts').innerHTML = '<span class="pill pill-ok">Done — mastery updates after next check</span>';
+    });
+    el.querySelector('.act-start').addEventListener('click', function () {
+      this.textContent = 'In progress…';
+      this.setAttribute('disabled', '');
+    });
+    sugWrap.appendChild(el);
+  });
+
+  /* ---- knowledge components ---- */
+  const list = document.getElementById('kc-list');
+  C.kcs.forEach(kc => {
+    const started = kc.mastery > 0;
+    const status = !started ? ['pill-idle', 'Not started']
+      : kc.mastery >= 80 ? ['pill-ok', 'Strong']
+      : kc.mastery >= 55 ? ['pill-idle', 'Developing']
+      : ['pill-warn', 'Needs work'];
+    const item = document.createElement('div');
+    item.className = 'kc';
+    item.innerHTML =
+      '<button class="kc-row" aria-expanded="false" data-od-id="kc-row-' + kc.id + '">' +
+        '<span class="name">' + kc.name + '</span>' +
+        '<span class="bar' + (started && kc.mastery < 55 ? ' low' : '') + '"><span style="width:0"></span></span>' +
+        '<span class="pct num">' + (started ? kc.mastery + '%' : '—') + '</span>' +
+        '<span class="pill ' + status[0] + '">' + status[1] + '</span>' +
+        '<svg class="caret" width="12" height="8" viewBox="0 0 12 8" fill="none" aria-hidden="true">' +
+        '<path d="M1 1.5 L6 6.5 L11 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>' +
+      '</button>' +
+      '<div class="kc-detail"><span><strong>Last signal:</strong> ' + kc.last + '</span>' +
+      '<span><strong>Resources:</strong> ' + kc.resources + '</span></div>';
+    const row = item.querySelector('.kc-row');
+    const detail = item.querySelector('.kc-detail');
+    row.addEventListener('click', () => {
+      const open = row.getAttribute('aria-expanded') === 'true';
+      row.setAttribute('aria-expanded', String(!open));
+      detail.classList.toggle('open', !open);
+    });
+    list.appendChild(item);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      item.querySelector('.bar > span').style.width = kc.mastery + '%';
+    }));
+  });
+
+  /* ---- upcoming deadlines (course-filtered) ---- */
+  const dl = document.getElementById('deadline-list');
+  C.upcoming('cs', 5).filter(e => ['assignment', 'quiz', 'exam'].includes(e.type)).forEach(e => {
+    const days = C.daysUntil(e.date);
+    const urgency = days <= 1 ? 'pill-danger' : days <= 4 ? 'pill-warn' : 'pill-idle';
+    const row = document.createElement('div');
+    row.className = 'evt';
+    row.innerHTML =
+      '<span class="when">' + C.fmt(e.date, { month: 'short', day: 'numeric' }) + '</span>' +
+      '<span class="what"><span class="t">' + e.title + '</span><br/><span class="m">' +
+      C.TYPE_LABEL[e.type] + ' · ' + e.time + '</span></span>' +
+      '<span class="pill ' + urgency + '" style="margin-left:auto;">' +
+      (days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : 'in ' + days + 'd') + '</span>';
+    dl.appendChild(row);
+  });
+
+  /* ---- assessments & instruction ---- */
+  const evtWrap = document.getElementById('course-events');
+  let kind = 'all';
+
+  function renderEvents() {
+    evtWrap.innerHTML = '';
+    const rows = C.events.filter(e => e.course === 'cs' && e.date >= C.todayISO)
+      .filter(e => kind === 'all'
+        || (kind === 'graded' && ['quiz', 'exam', 'assignment'].includes(e.type))
+        || (kind === 'teach' && ['lecture', 'lab', 'recitation'].includes(e.type)))
+      .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+    if (!rows.length) { evtWrap.innerHTML = '<p class="empty">Nothing in this view yet.</p>'; return; }
+    rows.forEach(e => {
+      const row = document.createElement('div');
+      row.className = 'evt';
+      row.innerHTML =
+        '<span class="when">' + C.fmt(e.date, { month: 'short', day: 'numeric' }) + '</span>' +
+        '<span class="what"><span class="t">' + e.title + '</span><br/>' +
+        '<span class="m">' + C.TYPE_LABEL[e.type] + ' · ' + e.time + '</span></span>';
+      evtWrap.appendChild(row);
+    });
+  }
+
+  document.getElementById('evt-tabs').addEventListener('click', ev => {
+    const b = ev.target.closest('[role="tab"]');
+    if (!b) return;
+    document.querySelectorAll('#evt-tabs [role="tab"]').forEach(t => t.setAttribute('aria-selected', t === b));
+    kind = b.dataset.k;
+    renderEvents();
+  });
+
+  renderEvents();
+})();
+</script>
+</body>
+</html>

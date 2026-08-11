@@ -1,0 +1,11 @@
+{
+  "kind": "critique-panel",
+  "score": 4,
+  "axes": {
+    "clarity":    { "score": 4, "notes": "Each screen answers one question: what's this week / what should I study next / what's on the calendar. Coaching headline on dashboard states the two most urgent items." },
+    "hierarchy":  { "score": 4, "notes": "One landing point per screen — week strip, mastery ring + suggested-next pair, month grid. Rails stay secondary via smaller type and muted color." },
+    "typography": { "score": 4, "notes": "Avenir Next display over system body, caps tracking 0.06–0.08em, tabular numerals on all data, 11px caption floor." },
+    "motion":     { "score": 4, "notes": "One flourish: mastery ring + KC bars ease in on load. Everything else is 150ms state transitions; all gated behind prefers-reduced-motion." },
+    "brand":      { "score": 4, "notes": "Minimal-motivational: near-white canvas, single teal-green growth accent reserved for progress and primary actions, four muted course hues doing functional calendar coding only." }
+  }
+}

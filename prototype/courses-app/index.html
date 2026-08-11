@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sem 3 Study OS</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="sigil">S3</span>
+      <div>
+        <h1>Sem 3 Study OS</h1>
+        <p>McGill chemical engineering semester cockpit</p>
+      </div>
+    </div>
+    <nav id="courseNav" aria-label="Courses"></nav>
+    <section class="mini-card motion-card">
+      <p class="eyebrow">Today</p>
+      <h2>One study move.</h2>
+      <p>Pick less. Start faster. Let the app surface the next weak concept and turn it into a 25-minute session.</p>
+      <button id="focusFromSidebarBtn" class="primary-btn">Start next session</button>
+    </section>
+  </aside>
+
+  <main>
+    <header class="hero reveal">
+      <div>
+        <p class="eyebrow">Study management app</p>
+        <h2 id="courseTitle">Loading…</h2>
+        <p id="courseMeta"></p>
+      </div>
+      <div class="score-card" aria-live="polite">
+        <span id="overallScore">0%</span>
+        <small>overall confidence</small>
+      </div>
+    </header>
+
+    <section class="next-move panel reveal" aria-labelledby="nextMoveHeading">
+      <div class="next-copy">
+        <p class="eyebrow">Recommended next move</p>
+        <h3 id="nextMoveHeading">Find the next weak concept</h3>
+        <p id="nextMoveWhy" class="muted">The app prioritizes concepts with low confidence, active struggle, or no progress.</p>
+      </div>
+      <div class="study-card">
+        <div class="study-orb" aria-hidden="true"><span></span></div>
+        <div>
+          <p class="mini-label">Do now · 25 min</p>
+          <h4 id="nextConceptName">Loading…</h4>
+          <p id="nextConceptAction">Watch/read one source, solve one representative problem, then write what still feels fuzzy.</p>
+        </div>
+        <div class="study-actions">
+          <button id="startSessionBtn" class="primary-btn">Start 25-min session</button>
+          <button id="skipConceptBtn">Skip</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="focusMode" class="focus-mode panel reveal" hidden>
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Focus session</p>
+          <h3 id="focusTitle">25-minute study sprint</h3>
+        </div>
+        <div class="timer" id="timerDisplay">25:00</div>
+      </div>
+      <div class="focus-grid">
+        <div>
+          <p class="mini-label">Proof task</p>
+          <p id="proofTask">Write the core definition from memory, then solve or outline one representative problem.</p>
+        </div>
+        <div class="focus-buttons">
+          <button id="markDoneBtn" class="success-btn">Done</button>
+          <button id="markStuckBtn" class="warning-btn">Stuck</button>
+          <button id="closeFocusBtn">Close</button>
+        </div>
+      </div>
+      <div class="progress-rail"><span id="timerRail"></span></div>
+    </section>
+
+    <section class="panel calendar-panel reveal">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Calendar view</p>
+          <h3>Schedule + important dates</h3>
+        </div>
+        <button id="newEventBtn">+ Add date</button>
+      </div>
+      <div id="calendarNotice" class="notice"></div>
+      <div id="calendarGrid" class="calendar-grid"></div>
+    </section>
+
+    <section class="workspace reveal">
+      <section class="panel timeline-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Topic timeline</p>
+            <h3>Branches of concepts covered</h3>
+          </div>
+          <button id="exportBtn">Export progress JSON</button>
+        </div>
+        <div id="timeline" class="timeline"></div>
+      </section>
+
+      <section class="panel detail-panel">
+        <p class="eyebrow">Concept detail</p>
+        <h3 id="conceptName">Pick a concept</h3>
+        <p id="conceptContext" class="muted">Select any topic on the timeline to manage confidence, practice, materials, and web rabbit holes.</p>
+
+        <label class="field">
+          <span>Confidence score: <strong id="confidenceLabel">0</strong>/100</span>
+          <input id="confidenceInput" type="range" min="0" max="100" value="0" />
+        </label>
+
+        <label class="field">
+          <span>Practice area</span>
+          <textarea id="practiceInput" placeholder="What problems, lab prep, derivations, or mini-projects will prove this concept is yours?"></textarea>
+        </label>
+
+        <label class="field">
+          <span>Status</span>
+          <select id="statusInput">
+            <option value="not-started">Not started</option>
+            <option value="learning">Learning</option>
+            <option value="practicing">Practicing</option>
+            <option value="confident">Confident</option>
+            <option value="needs-help">Needs help</option>
+          </select>
+        </label>
+
+        <div class="columns">
+          <section>
+            <h4>Canonical learning materials</h4>
+            <ul id="materialsList" class="link-list"></ul>
+          </section>
+          <section>
+            <h4>Excited-geek feed</h4>
+            <ul id="feedList" class="link-list"></ul>
+          </section>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="eventDialog">
+    <form method="dialog" id="eventForm">
+      <h3>Add study date</h3>
+      <label class="field"><span>Title</span><input id="eventTitle" required placeholder="Midterm, quiz, lab report, study block…" /></label>
+      <label class="field"><span>Date</span><input id="eventDate" type="date" required /></label>
+      <label class="field"><span>Type</span><select id="eventType"><option>Class schedule</option><option>Exam</option><option>Assignment</option><option>Lab</option><option>Self-study</option></select></label>
+      <menu>
+        <button value="cancel">Cancel</button>
+        <button id="saveEventBtn" value="default" class="primary-btn">Save</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+---
+import AppShell from '../layouts/AppShell.astro';
+import { env } from 'cloudflare:workers';
+import { getDb } from '../db/client';
+import { courses } from '../db/schema';
+import { eq } from 'drizzle-orm';
+
+const db = getDb(env.DB);
+const userCourses = Astro.locals.user
+  ? await db.select().from(courses).where(eq(courses.userId, Astro.locals.user.id))
+  : [];
+---
+<AppShell title="Dashboard">
+  <h1>Dashboard</h1>
+  <p>Coming soon — 7-day calendar strip, grade snapshot, due tasks, quick event log.</p>
+  <h2>Your courses</h2>
+  <ul>
+    {userCourses.map((course) => (
+      <li>{course.code} — {course.title} ({course.term})</li>
+    ))}
+  </ul>
+</AppShell>

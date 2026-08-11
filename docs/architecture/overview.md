@@ -1,0 +1,209 @@
+# StudyBuddy Architecture Overview
+
+## Stack (Pinned 2026-08-11)
+
+- **Frontend**: Astro 7.2 + Svelte 5.56 islands (`@astrojs/svelte` 9), `output: 'server'` SSR.
+- **Hosting & Database**: Cloudflare Workers (via `@astrojs/cloudflare` 14.2) + D1 SQLite + Drizzle ORM 0.45.2.
+- **Storage**: Cloudflare R2 (file uploads).
+- **AI**: OpenRouter API (LLM proxy for tutor, via SSE).
+- **Auth**: Hand-rolled sessions (SHA-256 token hash, HttpOnly cookie, 30-day sliding expiry, PBKDF2 password hashing now, argon2-WASM post-v1).
+- **Validation**: Zod 4 (top-level `z.email()`, `z.strictObject()`).
+- **Testing**: Vitest 4.1 + `@cloudflare/vitest-pool-workers` 0.21 (real bindings, per-file isolation).
+
+## Key Principles
+
+### Headless, Tool-Shaped Services
+Every capability is a **pure function** over `(userId, input)` with Zod input/output schemas:
+- Callable from HTTP routes, Flue tools, or MCP.
+- No business logic in route handlers — only parsing, calling services, serializing responses.
+- Services live in `src/lib/services/` — organized by domain (courses, events, mastery, grades, calendar, notes, tasks, resources, sessions, profile, tutor).
+- This shapes the code for **agentic future**: Flue agents will wrap these services as tools.
+
+### Event-Sourced Mastery
+Mastery is **never stored directly** — it's computed on-demand from an append-only (but editable) event log:
+- Events carry dual-role flags (`is_instructional`, `is_assessment`) not a category enum.
+- Editable manual events, delete-only system-generated events (with confirmation).
+- Every event write triggers a mastery re-fold for affected KCs.
+- **The fold is pure**: given a list of events, compute the score deterministically (recency-weighted first-attempt AE success + exposure prior from IE).
+- `assessment_kcs.qmatrix_version` allows KC-to-assessment mappings to evolve without rewriting history.
+
+### Webapp + Frozen API
+- **HTTP API** (`/api/v1`) is the single source of truth for client contracts.
+- Astro pages call services directly server-side (no self-calls).
+- The same API surfaces for native clients (iPad app later).
+- API contract is frozen at end of M1; iPad and web apps build against the same specification.
+
+## Repo Structure
+
+```
+astro.config.mjs                          # Astro + Svelte islands config
+wrangler.jsonc                            # Bindings: D1 (DB), R2 (UPLOADS), vars
+drizzle.config.ts                         # Migration + schema config
+.dev.vars.example                         # Template for local secrets
+
+courses/                                  # Seed data + old prototype (frozen)
+  courses.json
+  [course-readmes]
+  [old prototype files]
+
+migrations/                               # D1 migration SQL files
+scripts/
+  seed.ts                                 # Idempotent course+KC seed
+
+src/
+  middleware.ts                           # Session → locals.user, gates pages + /api/v1
+  db/
+    schema.ts                             # Drizzle schema (all tables)
+    client.ts                             # `db` singleton, db.batch pattern
+  lib/
+    auth/                                 # Token generation, session mgmt, PBKDF2
+    schemas/                              # Zod validators (users, courses, events, etc.)
+    services/                             # Pure service functions
+      courses.ts
+      events.ts (and mastery fold logic)
+      mastery.ts (KC score computation)
+      grades.ts
+      calendar.ts
+      notes.ts
+      tasks.ts
+      resources.ts
+      sessions.ts (cookie mgmt)
+      profile.ts
+      tutor/
+        openrouter.ts
+        prompts.ts
+        modelSpec.ts
+    flows/                                # Agentic flows
+      quick_quiz.ts                       # Pattern flow: pick KCs, generate, grade, append
+    api.ts                                # Request/response envelope helpers
+  layouts/
+    AppShell.astro                        # Two-group sidebar, nav, footer
+  components/                             # By feature (admin/, learning/, shared/)
+    admin/
+      CalendarView.svelte
+      GradeTable.svelte
+      ...
+    learning/
+      ScaffoldChat.svelte
+      InteractiveModel.svelte
+      ...
+    shared/
+      RecordEventModal.svelte
+      ...
+  pages/
+    /login.astro
+    /index.astro
+    /onboarding.astro
+    /dashboard.astro
+    /calendar.astro
+    /grades.astro
+    /feed.astro
+    /courses/index.astro
+    /courses/[slug].astro
+    /courses/[slug]/kc/[kcId].astro
+    /study.astro
+    /tutor/[kcId].astro
+    /notes/index.astro
+    /notes/[id].astro
+    /tasks.astro
+    /profile.astro
+    api/v1/
+      auth/
+        login.ts
+        logout.ts
+      user.ts
+      courses/
+        index.ts
+        [id].ts
+        [id]/assessments.ts
+        [id]/attachments.ts
+      kcs/
+        [id].ts
+        [id]/events.ts
+      events/
+        index.ts
+        [id].ts
+      calendar.ts
+      grades/
+        summary.ts
+      tasks/
+        index.ts
+        [id].ts
+      notes/
+        index.ts
+        [id].ts
+      resources/
+        index.ts
+        [id].ts
+      sessions/
+        index.ts
+        [id]/complete.ts
+      tutor/
+        conversations/
+          index.ts
+          [id].ts
+          [id]/messages.ts
+      flows/
+        quick_quiz/
+          index.ts
+          [id]/answers.ts
+
+tests/
+  unit/
+    mastery.test.ts (fold determinism, learning curves)
+    grades.test.ts (weighted standing, grade math)
+    auth.test.ts (token/session lifecycle)
+  integration/
+    seed.test.ts (idempotency)
+    api.test.ts (key endpoints with D1/R2 bindings)
+
+docs/
+  README.md (this map)
+  product/
+    vision.md
+    user-journeys.md
+    screens.md
+  architecture/
+    overview.md (this file)
+    data-model.md
+    events-and-mastery.md (KLI distillation)
+    tutor.md
+    cloudflare.md
+    agentic-channels.md
+  api.md (DRAFT, frozen M1)
+  decisions/
+    ADR-001-astro-ssr-on-cloudflare.md
+    ADR-002-svelte.md
+    ADR-003-d1-drizzle.md
+    ADR-004-event-sourced-mastery.md
+    ADR-005-hand-rolled-sessions.md
+    ADR-006-r2-uploads.md
+  todo.md
+```
+
+## Local Development
+
+```bash
+# Setup
+npm install
+cp .dev.vars.example .dev.vars          # Add OPENROUTER_KEY
+wrangler d1 migrations apply studybuddy --local
+npm run seed                            # Idempotent: courses.json → D1
+
+# Dev server
+npm run dev                             # Astro on workerd, hot-reload
+
+# Tests
+npm run test                            # Vitest with pool-workers
+npm run test:watch
+
+# Deploy
+wrangler deploy                         # Push to Cloudflare
+```
+
+## TODO
+
+- Repository initialization checklist (TypeScript setup, ESLint, Prettier, git hooks).
+- Detailed dev environment setup guide (Node version, wrangler config, local D1).
+- CI/CD pipeline definition (GitHub Actions for test, lint, deploy).
+- Performance budgets and monitoring strategy.
