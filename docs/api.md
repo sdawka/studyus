@@ -1,6 +1,6 @@
 # StudyBuddy API — FROZEN v1 (M1, 2026-08-11)
 
-**Status**: FROZEN v1. This is the contract the iPad client (and any other native/agentic caller) builds against. Changes after this point are additive-only (new optional fields, new endpoints) unless a new major version is introduced. `tutor/*` and `flows/*` are **reserved for M4** — not implemented yet, see that section below.
+**Status**: FROZEN v1. This is the contract the iPad client (and any other native/agentic caller) builds against. Changes after this point are additive-only (new optional fields, new endpoints) unless a new major version is introduced. `tutor/*` and `flows/*` were reserved for M4 and are now implemented — see those sections below (the streaming message endpoint and the `end`/quick_quiz-answers endpoints return a non-`{data}` or additive shape respectively, called out where relevant).
 
 **Base URL**: `/api/v1`
 
@@ -14,7 +14,7 @@ or on error:
 ```json
 { "error": { "code": "invalid_input", "message": "..." } }
 ```
-Error `code`s in use: `invalid_input` (400, includes Zod validation failures), `unauthorized` (401), `forbidden` (403), `not_manual_event` (400 — see Events below), `not_found` (404), `internal_error` (500).
+Error `code`s in use: `invalid_input` (400, includes Zod validation failures), `unauthorized` (401), `forbidden` (403), `not_manual_event` (400 — see Events below), `not_found` (404), `internal_error` (500), `conversation_capped` (400 — see AI Tutor below), `quiz_generation_failed` (502 — see Agentic Flows below), `quiz_not_gradable` (400 — see Agentic Flows below).
 
 **IDs**: All entity ids are UUID-*shaped* strings (`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`, lowercase hex) but are **not guaranteed to be valid RFC4122 v4 UUIDs** — seed data uses deterministic UUID-shaped hashes (stable across reseeds) that don't set the version/variant nibits real UUIDs do. Clients must treat ids as opaque strings matching that grouping, not validate strict UUID version.
 
@@ -204,13 +204,56 @@ Matches draft. `kc_ids_touched` defaults to whatever KCs were linked at session 
 
 ---
 
-## AI Tutor — reserved for M4
+## AI Tutor (M4)
 
-`POST /tutor/conversations`, `GET /tutor/conversations/:id`, `POST /tutor/conversations/:id/messages` are **not implemented**. Routes don't exist (404, not 501) until M4. Shapes in the original plan draft stand as the target design; M4 may refine them once the OpenRouter integration is built.
+Server-side OpenRouter integration (`src/lib/services/tutor/{openrouter,prompts,modelSpec,conversations}.ts`). Mode is derived from the KC's `kc_type` per the KLI mapping in `docs/architecture/events-and-mastery.md` (`fact`/`association`→`recall`, `concept`→`classify`, `rule`→`worked_example`, `principle`→`interactive_model` by default, with `self_explain` available as an explicit override) unless the client passes `mode` explicitly at creation.
 
-## Agentic Flows — reserved for M4
+### POST /tutor/conversations
+**Request**: `{ "kc_id": "uuid", "mode": "recall|classify|worked_example|self_explain|interactive_model"? }`
 
-`POST /flows/quick_quiz`, `POST /flows/quick_quiz/:id/answers` are **not implemented**. Same as above — M4 scope, shapes in the plan draft are the target design.
+**Response** (201): the created `tutor_conversations` row (`id`, `kc_id`, `mode`, `created_at`).
+
+### GET /tutor/conversations/:id
+**Response** (200): `{ ...conversation, "messages": [{ id, role, content, created_at }] }`, messages oldest-first.
+
+### POST /tutor/conversations/:id/messages
+**Request**: `{ "content": "string" }`. **Response**: `text/event-stream`, not the `{data}` envelope — each frame is `data: {"delta":"..."}\n\n`, terminated by `data: {"done":true}\n\n`. The user message is persisted immediately; the assistant's full reply is persisted once the stream completes.
+
+Per-conversation message cap: **30** (`MAX_MESSAGES_PER_CONVERSATION` in `conversations.ts`), user+assistant combined. Once an exchange would reach the cap, the conversation is auto-ended (see below) after that reply streams. Posting to an already-capped conversation returns `400 conversation_capped` instead of a stream.
+
+### POST /tutor/conversations/:id/end — additive, beyond the original plan draft
+**Request**: `{ "final_rating": 1-5? }`. Appends one dual-role `tutor_session` event (`payload: { conversation_id, mode, final_rating? }`) via the events service and returns `{ conversation, event, mastery_deltas }`. Also fired automatically when the message cap is reached — the client button just exposes the same action. Not idempotency-guarded: calling it twice appends two events (each representing a distinct self-assessment/close), same as the `tutor_session` events a Flue channel agent would append per session-close.
+
+### Interactive model spec (principle KCs, `interactive_model` mode)
+The tutor may emit at most one fenced ` ```json ` block per message, validated against `modelSpecSchema` in `src/lib/services/tutor/modelSpec.ts`:
+```json
+{
+  "title": "string?",
+  "parameters": [{ "id": "string", "label": "string?", "min": 0, "max": 50, "step": 1?, "default": 10, "unit": "string?" }],
+  "expressions": [{ "id": "string", "label": "string?", "formula": "string" }],
+  "notes": "string?"
+}
+```
+Formulas are evaluated by a hand-rolled recursive-descent parser (no `eval`/`Function`) supporting only `+ - * / ^ ( )`, the functions `sqrt sin cos tan log exp abs`, and the constants `pi e` plus the declared parameter ids. Parse or validation failure degrades silently to `null` — the client renders the message as plain prose. `InteractiveModel.svelte` re-evaluates all expressions client-side as sliders move, using the same parser (it has no server-only imports).
+
+### Context assembly
+Before every LLM call, `conversations.ts` assembles: KC name/type/description/practice_notes, branch name, course title/overview, current mastery/status, the last 5 events for the KC (summarized), and any notes linked to the KC (bodies truncated to 500 chars) — injected into the system prompt built by `prompts.ts`. Every mode's prompt ends with an instruction to close the turn with a retrieval question (the KLI asymmetry hypothesis: spaced retrieval helps for every KC type) and to keep tone purely informational, calibrated to current mastery.
+
+## Agentic Flows (M4)
+
+### POST /flows/quick_quiz
+**Request**: `{ "course_id": "uuid"?, "kc_id": "uuid"?, "count": 1-10? (default 5) }`. If `kc_id` is given, the quiz is that one KC; otherwise KCs are picked by lowest `mastery` then oldest (or never-touched) `last_event_at`, optionally scoped to `course_id`, across the user's owned KCs.
+
+**Response** (201): `{ "id": "uuid", "questions": [{ "index": 0, "kc_id": "uuid", "question": "string", "options": ["string", "string", "string", "string"] }] }` — **no answers or explanations included**.
+
+**Storage** (documented per the plan's "your call"): quizzes reuse a `study_sessions` row rather than a new table. `intended_event_type` is set to the sentinel `"quick_quiz"` (not a real event type — `PATCH /sessions/:id/complete` is never called on these rows). The generated items (with correct answers + explanations) are JSON-stringified into the otherwise-unused `reflection` text column; `session_kcs` links the picked KCs, same as a real study session.
+
+### POST /flows/quick_quiz/:id/answers
+**Request**: `{ "answers": [{ "question_index": 0, "selected_index": 0 }] }`.
+
+**Response**: `{ "id": "uuid", "score": 0-100, "results": [{ "question_index", "kc_id", "correct", "correct_index", "explanation" }], "mastery_deltas": [...] }`. Grading appends one dual-role `retrieval_practice` event per KC (`payload: { correct, session_id, channel: "quick_quiz" }`) via the events service, and rewrites the session's `reflection` blob with the graded answers + score, setting `ended_at`. Re-submitting an already-graded quiz returns `400 quiz_not_gradable`.
+
+Both flow functions are `(db, userId, input, env) -> result` with no route-handler logic inside them (`src/lib/flows/quick_quiz.ts`) — the shape a future Flue tool wraps unchanged, per `docs/architecture/agentic-channels.md`.
 
 ---
 
@@ -264,4 +307,6 @@ All constants live in `MASTERY_CONSTANTS` in that file.
 - Versioning strategy for backward compatibility once this contract needs to change.
 - Webhook signatures for agentic flow channels (Telegram, SMS callbacks) — M4+.
 - `study_session`/`lecture` calendar item types (see Calendar deviation above).
-- AI tutor + quick_quiz flow implementation (M4).
+- Adaptive difficulty within a tutor conversation; mode-switching mid-conversation; multi-turn lesson planning (see `docs/architecture/tutor.md`).
+- `quick_quiz`'s `study_sessions.reflection`-as-JSON-blob storage is a v1 shortcut — a dedicated `quiz_items` table would be cleaner if quizzes grow more structure (partial credit, free-response, etc).
+- OpenRouter live verification: local dev has no `OPENROUTER_API_KEY` set in `.dev.vars` as of this writing — tutor/flow tests mock the OpenRouter `fetch` call; a real key is needed to verify actual model behavior (prompt quality, model-spec emission rate) end-to-end.
