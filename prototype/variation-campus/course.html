@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>StudyBuddy — CHEE 314 Standing</title>
+<style>
+  :root {
+    --bg: #faf5ec;
+    --surface: #fffdf9;
+    --surface-alt: #fff8ec;
+    --ink: #2b2620;
+    --ink-soft: #766c5c;
+    --ink-faint: #a89a84;
+    --border: #ecdfc9;
+    --border-soft: #f2e9d8;
+    --accent: #c96f2e;
+    --accent-ink: #a4551d;
+    --accent-soft: #f7e3d0;
+    --good: #4c7a4a;
+    --good-soft: #e4f0e0;
+    --warn: #b8842a;
+    --warn-soft: #faf0da;
+    --danger: #ba4b3d;
+    --danger-soft: #fbe6e0;
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+    --shadow-card: 0 1px 2px rgba(70,45,10,.05), 0 8px 20px -6px rgba(70,45,10,.10);
+    --shadow-pop: 0 4px 10px -2px rgba(70,45,10,.10), 0 16px 32px -10px rgba(70,45,10,.16);
+    --font-display: ui-rounded, "SF Pro Rounded", -apple-system, "Segoe UI", system-ui, sans-serif;
+    --font-body: -apple-system, "Segoe UI", system-ui, sans-serif;
+    --font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #221c14; --surface: #2b2318; --surface-alt: #322920; --ink: #f4ecdd;
+      --ink-soft: #c4b6a0; --ink-faint: #8d7f6a; --border: #423628; --border-soft: #3a2f23;
+      --accent: #e08a48; --accent-ink: #f0a869; --accent-soft: #4a3423;
+      --good: #7bab73; --good-soft: #2c3626; --warn: #d3a355; --warn-soft: #3a301f;
+      --danger: #e08174; --danger-soft: #3d2621;
+      --shadow-card: 0 1px 2px rgba(0,0,0,.3), 0 8px 20px -6px rgba(0,0,0,.4);
+      --shadow-pop: 0 4px 10px -2px rgba(0,0,0,.4), 0 16px 32px -10px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #221c14; --surface: #2b2318; --surface-alt: #322920; --ink: #f4ecdd;
+    --ink-soft: #c4b6a0; --ink-faint: #8d7f6a; --border: #423628; --border-soft: #3a2f23;
+    --accent: #e08a48; --accent-ink: #f0a869; --accent-soft: #4a3423;
+    --good: #7bab73; --good-soft: #2c3626; --warn: #d3a355; --warn-soft: #3a301f;
+    --danger: #e08174; --danger-soft: #3d2621;
+  }
+  :root[data-theme="light"] {
+    --bg: #faf5ec; --surface: #fffdf9; --surface-alt: #fff8ec; --ink: #2b2620;
+    --ink-soft: #766c5c; --ink-faint: #a89a84; --border: #ecdfc9; --border-soft: #f2e9d8;
+    --accent: #c96f2e; --accent-ink: #a4551d; --accent-soft: #f7e3d0;
+    --good: #4c7a4a; --good-soft: #e4f0e0; --warn: #b8842a; --warn-soft: #faf0da;
+    --danger: #ba4b3d; --danger-soft: #fbe6e0;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 400 15px/1.5 var(--font-body); -webkit-font-smoothing: antialiased; }
+  h1, h2, h3 { font-family: var(--font-display); margin: 0; }
+  a { color: inherit; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .topnav { display: flex; align-items: center; gap: 22px; padding: 14px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 20; }
+  .brand { display: flex; align-items: center; gap: 8px; font: 700 17px/1 var(--font-display); letter-spacing: -0.01em; text-decoration: none; color: var(--ink); }
+  .brand svg { color: var(--accent); }
+  .topnav nav { display: flex; gap: 4px; margin-left: 8px; }
+  .topnav nav a { text-decoration: none; color: var(--ink-soft); font-weight: 560; font-size: 14px; padding: 8px 14px; border-radius: 999px; transition: background .15s, color .15s; }
+  .topnav nav a:hover { background: var(--surface-alt); color: var(--ink); }
+  .topnav nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent-ink); }
+  .who { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font: 650 13px/1 var(--font-display); }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 30px 28px 60px; }
+
+  /* course switcher chips */
+  .course-switch { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
+  .cs-chip {
+    display: flex; align-items: center; gap: 7px;
+    padding: 7px 13px; border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font: 600 12.5px/1 var(--font-mono); letter-spacing: .04em;
+    color: var(--ink-soft);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .cs-chip .d { width: 8px; height: 8px; border-radius: 50%; background: hsl(var(--h) 60% 52%); }
+  .cs-chip.active { background: hsl(var(--h) 78% 93%); border-color: hsl(var(--h) 55% 78%); color: hsl(var(--h) 55% 26%); }
+
+  /* header */
+  .course-head {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 5px solid hsl(var(--h) 55% 55%);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    box-shadow: var(--shadow-card);
+    margin-bottom: 22px;
+  }
+  .course-head .code { font: 650 12px/1 var(--font-mono); letter-spacing: .06em; color: hsl(var(--h) 50% 34%); }
+  .course-head h1 { font-size: 23px; letter-spacing: -0.015em; margin-top: 6px; }
+  .course-head .meta { color: var(--ink-soft); font-size: 13.5px; margin-top: 6px; }
+  .course-head .overview { color: var(--ink-soft); font-size: 13.5px; margin-top: 10px; max-width: 640px; line-height: 1.6; }
+
+  /* tabs */
+  .tabs { display: flex; gap: 4px; margin-top: 14px; }
+  .tabs button {
+    border: none; background: transparent; cursor: pointer;
+    padding: 8px 14px; border-radius: 999px;
+    font: 600 13px/1 var(--font-body); color: var(--ink-soft);
+  }
+  .tabs button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent-ink); }
+
+  .grid { display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 22px; align-items: start; }
+  .main { display: grid; gap: 22px; min-width: 0; }
+  .rail { display: grid; gap: 22px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 22px; box-shadow: var(--shadow-card); }
+  .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .card-head h2 { font-size: 16.5px; letter-spacing: -0.01em; }
+
+  /* standing summary strip */
+  .standing-strip { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 22px; }
+  .standing-tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px; box-shadow: var(--shadow-card); }
+  .standing-tile .lbl { font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-faint); }
+  .standing-tile .val { font: 700 30px/1.2 var(--font-display); margin-top: 6px; letter-spacing: -0.02em; }
+  .standing-tile .sub { font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; }
+  .ring-wrap { display: flex; align-items: center; gap: 14px; }
+
+  /* assessments */
+  .assess-row { display: flex; align-items: center; gap: 12px; padding: 11px 4px; border-bottom: 1px solid var(--border-soft); }
+  .assess-row:last-child { border-bottom: none; }
+  .assess-row .title { font-weight: 570; font-size: 14px; }
+  .assess-row .type { font-size: 11.5px; color: var(--ink-soft); margin-top: 1px; }
+  .assess-row .weight { font-size: 12px; color: var(--ink-faint); margin-left: auto; }
+  .assess-row .grade { font: 650 14px/1 var(--font-display); width: 52px; text-align: right; }
+
+  /* attendance */
+  .attend-summary { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+  .attend-pct { font: 700 32px/1 var(--font-display); color: hsl(var(--h) 50% 40%); }
+  .attend-note { font-size: 12.5px; color: var(--ink-soft); }
+  .attend-log { display: flex; gap: 8px; margin-top: 12px; }
+  .attend-btn { flex: 1; padding: 9px 0; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-alt); font: 600 12.5px/1 var(--font-body); cursor: pointer; color: var(--ink-soft); }
+  .attend-btn:hover { border-color: hsl(var(--h) 55% 60%); color: var(--ink); }
+  .attend-btn.present:hover { background: var(--good-soft); color: var(--good); border-color: var(--good); }
+  .attend-btn.absent:hover { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
+
+  /* mastery by branch */
+  .branch { border: 1px solid var(--border-soft); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 10px; background: var(--surface-alt); }
+  .branch:last-child { margin-bottom: 0; }
+  .branch-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; }
+  .branch-head h3 { font-size: 14.5px; letter-spacing: -0.005em; }
+  .branch-head .frac { font-size: 12px; color: var(--ink-soft); font-weight: 560; }
+  .branch-bar { height: 7px; border-radius: 999px; background: var(--border-soft); margin-top: 9px; overflow: hidden; }
+  .branch-bar span { display: block; height: 100%; background: hsl(var(--h) 58% 52%); border-radius: 999px; }
+  .concept-list { display: none; margin-top: 12px; display: grid; gap: 6px; }
+  .branch.open .concept-list { display: grid; }
+  .concept-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; border-radius: 8px; background: var(--surface); font-size: 13px; }
+  .concept-status { font: 650 10.5px/1 var(--font-body); text-transform: uppercase; letter-spacing: .04em; padding: 3px 9px; border-radius: 999px; }
+  .status-mastered { background: var(--good-soft); color: var(--good); }
+  .status-practicing { background: var(--warn-soft); color: var(--warn); }
+  .status-not-started { background: var(--border-soft); color: var(--ink-faint); }
+  .chevron { transition: transform .15s; color: var(--ink-faint); }
+  .branch.open .chevron { transform: rotate(90deg); }
+
+  /* upcoming */
+  .up-row { display: flex; align-items: center; gap: 10px; padding: 10px 2px; border-bottom: 1px solid var(--border-soft); }
+  .up-row:last-child { border-bottom: none; }
+  .up-when { font: 650 12px/1 var(--font-mono); color: var(--ink-soft); width: 54px; }
+  .up-title { font-size: 13.5px; font-weight: 560; }
+
+  @media (max-width: 1060px) {
+    .grid { grid-template-columns: 1fr; }
+    .standing-strip { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 720px) {
+    .course-head { flex-direction: column; }
+    .topnav { flex-wrap: wrap; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topnav">
+  <a class="brand" href="dashboard.html">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 3 2 8l10 5 10-5-10-5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M6 11v5c0 1.2 2.7 3 6 3s6-1.8 6-3v-5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    </svg>
+    StudyBuddy
+  </a>
+  <nav aria-label="Primary">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="course.html" aria-current="page">Courses</a>
+    <a href="study.html">Study</a>
+    <a href="feed.html">Feed</a>
+  </nav>
+  <div class="who"><span class="avatar">S</span></div>
+</header>
+
+<main class="wrap">
+
+  <div class="course-switch" id="course-switch"></div>
+
+  <div class="course-head" id="course-head" style="--h:205">
+    <div>
+      <div class="code">CHEE 314</div>
+      <h1>Fluid Mechanics</h1>
+      <div class="meta">Milan Maric · Fall 2024 · 3 credits</div>
+      <p class="overview">Fluid properties; dimensional analysis; drag; packed/fluidized beds; macroscopic energy balances, Bernoulli's equation and linear momentum theorem; boundary layer approximation; turbulence.</p>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Course view">
+      <button role="tab" aria-selected="true">Standing</button>
+      <button role="tab" aria-selected="false">Concepts</button>
+      <button role="tab" aria-selected="false">Notes</button>
+      <button role="tab" aria-selected="false">Resources</button>
+    </div>
+  </div>
+
+  <div class="standing-strip">
+    <div class="standing-tile">
+      <div class="lbl">Weighted standing</div>
+      <div class="val num" style="color:hsl(205 50% 40%)">78%</div>
+      <div class="sub">from 3 graded items, 45% of final weight entered</div>
+    </div>
+    <div class="standing-tile">
+      <div class="lbl">Attendance</div>
+      <div class="val num" style="color:hsl(205 50% 40%)">92%</div>
+      <div class="sub">11 of 12 lectures logged attended</div>
+    </div>
+    <div class="standing-tile">
+      <div class="lbl">Concept mastery</div>
+      <div class="val num" style="color:hsl(205 50% 40%)">3 / 16</div>
+      <div class="sub">concepts mastered across 5 branches</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="main">
+
+      <section class="card">
+        <div class="card-head"><h2>Assessments</h2></div>
+        <div id="assess-list"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Concept mastery by branch</h2>
+          <span style="font-size:12.5px;color:var(--ink-soft);">Tap a branch to expand</span>
+        </div>
+        <div id="branch-list"></div>
+      </section>
+
+    </div>
+
+    <aside class="rail">
+
+      <section class="card">
+        <div class="card-head"><h2>Attendance log</h2></div>
+        <div class="attend-summary" style="--h:205">
+          <span class="attend-pct num">92%</span>
+          <span class="attend-note">11 of 12 lectures<br/>this term</span>
+        </div>
+        <div class="attend-log" style="--h:205">
+          <button class="attend-btn present" id="log-present">Mark attended</button>
+          <button class="attend-btn absent" id="log-absent">Mark missed</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>Upcoming</h2></div>
+        <div id="upcoming-list"></div>
+      </section>
+
+    </aside>
+  </div>
+
+</main>
+
+<script>
+(function () {
+  const COURSES = [
+    { code: 'CHEE 314', title: 'Fluid Mechanics', hue: 205 },
+    { code: 'CHEE 370', title: 'Elements of Biotechnology', hue: 150 },
+    { code: 'MATH 264', title: 'Advanced Calculus for Engineers', hue: 265 },
+    { code: 'CHEE 380', title: 'Materials Science', hue: 25 },
+    { code: 'FACC 250', title: 'Responsibilities of the Professional Engineer', hue: 185 },
+  ];
+
+  const switcher = document.getElementById('course-switch');
+  COURSES.forEach((c, i) => {
+    const el = document.createElement(i === 0 ? 'span' : 'a');
+    el.className = 'cs-chip' + (i === 0 ? ' active' : '');
+    el.style.setProperty('--h', c.hue);
+    if (i !== 0) el.href = 'course.html';
+    el.innerHTML = '<span class="d"></span>' + c.code;
+    switcher.appendChild(el);
+  });
+
+  const ASSESSMENTS = [
+    { title: 'Quiz 1 — Fluid properties & dimensional analysis', type: 'Quiz', weight: '8%', grade: '85%' },
+    { title: 'Assignment 1 — Drag & packed beds', type: 'Assignment', weight: '12%', grade: '74%' },
+    { title: 'Midterm exam', type: 'Exam', weight: '25%', grade: '76%' },
+    { title: 'Quiz 2 — Bernoulli & momentum', type: 'Quiz', weight: '8%', grade: '—' },
+    { title: 'Final exam', type: 'Exam', weight: '35%', grade: '—' },
+  ];
+  const assessList = document.getElementById('assess-list');
+  ASSESSMENTS.forEach(a => {
+    const row = document.createElement('div');
+    row.className = 'assess-row';
+    row.innerHTML =
+      '<span><span class="title">' + a.title + '</span><br/><span class="type">' + a.type + '</span></span>' +
+      '<span class="weight">' + a.weight + '</span>' +
+      '<span class="grade num">' + a.grade + '</span>';
+    assessList.appendChild(row);
+  });
+
+  const BRANCHES = [
+    { name: 'Foundations', concepts: [
+      { name: 'Fluid properties', status: 'mastered' },
+      { name: 'Dimensional analysis', status: 'mastered' },
+      { name: 'Drag', status: 'practicing' },
+      { name: 'Non-Newtonian fluids', status: 'not-started' },
+    ]},
+    { name: 'Macroscopic balances', concepts: [
+      { name: 'Macroscopic energy balances', status: 'practicing' },
+      { name: 'Bernoulli equation', status: 'mastered' },
+      { name: 'Linear momentum theorem', status: 'practicing' },
+      { name: 'Flowmeters', status: 'not-started' },
+      { name: 'Pipeline systems', status: 'not-started' },
+    ]},
+    { name: 'Porous/particle systems', concepts: [
+      { name: 'Packed beds', status: 'not-started' },
+      { name: 'Fluidized beds', status: 'not-started' },
+    ]},
+    { name: 'Microscopic balances', concepts: [
+      { name: 'Continuity equation', status: 'not-started' },
+      { name: 'Navier-Stokes equations', status: 'not-started' },
+      { name: 'Boundary layer approximation', status: 'not-started' },
+      { name: 'Turbulence', status: 'not-started' },
+    ]},
+    { name: 'Lab', concepts: [
+      { name: 'Fluid mechanics laboratory exercises', status: 'practicing' },
+    ]},
+  ];
+  const branchList = document.getElementById('branch-list');
+  BRANCHES.forEach((b, i) => {
+    const mastered = b.concepts.filter(c => c.status === 'mastered').length;
+    const pct = Math.round((mastered / b.concepts.length) * 100);
+    const el = document.createElement('div');
+    el.className = 'branch' + (i === 1 ? ' open' : '');
+    el.style.setProperty('--h', 205);
+    el.innerHTML =
+      '<div class="branch-head">' +
+        '<h3>' + b.name + '</h3>' +
+        '<span class="frac num">' + mastered + ' / ' + b.concepts.length + ' <svg class="chevron" width="12" height="12" viewBox="0 0 12 12" style="vertical-align:-1px;margin-left:4px;" fill="none"><path d="M4 2 8 6 4 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
+      '</div>' +
+      '<div class="branch-bar"><span style="width:' + pct + '%"></span></div>' +
+      '<div class="concept-list">' +
+        b.concepts.map(c => '<div class="concept-row"><span>' + c.name + '</span><span class="concept-status status-' + c.status + '">' + c.status.replace('-', ' ') + '</span></div>').join('') +
+      '</div>';
+    el.querySelector('.branch-head').addEventListener('click', () => el.classList.toggle('open'));
+    branchList.appendChild(el);
+  });
+
+  const UPCOMING = [
+    { when: 'Aug 13', title: 'Problem set 4 due' },
+    { when: 'Aug 14', title: 'Quiz 2 — Bernoulli & momentum' },
+    { when: 'Aug 21', title: 'Lab report — boundary layers' },
+  ];
+  const upList = document.getElementById('upcoming-list');
+  UPCOMING.forEach(u => {
+    const row = document.createElement('div');
+    row.className = 'up-row';
+    row.innerHTML = '<span class="up-when">' + u.when + '</span><span class="up-title">' + u.title + '</span>';
+    upList.appendChild(row);
+  });
+
+  document.getElementById('log-present').addEventListener('click', function () {
+    this.textContent = 'Logged ✓';
+    setTimeout(() => { this.textContent = 'Mark attended'; }, 1600);
+  });
+  document.getElementById('log-absent').addEventListener('click', function () {
+    this.textContent = 'Logged ✓';
+    setTimeout(() => { this.textContent = 'Mark missed'; }, 1600);
+  });
+})();
+</script>
+</body>
+</html>

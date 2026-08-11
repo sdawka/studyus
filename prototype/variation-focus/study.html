@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study — StudyBuddy</title>
+<style>
+  :root{
+    --bg:#f6f6f7; --surface:#ffffff; --surface-2:#fafafb;
+    --border:#e3e3e6; --border-strong:#d3d3d8;
+    --text:#1a1a1e; --text-dim:#6b6b74; --text-faint:#9a9aa2;
+    --accent:#5b5bd6; --accent-hover:#4b4bc4; --accent-soft:#eeeefb; --accent-soft-border:#d8d8f5;
+    --success:#1a8a4a; --success-soft:#e6f5ec;
+    --warn:#b5790f; --warn-soft:#fbf1de;
+    --danger:#c23b3b; --danger-soft:#fbeaea;
+    --sidebar-bg:#18181c; --sidebar-text:#c9c9cf; --sidebar-text-dim:#75757e;
+    --sidebar-border:#28282e; --sidebar-active-bg:#26262e;
+    --radius:6px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#131316; --surface:#1a1a1e; --surface-2:#1d1d21;
+      --border:#2c2c31; --border-strong:#39393f;
+      --text:#e8e8ea; --text-dim:#98989f; --text-faint:#6c6c74;
+      --accent:#7373e0; --accent-hover:#8585e6; --accent-soft:#232343; --accent-soft-border:#33338f;
+      --success:#3fbf76; --success-soft:#132a1e;
+      --warn:#d9a441; --warn-soft:#332911;
+      --danger:#e5696e; --danger-soft:#331a1c;
+      --sidebar-bg:#0e0e10; --sidebar-text:#c9c9cf; --sidebar-text-dim:#6c6c74;
+      --sidebar-border:#232327; --sidebar-active-bg:#1c1c20;
+    }
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.45;-webkit-font-smoothing:antialiased;}
+  a{color:inherit;text-decoration:none;}
+  .shell{display:flex;min-height:100vh;}
+  .sidebar{width:212px;flex:0 0 212px;background:var(--sidebar-bg);color:var(--sidebar-text);display:flex;flex-direction:column;padding:10px 8px 12px;position:sticky;top:0;height:100vh;border-right:1px solid var(--sidebar-border);}
+  .brand{display:flex;align-items:center;gap:7px;padding:6px 8px 12px;font-weight:600;font-size:13px;color:#f2f2f4;letter-spacing:-0.01em;}
+  .brand-mark{width:16px;height:16px;border-radius:4px;background:var(--accent);display:inline-block;flex:0 0 16px;}
+  .term-pill{margin:0 8px 12px;padding:5px 8px;background:var(--sidebar-active-bg);border:1px solid var(--sidebar-border);border-radius:var(--radius);font-size:11px;color:var(--sidebar-text-dim);display:flex;justify-content:space-between;align-items:center;}
+  .term-pill strong{color:var(--sidebar-text);font-weight:600;}
+  .record-btn{margin:0 8px 14px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);padding:7px 10px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;justify-content:center;}
+  .record-btn:hover{background:var(--accent-hover);}
+  .record-btn kbd{font-family:inherit;font-size:10px;background:rgba(255,255,255,.18);padding:1px 4px;border-radius:3px;margin-left:auto;}
+  .nav-group{margin-bottom:14px;}
+  .nav-label{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--sidebar-text-dim);padding:4px 10px 5px;}
+  .nav-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:var(--radius);font-size:12.5px;color:var(--sidebar-text);cursor:pointer;margin:1px 0;}
+  .nav-item .dot{width:5px;height:5px;border-radius:50%;background:var(--sidebar-text-dim);flex:0 0 5px;}
+  .nav-item:hover{background:var(--sidebar-active-bg);}
+  .nav-item.active{background:var(--sidebar-active-bg);color:#fff;font-weight:600;}
+  .nav-item.active .dot{background:var(--accent);}
+  .nav-item.disabled{color:var(--sidebar-text-dim);cursor:default;}
+  .nav-item.disabled:hover{background:transparent;}
+  .nav-item .soon{margin-left:auto;font-size:9.5px;color:var(--sidebar-text-dim);border:1px solid var(--sidebar-border);border-radius:3px;padding:1px 4px;}
+  .sidebar-footer{margin-top:auto;padding:8px 10px;font-size:11px;color:var(--sidebar-text-dim);border-top:1px solid var(--sidebar-border);}
+
+  .main{flex:1;min-width:0;padding:20px 28px 40px;display:flex;flex-direction:column;align-items:center;}
+  .page-head{width:100%;max-width:520px;margin-bottom:18px;}
+  .page-head h1{font-size:18px;font-weight:650;margin:0;letter-spacing:-0.01em;}
+  .page-head .sub{font-size:12px;color:var(--text-dim);margin-top:2px;}
+
+  .steps{display:flex;align-items:center;gap:6px;width:100%;max-width:520px;margin-bottom:18px;}
+  .step{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-faint);}
+  .step .num{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:650;}
+  .step.active{color:var(--text);}
+  .step.active .num{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .step.done .num{background:var(--success);border-color:var(--success);color:#fff;}
+  .step-line{flex:1;height:1px;background:var(--border);}
+
+  .panel{width:100%;max-width:520px;background:var(--surface);border:1px solid var(--border);border-radius:9px;}
+  .panel-head{padding:12px 16px;border-bottom:1px solid var(--border);}
+  .panel-head h2{font-size:13.5px;font-weight:650;margin:0;}
+  .panel-head .sub{font-size:11.5px;color:var(--text-faint);margin-top:2px;}
+  .panel-body{padding:16px;display:flex;flex-direction:column;gap:14px;}
+
+  label.field-label{font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.04em;font-weight:600;margin-bottom:5px;display:block;}
+  select{width:100%;font-family:inherit;font-size:12.5px;padding:8px 9px;border:1px solid var(--border-strong);border-radius:6px;background:var(--surface);color:var(--text);}
+  select:focus{outline:none;border-color:var(--accent);}
+
+  .pill-group{display:flex;gap:6px;flex-wrap:wrap;}
+  .pill{padding:6px 12px;border:1px solid var(--border-strong);border-radius:16px;font-size:12px;font-weight:600;color:var(--text-dim);background:var(--surface);cursor:pointer;}
+  .pill.selected{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .pill:hover:not(.selected){border-color:var(--text-faint);}
+
+  .type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .type-card{border:1px solid var(--border-strong);border-radius:7px;padding:10px;cursor:pointer;}
+  .type-card .t-title{font-size:12px;font-weight:650;margin-bottom:2px;}
+  .type-card .t-desc{font-size:10.5px;color:var(--text-faint);line-height:1.35;}
+  .type-card.selected{border-color:var(--accent);background:var(--accent-soft);}
+  .type-card.selected .t-title{color:var(--accent);}
+
+  .btn{font-family:inherit;font-size:12.5px;font-weight:600;padding:9px 14px;border-radius:6px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text);cursor:pointer;}
+  .btn:hover{border-color:var(--text-faint);}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;width:100%;padding:10px;}
+  .btn.primary:hover{background:var(--accent-hover);}
+  .btn.ghost{background:transparent;border:none;color:var(--text-faint);}
+
+  /* timer state */
+  .timer-face{display:flex;flex-direction:column;align-items:center;padding:28px 16px 10px;}
+  .timer-course{font-size:11.5px;color:var(--text-faint);font-weight:600;margin-bottom:4px;}
+  .timer-clock{font-size:44px;font-weight:700;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;}
+  .timer-type{font-size:12px;color:var(--accent);font-weight:650;margin-top:2px;}
+  .timer-controls{display:flex;gap:8px;margin-top:18px;width:100%;padding:0 16px 16px;}
+  .timer-controls .btn{flex:1;}
+  .kc-touched{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 16px;}
+  .chip{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:11px;border:1px solid var(--accent-soft-border);background:var(--accent-soft);color:var(--accent);}
+
+  /* completion */
+  .complete-icon{width:40px;height:40px;border-radius:50%;background:var(--success-soft);color:var(--success);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;margin:20px auto 6px;}
+  textarea{width:100%;font-family:inherit;font-size:12.5px;padding:8px 9px;border:1px solid var(--border-strong);border-radius:6px;background:var(--surface);color:var(--text);resize:vertical;}
+  textarea:focus{outline:none;border-color:var(--accent);}
+
+  .footnote{font-size:11px;color:var(--text-faint);margin-top:16px;max-width:520px;width:100%;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="sidebar">
+    <div class="brand"><span class="brand-mark"></span>StudyBuddy</div>
+    <div class="term-pill"><span>Term</span><strong>Winter 2025</strong></div>
+    <button class="record-btn" onclick="alert('Record event modal — see dashboard.html for full mock')">+ Record event <kbd>E</kbd></button>
+    <div class="nav-group">
+      <div class="nav-label">Admin</div>
+      <a class="nav-item" href="dashboard.html"><span class="dot"></span>Dashboard</a>
+      <a class="nav-item disabled"><span class="dot"></span>Calendar<span class="soon">soon</span></a>
+      <a class="nav-item disabled"><span class="dot"></span>Grades<span class="soon">soon</span></a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Learning</div>
+      <a class="nav-item" href="feed.html"><span class="dot"></span>Feed</a>
+      <a class="nav-item" href="course.html"><span class="dot"></span>Courses</a>
+      <a class="nav-item active" href="study.html"><span class="dot"></span>Study</a>
+      <a class="nav-item disabled"><span class="dot"></span>Notes<span class="soon">soon</span></a>
+      <a class="nav-item disabled"><span class="dot"></span>Tasks<span class="soon">soon</span></a>
+      <a class="nav-item disabled"><span class="dot"></span>Profile<span class="soon">soon</span></a>
+    </div>
+    <div class="sidebar-footer">Sahil · McGill ChemEng</div>
+  </nav>
+
+  <main class="main">
+    <div class="page-head">
+      <h1>Study</h1>
+      <div class="sub">Pick a course, a duration, a session type — then go.</div>
+    </div>
+
+    <div class="steps">
+      <div class="step" id="s1"><div class="num">1</div>Setup</div>
+      <div class="step-line"></div>
+      <div class="step" id="s2"><div class="num">2</div>In session</div>
+      <div class="step-line"></div>
+      <div class="step" id="s3"><div class="num">3</div>Complete</div>
+    </div>
+
+    <!-- STEP 1: setup -->
+    <div class="panel" id="panel-setup">
+      <div class="panel-head"><h2>Set up your session</h2><div class="sub">This will append events when you finish</div></div>
+      <div class="panel-body">
+        <div>
+          <label class="field-label">Course</label>
+          <select id="setup-course">
+            <option>CHEE 314 — Fluid Mechanics</option>
+            <option>CHEE 315 — Heat and Mass Transfer</option>
+            <option>CHEE 351 — Separation Processes</option>
+            <option>CHEE 310 — Physical Chemistry for Engineers</option>
+            <option>MATH 264 — Advanced Calculus for Engineers</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Duration</label>
+          <div class="pill-group" id="duration-group">
+            <div class="pill" data-val="25">25 min</div>
+            <div class="pill selected" data-val="45">45 min</div>
+            <div class="pill" data-val="60">60 min</div>
+            <div class="pill" data-val="90">90 min</div>
+          </div>
+        </div>
+        <div>
+          <label class="field-label">Session type</label>
+          <div class="type-grid" id="type-group">
+            <div class="type-card selected" data-type="Practice">
+              <div class="t-title">Practice</div>
+              <div class="t-desc">Work problems, track which KCs you touch</div>
+            </div>
+            <div class="type-card" data-type="Retrieval practice">
+              <div class="t-title">Retrieval practice</div>
+              <div class="t-desc">Closed-book spaced recall on due KCs</div>
+            </div>
+            <div class="type-card" data-type="Reading">
+              <div class="t-title">Reading</div>
+              <div class="t-desc">Textbook / notes, lighter instructional weight</div>
+            </div>
+            <div class="type-card" data-type="Quick quiz">
+              <div class="t-title">Quick quiz</div>
+              <div class="t-desc">Auto-generated MCQs on due concepts</div>
+            </div>
+          </div>
+        </div>
+        <button class="btn primary" onclick="startSession()">Start session</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: active timer -->
+    <div class="panel" id="panel-timer" style="display:none;">
+      <div class="timer-face">
+        <div class="timer-course" id="timer-course-name">CHEE 314 — Fluid Mechanics</div>
+        <div class="timer-clock" id="timer-clock">45:00</div>
+        <div class="timer-type" id="timer-type-name">Practice</div>
+      </div>
+      <div class="kc-touched">
+        <span class="chip">+ Bernoulli equation</span>
+        <span class="chip">+ Flowmeters</span>
+      </div>
+      <div class="timer-controls">
+        <button class="btn" onclick="pauseSession()" id="pause-btn">Pause</button>
+        <button class="btn primary" onclick="completeSession()" style="background:var(--success);border-color:var(--success);">Finish</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: completion -->
+    <div class="panel" id="panel-complete" style="display:none;">
+      <div class="panel-head"><h2>Session logged</h2><div class="sub">Events appended to CHEE 314</div></div>
+      <div class="panel-body">
+        <div class="complete-icon">✓</div>
+        <div style="text-align:center;font-size:12px;color:var(--text-dim);margin-top:-4px;">42 minutes &middot; Practice &middot; 2 KCs touched</div>
+        <div class="kc-touched" style="padding:0;justify-content:center;">
+          <span class="chip">Bernoulli equation</span>
+          <span class="chip">Flowmeters</span>
+        </div>
+        <div>
+          <label class="field-label">Reflection (optional)</label>
+          <textarea rows="3" placeholder="How did it go? Anything to flag for next time?"></textarea>
+        </div>
+        <button class="btn primary" onclick="resetFlow()">Start another session</button>
+      </div>
+    </div>
+
+    <div class="footnote">Prototype — timer is a mocked countdown for demo purposes; no data persists. Direction: "focus tool". See README.md.</div>
+  </main>
+</div>
+
+<script>
+  document.querySelectorAll('#duration-group .pill').forEach(function(el){
+    el.addEventListener('click', function(){
+      document.querySelectorAll('#duration-group .pill').forEach(function(p){ p.classList.remove('selected'); });
+      this.classList.add('selected');
+    });
+  });
+  document.querySelectorAll('#type-group .type-card').forEach(function(el){
+    el.addEventListener('click', function(){
+      document.querySelectorAll('#type-group .type-card').forEach(function(p){ p.classList.remove('selected'); });
+      this.classList.add('selected');
+    });
+  });
+
+  var timerInterval = null;
+  var remaining = 0;
+  var paused = false;
+
+  function setStep(n){
+    ['s1','s2','s3'].forEach(function(id, i){
+      var el = document.getElementById(id);
+      el.classList.remove('active','done');
+      if(i + 1 < n) el.classList.add('done');
+      if(i + 1 === n) el.classList.add('active');
+    });
+  }
+
+  function fmt(sec){
+    var m = Math.floor(sec/60), s = sec%60;
+    return (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+  }
+
+  function startSession(){
+    var course = document.getElementById('setup-course').value;
+    var duration = document.querySelector('#duration-group .selected').getAttribute('data-val');
+    var type = document.querySelector('#type-group .selected').getAttribute('data-type');
+
+    document.getElementById('timer-course-name').textContent = course;
+    document.getElementById('timer-type-name').textContent = type;
+
+    remaining = parseInt(duration, 10) * 60;
+    document.getElementById('timer-clock').textContent = fmt(remaining);
+
+    document.getElementById('panel-setup').style.display = 'none';
+    document.getElementById('panel-timer').style.display = 'block';
+    setStep(2);
+
+    paused = false;
+    clearInterval(timerInterval);
+    timerInterval = setInterval(function(){
+      if(paused) return;
+      remaining--;
+      if(remaining <= 0){ remaining = 0; clearInterval(timerInterval); }
+      document.getElementById('timer-clock').textContent = fmt(remaining);
+    }, 1000);
+  }
+
+  function pauseSession(){
+    paused = !paused;
+    document.getElementById('pause-btn').textContent = paused ? 'Resume' : 'Pause';
+  }
+
+  function completeSession(){
+    clearInterval(timerInterval);
+    document.getElementById('panel-timer').style.display = 'none';
+    document.getElementById('panel-complete').style.display = 'block';
+    setStep(3);
+  }
+
+  function resetFlow(){
+    document.getElementById('panel-complete').style.display = 'none';
+    document.getElementById('panel-setup').style.display = 'block';
+    setStep(1);
+  }
+
+  setStep(1);
+</script>
+</body>
+</html>

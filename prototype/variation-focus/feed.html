@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feed — StudyBuddy</title>
+<style>
+  :root{
+    --bg:#f6f6f7; --surface:#ffffff; --surface-2:#fafafb;
+    --border:#e3e3e6; --border-strong:#d3d3d8;
+    --text:#1a1a1e; --text-dim:#6b6b74; --text-faint:#9a9aa2;
+    --accent:#5b5bd6; --accent-hover:#4b4bc4; --accent-soft:#eeeefb; --accent-soft-border:#d8d8f5;
+    --success:#1a8a4a; --success-soft:#e6f5ec;
+    --warn:#b5790f; --warn-soft:#fbf1de;
+    --danger:#c23b3b; --danger-soft:#fbeaea;
+    --sidebar-bg:#18181c; --sidebar-text:#c9c9cf; --sidebar-text-dim:#75757e;
+    --sidebar-border:#28282e; --sidebar-active-bg:#26262e;
+    --radius:6px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#131316; --surface:#1a1a1e; --surface-2:#1d1d21;
+      --border:#2c2c31; --border-strong:#39393f;
+      --text:#e8e8ea; --text-dim:#98989f; --text-faint:#6c6c74;
+      --accent:#7373e0; --accent-hover:#8585e6; --accent-soft:#232343; --accent-soft-border:#33338f;
+      --success:#3fbf76; --success-soft:#132a1e;
+      --warn:#d9a441; --warn-soft:#332911;
+      --danger:#e5696e; --danger-soft:#331a1c;
+      --sidebar-bg:#0e0e10; --sidebar-text:#c9c9cf; --sidebar-text-dim:#6c6c74;
+      --sidebar-border:#232327; --sidebar-active-bg:#1c1c20;
+    }
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.45;-webkit-font-smoothing:antialiased;}
+  a{color:inherit;text-decoration:none;}
+  .shell{display:flex;min-height:100vh;}
+  .sidebar{width:212px;flex:0 0 212px;background:var(--sidebar-bg);color:var(--sidebar-text);display:flex;flex-direction:column;padding:10px 8px 12px;position:sticky;top:0;height:100vh;border-right:1px solid var(--sidebar-border);}
+  .brand{display:flex;align-items:center;gap:7px;padding:6px 8px 12px;font-weight:600;font-size:13px;color:#f2f2f4;letter-spacing:-0.01em;}
+  .brand-mark{width:16px;height:16px;border-radius:4px;background:var(--accent);display:inline-block;flex:0 0 16px;}
+  .term-pill{margin:0 8px 12px;padding:5px 8px;background:var(--sidebar-active-bg);border:1px solid var(--sidebar-border);border-radius:var(--radius);font-size:11px;color:var(--sidebar-text-dim);display:flex;justify-content:space-between;align-items:center;}
+  .term-pill strong{color:var(--sidebar-text);font-weight:600;}
+  .record-btn{margin:0 8px 14px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);padding:7px 10px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;justify-content:center;}
+  .record-btn:hover{background:var(--accent-hover);}
+  .record-btn kbd{font-family:inherit;font-size:10px;background:rgba(255,255,255,.18);padding:1px 4px;border-radius:3px;margin-left:auto;}
+  .nav-group{margin-bottom:14px;}
+  .nav-label{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--sidebar-text-dim);padding:4px 10px 5px;}
+  .nav-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:var(--radius);font-size:12.5px;color:var(--sidebar-text);cursor:pointer;margin:1px 0;}
+  .nav-item .dot{width:5px;height:5px;border-radius:50%;background:var(--sidebar-text-dim);flex:0 0 5px;}
+  .nav-item:hover{background:var(--sidebar-active-bg);}
+  .nav-item.active{background:var(--sidebar-active-bg);color:#fff;font-weight:600;}
+  .nav-item.active .dot{background:var(--accent);}
+  .nav-item.disabled{color:var(--sidebar-text-dim);cursor:default;}
+  .nav-item.disabled:hover{background:transparent;}
+  .nav-item .soon{margin-left:auto;font-size:9.5px;color:var(--sidebar-text-dim);border:1px solid var(--sidebar-border);border-radius:3px;padding:1px 4px;}
+  .sidebar-footer{margin-top:auto;padding:8px 10px;font-size:11px;color:var(--sidebar-text-dim);border-top:1px solid var(--sidebar-border);}
+
+  .main{flex:1;min-width:0;padding:20px 28px 40px;max-width:1140px;}
+  .page-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;}
+  .page-head h1{font-size:18px;font-weight:650;margin:0;letter-spacing:-0.01em;}
+  .page-head .sub{font-size:12px;color:var(--text-dim);margin-top:2px;}
+
+  .filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+  .filter-pill{padding:5px 11px;border:1px solid var(--border-strong);border-radius:14px;font-size:11.5px;font-weight:600;color:var(--text-dim);background:var(--surface);cursor:pointer;}
+  .filter-pill.selected{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .filter-pill:hover:not(.selected){border-color:var(--text-faint);}
+
+  .grid-main{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;}
+  .card-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);}
+  .card-head h2{font-size:12.5px;font-weight:650;margin:0;}
+  .card-head .meta{font-size:11px;color:var(--text-faint);}
+  .card-body{padding:6px 0;}
+
+  .res-row{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);}
+  .res-row:last-child{border-bottom:none;}
+  .res-kind{
+    flex:0 0 auto;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+    padding:2px 6px;border-radius:3px;margin-top:1px;
+  }
+  .res-kind.canonical{background:var(--accent-soft);color:var(--accent);}
+  .res-kind.feed{background:var(--warn-soft);color:var(--warn);}
+  .res-kind.user{background:var(--success-soft);color:var(--success);}
+  .res-body{flex:1;min-width:0;}
+  .res-title{font-size:12.5px;font-weight:600;margin-bottom:2px;}
+  .res-title a:hover{color:var(--accent);}
+  .res-meta{font-size:11px;color:var(--text-faint);display:flex;gap:8px;flex-wrap:wrap;}
+  .res-course-tag{font-size:10px;font-weight:650;color:var(--text-dim);background:var(--surface-2);border:1px solid var(--border);padding:1px 6px;border-radius:3px;}
+  .res-pin{flex:0 0 auto;color:var(--text-faint);font-size:12px;cursor:pointer;margin-top:1px;}
+  .res-pin.pinned{color:var(--warn);}
+
+  .side-card{margin-bottom:14px;}
+  .add-form{display:flex;flex-direction:column;gap:8px;padding:12px 14px;}
+  label.field-label{font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.04em;font-weight:600;margin-bottom:3px;display:block;}
+  select, input[type="text"]{width:100%;font-family:inherit;font-size:12px;padding:6px 8px;border:1px solid var(--border-strong);border-radius:5px;background:var(--surface);color:var(--text);}
+  select:focus, input:focus{outline:none;border-color:var(--accent);}
+  .btn{font-family:inherit;font-size:12px;font-weight:600;padding:7px 12px;border-radius:5px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text);cursor:pointer;}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;align-self:flex-start;}
+  .btn.primary:hover{background:var(--accent-hover);}
+
+  .session-stub{padding:12px 14px;font-size:12px;color:var(--text-dim);}
+  .session-stub .btn{margin-top:8px;width:100%;}
+
+  .footnote{font-size:11px;color:var(--text-faint);margin-top:16px;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="sidebar">
+    <div class="brand"><span class="brand-mark"></span>StudyBuddy</div>
+    <div class="term-pill"><span>Term</span><strong>Winter 2025</strong></div>
+    <button class="record-btn" onclick="alert('Record event modal — see dashboard.html for full mock')">+ Record event <kbd>E</kbd></button>
+    <div class="nav-group">
+      <div class="nav-label">Admin</div>
+      <a class="nav-item" href="dashboard.html"><span class="dot"></span>Dashboard</a>
+      <a class="nav-item disabled"><span class="dot"></span>Calendar<span class="soon">soon</span></a>
+      <a class="nav-item disabled"><span class="dot"></span>Grades<span class="soon">soon</span></a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Learning</div>
+      <a class="nav-item active" href="feed.html"><span class="dot"></span>Feed</a>
+      <a class="nav-item" href="course.html"><span class="dot"></span>Courses</a>
+      <a class="nav-item" href="study.html"><span class="dot"></span>Study</a>
+      <a class="nav-item disabled"><span class="dot"></span>Notes<span class="soon">soon</span></a>
+      <a class="nav-item disabled"><span class="dot"></span>Tasks<span class="soon">soon</span></a>
+      <a class="nav-item disabled"><span class="dot"></span>Profile<span class="soon">soon</span></a>
+    </div>
+    <div class="sidebar-footer">Sahil · McGill ChemEng</div>
+  </nav>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h1>Feed</h1>
+        <div class="sub">Curated per-course resources, plus anything you've shared yourself</div>
+      </div>
+    </div>
+
+    <div class="filter-row" id="filters">
+      <div class="filter-pill selected" data-course="all">All courses</div>
+      <div class="filter-pill" data-course="CHEE314">CHEE 314</div>
+      <div class="filter-pill" data-course="CHEE370">CHEE 370</div>
+      <div class="filter-pill" data-course="MATH264">MATH 264</div>
+      <div class="filter-pill" data-course="CHEE315">CHEE 315</div>
+      <div class="filter-pill" data-course="CHEE351">CHEE 351</div>
+      <div class="filter-pill" data-course="CHEE310">CHEE 310</div>
+    </div>
+
+    <div class="grid-main">
+      <div class="card">
+        <div class="card-head"><h2>Resources</h2><span class="meta" id="res-count">18 items</span></div>
+        <div class="card-body" id="res-list">
+
+          <div class="res-row" data-course="CHEE314">
+            <span class="res-kind canonical">canonical</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://www.mcgill.ca/study/2024-2025/courses/chee-314" target="_blank" rel="noopener">McGill eCalendar official description</a></div>
+              <div class="res-meta"><span class="res-course-tag">CHEE 314</span><span>mcgill.ca</span></div>
+            </div>
+            <span class="res-pin">☆</span>
+          </div>
+          <div class="res-row" data-course="CHEE314">
+            <span class="res-kind canonical">canonical</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://learncheme.com/simulations/fluids/" target="_blank" rel="noopener">LearnChemE — Fluids screencasts/simulations</a></div>
+              <div class="res-meta"><span class="res-course-tag">CHEE 314</span><span>learncheme.com</span></div>
+            </div>
+            <span class="res-pin pinned">★</span>
+          </div>
+          <div class="res-row" data-course="CHEE314">
+            <span class="res-kind feed">feed</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://www.grc.nasa.gov/www/k-12/airplane/" target="_blank" rel="noopener">NASA Glenn — Beginner's Guide to Aerodynamics</a></div>
+              <div class="res-meta"><span class="res-course-tag">CHEE 314</span><span>grc.nasa.gov</span></div>
+            </div>
+            <span class="res-pin">☆</span>
+          </div>
+          <div class="res-row" data-course="CHEE314">
+            <span class="res-kind feed">feed</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://www.youtube.com/results?search_query=turbulence+explained+fluid+mechanics" target="_blank" rel="noopener">MinutePhysics-style intuition: what turbulence is and why it's hard</a></div>
+              <div class="res-meta"><span class="res-course-tag">CHEE 314</span><span>youtube.com</span></div>
+            </div>
+            <span class="res-pin">☆</span>
+          </div>
+
+          <div class="res-row" data-course="CHEE370">
+            <span class="res-kind canonical">canonical</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://openstax.org/details/books/biology-2e" target="_blank" rel="noopener">OpenStax Biology 2e</a></div>
+              <div class="res-meta"><span class="res-course-tag">CHEE 370</span><span>openstax.org</span></div>
+            </div>
+            <span class="res-pin">☆</span>
+          </div>
+          <div class="res-row" data-course="CHEE370">
+            <span class="res-kind feed">feed</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://www.nobelprize.org/prizes/chemistry/2020/press-release/" target="_blank" rel="noopener">Nobel Prize educational material on CRISPR/gene editing</a></div>
+              <div class="res-meta"><span class="res-course-tag">CHEE 370</span><span>nobelprize.org</span></div>
+            </div>
+            <span class="res-pin">☆</span>
+          </div>
+          <div class="res-row" data-course="CHEE370">
+            <span class="res-kind feed">feed</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://blog.addgene.org/" target="_blank" rel="noopener">Addgene blog — molecular biology explainers</a></div>
+              <div class="res-meta"><span class="res-course-tag">CHEE 370</span><span>blog.addgene.org</span></div>
+            </div>
+            <span class="res-pin">☆</span>
+          </div>
+
+          <div class="res-row" data-course="MATH264">
+            <span class="res-kind canonical">canonical</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://ocw.mit.edu/courses/18-02sc-multivariable-calculus-fall-2010/" target="_blank" rel="noopener">MIT OCW — Multivariable Calculus</a></div>
+              <div class="res-meta"><span class="res-course-tag">MATH 264</span><span>ocw.mit.edu</span></div>
+            </div>
+            <span class="res-pin pinned">★</span>
+          </div>
+          <div class="res-row" data-course="MATH264">
+            <span class="res-kind canonical">canonical</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://tutorial.math.lamar.edu/Classes/CalcIII/CalcIII.aspx" target="_blank" rel="noopener">Paul's Online Math Notes — Calculus III</a></div>
+              <div class="res-meta"><span class="res-course-tag">MATH 264</span><span>tutorial.math.lamar.edu</span></div>
+            </div>
+            <span class="res-pin">☆</span>
+          </div>
+          <div class="res-row" data-course="MATH264">
+            <span class="res-kind feed">feed</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://www.youtube.com/results?search_query=3blue1brown+divergence+curl" target="_blank" rel="noopener">3Blue1Brown — divergence and curl intuition</a></div>
+              <div class="res-meta"><span class="res-course-tag">MATH 264</span><span>youtube.com</span></div>
+            </div>
+            <span class="res-pin">☆</span>
+          </div>
+          <div class="res-row" data-course="MATH264">
+            <span class="res-kind user">user-shared</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://www.feynmanlectures.caltech.edu/" target="_blank" rel="noopener">The Feynman Lectures — vector calculus in physics context</a></div>
+              <div class="res-meta"><span class="res-course-tag">MATH 264</span><span>feynmanlectures.caltech.edu</span><span>added by you</span></div>
+            </div>
+            <span class="res-pin">☆</span>
+          </div>
+
+          <div class="res-row" data-course="CHEE315">
+            <span class="res-kind canonical">canonical</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://learncheme.com/simulations/heat-transfer/" target="_blank" rel="noopener">LearnChemE — heat transfer resources</a></div>
+              <div class="res-meta"><span class="res-course-tag">CHEE 315</span><span>learncheme.com</span></div>
+            </div>
+            <span class="res-pin pinned">★</span>
+          </div>
+          <div class="res-row" data-course="CHEE315">
+            <span class="res-kind feed">feed</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://www.engineeringtoolbox.com/heat-transfer-d_431.html" target="_blank" rel="noopener">Engineering Toolbox heat-transfer calculators</a></div>
+              <div class="res-meta"><span class="res-course-tag">CHEE 315</span><span>engineeringtoolbox.com</span></div>
+            </div>
+            <span class="res-pin">☆</span>
+          </div>
+          <div class="res-row" data-course="CHEE315">
+            <span class="res-kind user">user-shared</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://www.youtube.com/results?search_query=heat+transfer+thermal+camera+demo" target="_blank" rel="noopener">Thermal camera / heat-transfer demos</a></div>
+              <div class="res-meta"><span class="res-course-tag">CHEE 315</span><span>youtube.com</span><span>added by you</span></div>
+            </div>
+            <span class="res-pin">☆</span>
+          </div>
+
+          <div class="res-row" data-course="CHEE351">
+            <span class="res-kind canonical">canonical</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://learncheme.com/simulations/separations/" target="_blank" rel="noopener">LearnChemE — separations resources</a></div>
+              <div class="res-meta"><span class="res-course-tag">CHEE 351</span><span>learncheme.com</span></div>
+            </div>
+            <span class="res-pin">☆</span>
+          </div>
+          <div class="res-row" data-course="CHEE351">
+            <span class="res-kind feed">feed</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://www.youtube.com/results?search_query=distillation+column+how+it+works" target="_blank" rel="noopener">How distillation columns work — visual explainers</a></div>
+              <div class="res-meta"><span class="res-course-tag">CHEE 351</span><span>youtube.com</span></div>
+            </div>
+            <span class="res-pin">☆</span>
+          </div>
+
+          <div class="res-row" data-course="CHEE310">
+            <span class="res-kind canonical">canonical</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://learncheme.com/" target="_blank" rel="noopener">LearnChemE — kinetics and thermo resources</a></div>
+              <div class="res-meta"><span class="res-course-tag">CHEE 310</span><span>learncheme.com</span></div>
+            </div>
+            <span class="res-pin">☆</span>
+          </div>
+          <div class="res-row" data-course="CHEE310">
+            <span class="res-kind feed">feed</span>
+            <div class="res-body">
+              <div class="res-title"><a href="https://www.youtube.com/results?search_query=electrochemistry+batteries+explained" target="_blank" rel="noopener">Battery/electrochemistry explainers</a></div>
+              <div class="res-meta"><span class="res-course-tag">CHEE 310</span><span>youtube.com</span></div>
+            </div>
+            <span class="res-pin">☆</span>
+          </div>
+
+        </div>
+      </div>
+
+      <div>
+        <div class="card side-card">
+          <div class="card-head"><h2>Share a resource</h2></div>
+          <div class="add-form">
+            <div>
+              <label class="field-label">Course</label>
+              <select>
+                <option>CHEE 314 — Fluid Mechanics</option>
+                <option>CHEE 315 — Heat and Mass Transfer</option>
+                <option>CHEE 351 — Separation Processes</option>
+                <option>CHEE 310 — Physical Chemistry for Engineers</option>
+                <option>MATH 264 — Advanced Calculus</option>
+                <option>CHEE 370 — Elements of Biotechnology</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">URL</label>
+              <input type="text" placeholder="https://...">
+            </div>
+            <div>
+              <label class="field-label">Label</label>
+              <input type="text" placeholder="Short description">
+            </div>
+            <button class="btn primary">Add resource</button>
+          </div>
+        </div>
+
+        <div class="card side-card">
+          <div class="card-head"><h2>Organize a study session</h2></div>
+          <div class="session-stub">
+            Pull a resource straight into a study session with a course and duration pre-filled.
+            <button class="btn" onclick="location.href='study.html'">Go to Study →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footnote">Prototype — static mock, no data persists. Direction: "focus tool". See README.md.</div>
+  </main>
+</div>
+
+<script>
+  document.querySelectorAll('#filters .filter-pill').forEach(function(el){
+    el.addEventListener('click', function(){
+      document.querySelectorAll('#filters .filter-pill').forEach(function(p){ p.classList.remove('selected'); });
+      this.classList.add('selected');
+      var course = this.getAttribute('data-course');
+      var rows = document.querySelectorAll('#res-list .res-row');
+      var visible = 0;
+      rows.forEach(function(row){
+        var show = (course === 'all') || (row.getAttribute('data-course') === course);
+        row.style.display = show ? 'flex' : 'none';
+        if(show) visible++;
+      });
+      document.getElementById('res-count').textContent = visible + ' items';
+    });
+  });
+  document.querySelectorAll('.res-pin').forEach(function(el){
+    el.addEventListener('click', function(){
+      this.classList.toggle('pinned');
+      this.textContent = this.classList.contains('pinned') ? '★' : '☆';
+    });
+  });
+</script>
+</body>
+</html>
