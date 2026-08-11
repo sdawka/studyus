@@ -10,16 +10,20 @@ import { EVENT_ROLE_FLAGS } from '../schemas/events';
 import { toEpochMs } from '../schemas/common';
 import { foldMastery } from './mastery';
 import { NotFoundError, requireOwnedCourse, requireOwnedKc } from './util';
+import { withSpan } from '../tracing';
 
 type EventRow = typeof events.$inferSelect;
 
 export type MasteryDelta = { kc_id: string; old_mastery: number; new_mastery: number };
 
 async function foldedKcUpdate(db: Db, kcId: string, eventsForFold: Array<Pick<EventRow, 'ts' | 'isInstructional' | 'isAssessment' | 'payload'>>) {
-  const now = Date.now();
   const before = await db.select({ mastery: kcs.mastery }).from(kcs).where(eq(kcs.id, kcId)).limit(1);
   const oldMastery = before[0]?.mastery ?? 0;
-  const folded = foldMastery(eventsForFold, now);
+
+  const folded = await withSpan('mastery.fold', { kc_id: kcId, event_count: eventsForFold.length }, async () =>
+    foldMastery(eventsForFold, Date.now()),
+  );
+
   const updateStmt = db
     .update(kcs)
     .set({ mastery: folded.mastery, status: folded.status, lastEventAt: folded.lastEventAt })
@@ -59,9 +63,9 @@ export async function createEvent(db: Db, userId: string, input: CreateEventInpu
       .where(eq(events.kcId, newEvent.kcId));
     const { updateStmt, delta } = await foldedKcUpdate(db, newEvent.kcId, [...existing, newEvent]);
     masteryDeltas.push(delta);
-    await db.batch([insertStmt, updateStmt]);
+    await withSpan('events.append', { event_type: newEvent.type, kc_id: newEvent.kcId }, () => db.batch([insertStmt, updateStmt]));
   } else {
-    await insertStmt;
+    await withSpan('events.append', { event_type: newEvent.type }, () => insertStmt);
   }
 
   return { event: newEvent, masteryDeltas };

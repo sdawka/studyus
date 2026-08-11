@@ -19,5 +19,10 @@
   ],
   "vars": {
     "OPENROUTER_MODEL": "openrouter/auto"
+  },
+  "observability": {
+    "traces": {
+      "enabled": true
+    }
   }
 }
