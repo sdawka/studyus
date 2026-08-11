@@ -1,7 +1,201 @@
 ---
+import { env } from 'cloudflare:workers';
 import AppShell from '../layouts/AppShell.astro';
+import { getDb } from '../db/client';
+import { listResources } from '../lib/services/resources';
+import { listCourses } from '../lib/services/courses';
+import ShareResourceForm from '../components/feed/ShareResourceForm.svelte';
+import StudySessionStub from '../components/feed/StudySessionStub.svelte';
+import ResourceCard from '../components/feed/ResourceCard.svelte';
+
+const db = getDb(env.DB);
+const userId = Astro.locals.user!.id;
+
+const courses = await listCourses(db, userId);
+const allResources = await listResources(db, userId, {});
+
+// Separate by kind and sort pinned first
+const feedResources = allResources
+  .filter((r) => r.kind === 'feed' || r.kind === 'user_shared')
+  .sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return (b.createdAt ?? 0) - (a.createdAt ?? 0);
+  });
+
+const canonicalResources = allResources
+  .filter((r) => r.kind === 'canonical')
+  .sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return (b.createdAt ?? 0) - (a.createdAt ?? 0);
+  });
+
+const resourcesJson = JSON.stringify(feedResources);
+const coursesJson = JSON.stringify(courses);
 ---
+
 <AppShell title="Feed">
-  <h1>Feed</h1>
-  <p>Coming soon.</p>
+  <div class="feed-container">
+    <div class="feed-header">
+      <h1>Feed</h1>
+      <p class="feed-purpose">
+        Browse curated learning resources and links shared by your community. Low-key learning at your own pace.
+      </p>
+    </div>
+
+    <div class="feed-content">
+      <div class="feed-main">
+        <div class="share-section">
+          <ShareResourceForm courses={courses} client:load />
+        </div>
+
+        <div class="resources-section">
+          <div class="filter-bar">
+            <label for="course-filter">Filter by course:</label>
+            <select id="course-filter">
+              <option value="">All courses</option>
+              {courses.map((course) => (
+                <option value={course.id}>{course.title}</option>
+              ))}
+            </select>
+          </div>
+
+          <div class="resource-stream" id="resource-stream">
+            {feedResources.map((resource) => (
+              <ResourceCard resource={resource} course={courses.find((c) => c.id === resource.courseId)} client:load />
+            ))}
+          </div>
+
+          {canonicalResources.length > 0 && (
+            <details class="canonical-section" open={false}>
+              <summary>Course materials ({canonicalResources.length})</summary>
+              <div class="resource-stream">
+                {canonicalResources.map((resource) => (
+                  <ResourceCard resource={resource} course={courses.find((c) => c.id === resource.courseId)} client:load />
+                ))}
+              </div>
+            </details>
+          )}
+        </div>
+
+        <div class="study-session-section">
+          <StudySessionStub />
+        </div>
+      </div>
+    </div>
+  </div>
 </AppShell>
+
+<script define:vars={{ resourcesJson, coursesJson }}>
+  document.addEventListener('DOMContentLoaded', () => {
+    const filter = document.getElementById('course-filter');
+    const stream = document.getElementById('resource-stream');
+    const resources = JSON.parse(resourcesJson);
+
+    filter?.addEventListener('change', (e) => {
+      const selectedCourse = e.target.value;
+      const filtered = selectedCourse ? resources.filter((r) => r.course_id === selectedCourse) : resources;
+
+      // Hide/show cards based on filter
+      const cards = stream?.querySelectorAll('[data-resource-id]');
+      cards?.forEach((card) => {
+        const cardCourse = card.dataset.courseId || '';
+        if (!selectedCourse || cardCourse === selectedCourse) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+  });
+</script>
+
+<style>
+  .feed-container {
+    width: 100%;
+  }
+
+  .feed-header {
+    margin-bottom: 2rem;
+  }
+
+  .feed-header h1 {
+    margin: 0 0 0.5rem 0;
+  }
+
+  .feed-purpose {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin: 0;
+  }
+
+  .feed-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .share-section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .resources-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .filter-bar label {
+    font-size: 0.9rem;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .filter-bar select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .resource-stream {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .canonical-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .canonical-section summary {
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--accent);
+    padding: 0.5rem;
+    margin-left: -0.5rem;
+  }
+
+  .canonical-section summary:hover {
+    text-decoration: underline;
+  }
+
+  .study-session-section {
+    margin-top: 1rem;
+  }
+</style>
