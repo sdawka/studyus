@@ -1,8 +1,36 @@
 # StudyBuddy Roadmap: Deferred Features
 
-This document lists features explicitly deferred to post-v1. Each is prioritized and scoped to avoid scope creep during M0–M5.
+**M0–M5 Status (2026-08-11)**: Core v1 complete. Frozen API contract (docs/api.md), mastery fold, core UI, AI tutor, quick_quiz flows shipped. Features below remain deferred post-v1.
 
-## Core Features
+Each deferred feature is prioritized and scoped to avoid scope creep during post-v1 development.
+
+---
+
+## M0–M5 Completion Summary
+
+**M0**: Scaffold, D1 schema, seed data, hand-rolled auth, AppShell layout.
+
+**M1**: Core services (courses, KCs, events, mastery fold), API routes, frozen contract.
+
+**M2A**: Admin dashboard (calendar, grades, Standing tab with course/KC mastery rollups).
+
+**M2B**: Course area (KC detail, branches, R2 file uploads/downloads, attachment management).
+
+**M2C**: Notes & tasks UI (create, link to KCs, delete).
+
+**M2D**: Feed UI (canonical/feed resources, seed data seeded from courses.json, course-scoped resource discovery).
+
+**M3**: Study flow (session create/complete, event logging, mastery updates via events service).
+
+**M4**: AI tutor (OpenRouter integration, five modes: recall/classify/worked_example/self_explain/interactive_model, per-KC context assembly, message cap + auto-end) + quick_quiz (question generation, answer submission with mastery deltas, study_sessions reuse).
+
+**M5**: Onboarding (stepper walkthrough, name + term setup, course selection), learner profile (overall mastery, by-course breakdown, streaks, recent events), design pass (Svelte refinements, responsive layout), smoke tests (API contract verification).
+
+---
+
+## Deferred Features (Post-v1)
+
+### Core Features
 
 ### Multi-User Signup & Email Verification
 
