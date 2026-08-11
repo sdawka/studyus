@@ -218,16 +218,16 @@
   .timeline { display: flex; flex-direction: column; gap: 0.5rem; }
   ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
   li {
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.6rem 0.8rem;
     background: white;
   }
   .row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
   .row-main { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-  .row-meta { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: #6b7280; }
+  .row-meta { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--muted); }
   .type { font-weight: 500; font-size: 0.92rem; }
-  .date { color: #6b7280; font-size: 0.82rem; }
+  .date { color: var(--muted); font-size: 0.82rem; }
   .badge {
     font-size: 0.68rem;
     font-weight: 600;
@@ -237,11 +237,11 @@
   }
   .badge-ie { background: #e0ecff; color: #2f4d99; }
   .badge-ae { background: #fde8d2; color: #9a5b12; }
-  .score { font-weight: 500; color: #1c1e21; }
+  .score { font-weight: 500; color: var(--text); }
   .link {
     background: none;
     border: none;
-    color: #3f6fd8;
+    color: var(--accent);
     cursor: pointer;
     font-size: 0.85rem;
     padding: 0;
@@ -251,13 +251,13 @@
   .edit-form { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
   .edit-form input, .edit-form select {
     padding: 0.35rem 0.5rem;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 6px;
     font-size: 0.85rem;
   }
   .edit-actions { display: flex; gap: 0.4rem; }
   .edit-actions button {
-    background: #3f6fd8;
+    background: var(--accent);
     color: white;
     border: none;
     border-radius: 6px;
@@ -265,7 +265,7 @@
     font-size: 0.82rem;
     cursor: pointer;
   }
-  .edit-actions button.ghost { background: none; color: #6b7280; }
-  .muted { color: #6b7280; font-size: 0.9rem; }
+  .edit-actions button.ghost { background: none; color: var(--muted); }
+  .muted { color: var(--muted); font-size: 0.9rem; }
   .error { color: #b91c1c; font-size: 0.9rem; }
 </style>

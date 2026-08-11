@@ -5,6 +5,7 @@ import { getDb } from '../../../db/client';
 import { attachments, noteLinks, notes, resources as resourcesTable } from '../../../db/schema';
 import { and, desc, eq } from 'drizzle-orm';
 import { getCourseBySlug } from '../../../lib/services/courses';
+import { NotFoundError, notFound } from '../../../lib/handleNotFound';
 import MasteryBar from '../../../components/course/MasteryBar.astro';
 import StatusChip from '../../../components/course/StatusChip.astro';
 import KcTypeBadge from '../../../components/course/KcTypeBadge.astro';
@@ -15,7 +16,13 @@ const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
 const slug = Astro.params.slug!;
 
-const course = await getCourseBySlug(db, userId, slug);
+let course;
+try {
+  course = await getCourseBySlug(db, userId, slug);
+} catch (err) {
+  if (err instanceof NotFoundError) return notFound(Astro);
+  throw err;
+}
 
 const linkedNotes = await db
   .select({ id: notes.id, title: notes.title, updatedAt: notes.updatedAt })
@@ -162,16 +169,16 @@ const KIND_LABELS: Record<string, string> = { canonical: 'Canonical', feed: 'Fee
 
 <style>
   .course-header { margin-bottom: 1.5rem; }
-  .breadcrumb { font-size: 0.8rem; color: var(--muted, #6b7280); margin: 0 0 0.4rem 0; }
-  .breadcrumb a { color: var(--muted, #6b7280); text-decoration: none; }
+  .breadcrumb { font-size: 0.8rem; color: var(--muted); margin: 0 0 0.4rem 0; }
+  .breadcrumb a { color: var(--muted); text-decoration: none; }
   .head-top h1 { margin: 0 0 0.2rem 0; font-size: 1.4rem; }
-  .meta-line { margin: 0 0 0.6rem 0; font-size: 0.9rem; color: var(--muted, #6b7280); }
-  .overview { margin: 0; color: var(--text, #1c1e21); max-width: 700px; }
+  .meta-line { margin: 0 0 0.6rem 0; font-size: 0.9rem; color: var(--muted); }
+  .overview { margin: 0; color: var(--text); max-width: 700px; }
 
   .tabs {
     display: flex;
     gap: 0.25rem;
-    border-bottom: 1px solid var(--border, #e5e7eb);
+    border-bottom: 1px solid var(--border);
     margin-bottom: 1.5rem;
   }
   .tab-btn {
@@ -180,15 +187,15 @@ const KIND_LABELS: Record<string, string> = { canonical: 'Canonical', feed: 'Fee
     padding: 0.6rem 0.9rem;
     font-size: 0.9rem;
     cursor: pointer;
-    color: var(--muted, #6b7280);
+    color: var(--muted);
     border-bottom: 2px solid transparent;
   }
-  .tab-btn.active { color: var(--accent, #3f6fd8); border-bottom-color: var(--accent, #3f6fd8); font-weight: 600; }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
 
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
 
-  .placeholder { color: var(--muted, #6b7280); font-size: 0.9rem; }
+  .placeholder { color: var(--muted); font-size: 0.9rem; }
 
   .branch { margin-bottom: 1.75rem; }
   .branch h3 { margin: 0 0 0.5rem 0; font-size: 1rem; }
@@ -198,22 +205,22 @@ const KIND_LABELS: Record<string, string> = { canonical: 'Canonical', feed: 'Fee
     align-items: center;
     gap: 0.9rem;
     padding: 0.55rem 0.8rem;
-    border: 1px solid var(--border, #e5e7eb);
+    border: 1px solid var(--border);
     border-radius: 8px;
     text-decoration: none;
-    color: var(--text, #1c1e21);
+    color: var(--text);
   }
-  .kc-row:hover { border-color: var(--accent, #3f6fd8); }
+  .kc-row:hover { border-color: var(--accent); }
   .kc-name { flex: 1; font-size: 0.92rem; }
   .kc-bar { width: 140px; }
 
   .notes-uploads { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
   .note-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
-  .note-list a { color: var(--accent, #3f6fd8); text-decoration: none; }
+  .note-list a { color: var(--accent); text-decoration: none; }
 
   .resource-group { margin-bottom: 1.5rem; }
   .resource-group h3 { margin: 0 0 0.4rem 0; font-size: 0.95rem; }
   .resource-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
-  .resource-list a { color: var(--accent, #3f6fd8); text-decoration: none; }
-  .pin { margin-left: 0.5rem; font-size: 0.7rem; color: var(--muted, #6b7280); }
+  .resource-list a { color: var(--accent); text-decoration: none; }
+  .pin { margin-left: 0.5rem; font-size: 0.7rem; color: var(--muted); }
 </style>

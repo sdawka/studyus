@@ -133,21 +133,21 @@
   .messages { display: flex; flex-direction: column; gap: 0.75rem; min-height: 200px; }
   .bubble { padding: 0.65rem 0.9rem; border-radius: 10px; max-width: 85%; white-space: pre-wrap; }
   .bubble p { margin: 0; }
-  .bubble.user { align-self: flex-end; background: var(--accent, #3f6fd8); color: white; }
-  .bubble.assistant { align-self: flex-start; background: #f0f2f5; color: #1c1e21; }
-  .empty { color: #6b7280; font-size: 0.9rem; }
+  .bubble.user { align-self: flex-end; background: var(--accent); color: white; }
+  .bubble.assistant { align-self: flex-start; background: var(--hover-bg); color: var(--text); }
+  .empty { color: var(--muted); font-size: 0.9rem; }
   form { display: flex; gap: 0.5rem; }
   input {
     flex: 1;
     padding: 0.6rem 0.75rem;
-    border: 1px solid var(--border, #e5e7eb);
+    border: 1px solid var(--border);
     border-radius: 8px;
     font-size: 1rem;
   }
   button { padding: 0.6rem 0.9rem; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9rem; }
-  button[type='submit'] { background: var(--accent, #3f6fd8); color: white; }
+  button[type='submit'] { background: var(--accent); color: white; }
   button:disabled { opacity: 0.6; cursor: default; }
-  .end-btn { background: #e5e7eb; color: #374151; }
+  .end-btn { background: var(--border); color: #374151; }
   .error { color: #b91c1c; font-size: 0.85rem; }
   .ended { color: #059669; font-size: 0.9rem; }
 </style>

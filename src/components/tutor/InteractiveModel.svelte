@@ -40,10 +40,10 @@
 
 <style>
   .model {
-    border: 1px solid var(--border, #e5e7eb);
+    border: 1px solid var(--border);
     border-radius: 10px;
     padding: 1rem;
-    background: var(--panel, #fafafa);
+    background: var(--panel, var(--bg));
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -55,5 +55,5 @@
   .outputs { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.9rem; }
   .output .label { font-weight: 500; margin-right: 0.4rem; }
   .err { color: #b91c1c; }
-  .notes { color: #6b7280; font-size: 0.85rem; margin: 0; }
+  .notes { color: var(--muted); font-size: 0.85rem; margin: 0; }
 </style>

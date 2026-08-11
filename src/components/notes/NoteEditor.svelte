@@ -265,14 +265,14 @@
     font-size: 1.5rem;
     font-weight: 600;
     border: none;
-    border-bottom: 2px solid #e5e7eb;
+    border-bottom: 2px solid var(--border);
     padding: 0.5rem 0;
     font-family: inherit;
   }
 
   .title-input:focus {
     outline: none;
-    border-bottom-color: #3f6fd8;
+    border-bottom-color: var(--accent);
   }
 
   .markdown-editor {
@@ -280,7 +280,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
     height: 500px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 8px;
     overflow: hidden;
   }
@@ -296,7 +296,7 @@
     font-size: 0.9rem;
     padding: 1rem;
     border: none;
-    border-right: 1px solid #e5e7eb;
+    border-right: 1px solid var(--border);
     resize: none;
   }
 
@@ -305,7 +305,7 @@
   }
 
   .markdown-preview {
-    background: #fafafa;
+    background: var(--bg);
     overflow-y: auto;
   }
 
@@ -357,7 +357,7 @@
 
   .btn-primary,
   .btn-secondary {
-    background: #3f6fd8;
+    background: var(--accent);
     color: white;
     border: none;
     border-radius: 8px;
@@ -378,7 +378,7 @@
   }
 
   .btn-secondary {
-    background: #6b7280;
+    background: var(--muted);
   }
 
   .btn-secondary:hover {
@@ -401,7 +401,7 @@
   }
 
   .links-section {
-    background: #fafafa;
+    background: var(--bg);
     padding: 1rem;
     border-radius: 8px;
   }
@@ -476,7 +476,7 @@
 
     .markdown-input {
       border-right: none;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid var(--border);
       height: 300px;
     }
 

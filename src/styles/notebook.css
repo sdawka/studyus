@@ -1,0 +1,87 @@
+/*
+ * Shared design tokens for the "paper notebook" direction
+ * (see prototype/variation-notebook/README.md for the source mood).
+ * Imported once by AppShell so every page/island shares one palette.
+ *
+ * Legacy variable names (--accent, --bg, --panel, --text, --muted, --border)
+ * are kept as aliases because most existing component/page styles already
+ * read them via `var(--accent, #3f6fd8)` etc. — aliasing here re-themes
+ * that code without touching every file.
+ */
+:root {
+  --paper: #f8f4ea;
+  --paper-deep: #f3eee1;
+  --rule: #d9d2bf;
+  --rule-strong: #c9bfa4;
+  --margin-ink: #c98b8b;
+  --ink: #2b4a6b;
+  --ink-soft: #e7edf2;
+  --ink-dim: #6f8ba3;
+  --ink-text: #2c2620;
+  --paper-muted: #83786a;
+  --hairline: #dcd4bf;
+  --good: #3f7a52;
+  --warn: #a9762b;
+  --danger: #b91c1c;
+  --serif: 'Iowan Old Style', 'Palatino Linotype', Charter, Georgia, 'Times New Roman', serif;
+
+  /* legacy aliases — see note above */
+  --accent: var(--ink);
+  --bg: var(--paper-deep);
+  --panel: var(--paper);
+  --text: var(--ink-text);
+  --muted: var(--paper-muted);
+  --border: var(--hairline);
+  --hover-bg: var(--ink-soft);
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  background: var(--paper-deep);
+  color: var(--ink-text);
+  font-family: var(--serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--ink); }
+
+h1, h2, h3, h4, h5, h6 { font-family: var(--serif); }
+
+/* Ruled "sheet" — a paper block with a faint horizontal rule pattern and a
+   thin margin line, the two motifs of ruled paper, CSS-only. Opt-in class,
+   used where a page wants the full notebook treatment. */
+.sheet {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--hairline);
+  border-radius: 3px;
+  padding: 1.25rem 1.5rem 1.25rem 2.6rem;
+  background-image: repeating-linear-gradient(to bottom, transparent, transparent 27px, var(--rule) 27px, var(--rule) 28px);
+  background-position: 0 6px;
+}
+.sheet::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 34px;
+  width: 1px;
+  background: var(--margin-ink);
+  opacity: 0.55;
+}
+
+/* Margin note — a small italic aside for editorializing facts, styled like
+   a handwritten annotation. Never a banner/toast. */
+.margin-note {
+  font-style: italic;
+  font-size: 0.82rem;
+  color: var(--ink);
+  padding-left: 0.6rem;
+  border-left: 2px dashed var(--margin-ink);
+}
+
+/* Status colors — used sparingly, only to mean "solid" vs "needs review". */
+.status-good { color: var(--good); }
+.status-warn { color: var(--warn); }

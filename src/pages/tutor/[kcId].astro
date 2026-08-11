@@ -4,13 +4,20 @@ import AppShell from '../../layouts/AppShell.astro';
 import { getDb } from '../../db/client';
 import { getKc } from '../../lib/services/kcs';
 import { createConversation, getConversation } from '../../lib/services/tutor/conversations';
+import { NotFoundError, notFound } from '../../lib/handleNotFound';
 import ScaffoldChat from '../../components/tutor/ScaffoldChat.svelte';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
 const kcId = Astro.params.kcId!;
 
-const kc = await getKc(db, userId, kcId);
+let kc;
+try {
+  kc = await getKc(db, userId, kcId);
+} catch (err) {
+  if (err instanceof NotFoundError) return notFound(Astro);
+  throw err;
+}
 
 const existingId = Astro.url.searchParams.get('c');
 if (!existingId) {
@@ -18,7 +25,13 @@ if (!existingId) {
   return Astro.redirect(`/tutor/${kcId}?c=${created.id}`);
 }
 
-const conversation = await getConversation(db, userId, existingId);
+let conversation;
+try {
+  conversation = await getConversation(db, userId, existingId);
+} catch (err) {
+  if (err instanceof NotFoundError) return notFound(Astro);
+  throw err;
+}
 
 const initialMessages = conversation.messages.map((m) => ({
   id: m.id,
@@ -51,14 +64,14 @@ const MODE_LABELS: Record<string, string> = {
   .mode-badge {
     display: inline-block;
     background: #eef2ff;
-    color: var(--accent, #3f6fd8);
+    color: var(--accent);
     border-radius: 999px;
     padding: 0.2rem 0.7rem;
     font-size: 0.8rem;
     font-weight: 600;
   }
   .muted {
-    color: #6b7280;
+    color: var(--muted);
     font-size: 0.9rem;
   }
 </style>

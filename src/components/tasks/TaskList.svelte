@@ -377,7 +377,7 @@
   .add-task-form {
     background: white;
     padding: 1.5rem;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 8px;
   }
 
@@ -395,7 +395,7 @@
   .task-title-input,
   .task-date-input {
     padding: 0.65rem;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 6px;
     font-size: 0.95rem;
   }
@@ -408,7 +408,7 @@
   .task-title-input:focus,
   .task-date-input:focus {
     outline: none;
-    border-color: #3f6fd8;
+    border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(63, 111, 216, 0.1);
   }
 
@@ -445,7 +445,7 @@
   }
 
   .btn-primary {
-    background: #3f6fd8;
+    background: var(--accent);
     color: white;
     border: none;
     border-radius: 6px;
@@ -476,7 +476,7 @@
   .zero-state {
     text-align: center;
     padding: 3rem 2rem;
-    color: #6b7280;
+    color: var(--muted);
   }
 
   .task-section {
@@ -490,7 +490,7 @@
     font-size: 1rem;
     font-weight: 600;
     padding-bottom: 0.5rem;
-    border-bottom: 2px solid #e5e7eb;
+    border-bottom: 2px solid var(--border);
   }
 
   .section-title.overdue {
@@ -510,7 +510,7 @@
 
   .section-title.done {
     border-bottom-color: #9ca3af;
-    color: #6b7280;
+    color: var(--muted);
   }
 
   .task-list {
@@ -525,13 +525,13 @@
     gap: 0.75rem;
     padding: 0.75rem;
     background: white;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 6px;
     transition: all 0.2s;
   }
 
   .task-item:hover {
-    border-color: #3f6fd8;
+    border-color: var(--accent);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   }
 
@@ -555,7 +555,7 @@
 
   .task-title {
     font-weight: 500;
-    color: #1c1e21;
+    color: var(--text);
   }
 
   .task-item.completed .task-title {
@@ -565,7 +565,7 @@
 
   .task-date {
     font-size: 0.85rem;
-    color: #6b7280;
+    color: var(--muted);
   }
 
   .task-chips {
@@ -580,7 +580,7 @@
     padding: 0.25rem 0.5rem;
     background: #f3f4f6;
     border-radius: 3px;
-    color: #6b7280;
+    color: var(--muted);
   }
 
   .btn-delete {

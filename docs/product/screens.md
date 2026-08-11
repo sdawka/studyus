@@ -6,7 +6,7 @@ All pages wrapped in `AppShell.astro` with a two-group sidebar (Admin: Dashboard
 |---|---|---|
 | `/login` | Session login | LoginForm* |
 | `/` | Redirect → onboarding or dashboard | (redirect logic in middleware) |
-| `/onboarding` | Stepper: explain KC/event concept, set name, confirm imported courses. | Stepper*, CourseConfirm* |
+| `/onboarding` | 4-step stepper (skippable): what StudyBuddy is (admin + learning sides) → how KCs/events → mastery works, in plain language → confirm the imported courses → set display name + current term (`PATCH /user`, stamps `onboarded_at`). Personalized pacing/goals shown as a visible, disabled "coming soon" item. | OnboardingFlow* |
 | `/dashboard` | 7-day calendar strip, grade snapshot, due tasks, quick event log | CalendarStrip*, GradeSnapshot*, TasksWidget*, EventLog |
 | `/calendar` | Month + agenda views, **course filter dropdown**, scoped to current term by default | CalendarView* |
 | `/grades` | Assessments, weights, current standing, grade entry | GradeTable*, GradeEntryForm* |
@@ -20,7 +20,7 @@ All pages wrapped in `AppShell.astro` with a two-group sidebar (Admin: Dashboard
 | `/notes` | NoteList, markdown editor | NoteList*, NoteEditor* |
 | `/notes/[id]` | Markdown NoteEditor with course/KC LinkPicker | NoteEditor*, LinkPicker* |
 | `/tasks` | TaskList with due dates + course links | TaskList*, TaskForm* |
-| `/profile` | Overall mastery, per-course bars, streaks, event history, knowledge-map placeholder | ProfileHeader, MasteryByCourseBars*, EventHistory*, KnowledgeMapPlaceholder |
+| `/profile` | Overall mastery + streaks, per-course mastery bars, KC status distribution (counts by not-started/learning/review/mastered), recent-events timeline, and a clearly-stubbed "Global knowledge map — coming later" panel (informational sketch, no fake data) | MasteryBar (per course), EventTimeline*, knowledge-map sketch |
 
 ## Shared Components
 

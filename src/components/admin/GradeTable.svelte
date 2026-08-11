@@ -125,7 +125,7 @@
 <style>
   .course-panel {
     background: #ffffff;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem 1.5rem;
     margin-bottom: 1.25rem;
@@ -138,15 +138,15 @@
   }
   .course-header h2 { margin: 0; font-size: 1.05rem; }
   .standing { font-weight: 700; }
-  .reminder { color: #6b7280; font-size: 0.82rem; margin: 0 0 1rem 0; }
-  .muted { color: #6b7280; font-size: 0.9rem; }
+  .reminder { color: var(--muted); font-size: 0.82rem; margin: 0 0 1rem 0; }
+  .muted { color: var(--muted); font-size: 0.9rem; }
   table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-  th { text-align: left; padding: 0.4rem 0.5rem; color: #6b7280; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid #e5e7eb; }
-  td { padding: 0.5rem; border-bottom: 1px solid #f0f2f5; }
+  th { text-align: left; padding: 0.4rem 0.5rem; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid var(--border); }
+  td { padding: 0.5rem; border-bottom: 1px solid var(--hover-bg); }
   .capitalize { text-transform: capitalize; }
-  .grade-input { width: 4.5rem; padding: 0.3rem 0.4rem; border: 1px solid #e5e7eb; border-radius: 6px; }
+  .grade-input { width: 4.5rem; padding: 0.3rem 0.4rem; border: 1px solid var(--border); border-radius: 6px; }
   button {
-    background: #3f6fd8;
+    background: var(--accent);
     color: white;
     border: none;
     border-radius: 6px;
@@ -155,5 +155,5 @@
     cursor: pointer;
   }
   button:disabled { opacity: 0.6; cursor: default; }
-  .feedback-row td { color: #15803d; font-size: 0.8rem; padding-top: 0; border-bottom: 1px solid #f0f2f5; }
+  .feedback-row td { color: #15803d; font-size: 0.8rem; padding-top: 0; border-bottom: 1px solid var(--hover-bg); }
 </style>

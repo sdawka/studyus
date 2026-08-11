@@ -182,7 +182,7 @@
   }
   .month-nav button {
     background: none;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 6px;
     width: 2rem;
     height: 2rem;
@@ -193,11 +193,11 @@
   .controls { display: flex; gap: 0.75rem; align-items: center; }
   select {
     padding: 0.45rem 0.6rem;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 8px;
     font-size: 0.88rem;
   }
-  .view-toggle { display: flex; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+  .view-toggle { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
   .view-toggle button {
     background: white;
     border: none;
@@ -205,16 +205,16 @@
     font-size: 0.85rem;
     cursor: pointer;
   }
-  .view-toggle button.active { background: #3f6fd8; color: white; }
-  .muted { color: #6b7280; font-size: 0.9rem; }
+  .view-toggle button.active { background: var(--accent); color: white; }
+  .muted { color: var(--muted); font-size: 0.9rem; }
   .error { color: #b91c1c; font-size: 0.9rem; }
 
   .month-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 1px;
-    background: #e5e7eb;
-    border: 1px solid #e5e7eb;
+    background: var(--border);
+    border: 1px solid var(--border);
     border-radius: 12px;
     overflow: hidden;
   }
@@ -223,7 +223,7 @@
     padding: 0.4rem;
     font-size: 0.75rem;
     text-transform: uppercase;
-    color: #6b7280;
+    color: var(--muted);
     text-align: center;
   }
   .day-cell {
@@ -235,7 +235,7 @@
     flex-direction: column;
     gap: 0.2rem;
   }
-  .day-cell.empty { background: #fafafa; }
+  .day-cell.empty { background: var(--bg); }
   .day-number { font-weight: 600; color: #374151; margin-bottom: 0.2rem; }
   .item {
     display: flex;
@@ -249,7 +249,7 @@
   }
   .item.assessment_due { background: #eef2ff; }
   .item.task_due { background: #f0fdf4; }
-  .dot { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: #3f6fd8; flex-shrink: 0; }
+  .dot { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
   .item.task_due .dot { background: #16a34a; }
 
   .agenda-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
@@ -259,10 +259,10 @@
     gap: 1rem;
     padding: 0.6rem 0.8rem;
     background: white;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 8px;
   }
-  .agenda-date { min-width: 4rem; font-weight: 600; color: #3f6fd8; }
+  .agenda-date { min-width: 4rem; font-weight: 600; color: var(--accent); }
   .item.inline { flex: 1; padding: 0; background: none; }
-  .agenda-course { color: #6b7280; font-size: 0.85rem; }
+  .agenda-course { color: var(--muted); font-size: 0.85rem; }
 </style>

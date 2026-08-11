@@ -151,21 +151,21 @@
   .quick-quiz { max-width: 560px; display: flex; flex-direction: column; gap: 1rem; }
   .setup { display: flex; flex-direction: column; gap: 1rem; max-width: 320px; }
   .setup label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; }
-  select { padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border, #e5e7eb); }
-  button { padding: 0.6rem 1rem; border-radius: 8px; border: none; cursor: pointer; background: var(--accent, #3f6fd8); color: white; font-size: 0.95rem; }
+  select { padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border); }
+  button { padding: 0.6rem 1rem; border-radius: 8px; border: none; cursor: pointer; background: var(--accent); color: white; font-size: 0.95rem; }
   button:disabled { opacity: 0.6; cursor: default; }
   .question { display: flex; flex-direction: column; gap: 1rem; }
-  .progress { color: #6b7280; font-size: 0.85rem; margin: 0; }
+  .progress { color: var(--muted); font-size: 0.85rem; margin: 0; }
   .options { display: flex; flex-direction: column; gap: 0.5rem; }
-  .option { background: #f0f2f5; color: #1c1e21; text-align: left; }
-  .option.selected { background: var(--accent, #3f6fd8); color: white; }
+  .option { background: var(--hover-bg); color: var(--text); text-align: left; }
+  .option.selected { background: var(--accent); color: white; }
   .next-btn { align-self: flex-start; }
   .score-screen { display: flex; flex-direction: column; gap: 1rem; }
-  .result { border-left: 3px solid #e5e7eb; padding-left: 0.75rem; }
+  .result { border-left: 3px solid var(--border); padding-left: 0.75rem; }
   .result.correct { border-color: #059669; }
   .result.incorrect { border-color: #b91c1c; }
   .explanation { color: #374151; font-size: 0.9rem; margin: 0.2rem 0 0 0; }
   .deltas h4 { margin: 0 0 0.4rem 0; font-size: 0.9rem; }
   .error { color: #b91c1c; }
-  .muted { color: #6b7280; font-size: 0.9rem; }
+  .muted { color: var(--muted); font-size: 0.9rem; }
 </style>

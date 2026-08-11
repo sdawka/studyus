@@ -1,4 +1,5 @@
 ---
+import '../styles/notebook.css';
 import LogEventModal from '../components/events/LogEventModal.svelte';
 
 interface Props {
@@ -30,44 +31,46 @@ const currentPath = Astro.url.pathname;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title} · StudyBuddy</title>
     <style>
-      :root {
-        --accent: #3f6fd8;
-        --bg: #fafafa;
-        --panel: #ffffff;
-        --text: #1c1e21;
-        --muted: #6b7280;
-        --border: #e5e7eb;
-      }
-      * { box-sizing: border-box; }
       body {
         margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        background: var(--bg);
-        color: var(--text);
         display: flex;
         min-height: 100vh;
       }
       nav.sidebar {
-        width: 220px;
+        width: 224px;
         flex-shrink: 0;
-        background: var(--panel);
-        border-right: 1px solid var(--border);
-        padding: 1.5rem 1rem;
+        background: var(--paper);
+        border-right: 1px solid var(--rule-strong);
+        padding: 1.75rem 1.1rem;
         display: flex;
         flex-direction: column;
-        gap: 1.75rem;
+        gap: 1.9rem;
       }
       .brand {
+        display: flex;
+        align-items: baseline;
+        gap: 0.4rem;
+        padding: 0 0.5rem 1rem;
+        border-bottom: 2px solid var(--rule-strong);
+        margin-bottom: 0.25rem;
+      }
+      .brand .mark {
         font-weight: 600;
-        font-size: 1.1rem;
-        padding: 0 0.5rem;
+        font-size: 1.2rem;
+        letter-spacing: 0.01em;
+      }
+      .brand .tag {
+        font-size: 0.72rem;
+        color: var(--muted);
+        font-style: italic;
       }
       .nav-group h2 {
-        font-size: 0.7rem;
+        font-size: 0.68rem;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.06em;
         color: var(--muted);
         margin: 0 0 0.5rem 0.5rem;
+        font-weight: 600;
       }
       .nav-group ul {
         list-style: none;
@@ -79,18 +82,18 @@ const currentPath = Astro.url.pathname;
       }
       .nav-group a {
         display: block;
-        padding: 0.5rem 0.5rem;
-        border-radius: 8px;
+        padding: 0.45rem 0.6rem;
+        border-radius: 3px;
         color: var(--text);
         text-decoration: none;
         font-size: 0.92rem;
       }
-      .nav-group a:hover { background: #f0f2f5; }
-      .nav-group a.active { background: var(--accent); color: white; }
+      .nav-group a:hover { background: var(--ink-soft); }
+      .nav-group a.active { background: var(--ink); color: white; font-weight: 600; }
       main {
         flex: 1;
         padding: 2.5rem 3rem;
-        max-width: 960px;
+        max-width: 980px;
       }
       main h1 { margin-top: 0; }
       nav.sidebar > :global(.record-event-btn) {
@@ -100,7 +103,10 @@ const currentPath = Astro.url.pathname;
   </head>
   <body>
     <nav class="sidebar">
-      <div class="brand">StudyBuddy</div>
+      <div class="brand">
+        <span class="mark">StudyBuddy</span>
+        <span class="tag">a notebook for the semester</span>
+      </div>
       <div class="nav-group">
         <h2>Admin</h2>
         <ul>

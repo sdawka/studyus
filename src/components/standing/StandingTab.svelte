@@ -319,26 +319,26 @@
 <style>
   .block {
     background: #ffffff;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem 1.5rem;
     margin-bottom: 1.25rem;
   }
   .block h2 { margin: 0 0 0.75rem 0; font-size: 1rem; }
   .big-stat { font-size: 1.5rem; font-weight: 700; margin: 0; }
-  .muted { color: #6b7280; font-size: 0.9rem; }
+  .muted { color: var(--muted); font-size: 0.9rem; }
   .error { color: #b91c1c; font-size: 0.9rem; }
-  .reminder { color: #6b7280; font-size: 0.82rem; margin: 0 0 1rem 0; }
+  .reminder { color: var(--muted); font-size: 0.82rem; margin: 0 0 1rem 0; }
 
   table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-  th { text-align: left; padding: 0.4rem 0.5rem; color: #6b7280; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid #e5e7eb; }
-  td { padding: 0.5rem; border-bottom: 1px solid #f0f2f5; }
+  th { text-align: left; padding: 0.4rem 0.5rem; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid var(--border); }
+  td { padding: 0.5rem; border-bottom: 1px solid var(--hover-bg); }
   .capitalize { text-transform: capitalize; }
-  .grade-input { width: 4.5rem; padding: 0.3rem 0.4rem; border: 1px solid #e5e7eb; border-radius: 6px; }
+  .grade-input { width: 4.5rem; padding: 0.3rem 0.4rem; border: 1px solid var(--border); border-radius: 6px; }
   .feedback-row td { color: #15803d; font-size: 0.8rem; padding-top: 0; }
 
   button {
-    background: #3f6fd8;
+    background: var(--accent);
     color: white;
     border: none;
     border-radius: 6px;
@@ -346,7 +346,7 @@
     font-size: 0.82rem;
     cursor: pointer;
   }
-  button.secondary { background: #6b7280; }
+  button.secondary { background: var(--muted); }
   button.danger { background: #b91c1c; }
   button:disabled { opacity: 0.6; cursor: default; }
   .attendance-buttons { display: flex; gap: 0.6rem; margin-top: 0.75rem; }
@@ -354,18 +354,18 @@
   .branch-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
   .branch-list li { display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; }
   .branch-list li span:first-child { min-width: 10rem; }
-  .bar-track { flex: 1; height: 0.5rem; background: #f0f2f5; border-radius: 4px; overflow: hidden; }
-  .bar-fill { height: 100%; background: #3f6fd8; }
-  .branch-pct { min-width: 2.5rem; text-align: right; color: #6b7280; }
+  .bar-track { flex: 1; height: 0.5rem; background: var(--hover-bg); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--accent); }
+  .branch-pct { min-width: 2.5rem; text-align: right; color: var(--muted); }
 
   .deadline-list, .event-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
-  .deadline-list li { display: flex; gap: 0.75rem; font-size: 0.9rem; border-bottom: 1px solid #f0f2f5; padding-bottom: 0.4rem; }
-  .deadline-date { color: #3f6fd8; font-weight: 600; min-width: 5rem; }
+  .deadline-list li { display: flex; gap: 0.75rem; font-size: 0.9rem; border-bottom: 1px solid var(--hover-bg); padding-bottom: 0.4rem; }
+  .deadline-date { color: var(--accent); font-weight: 600; min-width: 5rem; }
 
-  .event-list li { display: flex; align-items: center; gap: 0.6rem; font-size: 0.88rem; flex-wrap: wrap; border-bottom: 1px solid #f0f2f5; padding-bottom: 0.4rem; }
-  .event-date { color: #6b7280; min-width: 5rem; }
+  .event-list li { display: flex; align-items: center; gap: 0.6rem; font-size: 0.88rem; flex-wrap: wrap; border-bottom: 1px solid var(--hover-bg); padding-bottom: 0.4rem; }
+  .event-date { color: var(--muted); min-width: 5rem; }
   .event-type { text-transform: capitalize; }
-  .source-tag { color: #9ca3af; font-size: 0.75rem; border: 1px solid #e5e7eb; border-radius: 4px; padding: 0.1rem 0.35rem; }
-  select { padding: 0.3rem 0.5rem; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 0.85rem; }
+  .source-tag { color: #9ca3af; font-size: 0.75rem; border: 1px solid var(--border); border-radius: 4px; padding: 0.1rem 0.35rem; }
+  select { padding: 0.3rem 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; }
   .feedback { color: #15803d; font-size: 0.8rem; }
 </style>

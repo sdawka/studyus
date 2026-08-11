@@ -139,7 +139,7 @@ const quickEventCourses = userCourses.map((c) => ({ id: c.id, code: c.code, titl
   }
   .panel {
     background: #ffffff;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem 1.5rem;
   }
@@ -151,11 +151,11 @@ const quickEventCourses = userCourses.map((c) => ({ id: c.id, code: c.code, titl
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: #6b7280;
+    color: var(--muted);
     margin: 0.75rem 0 0.35rem 0;
   }
   .subhead.overdue { color: #b91c1c; }
-  .muted { color: #6b7280; font-size: 0.9rem; }
+  .muted { color: var(--muted); font-size: 0.9rem; }
   .deadline-list, .task-list, .event-list, .grade-cards {
     list-style: none;
     margin: 0;
@@ -170,16 +170,16 @@ const quickEventCourses = userCourses.map((c) => ({ id: c.id, code: c.code, titl
     gap: 0.75rem;
     font-size: 0.9rem;
     padding-bottom: 0.4rem;
-    border-bottom: 1px solid #f0f2f5;
+    border-bottom: 1px solid var(--hover-bg);
   }
-  .deadline-date { color: #3f6fd8; font-weight: 600; min-width: 3.5rem; }
+  .deadline-date { color: var(--accent); font-weight: 600; min-width: 3.5rem; }
   .deadline-title { flex: 1; }
-  .deadline-course { color: #6b7280; }
-  .task-due { color: #6b7280; }
+  .deadline-course { color: var(--muted); }
+  .task-due { color: var(--muted); }
   .task-due.overdue { color: #b91c1c; font-weight: 600; }
   .event-type { text-transform: capitalize; }
   .overall-grade { font-size: 1.75rem; font-weight: 700; margin: 0 0 0.75rem 0; }
   .overall-grade .muted { font-size: 1rem; font-weight: 400; }
   .grade-value { font-weight: 600; }
-  .link { font-size: 0.85rem; color: #3f6fd8; text-decoration: none; display: inline-block; margin-top: 0.5rem; }
+  .link { font-size: 0.85rem; color: var(--accent); text-decoration: none; display: inline-block; margin-top: 0.5rem; }
 </style>

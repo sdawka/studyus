@@ -5,6 +5,7 @@ import { getDb } from '../../db/client';
 import { getNote } from '../../lib/services/notes';
 import { getCourseBySlug, listCourses } from '../../lib/services/courses';
 import { toApi } from '../../lib/serialize';
+import { NotFoundError, notFound } from '../../lib/handleNotFound';
 import NoteEditor from '../../components/notes/NoteEditor.svelte';
 
 if (!Astro.locals.user) return Astro.redirect('/login');
@@ -12,10 +13,15 @@ if (!Astro.locals.user) return Astro.redirect('/login');
 const db = getDb(env.DB);
 const { id } = Astro.params;
 
-if (!id) return Astro.redirect('/notes');
+if (!id) return notFound(Astro);
 
-const note = await getNote(db, Astro.locals.user.id, id).catch(() => null);
-if (!note) return Astro.redirect('/notes');
+let note;
+try {
+  note = await getNote(db, Astro.locals.user.id, id);
+} catch (err) {
+  if (err instanceof NotFoundError) return notFound(Astro);
+  throw err;
+}
 
 const courses = await listCourses(db, Astro.locals.user.id);
 

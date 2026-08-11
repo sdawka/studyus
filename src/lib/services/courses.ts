@@ -7,18 +7,31 @@ export async function listCourses(db: Db, userId: string, opts: { includeMastery
   const rows = await db.select().from(courses).where(eq(courses.userId, userId));
   if (!opts.includeMastery) return rows.map((c) => ({ ...c, mastery: null, status: null }));
 
-  const allKcs = await db.select({ courseId: kcs.courseId, mastery: kcs.mastery }).from(kcs);
-  const byCourse = new Map<string, number[]>();
+  const allKcs = await db.select({ courseId: kcs.courseId, mastery: kcs.mastery, status: kcs.status }).from(kcs);
+  const byCourse = new Map<string, { mastery: number; status: string }[]>();
   for (const kc of allKcs) {
     const list = byCourse.get(kc.courseId) ?? [];
-    list.push(kc.mastery);
+    list.push({ mastery: kc.mastery, status: kc.status });
     byCourse.set(kc.courseId, list);
   }
 
   return rows.map((c) => {
-    const masteries = byCourse.get(c.id) ?? [];
-    const mastery = masteries.length ? Math.round(masteries.reduce((a, b) => a + b, 0) / masteries.length) : 0;
-    const status = mastery >= 80 ? 'mastered' : mastery >= 40 ? 'review' : masteries.length ? 'learning' : 'not-started';
+    const courseKcs = byCourse.get(c.id) ?? [];
+    const mastery = courseKcs.length
+      ? Math.round(courseKcs.reduce((sum, k) => sum + k.mastery, 0) / courseKcs.length)
+      : 0;
+    // A course only reads as "learning"+ once some KC actually has event
+    // evidence — averaging mastery alone can't distinguish "9 untouched
+    // KCs" from "a course just getting started" (both average to 0).
+    const hasEvidence = courseKcs.some((k) => k.status !== 'not-started');
+    const status =
+      courseKcs.length === 0 || !hasEvidence
+        ? 'not-started'
+        : mastery >= 80
+          ? 'mastered'
+          : mastery >= 40
+            ? 'review'
+            : 'learning';
     return { ...c, mastery, status };
   });
 }

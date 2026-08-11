@@ -59,12 +59,12 @@
   }
   input {
     padding: 0.55rem 0.7rem;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 8px;
     font-size: 1rem;
   }
   button {
-    background: #3f6fd8;
+    background: var(--accent);
     color: white;
     border: none;
     border-radius: 8px;

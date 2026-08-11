@@ -33,6 +33,9 @@ Mastery is **never stored directly** — it's computed on-demand from an append-
 - The same API surfaces for native clients (iPad app later).
 - API contract is frozen at end of M1; iPad and web apps build against the same specification.
 
+### Design Tokens — the "Paper Notebook" Direction
+The whole app shares one visual system, adapted from `prototype/variation-notebook/` (a "calm, academic lab notebook" mood — see that directory's README for the full rationale). Tokens live in `src/styles/notebook.css`, imported once by `AppShell.astro` (and separately by the standalone `login.astro`, which sits outside the shell): off-white paper background (`--paper`/`--paper-deep`), one desaturated-blue ink accent (`--ink`) for every accent job (links, active nav, buttons, focus), a serif stack (`--serif`, Charter/Georgia-family) for all type, and two cheap CSS-only ruled-paper motifs — the `.sheet` utility class (horizontal rule pattern + a thin margin line) and `.margin-note` (dashed-border italic asides for editorializing facts, never a toast/banner). Legacy variable names (`--accent`, `--bg`, `--panel`, `--text`, `--muted`, `--border`) are kept as aliases onto the new tokens, since most existing component/page styles already read them via `var(--accent, #3f6fd8)`-style fallbacks — this re-themes that code without touching every file. No dark mode; status colors (`--good`/`--warn`) are used sparingly, only to mean "solid" vs. "needs review."
+
 ## Repo Structure
 
 ```

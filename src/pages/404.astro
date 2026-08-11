@@ -1,0 +1,27 @@
+---
+import AppShell from '../layouts/AppShell.astro';
+
+Astro.response.status = 404;
+---
+<AppShell title="Not found">
+  <div class="sheet not-found">
+    <h1>Page not found</h1>
+    <p>Whatever this pointed to — a course, a concept, a note — doesn't exist, or isn't yours.</p>
+    <a class="ink-btn" href="/dashboard">Back to dashboard</a>
+  </div>
+</AppShell>
+
+<style>
+  .not-found { max-width: 480px; }
+  .not-found p { color: var(--muted); margin: 0.5rem 0 1.5rem; }
+  .ink-btn {
+    display: inline-block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+    background: var(--ink);
+    text-decoration: none;
+    border-radius: 3px;
+    padding: 0.6rem 1.3rem;
+  }
+</style>

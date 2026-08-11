@@ -6,6 +6,7 @@ import { branches, noteLinks, notes, resources as resourcesTable } from '../../.
 import { and, eq } from 'drizzle-orm';
 import { getKc } from '../../../../lib/services/kcs';
 import { getKcEvents } from '../../../../lib/services/events';
+import { NotFoundError, notFound } from '../../../../lib/handleNotFound';
 import MasteryBar from '../../../../components/course/MasteryBar.astro';
 import StatusChip from '../../../../components/course/StatusChip.astro';
 import KcTypeBadge from '../../../../components/course/KcTypeBadge.astro';
@@ -16,7 +17,13 @@ const userId = Astro.locals.user!.id;
 const slug = Astro.params.slug!;
 const kcId = Astro.params.kcId!;
 
-const kc = await getKc(db, userId, kcId);
+let kc;
+try {
+  kc = await getKc(db, userId, kcId);
+} catch (err) {
+  if (err instanceof NotFoundError) return notFound(Astro);
+  throw err;
+}
 
 const branchRows = await db.select().from(branches).where(eq(branches.id, kc.branchId)).limit(1);
 const branch = branchRows[0];
@@ -115,8 +122,8 @@ const historyEvents = [...recentEvents].reverse();
 </AppShell>
 
 <style>
-  .breadcrumb { font-size: 0.8rem; color: var(--muted, #6b7280); margin: 0 0 1rem 0; }
-  .breadcrumb a { color: var(--muted, #6b7280); text-decoration: none; }
+  .breadcrumb { font-size: 0.8rem; color: var(--muted); margin: 0 0 1rem 0; }
+  .breadcrumb a { color: var(--muted); text-decoration: none; }
 
   .kc-header { margin-bottom: 2rem; }
   .head-top { display: flex; align-items: center; gap: 0.6rem; }
@@ -124,11 +131,11 @@ const historyEvents = [...recentEvents].reverse();
   .mastery-row { display: flex; align-items: center; gap: 0.8rem; margin: 0.7rem 0; max-width: 420px; }
   .bar-wrap { flex: 1; }
   .description { margin: 0.6rem 0 0 0; max-width: 700px; }
-  .practice-notes { margin: 0.5rem 0 0 0; max-width: 700px; font-size: 0.9rem; color: var(--muted, #6b7280); }
+  .practice-notes { margin: 0.5rem 0 0 0; max-width: 700px; font-size: 0.9rem; color: var(--muted); }
   .tutor-btn {
     display: inline-block;
     margin-top: 1rem;
-    background: var(--accent, #3f6fd8);
+    background: var(--accent);
     color: white;
     text-decoration: none;
     padding: 0.55rem 1rem;
@@ -139,7 +146,7 @@ const historyEvents = [...recentEvents].reverse();
 
   .section { margin-bottom: 2.25rem; }
   .section h2 { font-size: 1rem; margin: 0 0 0.7rem 0; }
-  .placeholder { color: var(--muted, #6b7280); font-size: 0.9rem; }
+  .placeholder { color: var(--muted); font-size: 0.9rem; }
 
   .history-strip {
     display: flex;
@@ -159,12 +166,12 @@ const historyEvents = [...recentEvents].reverse();
   }
   .history-bar .fill {
     width: 100%;
-    background: var(--accent, #3f6fd8);
+    background: var(--accent);
     border-radius: 2px;
     min-height: 2px;
   }
 
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
   .plain-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
-  .plain-list a { color: var(--accent, #3f6fd8); text-decoration: none; }
+  .plain-list a { color: var(--accent); text-decoration: none; }
 </style>

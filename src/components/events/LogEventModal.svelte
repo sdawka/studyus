@@ -279,7 +279,7 @@
 <style>
   .record-event-btn {
     margin-top: auto;
-    background: var(--accent, #3f6fd8);
+    background: var(--accent);
     color: white;
     border: none;
     border-radius: 8px;
@@ -308,19 +308,19 @@
   }
   .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
   .modal-header h2 { margin: 0; font-size: 1.1rem; }
-  .icon-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: #6b7280; line-height: 1; }
+  .icon-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--muted); line-height: 1; }
   .groups { display: flex; flex-direction: column; gap: 1.1rem; }
   .group h3 {
     margin: 0 0 0.5rem 0;
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #6b7280;
+    color: var(--muted);
   }
   .type-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .type-btn {
-    background: #f0f2f5;
-    border: 1px solid #e5e7eb;
+    background: var(--hover-bg);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.45rem 0.7rem;
     font-size: 0.85rem;
@@ -332,14 +332,14 @@
   label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.88rem; color: #374151; }
   input, select, textarea {
     padding: 0.5rem 0.65rem;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 8px;
     font-size: 0.9rem;
     font-family: inherit;
   }
-  .link { background: none; border: none; color: #3f6fd8; cursor: pointer; padding: 0; font-size: 0.85rem; }
+  .link { background: none; border: none; color: var(--accent); cursor: pointer; padding: 0; font-size: 0.85rem; }
   .primary {
-    background: #3f6fd8;
+    background: var(--accent);
     color: white;
     border: none;
     border-radius: 8px;

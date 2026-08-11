@@ -87,13 +87,13 @@
   }
   select {
     padding: 0.5rem 0.6rem;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 8px;
     font-size: 0.9rem;
     min-width: 200px;
   }
   button {
-    background: #3f6fd8;
+    background: var(--accent);
     color: white;
     border: none;
     border-radius: 8px;

@@ -79,12 +79,12 @@
   }
 
   .course-item {
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-top: none;
   }
 
   .course-item:first-child {
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--border);
     border-radius: 4px 4px 0 0;
   }
 
@@ -135,11 +135,11 @@
     font-size: 0.8rem;
     cursor: pointer;
     text-align: left;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--border);
   }
 
   .course-link-btn:hover {
-    background: #e5e7eb;
+    background: var(--border);
   }
 
   .kcs-list {
@@ -156,7 +156,7 @@
     font-size: 0.8rem;
     cursor: pointer;
     text-align: left;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--border);
   }
 
   .kc-link-btn:hover {

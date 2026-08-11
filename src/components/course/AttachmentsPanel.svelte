@@ -128,18 +128,18 @@
     align-items: center;
     gap: 0.6rem;
     padding: 0.5rem 0.7rem;
-    border: 1px solid var(--border, #e5e7eb);
+    border: 1px solid var(--border);
     border-radius: 8px;
   }
   .list li.empty {
-    color: var(--muted, #6b7280);
+    color: var(--muted);
     border-style: dashed;
   }
-  .list a { color: var(--accent, #3f6fd8); text-decoration: none; flex: 1; }
-  .meta { font-size: 0.78rem; color: var(--muted, #6b7280); }
+  .list a { color: var(--accent); text-decoration: none; flex: 1; }
+  .meta { font-size: 0.78rem; color: var(--muted); }
   .delete {
     background: none;
-    border: 1px solid var(--border, #e5e7eb);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.2rem 0.55rem;
     font-size: 0.78rem;
@@ -147,14 +147,14 @@
     color: #b91c1c;
   }
   .dropzone {
-    border: 1.5px dashed var(--border, #e5e7eb);
+    border: 1.5px dashed var(--border);
     border-radius: 10px;
     padding: 1.5rem;
     text-align: center;
-    color: var(--muted, #6b7280);
+    color: var(--muted);
     font-size: 0.9rem;
   }
-  .dropzone.drag { border-color: var(--accent, #3f6fd8); background: #f5f8ff; }
-  .file-label { color: var(--accent, #3f6fd8); cursor: pointer; text-decoration: underline; }
+  .dropzone.drag { border-color: var(--accent); background: #f5f8ff; }
+  .file-label { color: var(--accent); cursor: pointer; text-decoration: underline; }
   .error { color: #b91c1c; font-size: 0.85rem; margin: 0; }
 </style>

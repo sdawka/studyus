@@ -20,6 +20,8 @@ Error `code`s in use: `invalid_input` (400, includes Zod validation failures), `
 
 **Timestamps**: Every response field ending in `_at`/`_date`, plus `ts`, is an ISO 8601 datetime string. Internally these are stored as epoch-ms integers and converted at the API boundary (`src/lib/serialize.ts::toApi`) — this is the one place that conversion happens, so it's always applied.
 
+**Client requirements (CSRF)**: Astro's built-in `checkOrigin` CSRF protection is on for this app (the default for `output: 'server'`). It compares the request's `Origin` header against the host on unsafe methods (`POST`/`PATCH`/`PUT`/`DELETE`). Browser same-origin requests (the webapp itself) are unaffected — the browser sets `Origin` automatically. **Non-browser clients** (a future iPad app, `curl`, integration tests, a Flue agent calling in over HTTP) **must send an `Origin` header matching the request's host** on unsafe methods, or the request is rejected before it reaches the route handler. Example: `curl -X POST http://localhost:4331/api/v1/events -H "Origin: http://localhost:4331" -H "Content-Type: application/json" -d '...'`.
+
 ---
 
 ## Authentication
@@ -47,11 +49,13 @@ Error `code`s in use: `invalid_input` (400, includes Zod validation failures), `
 ### GET /user
 **Response** (200):
 ```json
-{ "data": { "id": "uuid", "email": "string", "name": "string|null", "current_term": "string|null" } }
+{ "data": { "id": "uuid", "email": "string", "name": "string|null", "current_term": "string|null", "onboarded_at": "iso|null" } }
 ```
+`onboarded_at` is additive (M5) — set once by the onboarding stepper, `null` until then.
 
 ### PATCH /user
-**Request**: `{ "name": "string?", "current_term": "string?" }`
+**Request**: `{ "name": "string?", "current_term": "string?", "onboarded": true? }`
+`onboarded` is additive (M5), one-way — sending `true` stamps `onboarded_at` with the current time; there's no way to unset it (the onboarding page is skippable but not re-enterable).
 **Response** (200): updated user object (same shape as GET).
 
 ---

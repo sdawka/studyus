@@ -121,7 +121,7 @@
   }
 
   .btn-primary {
-    background: #3f6fd8;
+    background: var(--accent);
     color: white;
     border: none;
     border-radius: 8px;
@@ -152,7 +152,7 @@
   .zero-state {
     text-align: center;
     padding: 3rem 2rem;
-    color: #6b7280;
+    color: var(--muted);
   }
 
   .zero-state p {
@@ -179,7 +179,7 @@
     display: flex;
     flex-direction: column;
     padding: 1rem;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 8px;
     text-decoration: none;
     color: inherit;
@@ -188,7 +188,7 @@
   }
 
   .note-card:hover {
-    border-color: #3f6fd8;
+    border-color: var(--accent);
     box-shadow: 0 4px 8px rgba(63, 111, 216, 0.1);
   }
 
@@ -225,6 +225,6 @@
     padding: 0.3rem 0.6rem;
     background: #f3f4f6;
     border-radius: 4px;
-    color: #6b7280;
+    color: var(--muted);
   }
 </style>

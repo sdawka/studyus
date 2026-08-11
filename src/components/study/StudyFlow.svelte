@@ -413,7 +413,7 @@
   .study-flow { max-width: 640px; }
   .card {
     background: white;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.5rem;
     display: flex;
@@ -427,43 +427,43 @@
     padding: 0.55rem 1rem;
     font-size: 0.92rem;
     cursor: pointer;
-    border: 1px solid #e5e7eb;
-    background: #f0f2f5;
+    border: 1px solid var(--border);
+    background: var(--hover-bg);
   }
-  .primary { background: #3f6fd8; color: white; border: none; }
+  .primary { background: var(--accent); color: white; border: none; }
   .primary:disabled { opacity: 0.6; cursor: default; }
   .ghost { background: none; }
-  .link { background: none; border: none; color: #3f6fd8; cursor: pointer; padding: 0; text-align: left; font-size: 0.88rem; }
+  .link { background: none; border: none; color: var(--accent); cursor: pointer; padding: 0; text-align: left; font-size: 0.88rem; }
   .course-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.7rem; }
   .course-card {
     text-align: left;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border);
     border-radius: 10px;
     padding: 0.8rem;
-    background: #fafafa;
+    background: var(--bg);
     cursor: pointer;
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
   }
-  .course-card:hover { background: #f0f2f5; }
+  .course-card:hover { background: var(--hover-bg); }
   .code { font-weight: 600; font-size: 0.85rem; }
-  .title { font-size: 0.82rem; color: #6b7280; }
-  .mastery-bar { height: 5px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
-  .mastery-fill { height: 100%; background: #3f6fd8; }
-  .mastery-label { font-size: 0.75rem; color: #6b7280; }
+  .title { font-size: 0.82rem; color: var(--muted); }
+  .mastery-bar { height: 5px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .mastery-fill { height: 100%; background: var(--accent); }
+  .mastery-label { font-size: 0.75rem; color: var(--muted); }
   .custom-duration { display: flex; gap: 0.5rem; align-items: center; }
-  .custom-duration input { padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 8px; width: 140px; }
+  .custom-duration input { padding: 0.5rem; border: 1px solid var(--border); border-radius: 8px; width: 140px; }
   .timer-card { align-items: center; text-align: center; }
-  .context { color: #6b7280; font-size: 0.9rem; margin: 0; }
+  .context { color: var(--muted); font-size: 0.9rem; margin: 0; }
   .timer { font-size: 3rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .branch-group h3 { font-size: 0.85rem; color: #6b7280; margin: 0.6rem 0 0.4rem 0; }
+  .branch-group h3 { font-size: 0.85rem; color: var(--muted); margin: 0.6rem 0 0.4rem 0; }
   .kc-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.25rem 0; }
   .kc-check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
-  .kc-row select { padding: 0.3rem 0.5rem; border-radius: 6px; border: 1px solid #e5e7eb; font-size: 0.8rem; }
+  .kc-row select { padding: 0.3rem 0.5rem; border-radius: 6px; border: 1px solid var(--border); font-size: 0.8rem; }
   .reflection { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.88rem; color: #374151; }
-  .reflection textarea { padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 8px; font-family: inherit; font-size: 0.9rem; }
+  .reflection textarea { padding: 0.5rem; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.9rem; }
   .deltas { margin: 0; padding-left: 1.1rem; font-size: 0.88rem; color: #374151; }
-  .muted { color: #6b7280; font-size: 0.9rem; }
+  .muted { color: var(--muted); font-size: 0.9rem; }
   .error { color: #b91c1c; font-size: 0.9rem; }
 </style>

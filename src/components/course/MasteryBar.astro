@@ -8,7 +8,7 @@ const pct = mastery ?? 0;
 const statusColors: Record<string, string> = {
   'not-started': '#9ca3af',
   learning: '#f59e0b',
-  review: '#3f6fd8',
+  review: 'var(--accent)',
   mastered: '#16a34a',
 };
 const color = statusColors[status ?? ''] ?? '#9ca3af';
@@ -40,7 +40,7 @@ const color = statusColors[status ?? ''] ?? '#9ca3af';
   }
   .pct {
     font-size: 0.75rem;
-    color: var(--muted, #6b7280);
+    color: var(--muted);
     min-width: 2.5em;
     text-align: right;
   }
