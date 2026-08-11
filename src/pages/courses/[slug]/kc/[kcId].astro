@@ -1,0 +1,170 @@
+---
+import AppShell from '../../../../layouts/AppShell.astro';
+import { env } from 'cloudflare:workers';
+import { getDb } from '../../../../db/client';
+import { branches, noteLinks, notes, resources as resourcesTable } from '../../../../db/schema';
+import { and, eq } from 'drizzle-orm';
+import { getKc } from '../../../../lib/services/kcs';
+import { getKcEvents } from '../../../../lib/services/events';
+import MasteryBar from '../../../../components/course/MasteryBar.astro';
+import StatusChip from '../../../../components/course/StatusChip.astro';
+import KcTypeBadge from '../../../../components/course/KcTypeBadge.astro';
+import EventTimeline from '../../../../components/events/EventTimeline.svelte';
+
+const db = getDb(env.DB);
+const userId = Astro.locals.user!.id;
+const slug = Astro.params.slug!;
+const kcId = Astro.params.kcId!;
+
+const kc = await getKc(db, userId, kcId);
+
+const branchRows = await db.select().from(branches).where(eq(branches.id, kc.branchId)).limit(1);
+const branch = branchRows[0];
+
+const recentEvents = await getKcEvents(db, userId, kcId, { limit: 30 });
+
+const linkedNotes = await db
+  .select({ id: notes.id, title: notes.title })
+  .from(noteLinks)
+  .innerJoin(notes, eq(noteLinks.noteId, notes.id))
+  .where(and(eq(noteLinks.kcId, kcId), eq(notes.userId, userId)));
+
+const linkedResources = await db
+  .select()
+  .from(resourcesTable)
+  .where(and(eq(resourcesTable.kcId, kcId), eq(resourcesTable.userId, userId)));
+
+function eventBarValue(payload: unknown): number {
+  const p = (payload ?? {}) as Record<string, unknown>;
+  if (typeof p.correct === 'boolean') return p.correct ? 100 : 0;
+  if (typeof p.correctness === 'number') return Math.round(p.correctness * 100);
+  if (typeof p.score === 'number') return Math.round(p.score);
+  if (typeof p.self_rating === 'number') return Math.round((p.self_rating / 5) * 100);
+  return 50;
+}
+
+// Oldest-first for the history strip so it reads left-to-right as a timeline.
+const historyEvents = [...recentEvents].reverse();
+---
+<AppShell title={kc.name}>
+  <p class="breadcrumb">
+    <a href="/courses">Courses</a> / <a href={`/courses/${slug}`}>{slug}</a>
+    {branch && <> / {branch.name}</>}
+  </p>
+
+  <header class="kc-header">
+    <div class="head-top">
+      <h1>{kc.name}</h1>
+      <KcTypeBadge kcType={kc.kcType} />
+    </div>
+    <div class="mastery-row">
+      <div class="bar-wrap"><MasteryBar mastery={kc.mastery} status={kc.status} /></div>
+      <StatusChip status={kc.status} />
+    </div>
+    {kc.description && <p class="description">{kc.description}</p>}
+    {kc.practiceNotes && <p class="practice-notes"><strong>Practice notes:</strong> {kc.practiceNotes}</p>}
+    <a class="tutor-btn" href={`/tutor/${kc.id}`}>Tutor me</a>
+  </header>
+
+  <section class="section">
+    <h2>Mastery history</h2>
+    {historyEvents.length === 0 ? (
+      <p class="placeholder">No events yet — this KC's mastery will build up as you study, get graded, or log lectures.</p>
+    ) : (
+      <div class="history-strip" role="img" aria-label="Mastery-relevant event history">
+        {historyEvents.map((e) => (
+          <div class="history-bar" title={`${e.type} — ${new Date(e.ts).toLocaleDateString()}`}>
+            <div class="fill" style={`height: ${eventBarValue(e.payload)}%`}></div>
+          </div>
+        ))}
+      </div>
+    )}
+  </section>
+
+  <section class="section">
+    <h2>Event timeline</h2>
+    <EventTimeline client:load kcId={kc.id} />
+  </section>
+
+  <section class="section two-col">
+    <div>
+      <h2>Linked notes</h2>
+      {linkedNotes.length === 0 ? (
+        <p class="placeholder">No notes linked to this KC yet.</p>
+      ) : (
+        <ul class="plain-list">
+          {linkedNotes.map((n) => (
+            <li><a href={`/notes/${n.id}`}>{n.title}</a></li>
+          ))}
+        </ul>
+      )}
+    </div>
+    <div>
+      <h2>Resources</h2>
+      {linkedResources.length === 0 ? (
+        <p class="placeholder">No resources linked to this KC yet.</p>
+      ) : (
+        <ul class="plain-list">
+          {linkedResources.map((r) => (
+            <li><a href={r.url} target="_blank" rel="noopener">{r.label}</a></li>
+          ))}
+        </ul>
+      )}
+    </div>
+  </section>
+</AppShell>
+
+<style>
+  .breadcrumb { font-size: 0.8rem; color: var(--muted, #6b7280); margin: 0 0 1rem 0; }
+  .breadcrumb a { color: var(--muted, #6b7280); text-decoration: none; }
+
+  .kc-header { margin-bottom: 2rem; }
+  .head-top { display: flex; align-items: center; gap: 0.6rem; }
+  .head-top h1 { margin: 0; font-size: 1.4rem; }
+  .mastery-row { display: flex; align-items: center; gap: 0.8rem; margin: 0.7rem 0; max-width: 420px; }
+  .bar-wrap { flex: 1; }
+  .description { margin: 0.6rem 0 0 0; max-width: 700px; }
+  .practice-notes { margin: 0.5rem 0 0 0; max-width: 700px; font-size: 0.9rem; color: var(--muted, #6b7280); }
+  .tutor-btn {
+    display: inline-block;
+    margin-top: 1rem;
+    background: var(--accent, #3f6fd8);
+    color: white;
+    text-decoration: none;
+    padding: 0.55rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .section { margin-bottom: 2.25rem; }
+  .section h2 { font-size: 1rem; margin: 0 0 0.7rem 0; }
+  .placeholder { color: var(--muted, #6b7280); font-size: 0.9rem; }
+
+  .history-strip {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 60px;
+    background: #f7f8fa;
+    border-radius: 8px;
+    padding: 0.5rem;
+  }
+  .history-bar {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    max-width: 14px;
+  }
+  .history-bar .fill {
+    width: 100%;
+    background: var(--accent, #3f6fd8);
+    border-radius: 2px;
+    min-height: 2px;
+  }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+  .plain-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+  .plain-list a { color: var(--accent, #3f6fd8); text-decoration: none; }
+</style>

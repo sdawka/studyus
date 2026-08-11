@@ -1,0 +1,47 @@
+---
+interface Props {
+  mastery: number | null;
+  status?: string | null;
+}
+const { mastery, status } = Astro.props;
+const pct = mastery ?? 0;
+const statusColors: Record<string, string> = {
+  'not-started': '#9ca3af',
+  learning: '#f59e0b',
+  review: '#3f6fd8',
+  mastered: '#16a34a',
+};
+const color = statusColors[status ?? ''] ?? '#9ca3af';
+---
+<div class="mastery-bar" role="img" aria-label={`Mastery ${pct}%${status ? `, ${status}` : ''}`}>
+  <div class="track">
+    <div class="fill" style={`width: ${pct}%; background: ${color};`}></div>
+  </div>
+  <span class="pct">{pct}%</span>
+</div>
+
+<style>
+  .mastery-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .track {
+    flex: 1;
+    height: 6px;
+    border-radius: 4px;
+    background: #eef0f3;
+    overflow: hidden;
+  }
+  .fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.2s ease;
+  }
+  .pct {
+    font-size: 0.75rem;
+    color: var(--muted, #6b7280);
+    min-width: 2.5em;
+    text-align: right;
+  }
+</style>

@@ -1,0 +1,117 @@
+---
+import AppShell from '../../layouts/AppShell.astro';
+import { env } from 'cloudflare:workers';
+import { getDb } from '../../db/client';
+import { kcs } from '../../db/schema';
+import { inArray } from 'drizzle-orm';
+import { listCourses } from '../../lib/services/courses';
+import MasteryBar from '../../components/course/MasteryBar.astro';
+
+const db = getDb(env.DB);
+const userId = Astro.locals.user!.id;
+
+const courses = await listCourses(db, userId, { includeMastery: true });
+
+const courseIds = courses.map((c) => c.id);
+const allKcs = courseIds.length
+  ? await db.select({ courseId: kcs.courseId, status: kcs.status }).from(kcs).where(inArray(kcs.courseId, courseIds))
+  : [];
+
+const statusCountsByCourse = new Map<string, Record<string, number>>();
+for (const kc of allKcs) {
+  const counts = statusCountsByCourse.get(kc.courseId) ?? {};
+  counts[kc.status] = (counts[kc.status] ?? 0) + 1;
+  statusCountsByCourse.set(kc.courseId, counts);
+}
+
+// Group by exact term string, ordered by a recency heuristic: latest year
+// mentioned in the string, tie-broken by the last season word (courses that
+// run into a later season in the same academic year sort first).
+const SEASON_RANK: Record<string, number> = { fall: 0, winter: 1, summer: 2 };
+function termRecency(term: string): number {
+  const years = [...term.matchAll(/\d{4}/g)].map((m) => parseInt(m[0], 10));
+  const maxYear = years.length ? Math.max(...years) : 0;
+  const seasons = term.toLowerCase().match(/fall|winter|summer/g) ?? [];
+  const lastSeason = seasons[seasons.length - 1];
+  const seasonRank = lastSeason ? SEASON_RANK[lastSeason] : 0;
+  return maxYear * 10 + seasonRank;
+}
+
+const groups = new Map<string, typeof courses>();
+for (const c of courses) {
+  const key = c.term ?? 'No term';
+  const list = groups.get(key) ?? [];
+  list.push(c);
+  groups.set(key, list);
+}
+const orderedGroups = [...groups.entries()].sort((a, b) => termRecency(b[0]) - termRecency(a[0]));
+
+function statusSummary(courseId: string): string {
+  const counts = statusCountsByCourse.get(courseId) ?? {};
+  const parts = ['mastered', 'review', 'learning', 'not-started']
+    .filter((s) => counts[s])
+    .map((s) => `${counts[s]} ${s.replace('-', ' ')}`);
+  return parts.length ? parts.join(' · ') : 'No KCs yet';
+}
+---
+<AppShell title="Courses">
+  <h1>Courses</h1>
+  {orderedGroups.map(([term, termCourses]) => (
+    <section class="term-group">
+      <h2>{term}</h2>
+      <div class="grid">
+        {termCourses.map((course) => (
+          <a class="card" href={`/courses/${course.slug}`}>
+            <div class="card-head">
+              <span class="code">{course.code}</span>
+              {course.credits != null && <span class="credits">{course.credits} cr</span>}
+            </div>
+            <h3 class="title">{course.title}</h3>
+            {course.instructor && <p class="instructor">{course.instructor}</p>}
+            <MasteryBar mastery={course.mastery} status={course.status} />
+            <p class="kc-summary">{statusSummary(course.id)}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+  ))}
+  {courses.length === 0 && <p>No courses yet.</p>}
+</AppShell>
+
+<style>
+  .term-group { margin-bottom: 2.5rem; }
+  .term-group h2 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted, #6b7280);
+    margin: 0 0 0.9rem 0;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+  }
+  .card {
+    display: block;
+    background: var(--panel, #fff);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 12px;
+    padding: 1.1rem 1.2rem;
+    text-decoration: none;
+    color: var(--text, #1c1e21);
+    transition: border-color 0.15s ease;
+  }
+  .card:hover { border-color: var(--accent, #3f6fd8); }
+  .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.8rem;
+    color: var(--muted, #6b7280);
+  }
+  .code { font-weight: 600; color: var(--text, #1c1e21); }
+  .title { margin: 0.25rem 0 0.15rem 0; font-size: 1.05rem; }
+  .instructor { margin: 0 0 0.75rem 0; font-size: 0.85rem; color: var(--muted, #6b7280); }
+  .kc-summary { margin: 0.5rem 0 0 0; font-size: 0.78rem; color: var(--muted, #6b7280); }
+</style>

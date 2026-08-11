@@ -1,0 +1,20 @@
+---
+interface Props {
+  kcType: string;
+}
+const { kcType } = Astro.props;
+---
+<span class="kc-type-badge">{kcType}</span>
+
+<style>
+  .kc-type-badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted, #6b7280);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 6px;
+    padding: 0.1rem 0.4rem;
+  }
+</style>
