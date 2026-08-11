@@ -888,24 +888,17 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
     });
   });
 
-  // ========== 401 SPOT CHECKS ==========
+  // ========== 401 AUTHORIZATION (MIDDLEWARE) ==========
 
-  describe('401 Unauthorized spot checks', () => {
-    it.skip('GET /user without auth returns 401 — requires Astro auth middleware', async () => {
-      // Routes check `locals.user!` and crash if middleware hasn't run.
-      // Use dev-server smoke tests to verify auth middleware behavior.
+  describe('401 Unauthorized — Astro auth middleware', () => {
+    it.skip('Middleware 401 enforcement — requires astro:middleware (not available in workers pool)', async () => {
+      // src/middleware.ts enforces auth via Astro's middleware system.
+      // Astro middleware can't be tested in cloudflare/vitest-pool-workers.
+      // Verify via: dev-server smoke tests (curl to http://localhost:4332 without session)
       expect(true).toBe(true);
     });
 
-    it.skip('POST /events without auth returns 401 — requires Astro auth middleware', async () => {
-      expect(true).toBe(true);
-    });
-
-    it.skip('GET /tasks without auth returns 401 — requires Astro auth middleware', async () => {
-      expect(true).toBe(true);
-    });
-
-    it.skip('POST /tutor/conversations without auth returns 401 — requires Astro auth middleware', async () => {
+    it.skip('Public auth paths accessible without session — verify in dev-server', async () => {
       expect(true).toBe(true);
     });
   });
