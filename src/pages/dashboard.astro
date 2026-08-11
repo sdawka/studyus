@@ -1,22 +1,185 @@
 ---
 import AppShell from '../layouts/AppShell.astro';
+import QuickEventForm from '../components/admin/QuickEventForm.svelte';
 import { env } from 'cloudflare:workers';
 import { getDb } from '../db/client';
-import { courses } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { listCourses } from '../lib/services/courses';
+import { getCalendar } from '../lib/services/calendar';
+import { getGradesSummary } from '../lib/services/grades';
+import { listTasks } from '../lib/services/tasks';
+import { listEvents } from '../lib/services/events';
 
 const db = getDb(env.DB);
-const userCourses = Astro.locals.user
-  ? await db.select().from(courses).where(eq(courses.userId, Astro.locals.user.id))
-  : [];
+const userId = Astro.locals.user!.id;
+
+const userCourses = await listCourses(db, userId);
+const courseById = new Map(userCourses.map((c) => [c.id, c]));
+
+const now = Date.now();
+const weekFromNow = now + 7 * 24 * 60 * 60 * 1000;
+const deadlines = await getCalendar(db, userId, now, weekFromNow);
+
+const gradesSummary = await getGradesSummary(db, userId);
+
+const allTasks = await listTasks(db, userId);
+const openTasks = allTasks.filter((t) => !t.completed);
+const overdueTasks = openTasks.filter((t) => t.dueDate !== null && t.dueDate < now);
+const upcomingTasks = openTasks.filter((t) => t.dueDate === null || t.dueDate >= now).slice(0, 5);
+
+const recentEvents = await listEvents(db, userId, { limit: 8 });
+
+function formatDate(iso: string | number | null) {
+  if (iso === null) return 'No due date';
+  const d = typeof iso === 'number' ? new Date(iso) : new Date(iso);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+const quickEventCourses = userCourses.map((c) => ({ id: c.id, code: c.code, title: c.title }));
 ---
 <AppShell title="Dashboard">
   <h1>Dashboard</h1>
-  <p>Coming soon — 7-day calendar strip, grade snapshot, due tasks, quick event log.</p>
-  <h2>Your courses</h2>
-  <ul>
-    {userCourses.map((course) => (
-      <li>{course.code} — {course.title} ({course.term})</li>
-    ))}
-  </ul>
+
+  <section class="grid">
+    <div class="panel">
+      <h2>Next 7 days</h2>
+      {deadlines.length === 0 ? (
+        <p class="muted">Nothing due this week.</p>
+      ) : (
+        <ul class="deadline-list">
+          {deadlines.map((item) => (
+            <li>
+              <span class="deadline-date">{formatDate(item.date)}</span>
+              <span class="deadline-title">{item.title}</span>
+              <span class="deadline-course">{item.course_id ? courseById.get(item.course_id)?.code ?? '' : ''}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+
+    <div class="panel">
+      <h2>Grade snapshot</h2>
+      <p class="overall-grade">
+        {gradesSummary.overall_weighted_grade !== null ? `${gradesSummary.overall_weighted_grade}%` : '—'}
+        <span class="muted"> overall</span>
+      </p>
+      <ul class="grade-cards">
+        {gradesSummary.by_course.map((c) => (
+          <li>
+            <span>{c.course_title}</span>
+            <span class="grade-value">{c.weighted_grade !== null ? `${c.weighted_grade}%` : 'no grades yet'}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="panel">
+      <h2>Tasks</h2>
+      {overdueTasks.length > 0 && (
+        <>
+          <h3 class="subhead overdue">Overdue</h3>
+          <ul class="task-list">
+            {overdueTasks.map((t) => (
+              <li>
+                <span>{t.title}</span>
+                <span class="task-due overdue">{formatDate(t.dueDate)}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      <h3 class="subhead">Upcoming</h3>
+      {upcomingTasks.length === 0 ? (
+        <p class="muted">No open tasks.</p>
+      ) : (
+        <ul class="task-list">
+          {upcomingTasks.map((t) => (
+            <li>
+              <span>{t.title}</span>
+              <span class="task-due">{formatDate(t.dueDate)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <a class="link" href="/tasks">View all tasks →</a>
+    </div>
+
+    <div class="panel">
+      <h2>Recent events</h2>
+      {recentEvents.length === 0 ? (
+        <p class="muted">No events logged yet.</p>
+      ) : (
+        <ul class="event-list">
+          {recentEvents.map((e) => (
+            <li>
+              <span class="event-type">{e.type.replace(/_/g, ' ')}</span>
+              <span class="muted">{formatDate(e.ts)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Record an event</h2>
+    <p class="muted">Log something that happened outside the app — attended a lecture, did some reading, ran a practice set.</p>
+    <QuickEventForm client:load courses={quickEventCourses} />
+  </section>
 </AppShell>
+
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  .panel {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+  }
+  .panel h2 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+  }
+  .subhead {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6b7280;
+    margin: 0.75rem 0 0.35rem 0;
+  }
+  .subhead.overdue { color: #b91c1c; }
+  .muted { color: #6b7280; font-size: 0.9rem; }
+  .deadline-list, .task-list, .event-list, .grade-cards {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .deadline-list li, .task-list li, .event-list li, .grade-cards li {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid #f0f2f5;
+  }
+  .deadline-date { color: #3f6fd8; font-weight: 600; min-width: 3.5rem; }
+  .deadline-title { flex: 1; }
+  .deadline-course { color: #6b7280; }
+  .task-due { color: #6b7280; }
+  .task-due.overdue { color: #b91c1c; font-weight: 600; }
+  .event-type { text-transform: capitalize; }
+  .overall-grade { font-size: 1.75rem; font-weight: 700; margin: 0 0 0.75rem 0; }
+  .overall-grade .muted { font-size: 1rem; font-weight: 400; }
+  .grade-value { font-weight: 600; }
+  .link { font-size: 0.85rem; color: #3f6fd8; text-decoration: none; display: inline-block; margin-top: 0.5rem; }
+</style>

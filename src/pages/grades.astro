@@ -1,7 +1,55 @@
 ---
 import AppShell from '../layouts/AppShell.astro';
+import GradeTable from '../components/admin/GradeTable.svelte';
+import { env } from 'cloudflare:workers';
+import { getDb } from '../db/client';
+import { listCourses } from '../lib/services/courses';
+import { listAssessments } from '../lib/services/assessments';
+import { getGradesSummary } from '../lib/services/grades';
+
+const db = getDb(env.DB);
+const userId = Astro.locals.user!.id;
+
+const userCourses = await listCourses(db, userId);
+const gradesSummary = await getGradesSummary(db, userId);
+const weightedByCourse = new Map(gradesSummary.by_course.map((c) => [c.course_id, c.weighted_grade]));
+
+const courseData = await Promise.all(
+  userCourses.map(async (course) => ({
+    id: course.id,
+    code: course.code,
+    title: course.title,
+    weightedGrade: weightedByCourse.get(course.id) ?? null,
+    assessments: await listAssessments(db, userId, course.id),
+  })),
+);
 ---
 <AppShell title="Grades">
   <h1>Grades</h1>
-  <p>Coming soon.</p>
+  <p class="overall">
+    Overall weighted standing:
+    <strong>{gradesSummary.overall_weighted_grade !== null ? `${gradesSummary.overall_weighted_grade}%` : '—'}</strong>
+  </p>
+
+  {courseData.map((course) => (
+    <GradeTable
+      client:load
+      courseId={course.id}
+      courseCode={course.code}
+      courseTitle={course.title}
+      weightedGrade={course.weightedGrade}
+      initialAssessments={course.assessments}
+    />
+  ))}
 </AppShell>
+
+<style>
+  .overall {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .overall strong { font-size: 1.2rem; }
+</style>

@@ -1,7 +1,28 @@
 ---
 import AppShell from '../layouts/AppShell.astro';
+import CalendarView from '../components/admin/CalendarView.svelte';
+import { env } from 'cloudflare:workers';
+import { getDb } from '../db/client';
+import { listCourses } from '../lib/services/courses';
+import { getCalendar } from '../lib/services/calendar';
+import { users } from '../db/schema';
+import { eq } from 'drizzle-orm';
+
+const db = getDb(env.DB);
+const userId = Astro.locals.user!.id;
+
+const userCourses = await listCourses(db, userId);
+const userRows = await db.select({ currentTerm: users.currentTerm }).from(users).where(eq(users.id, userId)).limit(1);
+const currentTerm = userRows[0]?.currentTerm ?? null;
+
+const now = new Date();
+const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime();
+const initialItems = await getCalendar(db, userId, monthStart, monthEnd);
+
+const courseOptions = userCourses.map((c) => ({ id: c.id, code: c.code, title: c.title, term: c.term }));
 ---
 <AppShell title="Calendar">
   <h1>Calendar</h1>
-  <p>Coming soon.</p>
+  <CalendarView client:load courses={courseOptions} currentTerm={currentTerm} initialItems={initialItems} />
 </AppShell>
