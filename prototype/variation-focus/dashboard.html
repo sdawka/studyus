@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — StudyBuddy</title>
+<style>
+  :root{
+    --bg:#f6f6f7;
+    --surface:#ffffff;
+    --surface-2:#fafafb;
+    --border:#e3e3e6;
+    --border-strong:#d3d3d8;
+    --text:#1a1a1e;
+    --text-dim:#6b6b74;
+    --text-faint:#9a9aa2;
+    --accent:#5b5bd6;
+    --accent-hover:#4b4bc4;
+    --accent-soft:#eeeefb;
+    --accent-soft-border:#d8d8f5;
+    --success:#1a8a4a;
+    --success-soft:#e6f5ec;
+    --warn:#b5790f;
+    --warn-soft:#fbf1de;
+    --danger:#c23b3b;
+    --danger-soft:#fbeaea;
+    --sidebar-bg:#18181c;
+    --sidebar-text:#c9c9cf;
+    --sidebar-text-dim:#75757e;
+    --sidebar-border:#28282e;
+    --sidebar-active-bg:#26262e;
+    --radius:6px;
+    --shadow:none;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#131316;
+      --surface:#1a1a1e;
+      --surface-2:#1d1d21;
+      --border:#2c2c31;
+      --border-strong:#39393f;
+      --text:#e8e8ea;
+      --text-dim:#98989f;
+      --text-faint:#6c6c74;
+      --accent:#7373e0;
+      --accent-hover:#8585e6;
+      --accent-soft:#232343;
+      --accent-soft-border:#33338f;
+      --success:#3fbf76;
+      --success-soft:#132a1e;
+      --warn:#d9a441;
+      --warn-soft:#332911;
+      --danger:#e5696e;
+      --danger-soft:#331a1c;
+      --sidebar-bg:#0e0e10;
+      --sidebar-text:#c9c9cf;
+      --sidebar-text-dim:#6c6c74;
+      --sidebar-border:#232327;
+      --sidebar-active-bg:#1c1c20;
+    }
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    font-size:13px;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none;}
+
+  .shell{display:flex;min-height:100vh;}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    width:212px;
+    flex:0 0 212px;
+    background:var(--sidebar-bg);
+    color:var(--sidebar-text);
+    display:flex;
+    flex-direction:column;
+    padding:10px 8px 12px;
+    position:sticky;
+    top:0;
+    height:100vh;
+    border-right:1px solid var(--sidebar-border);
+  }
+  .brand{
+    display:flex;align-items:center;gap:7px;
+    padding:6px 8px 12px;
+    font-weight:600;
+    font-size:13px;
+    color:#f2f2f4;
+    letter-spacing:-0.01em;
+  }
+  .brand-mark{
+    width:16px;height:16px;border-radius:4px;
+    background:var(--accent);
+    display:inline-block;
+    flex:0 0 16px;
+  }
+  .term-pill{
+    margin:0 8px 12px;
+    padding:5px 8px;
+    background:var(--sidebar-active-bg);
+    border:1px solid var(--sidebar-border);
+    border-radius:var(--radius);
+    font-size:11px;
+    color:var(--sidebar-text-dim);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .term-pill strong{color:var(--sidebar-text);font-weight:600;}
+
+  .record-btn{
+    margin:0 8px 14px;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:var(--radius);
+    padding:7px 10px;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    justify-content:center;
+    transition:background .12s;
+  }
+  .record-btn:hover{background:var(--accent-hover);}
+  .record-btn kbd{
+    font-family:inherit;
+    font-size:10px;
+    background:rgba(255,255,255,.18);
+    padding:1px 4px;
+    border-radius:3px;
+    margin-left:auto;
+  }
+
+  .nav-group{margin-bottom:14px;}
+  .nav-label{
+    font-size:10.5px;
+    font-weight:600;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--sidebar-text-dim);
+    padding:4px 10px 5px;
+  }
+  .nav-item{
+    display:flex;align-items:center;gap:8px;
+    padding:6px 10px;
+    border-radius:var(--radius);
+    font-size:12.5px;
+    color:var(--sidebar-text);
+    cursor:pointer;
+    margin:1px 0;
+  }
+  .nav-item .dot{width:5px;height:5px;border-radius:50%;background:var(--sidebar-text-dim);flex:0 0 5px;}
+  .nav-item:hover{background:var(--sidebar-active-bg);}
+  .nav-item.active{background:var(--sidebar-active-bg);color:#fff;font-weight:600;}
+  .nav-item.active .dot{background:var(--accent);}
+  .nav-item.disabled{color:var(--sidebar-text-dim);cursor:default;}
+  .nav-item.disabled:hover{background:transparent;}
+  .nav-item .soon{
+    margin-left:auto;font-size:9.5px;color:var(--sidebar-text-dim);
+    border:1px solid var(--sidebar-border);border-radius:3px;padding:1px 4px;
+  }
+
+  .sidebar-footer{
+    margin-top:auto;
+    padding:8px 10px;
+    font-size:11px;
+    color:var(--sidebar-text-dim);
+    border-top:1px solid var(--sidebar-border);
+  }
+
+  /* ---------- Main ---------- */
+  .main{flex:1;min-width:0;padding:20px 28px 40px;max-width:1140px;}
+  .page-head{
+    display:flex;align-items:baseline;justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .page-head h1{font-size:18px;font-weight:650;margin:0;letter-spacing:-0.01em;}
+  .page-head .sub{font-size:12px;color:var(--text-dim);margin-top:2px;}
+  .head-meta{font-size:11.5px;color:var(--text-faint);text-align:right;}
+  .head-meta strong{color:var(--text-dim);font-weight:600;}
+
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .stack{display:flex;flex-direction:column;gap:14px;}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:8px;
+  }
+  .card-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 14px;
+    border-bottom:1px solid var(--border);
+  }
+  .card-head h2{font-size:12.5px;font-weight:650;margin:0;}
+  .card-head .meta{font-size:11px;color:var(--text-faint);}
+  .card-body{padding:12px 14px;}
+
+  /* 7-day strip */
+  .day-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;padding:12px 14px;}
+  .day-cell{
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:8px 7px;
+    min-height:74px;
+    background:var(--surface-2);
+    display:flex;flex-direction:column;gap:5px;
+  }
+  .day-cell.today{border-color:var(--accent);background:var(--accent-soft);}
+  .day-cell .dname{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.04em;}
+  .day-cell .dnum{font-size:14px;font-weight:650;}
+  .day-cell.today .dnum{color:var(--accent);}
+  .day-events{display:flex;flex-direction:column;gap:3px;margin-top:2px;}
+  .day-event{
+    font-size:9.5px;line-height:1.3;
+    padding:2px 4px;border-radius:3px;
+    background:var(--warn-soft);color:var(--warn);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .day-event.exam{background:var(--danger-soft);color:var(--danger);}
+  .day-event.task{background:var(--accent-soft);color:var(--accent);}
+
+  /* grade snapshot */
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  .grade-table td, .grade-table th{padding:6px 4px;border-bottom:1px solid var(--border);text-align:left;}
+  .grade-table th{font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.04em;font-weight:600;}
+  .grade-table tr:last-child td{border-bottom:none;}
+  .course-tag{
+    display:inline-flex;align-items:center;gap:5px;font-weight:600;font-size:11.5px;
+  }
+  .course-tag .swatch{width:7px;height:7px;border-radius:2px;display:inline-block;}
+  .grade-bar-wrap{width:70px;height:5px;background:var(--border);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:6px;}
+  .grade-bar{height:100%;background:var(--accent);}
+  .grade-num{font-weight:650;font-size:12px;}
+  .trend{font-size:10.5px;padding:1px 5px;border-radius:3px;font-weight:600;}
+  .trend.up{color:var(--success);background:var(--success-soft);}
+  .trend.down{color:var(--danger);background:var(--danger-soft);}
+  .trend.flat{color:var(--text-faint);background:var(--surface-2);}
+
+  /* task list */
+  .task-list{display:flex;flex-direction:column;}
+  .task-row{
+    display:flex;align-items:center;gap:9px;
+    padding:8px 14px;
+    border-bottom:1px solid var(--border);
+    font-size:12.5px;
+  }
+  .task-row:last-child{border-bottom:none;}
+  .task-check{
+    width:15px;height:15px;border-radius:4px;border:1.5px solid var(--border-strong);
+    flex:0 0 15px;cursor:pointer;
+  }
+  .task-check.checked{background:var(--accent);border-color:var(--accent);}
+  .task-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .task-course{
+    font-size:10px;font-weight:650;color:var(--text-dim);
+    background:var(--surface-2);border:1px solid var(--border);
+    padding:1px 6px;border-radius:3px;flex:0 0 auto;
+  }
+  .task-due{font-size:11px;color:var(--text-faint);flex:0 0 auto;min-width:56px;text-align:right;}
+  .task-due.soon{color:var(--warn);}
+  .task-due.overdue{color:var(--danger);font-weight:600;}
+
+  /* status chips (KC mastery) */
+  .chip{
+    display:inline-flex;align-items:center;gap:4px;
+    font-size:10.5px;font-weight:600;
+    padding:2px 7px;border-radius:11px;
+    border:1px solid transparent;
+    line-height:1.6;
+  }
+  .chip .dot{width:5px;height:5px;border-radius:50%;}
+  .chip.not-started{background:var(--surface-2);color:var(--text-faint);border-color:var(--border);}
+  .chip.not-started .dot{background:var(--text-faint);}
+  .chip.learning{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft-border);}
+  .chip.learning .dot{background:var(--accent);}
+  .chip.review{background:var(--warn-soft);color:var(--warn);border-color:#f0dcb0;}
+  .chip.review .dot{background:var(--warn);}
+  .chip.mastered{background:var(--success-soft);color:var(--success);border-color:#c8e8d4;}
+  .chip.mastered .dot{background:var(--success);}
+
+  /* quick record card */
+  .record-form{display:flex;flex-direction:column;gap:8px;}
+  .record-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  select, input[type="text"], textarea{
+    width:100%;
+    font-family:inherit;
+    font-size:12px;
+    padding:6px 8px;
+    border:1px solid var(--border-strong);
+    border-radius:5px;
+    background:var(--surface);
+    color:var(--text);
+  }
+  select:focus, input:focus, textarea:focus{outline:none;border-color:var(--accent);}
+  label.field-label{font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.04em;font-weight:600;margin-bottom:3px;display:block;}
+  .btn{
+    font-family:inherit;font-size:12px;font-weight:600;
+    padding:7px 12px;border-radius:5px;border:1px solid var(--border-strong);
+    background:var(--surface);color:var(--text);cursor:pointer;
+  }
+  .btn:hover{border-color:var(--text-faint);}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .btn.primary:hover{background:var(--accent-hover);}
+
+  .streak-stat{
+    display:flex;align-items:center;gap:14px;
+    padding:12px 14px;
+  }
+  .stat-block{display:flex;flex-direction:column;gap:1px;}
+  .stat-block .num{font-size:20px;font-weight:700;letter-spacing:-0.01em;}
+  .stat-block .lbl{font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.04em;}
+  .stat-divider{width:1px;height:28px;background:var(--border);}
+
+  /* modal */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.35);
+    display:none;align-items:flex-start;justify-content:center;
+    padding-top:90px;z-index:50;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{
+    background:var(--surface);border:1px solid var(--border);border-radius:9px;
+    width:380px;box-shadow:0 12px 32px rgba(0,0,0,.18);
+  }
+  .modal-head{
+    padding:12px 14px;border-bottom:1px solid var(--border);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .modal-head h3{font-size:13px;margin:0;font-weight:650;}
+  .modal-close{cursor:pointer;color:var(--text-faint);font-size:15px;border:none;background:none;}
+  .modal-body{padding:14px;display:flex;flex-direction:column;gap:10px;}
+  .modal-foot{padding:10px 14px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+
+  .footnote{font-size:11px;color:var(--text-faint);margin-top:16px;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="sidebar">
+    <div class="brand"><span class="brand-mark"></span>StudyBuddy</div>
+    <div class="term-pill"><span>Term</span><strong>Winter 2025</strong></div>
+    <button class="record-btn" onclick="openRecordModal()">+ Record event <kbd>E</kbd></button>
+
+    <div class="nav-group">
+      <div class="nav-label">Admin</div>
+      <a class="nav-item active" href="dashboard.html"><span class="dot"></span>Dashboard</a>
+      <a class="nav-item disabled"><span class="dot"></span>Calendar<span class="soon">soon</span></a>
+      <a class="nav-item disabled"><span class="dot"></span>Grades<span class="soon">soon</span></a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Learning</div>
+      <a class="nav-item" href="feed.html"><span class="dot"></span>Feed</a>
+      <a class="nav-item" href="course.html"><span class="dot"></span>Courses</a>
+      <a class="nav-item" href="study.html"><span class="dot"></span>Study</a>
+      <a class="nav-item disabled"><span class="dot"></span>Notes<span class="soon">soon</span></a>
+      <a class="nav-item disabled"><span class="dot"></span>Tasks<span class="soon">soon</span></a>
+      <a class="nav-item disabled"><span class="dot"></span>Profile<span class="soon">soon</span></a>
+    </div>
+
+    <div class="sidebar-footer">Sahil · McGill ChemEng</div>
+  </nav>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h1>Dashboard</h1>
+        <div class="sub">Tuesday, August 11 &middot; Week 3 of term</div>
+      </div>
+      <div class="head-meta"><strong>6</strong>-day log streak</div>
+    </div>
+
+    <div class="stack">
+      <!-- 7-day deadline strip -->
+      <div class="card">
+        <div class="card-head">
+          <h2>Next 7 days</h2>
+          <span class="meta">4 items due</span>
+        </div>
+        <div class="day-strip">
+          <div class="day-cell today">
+            <div class="dname">Tue</div>
+            <div class="dnum">11</div>
+            <div class="day-events"><div class="day-event task">CHEE315 pset</div></div>
+          </div>
+          <div class="day-cell">
+            <div class="dname">Wed</div>
+            <div class="dnum">12</div>
+            <div class="day-events"></div>
+          </div>
+          <div class="day-cell">
+            <div class="dname">Thu</div>
+            <div class="dnum">13</div>
+            <div class="day-events"><div class="day-event">CHEE351 lab</div></div>
+          </div>
+          <div class="day-cell">
+            <div class="dname">Fri</div>
+            <div class="dnum">14</div>
+            <div class="day-events"></div>
+          </div>
+          <div class="day-cell">
+            <div class="dname">Sat</div>
+            <div class="dnum">15</div>
+            <div class="day-events"></div>
+          </div>
+          <div class="day-cell">
+            <div class="dname">Sun</div>
+            <div class="dnum">16</div>
+            <div class="day-events"></div>
+          </div>
+          <div class="day-cell">
+            <div class="dname">Mon</div>
+            <div class="dnum">17</div>
+            <div class="day-events">
+              <div class="day-event exam">CHEE314 midterm</div>
+              <div class="day-event task">MATH264 hw6</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Grade snapshot -->
+        <div class="card">
+          <div class="card-head">
+            <h2>Grade snapshot</h2>
+            <span class="meta">Winter 2025</span>
+          </div>
+          <div class="card-body" style="padding:6px 14px 10px;">
+            <table class="grade-table">
+              <thead>
+                <tr><th>Course</th><th>Standing</th><th></th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="course-tag"><span class="swatch" style="background:#5b5bd6"></span>CHEE 314</span></td>
+                  <td><span class="grade-bar-wrap"><span class="grade-bar" style="width:81%"></span></span><span class="grade-num">81%</span></td>
+                  <td><span class="trend up">+2.1</span></td>
+                </tr>
+                <tr>
+                  <td><span class="course-tag"><span class="swatch" style="background:#c23b3b"></span>CHEE 310</span></td>
+                  <td><span class="grade-bar-wrap"><span class="grade-bar" style="width:68%"></span></span><span class="grade-num">68%</span></td>
+                  <td><span class="trend down">-3.4</span></td>
+                </tr>
+                <tr>
+                  <td><span class="course-tag"><span class="swatch" style="background:#1a8a4a"></span>CHEE 315</span></td>
+                  <td><span class="grade-bar-wrap"><span class="grade-bar" style="width:88%"></span></span><span class="grade-num">88%</span></td>
+                  <td><span class="trend flat">0.0</span></td>
+                </tr>
+                <tr>
+                  <td><span class="course-tag"><span class="swatch" style="background:#b5790f"></span>CHEE 351</span></td>
+                  <td><span class="grade-bar-wrap"><span class="grade-bar" style="width:74%"></span></span><span class="grade-num">74%</span></td>
+                  <td><span class="trend up">+5.0</span></td>
+                </tr>
+                <tr>
+                  <td><span class="course-tag"><span class="swatch" style="background:#7a7a86"></span>CHEE 484</span></td>
+                  <td><span class="grade-bar-wrap"><span class="grade-bar" style="width:79%"></span></span><span class="grade-num">79%</span></td>
+                  <td><span class="trend flat">0.0</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Streak / study stat -->
+        <div class="card">
+          <div class="card-head">
+            <h2>This week</h2>
+            <span class="meta">rolling</span>
+          </div>
+          <div class="streak-stat">
+            <div class="stat-block"><div class="num">4.2h</div><div class="lbl">Studied</div></div>
+            <div class="stat-divider"></div>
+            <div class="stat-block"><div class="num">11</div><div class="lbl">Events logged</div></div>
+            <div class="stat-divider"></div>
+            <div class="stat-block"><div class="num">3</div><div class="lbl">KCs → mastered</div></div>
+          </div>
+          <div class="card-body" style="padding-top:0;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <span class="chip mastered"><span class="dot"></span>Bernoulli equation</span>
+              <span class="chip mastered"><span class="dot"></span>Diffusion</span>
+              <span class="chip review"><span class="dot"></span>Distillation</span>
+              <span class="chip learning"><span class="dot"></span>Enzyme kinetics</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Due tasks -->
+        <div class="card">
+          <div class="card-head">
+            <h2>Due tasks</h2>
+            <span class="meta">4 open</span>
+          </div>
+          <div class="task-list">
+            <div class="task-row">
+              <div class="task-check"></div>
+              <div class="task-title">Problem set 4 — conduction &amp; convection</div>
+              <span class="task-course">CHEE315</span>
+              <span class="task-due soon">Today</span>
+            </div>
+            <div class="task-row">
+              <div class="task-check"></div>
+              <div class="task-title">Lab report — packed bed pressure drop</div>
+              <span class="task-course">CHEE314</span>
+              <span class="task-due overdue">Overdue</span>
+            </div>
+            <div class="task-row">
+              <div class="task-check checked"></div>
+              <div class="task-title" style="text-decoration:line-through;color:var(--text-faint);">Reading — Michaelis-Menten intuition</div>
+              <span class="task-course">CHEE370</span>
+              <span class="task-due">Thu</span>
+            </div>
+            <div class="task-row">
+              <div class="task-check"></div>
+              <div class="task-title">Homework 6 — Fourier series</div>
+              <span class="task-course">MATH264</span>
+              <span class="task-due">Mon</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick record event -->
+        <div class="card">
+          <div class="card-head">
+            <h2>Quick record</h2>
+            <span class="meta">logs an event</span>
+          </div>
+          <div class="card-body">
+            <div class="record-form">
+              <div class="record-row">
+                <div>
+                  <label class="field-label">Course</label>
+                  <select>
+                    <option>CHEE 314 — Fluid Mechanics</option>
+                    <option>CHEE 315 — Heat and Mass Transfer</option>
+                    <option>CHEE 351 — Separation Processes</option>
+                    <option>MATH 264 — Advanced Calculus</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label">Event type</label>
+                  <select>
+                    <option>Lecture attended</option>
+                    <option>Lecture missed</option>
+                    <option>Reading done</option>
+                    <option>Practice done</option>
+                    <option>Self-assessment</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="field-label">Concept (optional)</label>
+                <select>
+                  <option>—</option>
+                  <option>Bernoulli equation</option>
+                  <option>Navier-Stokes equations</option>
+                  <option>Diffusion</option>
+                </select>
+              </div>
+              <button class="btn primary" style="align-self:flex-start;">Log event</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footnote">Prototype — static mock, no data persists. Direction: "focus tool". See README.md.</div>
+  </main>
+</div>
+
+<!-- Record Event Modal (global affordance) -->
+<div class="modal-overlay" id="recordModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Record event</h3>
+      <button class="modal-close" onclick="closeRecordModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <label class="field-label">Course</label>
+        <select>
+          <option>CHEE 314 — Fluid Mechanics</option>
+          <option>CHEE 315 — Heat and Mass Transfer</option>
+          <option>CHEE 351 — Separation Processes</option>
+          <option>CHEE 310 — Physical Chemistry for Engineers</option>
+          <option>MATH 264 — Advanced Calculus for Engineers</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Event type</label>
+        <select>
+          <option>Lecture attended</option>
+          <option>Lecture missed</option>
+          <option>Reading done</option>
+          <option>Video watched</option>
+          <option>Practice done</option>
+          <option>Assignment graded</option>
+          <option>Self-assessment</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Concept (optional)</label>
+        <select>
+          <option>—</option>
+          <option>Bernoulli equation</option>
+          <option>Navier-Stokes equations</option>
+          <option>Diffusion</option>
+          <option>Distillation</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Note (optional)</label>
+        <textarea rows="2" placeholder="e.g. covered boundary layer approximation, felt shaky on the math"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeRecordModal()">Cancel</button>
+      <button class="btn primary" onclick="closeRecordModal()">Log event</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openRecordModal(){ document.getElementById('recordModal').classList.add('open'); }
+  function closeRecordModal(){ document.getElementById('recordModal').classList.remove('open'); }
+  document.getElementById('recordModal').addEventListener('click', function(e){
+    if(e.target === this) closeRecordModal();
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeRecordModal();
+    if(e.key.toLowerCase() === 'e' && !e.target.matches('input,textarea,select')) openRecordModal();
+  });
+  document.querySelectorAll('.task-check').forEach(function(el){
+    el.addEventListener('click', function(){ this.classList.toggle('checked'); });
+  });
+</script>
+</body>
+</html>

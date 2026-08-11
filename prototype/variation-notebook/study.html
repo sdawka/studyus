@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>StudyBuddy — Study</title>
+<style>
+  :root{
+    --paper:#f8f4ea;--paper-deep:#f3eee1;--rule:#d9d2bf;--rule-strong:#c9bfa4;
+    --margin:#c98b8b;--ink:#2b4a6b;--ink-soft:#e7edf2;--ink-dim:#6f8ba3;
+    --text:#2c2620;--muted:#83786a;--hairline:#dcd4bf;
+    --serif:'Iowan Old Style','Palatino Linotype',Charter,Georgia,'Times New Roman',serif;
+    --good:#3f7a52;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:var(--paper-deep);color:var(--text);font-family:var(--serif);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  a{color:var(--ink);}
+  .shell{max-width:900px;margin:0 auto;padding:36px 28px 80px;}
+  header.top{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:18px;border-bottom:2px solid var(--rule-strong);margin-bottom:8px;}
+  .wordmark{display:flex;align-items:baseline;gap:10px;}
+  .wordmark .mark{font-size:26px;font-weight:600;letter-spacing:.01em;}
+  .wordmark .tag{font-size:13px;color:var(--muted);font-style:italic;}
+  nav.tabs{display:flex;gap:26px;font-size:14.5px;}
+  nav.tabs a{text-decoration:none;color:var(--muted);padding-bottom:4px;border-bottom:2px solid transparent;}
+  nav.tabs a.active{color:var(--ink);border-color:var(--ink);font-weight:600;}
+  nav.tabs a:hover{color:var(--ink);}
+
+  h1{font-size:28px;font-weight:600;margin:22px 0 4px;}
+  p.lede{color:var(--muted);margin:0 0 26px;font-size:15px;}
+
+  /* step indicator */
+  .steps{display:flex;gap:0;margin-bottom:26px;counter-reset:step;}
+  .step{flex:1;text-align:center;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);
+    padding-bottom:10px;border-bottom:2px solid var(--hairline);position:relative;}
+  .step.active{color:var(--ink);border-color:var(--ink);font-weight:600;}
+  .step.done{color:var(--good);border-color:var(--good);}
+
+  .sheet{position:relative;background:var(--paper);border:1px solid var(--hairline);border-radius:3px;
+    padding:30px 34px 30px 50px;margin-bottom:26px;min-height:340px;
+    background-image:repeating-linear-gradient(to bottom, transparent, transparent 27px, var(--rule) 27px, var(--rule) 28px);
+    background-position:0 6px;}
+  .sheet::before{content:"";position:absolute;top:0;bottom:0;left:38px;width:1px;background:var(--margin);opacity:.55;}
+
+  h2{font-size:19px;font-weight:600;margin:0 0 6px;}
+  p.stepdesc{color:var(--muted);font-size:14px;margin:0 0 22px;}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .choice{
+    border:1px solid var(--hairline);background:var(--paper-deep);border-radius:3px;
+    padding:14px 16px;cursor:pointer;text-align:left;font-family:var(--serif);color:var(--text);
+  }
+  .choice .t{font-size:14.5px;font-weight:600;display:block;}
+  .choice .s{font-size:12px;color:var(--muted);display:block;margin-top:3px;font-style:italic;}
+  .choice:hover{border-color:var(--ink-dim);}
+  .choice.selected{border-color:var(--ink);background:var(--ink-soft);}
+  .choice.selected .t{color:var(--ink);}
+
+  .dur-grid{display:flex;gap:10px;flex-wrap:wrap;}
+  .dur{border:1px solid var(--hairline);background:var(--paper-deep);border-radius:20px;
+    padding:9px 20px;cursor:pointer;font-family:var(--serif);font-size:14px;color:var(--text);}
+  .dur:hover{border-color:var(--ink-dim);}
+  .dur.selected{border-color:var(--ink);background:var(--ink);color:#fff;font-weight:600;}
+
+  .nav-row{display:flex;justify-content:space-between;margin-top:6px;}
+  button.ink-btn{font-family:var(--serif);font-size:14px;font-weight:600;color:#fff;background:var(--ink);
+    border:none;border-radius:3px;padding:10px 22px;cursor:pointer;}
+  button.ink-btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--ink);}
+  button.ink-btn:disabled{opacity:.4;cursor:default;}
+  button.ink-btn:hover:not(:disabled){opacity:.88;}
+
+  .summary-row{display:flex;justify-content:space-between;font-size:14.5px;padding:9px 0;border-bottom:1px dotted var(--hairline);}
+  .summary-row:last-child{border-bottom:none;}
+  .summary-row .k{color:var(--muted);}
+
+  .timer-face{text-align:center;padding:20px 0 8px;}
+  .timer-face .clock{font-size:52px;font-weight:600;color:var(--ink);letter-spacing:.02em;}
+  .timer-face .sub{color:var(--muted);font-size:13px;margin-top:6px;}
+
+  .margin-note{font-style:italic;font-size:12.5px;color:var(--ink);margin-top:20px;padding-left:10px;border-left:2px dashed var(--margin);}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <div class="wordmark"><span class="mark">StudyBuddy</span><span class="tag">a notebook for the semester</span></div>
+    <nav class="tabs">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="course.html">Course</a>
+      <a href="study.html" class="active">Study</a>
+      <a href="feed.html">Feed</a>
+    </nav>
+  </header>
+
+  <h1>Start a study session</h1>
+  <p class="lede">Pick a course, a duration, and what kind of work you're doing. Finishing appends events to that course's timeline.</p>
+
+  <div class="steps">
+    <div class="step active" data-step="1">1. Course</div>
+    <div class="step" data-step="2">2. Duration</div>
+    <div class="step" data-step="3">3. Session type</div>
+    <div class="step" data-step="4">4. Session</div>
+  </div>
+
+  <!-- Step 1: course -->
+  <div class="sheet panel active" data-panel="1">
+    <h2>Which course?</h2>
+    <p class="stepdesc">Choose what you're working on today.</p>
+    <div class="choice-grid">
+      <button class="choice" data-course="CHEE 314 — Fluid Mechanics"><span class="t">CHEE 314</span><span class="s">Fluid Mechanics</span></button>
+      <button class="choice" data-course="CHEE 310 — Physical Chemistry for Engineers"><span class="t">CHEE 310</span><span class="s">Physical Chemistry for Engineers</span></button>
+      <button class="choice" data-course="CHEE 315 — Heat and Mass Transfer"><span class="t">CHEE 315</span><span class="s">Heat and Mass Transfer</span></button>
+      <button class="choice" data-course="CHEE 351 — Separation Processes"><span class="t">CHEE 351</span><span class="s">Separation Processes</span></button>
+      <button class="choice" data-course="MATH 264 — Advanced Calculus for Engineers"><span class="t">MATH 264</span><span class="s">Advanced Calculus for Engineers</span></button>
+      <button class="choice" data-course="CHEE 380 — Materials Science"><span class="t">CHEE 380</span><span class="s">Materials Science</span></button>
+    </div>
+    <div class="nav-row">
+      <span></span>
+      <button class="ink-btn" id="next1" disabled>Continue</button>
+    </div>
+  </div>
+
+  <!-- Step 2: duration -->
+  <div class="sheet panel" data-panel="2">
+    <h2>How long do you have?</h2>
+    <p class="stepdesc">This just sets a target — you can stop early or run long.</p>
+    <div class="dur-grid">
+      <button class="dur" data-dur="25 minutes">25 min</button>
+      <button class="dur" data-dur="45 minutes">45 min</button>
+      <button class="dur" data-dur="60 minutes">60 min</button>
+      <button class="dur" data-dur="90 minutes">90 min</button>
+    </div>
+    <div class="nav-row">
+      <button class="ink-btn ghost" id="back2">Back</button>
+      <button class="ink-btn" id="next2" disabled>Continue</button>
+    </div>
+  </div>
+
+  <!-- Step 3: session type -->
+  <div class="sheet panel" data-panel="3">
+    <h2>What kind of session?</h2>
+    <p class="stepdesc">The type shapes what gets logged when you're done.</p>
+    <div class="choice-grid">
+      <button class="choice" data-type="Reading"><span class="t">Reading</span><span class="s">textbook, slides, notes</span></button>
+      <button class="choice" data-type="Problem practice"><span class="t">Problem practice</span><span class="s">problem sets, past exams</span></button>
+      <button class="choice" data-type="Retrieval practice"><span class="t">Retrieval practice</span><span class="s">flashcards, self-quizzing</span></button>
+      <button class="choice" data-type="Quick quiz"><span class="t">Quick quiz</span><span class="s">generated, timed MCQs</span></button>
+    </div>
+    <div class="nav-row">
+      <button class="ink-btn ghost" id="back3">Back</button>
+      <button class="ink-btn" id="next3" disabled>Start session</button>
+    </div>
+  </div>
+
+  <!-- Step 4: running / summary -->
+  <div class="sheet panel" data-panel="4">
+    <h2>Session in progress</h2>
+    <p class="stepdesc">When you're done, wrap it up and note which concepts you touched.</p>
+    <div class="timer-face">
+      <div class="clock" id="clockFace">00:00</div>
+      <div class="sub" id="clockSub">of a 45 min target</div>
+    </div>
+    <div class="summary-row"><span class="k">Course</span><span id="sumCourse">—</span></div>
+    <div class="summary-row"><span class="k">Duration target</span><span id="sumDur">—</span></div>
+    <div class="summary-row"><span class="k">Type</span><span id="sumType">—</span></div>
+    <div class="nav-row">
+      <button class="ink-btn ghost" id="restart">Start over</button>
+      <button class="ink-btn" id="finish">Finish &amp; log session</button>
+    </div>
+    <div class="margin-note" id="doneNote" style="display:none;">Session appended to your event log — concept mastery for touched KCs will update on the course Standing view.</div>
+  </div>
+</div>
+
+<script>
+  var state = { course: null, dur: null, type: null };
+  var panels = document.querySelectorAll('.panel');
+  var steps = document.querySelectorAll('.step');
+
+  function goTo(n){
+    panels.forEach(function(p){ p.classList.toggle('active', p.dataset.panel === String(n)); });
+    steps.forEach(function(s){
+      var sn = Number(s.dataset.step);
+      s.classList.toggle('active', sn === n);
+      s.classList.toggle('done', sn < n);
+    });
+  }
+
+  // Step 1
+  document.querySelectorAll('[data-course]').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('[data-course]').forEach(function(x){ x.classList.remove('selected'); });
+      b.classList.add('selected');
+      state.course = b.dataset.course;
+      document.getElementById('next1').disabled = false;
+    });
+  });
+  document.getElementById('next1').addEventListener('click', function(){ goTo(2); });
+
+  // Step 2
+  document.querySelectorAll('[data-dur]').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('[data-dur]').forEach(function(x){ x.classList.remove('selected'); });
+      b.classList.add('selected');
+      state.dur = b.dataset.dur;
+      document.getElementById('next2').disabled = false;
+    });
+  });
+  document.getElementById('back2').addEventListener('click', function(){ goTo(1); });
+  document.getElementById('next2').addEventListener('click', function(){ goTo(3); });
+
+  // Step 3
+  document.querySelectorAll('[data-type]').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('[data-type]').forEach(function(x){ x.classList.remove('selected'); });
+      b.classList.add('selected');
+      state.type = b.dataset.type;
+      document.getElementById('next3').disabled = false;
+    });
+  });
+  document.getElementById('back3').addEventListener('click', function(){ goTo(2); });
+  document.getElementById('next3').addEventListener('click', function(){
+    document.getElementById('sumCourse').textContent = state.course;
+    document.getElementById('sumDur').textContent = state.dur;
+    document.getElementById('sumType').textContent = state.type;
+    document.getElementById('clockSub').textContent = 'of a ' + state.dur + ' target';
+    goTo(4);
+  });
+
+  // Step 4
+  document.getElementById('restart').addEventListener('click', function(){
+    state = { course: null, dur: null, type: null };
+    document.querySelectorAll('.choice.selected, .dur.selected').forEach(function(x){ x.classList.remove('selected'); });
+    document.getElementById('next1').disabled = true;
+    document.getElementById('next2').disabled = true;
+    document.getElementById('next3').disabled = true;
+    document.getElementById('doneNote').style.display = 'none';
+    goTo(1);
+  });
+  document.getElementById('finish').addEventListener('click', function(){
+    document.getElementById('doneNote').style.display = 'block';
+    document.getElementById('clockFace').textContent = '— stopped —';
+  });
+</script>
+</body>
+</html>
