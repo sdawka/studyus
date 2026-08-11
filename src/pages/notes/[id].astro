@@ -1,0 +1,41 @@
+---
+import { env } from 'cloudflare:workers';
+import AppShell from '../../layouts/AppShell.astro';
+import { getDb } from '../../db/client';
+import { getNote } from '../../lib/services/notes';
+import { getCourseBySlug, listCourses } from '../../lib/services/courses';
+import { toApi } from '../../lib/serialize';
+import NoteEditor from '../../components/notes/NoteEditor.svelte';
+
+if (!Astro.locals.user) return Astro.redirect('/login');
+
+const db = getDb(env.DB);
+const { id } = Astro.params;
+
+if (!id) return Astro.redirect('/notes');
+
+const note = await getNote(db, Astro.locals.user.id, id).catch(() => null);
+if (!note) return Astro.redirect('/notes');
+
+const courses = await listCourses(db, Astro.locals.user.id);
+
+// Get KCs for each course
+const coursesWithKcs = await Promise.all(
+  courses.map(async (course) => {
+    const courseDetail = await getCourseBySlug(db, Astro.locals.user.id, course.slug);
+    return {
+      id: course.id,
+      code: course.code,
+      title: course.title,
+      kcs: courseDetail.branches.flatMap((b) => b.kcs),
+    };
+  }),
+);
+
+const apiNote = toApi(note);
+---
+
+<AppShell title={`${note.title}`}>
+  <h1>{note.title}</h1>
+  <NoteEditor client:load note={apiNote} coursesWithKcs={coursesWithKcs} noteId={id} />
+</AppShell>

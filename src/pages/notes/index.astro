@@ -1,0 +1,19 @@
+---
+import { env } from 'cloudflare:workers';
+import AppShell from '../../layouts/AppShell.astro';
+import { getDb } from '../../db/client';
+import { listNotes } from '../../lib/services/notes';
+import { toApi } from '../../lib/serialize';
+import NotesList from '../../components/notes/NotesList.svelte';
+
+if (!Astro.locals.user) return Astro.redirect('/login');
+
+const db = getDb(env.DB);
+const notes = await listNotes(db, Astro.locals.user.id);
+const apiNotes = toApi(notes);
+---
+
+<AppShell title="Notes">
+  <h1>Notes</h1>
+  <NotesList client:load initialNotes={apiNotes} />
+</AppShell>
