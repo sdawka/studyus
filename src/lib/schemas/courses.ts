@@ -20,6 +20,8 @@ export const createCourseSchema = z.strictObject({
 export type CreateCourseInput = z.infer<typeof createCourseSchema>;
 
 // Partial; never includes `code`/`slug` — the slug is immutable post-create.
+// v1.3: `meeting_days` (ISO weekday numbers, Mon=1..Sun=7) drives the class
+// sessions generation sweep; the service dedupes/sorts before storing.
 export const updateCourseSchema = z.strictObject({
   title: z.string().min(1).optional(),
   term: z.string().nullable().optional(),
@@ -28,5 +30,6 @@ export const updateCourseSchema = z.strictObject({
   overview: z.string().nullable().optional(),
   archived: z.boolean().optional(),
   color_hue: z.number().int().min(0).max(360).optional(),
+  meeting_days: z.array(z.number().int().min(1).max(7)).nullable().optional(),
 });
 export type UpdateCourseInput = z.infer<typeof updateCourseSchema>;

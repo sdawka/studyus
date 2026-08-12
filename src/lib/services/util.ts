@@ -19,6 +19,16 @@ export class ForbiddenError extends Error {
   }
 }
 
+// Maps to the `invalid_input` error code at 409 (see apiErrors.ts) — a
+// well-formed request that collides with an existing unique row, e.g. a
+// manual class session on a date that already has one.
+export class ConflictError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ConflictError';
+  }
+}
+
 /** Loads a course and throws NotFoundError unless it belongs to `userId`. */
 export async function requireOwnedCourse(db: Db, userId: string, courseId: string) {
   const rows = await db

@@ -3,7 +3,7 @@
 // stays consistent without repeating try/catch boilerplate per route.
 import { ZodError } from 'zod';
 import { apiError } from './api';
-import { NotFoundError, ForbiddenError } from './services/util';
+import { NotFoundError, ForbiddenError, ConflictError } from './services/util';
 import { NotManualEventError } from './services/events';
 
 export function serviceErrorResponse(err: unknown): Response {
@@ -15,6 +15,9 @@ export function serviceErrorResponse(err: unknown): Response {
   }
   if (err instanceof NotManualEventError) {
     return apiError('not_manual_event', err.message, 400);
+  }
+  if (err instanceof ConflictError) {
+    return apiError('invalid_input', err.message, 409);
   }
   if (err instanceof ForbiddenError) {
     return apiError('forbidden', err.message, 403);

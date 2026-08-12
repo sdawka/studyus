@@ -422,3 +422,18 @@ Migration `0002` adds `study_sessions.scheduled_at` (nullable integer, epoch ms)
 ### Seed demo data
 
 `scripts/seed.ts` now seeds a deterministic, idempotent demo data block (re-running the seed refreshes dates rather than duplicating rows) for the user's **current-term** courses only (`users.current_term`, set to `"Winter 2025"` by the seed script — the courses in `courses/courses.json` whose `term` string includes that value): 3 assessments per course (one past-due and graded, one due soon, one due later), 6 tasks total (one overdue, several upcoming, two linked to courses), ~12 logged events across courses/KCs over the past two weeks, and 5 study sessions (3 completed in the past week, 2 scheduled in the next week via `scheduled_at`) — enough for the planner/dashboard week views to render something realistic out of the box.
+
+### Class sessions (v1.3)
+
+**Attendance re-model**: class sessions are pre-existing scheduled rows whose *status* gets updated, not events appended by a button click. `events` (`lecture_attended`/`lecture_missed`) remains a valid way to log a lecture retroactively for mastery-fold purposes, but **the events API is no longer the attendance mechanism** — StandingTab's old event-buttons flow is replaced by the UI agent's class-session list/toggle UI against the endpoints below.
+
+Migration `0003` adds:
+- Table `class_sessions`: `id`, `user_id` (FK cascade), `course_id` (FK cascade), `date` (epoch ms at **local noon** of the class day — noon avoids a TZ day-shift when converting to/from ISO), `status` (`attended | missed`, nullable — `null` means unmarked), `note` (nullable), `source` (`schedule | manual | seed`, default `schedule`), `created_at`. `UNIQUE(course_id, date)`.
+- `courses.meeting_days` — nullable JSON array of ISO weekday numbers (Mon=1..Sun=7), e.g. `"[1,3,5]"`. `null` means the course has no fixed meeting schedule.
+
+Frozen route shapes:
+
+- `GET /courses/:id/class-sessions?from=&to=&limit=` → `{ data: [{ id, course_id, date, status, note, source, created_at }, ...] }`, sorted `date` DESC (`from`/`to` are ISO datetimes, `limit` defaults to 100, max 200). **Runs the idempotent generation sweep first** (same pattern as the notifications sweep, `src/lib/services/notifications.ts`): if the course has `meeting_days`, `INSERT OR IGNORE` one row per matching weekday from 70 days back through today inclusive (never future), keyed idempotent on `UNIQUE(course_id, date)`. One-time backfill: a freshly generated row's initial status is seeded from any `lecture_attended`/`lecture_missed` event the user logged for that course on the same local day (`lecture_attended` wins if both exist that day) — after generation, status only changes via the PATCH below, never by the sweep re-running.
+- `PATCH /class-sessions/:id` — body `{ status: "attended" | "missed" | null }` → updated row. Ownership enforced in the service (cross-user id → `404 not_found`).
+- `POST /courses/:id/class-sessions` — body `{ date: ISO }` → creates a `source: "manual"` session, `date` normalized to local noon. A collision with an existing session on the same course + date → `409` with error code `invalid_input`.
+- `PATCH /courses/:id` gains optional `meeting_days: number[] | null` — validated to weekday values 1-7, deduped, and sorted before storage. `GET /courses/:slug` and `listCourses` (`GET /courses`) both now include `meeting_days` as the parsed array (or `null`), not the raw JSON string.

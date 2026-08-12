@@ -116,17 +116,24 @@ async function main() {
   const COURSE_HUES = [235, 25, 150, 305, 65, 190, 340, 105, 45];
 
   // Populated per-course below; feeds the demo data block after the main loop.
-  const currentTermCourses: { id: string; slug: string; kcs: { id: string; name: string }[] }[] = [];
+  const currentTermCourses: { id: string; slug: string; meetingDays: number[] | null; kcs: { id: string; name: string }[] }[] = [];
+
+  // Varied meeting-day patterns (Mon=1..Sun=7) cycled across the current-term
+  // demo courses so the class sessions sweep has something realistic to
+  // generate for each of them.
+  const MEETING_DAY_PATTERNS: number[][] = [[1, 3], [2, 4], [1, 3, 5], [2, 5]];
 
   for (const [courseIdx, course] of coursesData.entries()) {
     const courseId = deterministicId('course', course.slug);
     const colorHue = COURSE_HUES[courseIdx % COURSE_HUES.length];
+    const isCurrentTerm = course.term.includes(CURRENT_TERM);
+    const meetingDays = isCurrentTerm ? MEETING_DAY_PATTERNS[currentTermCourses.length % MEETING_DAY_PATTERNS.length] : null;
     statements.push(
-      `INSERT INTO courses (id, user_id, code, slug, title, credits, term, instructor, prereqs, overview, source_url, color, archived, created_at)
-       VALUES (${sqlStr(courseId)}, ${sqlStr(userId)}, ${sqlStr(course.code)}, ${sqlStr(course.slug)}, ${sqlStr(course.title)}, ${sqlStr(course.credits)}, ${sqlStr(course.term)}, ${sqlStr(course.instructor)}, ${sqlStr(course.prereqs)}, ${sqlStr(course.overview)}, ${sqlStr(course.source)}, ${sqlStr(colorHue)}, 0, ${Date.now()})
+      `INSERT INTO courses (id, user_id, code, slug, title, credits, term, instructor, prereqs, overview, source_url, color, meeting_days, archived, created_at)
+       VALUES (${sqlStr(courseId)}, ${sqlStr(userId)}, ${sqlStr(course.code)}, ${sqlStr(course.slug)}, ${sqlStr(course.title)}, ${sqlStr(course.credits)}, ${sqlStr(course.term)}, ${sqlStr(course.instructor)}, ${sqlStr(course.prereqs)}, ${sqlStr(course.overview)}, ${sqlStr(course.source)}, ${sqlStr(colorHue)}, ${sqlStr(meetingDays ? JSON.stringify(meetingDays) : null)}, 0, ${Date.now()})
        ON CONFLICT(slug) DO UPDATE SET
          code=excluded.code, title=excluded.title, credits=excluded.credits, term=excluded.term,
-         instructor=excluded.instructor, prereqs=excluded.prereqs, overview=excluded.overview, source_url=excluded.source_url, color=excluded.color;`,
+         instructor=excluded.instructor, prereqs=excluded.prereqs, overview=excluded.overview, source_url=excluded.source_url, color=excluded.color, meeting_days=excluded.meeting_days;`,
     );
 
     const courseKcs: { id: string; name: string }[] = [];
@@ -170,8 +177,8 @@ async function main() {
       );
     });
 
-    if (course.term.includes(CURRENT_TERM)) {
-      currentTermCourses.push({ id: courseId, slug: course.slug, kcs: courseKcs });
+    if (isCurrentTerm) {
+      currentTermCourses.push({ id: courseId, slug: course.slug, meetingDays, kcs: courseKcs });
     }
   }
 
@@ -307,6 +314,76 @@ async function main() {
       );
     });
   }
+
+  // --- class sessions (v1.3): past ~4 weeks of scheduled sessions per
+  // current-term course, matching its meeting_days pattern above. Statuses
+  // are deterministic (hashed from the session's own id, not Math.random)
+  // so re-seeding is stable: ~80% attended, ~10% missed, ~10% unmarked —
+  // except the most recent 1-2 sessions per course, always forced to
+  // unmarked so the UI's "mark attendance" call-to-action always has
+  // something to act on.
+  const CLASS_SESSION_WINDOW_DAYS = 28;
+
+  function localNoonDaysAgo(daysAgo: number): number {
+    const d = new Date(now);
+    d.setDate(d.getDate() - daysAgo);
+    d.setHours(12, 0, 0, 0);
+    return d.getTime();
+  }
+
+  function isoWeekdayOf(noonMs: number): number {
+    const dow = new Date(noonMs).getDay();
+    return dow === 0 ? 7 : dow;
+  }
+
+  function yyyymmdd(ms: number): string {
+    const d = new Date(ms);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}${m}${day}`;
+  }
+
+  // Stable hash -> [0, 1) fraction, used only to pick a deterministic demo
+  // status; same hash shape as deterministicId but returns a fraction.
+  function hashFraction(key: string): number {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < key.length; i++) {
+      h = Math.imul(h ^ key.charCodeAt(i), 0x01000193);
+    }
+    h = (h ^ (h >>> 16)) >>> 0;
+    return (h % 10_000) / 10_000;
+  }
+
+  currentTermCourses.forEach(({ id: courseId, slug, meetingDays }) => {
+    if (!meetingDays || meetingDays.length === 0) return;
+
+    const sessionDates: number[] = [];
+    for (let daysAgo = CLASS_SESSION_WINDOW_DAYS; daysAgo >= 0; daysAgo--) {
+      const noon = localNoonDaysAgo(daysAgo);
+      if (meetingDays.includes(isoWeekdayOf(noon))) sessionDates.push(noon);
+    }
+
+    sessionDates.forEach((dateMs, idx) => {
+      const key = `demo-csess-${slug}-${yyyymmdd(dateMs)}`;
+      const sessionId = deterministicId('csess', key);
+      const isMostRecent = idx >= sessionDates.length - 2;
+
+      let status: 'attended' | 'missed' | null;
+      if (isMostRecent) {
+        status = null;
+      } else {
+        const frac = hashFraction(key);
+        status = frac < 0.8 ? 'attended' : frac < 0.9 ? 'missed' : null;
+      }
+
+      statements.push(
+        `INSERT INTO class_sessions (id, user_id, course_id, date, status, note, source, created_at)
+         VALUES (${sqlStr(sessionId)}, ${sqlStr(userId)}, ${sqlStr(courseId)}, ${dateMs}, ${sqlStr(status)}, NULL, 'seed', ${now})
+         ON CONFLICT(id) DO NOTHING;`,
+      );
+    });
+  });
 
   const dir = mkdtempSync(join(tmpdir(), 'studyus-seed-'));
   const sqlPath = join(dir, 'seed.sql');

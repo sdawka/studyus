@@ -32,13 +32,35 @@ async function uniqueSlug(db: Db, base: string): Promise<string> {
   return `${base}-${n}`;
 }
 
+// `courses.meetingDays` is a text column storing a JSON array of ISO weekday
+// numbers; every course-shaped response exposes the parsed array (or null)
+// under the same key instead of the raw JSON string.
+function parseMeetingDaysColumn(raw: string | null): number[] | null {
+  if (raw === null) return null;
+  try {
+    const value = JSON.parse(raw);
+    return Array.isArray(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function dedupeSortDays(days: number[]): number[] {
+  return [...new Set(days)].sort((a, b) => a - b);
+}
+
 // `courses.color` is a text column storing the OKLCH hue as a decimal
 // string; the API's `color_hue` field is the integer. Kept as a private
-// shaping step here (create/update only — list/get shaping is out of scope).
+// shaping step here (create/update only — list/get shaping is out of scope
+// for `color`/`colorHue`, but meetingDays parsing applies everywhere below).
 function shapeCourse(row: typeof courses.$inferSelect) {
-  const { color, ...rest } = row;
+  const { color, meetingDays, ...rest } = row;
   const parsed = color === null ? null : Number(color);
-  return { ...rest, colorHue: parsed !== null && Number.isFinite(parsed) ? parsed : null };
+  return {
+    ...rest,
+    colorHue: parsed !== null && Number.isFinite(parsed) ? parsed : null,
+    meetingDays: parseMeetingDaysColumn(meetingDays),
+  };
 }
 
 export async function listCourses(
@@ -49,7 +71,8 @@ export async function listCourses(
   const rows = (await db.select().from(courses).where(eq(courses.userId, userId))).filter(
     (c) => opts.includeArchived || !c.archived,
   );
-  if (!opts.includeMastery) return rows.map((c) => ({ ...c, mastery: null, status: null }));
+  if (!opts.includeMastery)
+    return rows.map((c) => ({ ...c, meetingDays: parseMeetingDaysColumn(c.meetingDays), mastery: null, status: null }));
 
   const allKcs = await db.select({ courseId: kcs.courseId, mastery: kcs.mastery, status: kcs.status }).from(kcs);
   const byCourse = new Map<string, { mastery: number; status: string }[]>();
@@ -76,7 +99,7 @@ export async function listCourses(
           : mastery >= 40
             ? 'review'
             : 'learning';
-    return { ...c, mastery, status };
+    return { ...c, meetingDays: parseMeetingDaysColumn(c.meetingDays), mastery, status };
   });
 }
 
@@ -102,6 +125,7 @@ export async function getCourseBySlug(db: Db, userId: string, slug: string) {
 
   return {
     ...course,
+    meetingDays: parseMeetingDaysColumn(course.meetingDays),
     branches: courseBranches.map((b) => ({ ...b, kcs: kcsByBranch.get(b.id) ?? [] })),
   };
 }
@@ -157,6 +181,9 @@ export async function updateCourse(db: Db, userId: string, courseId: string, inp
   if (input.overview !== undefined) patch.overview = input.overview;
   if (input.archived !== undefined) patch.archived = input.archived;
   if (input.color_hue !== undefined) patch.color = String(input.color_hue);
+  if (input.meeting_days !== undefined) {
+    patch.meetingDays = input.meeting_days === null ? null : JSON.stringify(dedupeSortDays(input.meeting_days));
+  }
 
   if (Object.keys(patch).length > 0) {
     await db.update(courses).set(patch).where(eq(courses.id, courseId));
