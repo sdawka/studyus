@@ -20,12 +20,16 @@ const initials = (user.name || user.email)
 
 const db = getDb(env.DB);
 const courses = await listCourses(db, user.id);
+// toApi is typed as `<T>(value: T): T` (see src/lib/serialize.ts) so its
+// static type doesn't reflect the snake_case keys it produces at runtime —
+// `c` is genuinely just a bag of unknowns here, so each field picked for
+// the HeaderActions `Course[]` prop is shaped/coerced explicitly.
 const apiCourses = toApi(courses).map((c: Record<string, unknown>) => ({
-  id: c.id,
-  code: c.code,
-  slug: c.slug,
-  title: c.title,
-  color: c.color,
+  id: String(c.id),
+  code: String(c.code),
+  slug: String(c.slug),
+  title: String(c.title),
+  color: c.color as string | number | null | undefined,
 }));
 ---
 <header class="app-header">
