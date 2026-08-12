@@ -57,7 +57,7 @@
   --accent-glow: none;
 
   --now-line-color: var(--accent);
-  --now-line-glow: 0 0 0 3px oklch(52% 0.19 267 / 0.18);
+  --now-line-glow: 0 0 0 3px oklch(52% 0.19 267 / 0.28), 0 0 10px oklch(52% 0.19 267 / 0.45);
   --nav-active-tick: 2px;
 
   --course-l: 48%;
@@ -122,7 +122,7 @@
     --shadow-pop: 0 1px 5px oklch(0% 0 0 / 0.5);
     --accent-glow: 0 0 12px oklch(64% 0.155 268 / 0.35);
 
-    --now-line-glow: 0 0 0 3px oklch(64% 0.155 268 / 0.22);
+    --now-line-glow: 0 0 0 3px oklch(64% 0.155 268 / 0.3), 0 0 12px oklch(64% 0.155 268 / 0.6);
 
     --course-l: 66%;
     --course-ink-l: 74%;
@@ -162,7 +162,7 @@
   --shadow-pop: 0 1px 5px oklch(0% 0 0 / 0.5);
   --accent-glow: 0 0 12px oklch(64% 0.155 268 / 0.35);
 
-  --now-line-glow: 0 0 0 3px oklch(64% 0.155 268 / 0.22);
+  --now-line-glow: 0 0 0 3px oklch(64% 0.155 268 / 0.3), 0 0 12px oklch(64% 0.155 268 / 0.6);
 
   --course-l: 66%;
   --course-ink-l: 74%;

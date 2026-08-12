@@ -30,6 +30,7 @@ Called out separately because they were identified but explicitly not built duri
 - **App-wide horizontal overflow at ~400px viewport width**: a layout overflow issue exists somewhere in the shell/page grid below ~400px; not tracked down or fixed in this pass.
 - **Term-position bar on course cards**: `CourseCards` shows grade/mastery/assessment progress but no "week N of M" term-position indicator — needs term start/end bounds, which aren't modeled yet (`courses.term` is a free-text string, not a date range).
 - **Fonts on unauthenticated pages**: `login.astro` renders standalone (doesn't use `AppShell.astro`) and imports `tokens.css`/`themes/*.css`/`base.css` directly but not any `fonts/*.css` — confirmed the login page falls back to system fonts regardless of the active theme, since the `@fontsource` `@font-face` declarations never load there.
+- **Notifications page + bell footer parity**: the todo/scratchpad popovers have `All tasks →`/`All notes →` footer links to real pages, but the notifications bell has no footer because no `/notifications` page exists (the popover is the whole surface). Visual-QA reviewers flag the asymmetry every round — deliberate deferral until a notifications history page is worth building.
 
 ## v1.1 Shipped Summary
 
