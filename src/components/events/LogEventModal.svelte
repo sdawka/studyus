@@ -4,6 +4,8 @@
   // visibility via the bindable `open` prop (also toggled by the "e"
   // keyboard shortcut), so it can be one island among several popovers
   // instead of mounting its own always-present button.
+  import { courseContext } from '../../lib/stores/courseContext';
+
   interface Props {
     open?: boolean;
   }
@@ -117,7 +119,14 @@
     if (open) {
       confirmation = null;
       submitError = null;
-      void loadCourses();
+      // Default the course select to whatever course we're viewing — just a
+      // default, the picker below is always free to change it.
+      if ($courseContext) {
+        selectedCourseId = $courseContext.id;
+        void loadCourses().then(() => onCourseChange());
+      } else {
+        void loadCourses();
+      }
     }
   });
 
@@ -128,7 +137,7 @@
 
   function resetForm() {
     selectedType = null;
-    selectedCourseId = '';
+    selectedCourseId = $courseContext?.id ?? '';
     kcs = [];
     selectedKcId = '';
     when = nowLocal();

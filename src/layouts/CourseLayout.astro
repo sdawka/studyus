@@ -3,8 +3,10 @@
 // (index/concepts/notes/resources/practice/play, P2C) adopt this layout.
 import AppShell from './AppShell.astro';
 import { hueFor } from '../lib/courseHue';
+import CourseContextSetter from '../components/shell/CourseContextSetter.svelte';
 
 interface Course {
+  id: string;
   slug: string;
   code: string;
   title: string;
@@ -31,6 +33,8 @@ const TABS: { id: Props['active']; label: string; href: string }[] = [
 const courseH = hueFor(course);
 ---
 <AppShell title={`${course.code} · ${course.title}`}>
+  <CourseContextSetter client:load id={course.id} slug={course.slug} code={course.code} title={course.title} />
+
   <nav class="tab-bar" slot="header-center" aria-label="Course sections">
     {TABS.map((t) => (
       <a href={t.href} aria-current={t.id === active ? 'page' : undefined}>{t.label}</a>

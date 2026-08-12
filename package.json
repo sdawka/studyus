@@ -26,15 +26,18 @@
     "@fontsource-variable/space-grotesk": "^5.3.0",
     "astro": "~7.2.0",
     "drizzle-orm": "0.45.2",
+    "nanostores": "^1.4.2",
     "svelte": "~5.56.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.10",
     "@cloudflare/vitest-pool-workers": "~0.21.0",
     "@cloudflare/workers-types": "^5.0.0",
     "drizzle-kit": "0.31.1",
+    "svelte-check": "^4.7.5",
     "tsx": "^4.19.0",
-    "typescript": "^5.6.0",
+    "typescript": "^5.9.3",
     "vitest": "~4.1.0",
     "wrangler": "^4.83.0"
   }

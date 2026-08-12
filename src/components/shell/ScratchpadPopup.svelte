@@ -1,5 +1,6 @@
 <script lang="ts">
   import { bindPopoverDismiss } from './popover.svelte.ts';
+  import { courseContext } from '../../lib/stores/courseContext';
 
   interface Course {
     id: string;
@@ -33,9 +34,13 @@
     else localStorage.removeItem(STORAGE_KEY);
   });
 
+  // On open, default "Save to" to the course we're currently viewing (if
+  // any) — but only as a starting point; once the user has touched the
+  // select for this open session, respect their choice.
   $effect(() => {
     if (open) {
       savedNoteId = null;
+      selectedCourseId = $courseContext?.id ?? '';
       queueMicrotask(() => textareaEl?.focus());
     }
   });
@@ -67,10 +72,11 @@
 </script>
 
 <div class="popover-anchor" bind:this={anchorEl}>
-  <button type="button" class="icon-btn" onclick={onToggle} aria-expanded={open} title="Scratchpad" aria-label="Scratchpad">
+  <button type="button" class="icon-btn pill-btn" onclick={onToggle} aria-expanded={open} title="Scratchpad" aria-label="Scratchpad">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M4 20h4L19.5 8.5a2 2 0 0 0-2.83-2.83L6 17v3ZM14.5 6.5l3 3" />
     </svg>
+    <span class="pill-label">Scratchpad</span>
   </button>
 
   {#if open}
@@ -112,6 +118,39 @@
 
 <style>
   .popover-anchor { position: relative; }
+
+  /* Pill-on-hover, matching the Record event pill's language: the circular
+     icon button widens to reveal a text label. Width transitions to an
+     explicit px value (not `auto`) so it actually animates. */
+  .pill-btn {
+    display: inline-flex;
+    align-items: center;
+    width: 34px;
+    overflow: hidden;
+    transition: width var(--motion-base) var(--ease);
+  }
+  .pill-btn svg { flex-shrink: 0; margin-left: 8px; }
+  .pill-label {
+    max-width: 0;
+    margin-left: 0;
+    opacity: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 12.5px;
+    font-weight: 600;
+    transition: max-width var(--motion-base) var(--ease), opacity var(--motion-base) var(--ease),
+      margin-left var(--motion-base) var(--ease);
+  }
+  .pill-btn:hover,
+  .pill-btn:focus-visible {
+    width: 118px;
+  }
+  .pill-btn:hover .pill-label,
+  .pill-btn:focus-visible .pill-label {
+    max-width: 80px;
+    margin-left: 6px;
+    opacity: 1;
+  }
 
   textarea {
     width: 100%;

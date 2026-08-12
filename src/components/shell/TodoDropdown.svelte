@@ -2,6 +2,7 @@
   import TaskItem from '../tasks/TaskItem.svelte';
   import type { TaskItemTask } from '../tasks/TaskItem.svelte';
   import { bindPopoverDismiss } from './popover.svelte.ts';
+  import { courseContext } from '../../lib/stores/courseContext';
 
   interface Course {
     id: string;
@@ -24,6 +25,25 @@
   let loaded = $state(false);
   let newTitle = $state('');
   let adding = $state(false);
+  // Quick-add defaults new tasks to the course we're viewing — visible as a
+  // clearable chip so it's not invisible magic. `null` once the user clears
+  // it, even if a course context is present.
+  let quickAddCourseId = $state<string | null>(null);
+  let quickAddCourseCleared = $state(false);
+
+  let quickAddCourse = $derived(
+    quickAddCourseCleared ? null : (quickAddCourseId ?? $courseContext?.id ?? null),
+  );
+  let quickAddCourseLabel = $derived(
+    quickAddCourse ? courses.find((c) => c.id === quickAddCourse)?.code ?? null : null,
+  );
+
+  $effect(() => {
+    if (open) {
+      quickAddCourseId = null;
+      quickAddCourseCleared = false;
+    }
+  });
 
   let courseHues = $derived.by(() => {
     const map: Record<string, number> = {};
@@ -77,10 +97,12 @@
     if (!newTitle.trim()) return;
     adding = true;
     try {
+      const body: Record<string, unknown> = { title: newTitle.trim() };
+      if (quickAddCourse) body.course_ids = [quickAddCourse];
       const res = await fetch('/api/v1/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: newTitle.trim() }),
+        body: JSON.stringify(body),
       });
       if (res.ok) {
         const json = await res.json();
@@ -94,10 +116,11 @@
 </script>
 
 <div class="popover-anchor" bind:this={anchorEl}>
-  <button type="button" class="icon-btn" onclick={onToggle} aria-expanded={open} title="To-do" aria-label="To-do list">
+  <button type="button" class="icon-btn pill-btn" onclick={onToggle} aria-expanded={open} title="To-do" aria-label="To-do list">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M9 12l2 2 4-4 M5 5h14v14H5z" />
     </svg>
+    <span class="pill-label">To-do</span>
     {#if openCount > 0}
       <span class="badge">{openCount > 9 ? '9+' : openCount}</span>
     {/if}
@@ -110,8 +133,16 @@
       </div>
 
       <form class="quick-add" onsubmit={(e) => { e.preventDefault(); quickAdd(); }}>
-        <input type="text" placeholder="Quick add a task…" bind:value={newTitle} disabled={adding} />
-        <button type="submit" disabled={adding || !newTitle.trim()} aria-label="Add task">+</button>
+        <div class="quick-add-row">
+          <input type="text" placeholder="Quick add a task…" bind:value={newTitle} disabled={adding} />
+          <button type="submit" disabled={adding || !newTitle.trim()} aria-label="Add task">+</button>
+        </div>
+        {#if quickAddCourseLabel}
+          <span class="course-chip-inline">
+            {quickAddCourseLabel}
+            <button type="button" class="chip-clear" onclick={() => (quickAddCourseCleared = true)} aria-label="Don't link to course">×</button>
+          </span>
+        {/if}
       </form>
 
       {#if !loaded}
@@ -156,7 +187,41 @@
     overflow-y: auto;
   }
 
-  .quick-add { display: flex; gap: 6px; }
+  /* Pill-on-hover, matching the Record event pill's language: the circular
+     icon button widens to reveal a text label. Width transitions to an
+     explicit px value (not `auto`) so it actually animates. */
+  .pill-btn {
+    display: inline-flex;
+    align-items: center;
+    width: 34px;
+    overflow: hidden;
+    transition: width var(--motion-base) var(--ease);
+  }
+  .pill-btn svg { flex-shrink: 0; margin-left: 8px; }
+  .pill-btn .pill-label {
+    max-width: 0;
+    margin-left: 0;
+    opacity: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 12.5px;
+    font-weight: 600;
+    transition: max-width var(--motion-base) var(--ease), opacity var(--motion-base) var(--ease),
+      margin-left var(--motion-base) var(--ease);
+  }
+  .pill-btn:hover,
+  .pill-btn:focus-visible {
+    width: 88px;
+  }
+  .pill-btn:hover .pill-label,
+  .pill-btn:focus-visible .pill-label {
+    max-width: 50px;
+    margin-left: 6px;
+    opacity: 1;
+  }
+
+  .quick-add { display: flex; flex-direction: column; gap: 6px; }
+  .quick-add-row { display: flex; gap: 6px; }
   .quick-add input {
     flex: 1;
     min-width: 0;
@@ -176,6 +241,31 @@
     font-weight: 700;
   }
   .quick-add button:disabled { opacity: 0.5; }
+
+  .course-chip-inline {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 4px 2px 8px;
+    border-radius: 999px;
+    background: var(--course-soft, var(--hairline));
+    color: var(--course-ink, var(--muted));
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .chip-clear {
+    display: grid;
+    place-items: center;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    color: inherit;
+    opacity: 0.75;
+    font-size: 11px;
+    line-height: 1;
+  }
+  .chip-clear:hover { opacity: 1; background: color-mix(in oklch, currentColor 15%, transparent); }
 
   .list { display: flex; flex-direction: column; gap: 2px; }
 </style>

@@ -1,14 +1,17 @@
 <script lang="ts">
   // Header right-cluster island: [Record event] [scratchpad] [todo] [bell] [avatar].
-  // Owns the "only one popover open at a time" coordination — each popover
-  // component gets `open`/`onToggle`/`onClose` driven from `activePopover`
-  // here; escape/outside-click dismissal itself lives in popover.svelte.ts,
+  // "Only one popover open at a time" is coordinated through the
+  // `activePopover` nanostore (src/lib/stores/ui.ts) rather than local
+  // state, so any island could in principle drive it — each popover
+  // component still just gets `open`/`onToggle`/`onClose` props here.
+  // Escape/outside-click dismissal itself lives in popover.svelte.ts,
   // shared by all four.
   import LogEventModal from '../events/LogEventModal.svelte';
   import ScratchpadPopup from './ScratchpadPopup.svelte';
   import TodoDropdown from './TodoDropdown.svelte';
   import NotificationsBell from './NotificationsBell.svelte';
   import AvatarMenu from './AvatarMenu.svelte';
+  import { activePopover, togglePopover, closePopover, type PopoverName } from '../../lib/stores/ui';
 
   interface Course {
     id: string;
@@ -26,15 +29,13 @@
 
   let { userName, userInitials, courses }: Props = $props();
 
-  type PopoverName = 'scratchpad' | 'todo' | 'bell' | 'avatar';
-  let activePopover = $state<PopoverName | null>(null);
   let recordEventOpen = $state(false);
 
   function toggle(name: PopoverName) {
-    activePopover = activePopover === name ? null : name;
+    togglePopover(name);
   }
   function close() {
-    activePopover = null;
+    closePopover();
   }
 
   function onKeydown(e: KeyboardEvent) {
@@ -59,28 +60,28 @@
   </button>
 
   <ScratchpadPopup
-    open={activePopover === 'scratchpad'}
+    open={$activePopover === 'scratchpad'}
     onToggle={() => toggle('scratchpad')}
     onClose={close}
     {courses}
   />
 
   <TodoDropdown
-    open={activePopover === 'todo'}
+    open={$activePopover === 'todo'}
     onToggle={() => toggle('todo')}
     onClose={close}
     {courses}
   />
 
   <NotificationsBell
-    open={activePopover === 'bell'}
+    open={$activePopover === 'bell'}
     onToggle={() => toggle('bell')}
     onClose={close}
     {courses}
   />
 
   <AvatarMenu
-    open={activePopover === 'avatar'}
+    open={$activePopover === 'avatar'}
     onToggle={() => toggle('avatar')}
     onClose={close}
     name={userName}
