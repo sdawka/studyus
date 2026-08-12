@@ -94,7 +94,7 @@ const canonicalResources = allResources
   document.addEventListener('DOMContentLoaded', () => {
     const filterBar = document.getElementById('filter-bar');
     const stream = document.getElementById('resource-stream');
-    const chips = filterBar ? Array.from(filterBar.querySelectorAll('[data-course-filter]')) : [];
+    const chips = filterBar ? Array.from(filterBar.querySelectorAll<HTMLElement>('[data-course-filter]')) : [];
 
     chips.forEach((chip) => {
       chip.addEventListener('click', () => {
@@ -102,7 +102,7 @@ const canonicalResources = allResources
 
         chips.forEach((c) => c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'));
 
-        const cards = stream?.querySelectorAll('[data-resource-id]');
+        const cards = stream?.querySelectorAll<HTMLElement>('[data-resource-id]');
         cards?.forEach((card) => {
           const cardCourse = card.dataset.courseId || '';
           card.style.display = !selectedCourse || cardCourse === selectedCourse ? '' : 'none';
@@ -176,7 +176,10 @@ const canonicalResources = allResources
     width: 100%;
   }
 
-  @media (max-width: 600px) {
+  /* Queries the AppShell <main> content container, not the viewport,
+     so this fires based on actual available width in both sidebar
+     states rather than the raw window size. */
+  @container (max-width: 540px) {
     .resource-masonry {
       columns: 1;
     }

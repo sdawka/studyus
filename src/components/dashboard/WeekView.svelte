@@ -126,39 +126,47 @@
       <a class="link-more" href="/planner">Open planner →</a>
       <button type="button" class="toggle-btn" onclick={toggle} aria-expanded={expanded}>
         <span class="chevron" class:open={expanded}>›</span>
-        {expanded ? 'Collapse' : 'Expand'}
+        {#key expanded}
+          <span class="toggle-label">{expanded ? 'Collapse' : 'Expand'}</span>
+        {/key}
       </button>
     </div>
   </div>
 
-  {#if expanded}
-    {#if loading}<p class="loading">Loading…</p>{/if}
-    <WeekGrid {items} {weekStart} {courses} compact={true} onSelect={goToPlanner} />
-  {:else}
-    <div class="week">
-      {#each collapsedDays as d, i}
-        <div class="day" class:today={isSameDay(d, today)}>
-          <div class="dh">
-            <span class="wd">{weekdayFmt.format(d)}</span>
-            <span class="n num">{d.getDate()}</span>
-          </div>
-          {#if itemsByDay[i].length === 0}
-            <div class="day-empty">—</div>
-          {:else}
-            {#each itemsByDay[i].slice(0, MAX_CHIPS) as item (item.id)}
-              <div class="chip-evt" style={`--course-h:${hueForItem(item)}`} title={shortTitle(item)}>
-                <span class="t">{shortTitle(item)}</span>
-                {#if !item.all_day}<span class="time">{timeFmt.format(new Date(item.date))}</span>{/if}
-              </div>
-            {/each}
-            {#if itemsByDay[i].length > MAX_CHIPS}
-              <div class="overflow">+{itemsByDay[i].length - MAX_CHIPS}</div>
+  <div class="reveal" class:open={!expanded} aria-hidden={expanded}>
+    <div class="reveal-inner">
+      <div class="week">
+        {#each collapsedDays as d, i}
+          <div class="day" class:today={isSameDay(d, today)}>
+            <div class="dh">
+              <span class="wd">{weekdayFmt.format(d)}</span>
+              <span class="n num">{d.getDate()}</span>
+            </div>
+            {#if itemsByDay[i].length === 0}
+              <div class="day-empty">—</div>
+            {:else}
+              {#each itemsByDay[i].slice(0, MAX_CHIPS) as item (item.id)}
+                <div class="chip-evt" style={`--course-h:${hueForItem(item)}`} title={shortTitle(item)}>
+                  <span class="t">{shortTitle(item)}</span>
+                  {#if !item.all_day}<span class="time">{timeFmt.format(new Date(item.date))}</span>{/if}
+                </div>
+              {/each}
+              {#if itemsByDay[i].length > MAX_CHIPS}
+                <div class="overflow">+{itemsByDay[i].length - MAX_CHIPS}</div>
+              {/if}
             {/if}
-          {/if}
-        </div>
-      {/each}
+          </div>
+        {/each}
+      </div>
     </div>
-  {/if}
+  </div>
+
+  <div class="reveal" class:open={expanded} aria-hidden={!expanded}>
+    <div class="reveal-inner">
+      {#if loading}<p class="loading">Loading…</p>{/if}
+      <WeekGrid {items} {weekStart} {courses} compact={true} onSelect={goToPlanner} />
+    </div>
+  </div>
 </section>
 
 <style>
@@ -191,6 +199,32 @@
   }
   .toggle-btn:hover {
     color: var(--text);
+  }
+  .toggle-label {
+    display: inline-block;
+    animation: toggle-label-in var(--motion-base) var(--ease);
+  }
+  @keyframes toggle-label-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Expand/collapse reveal: grid-template-rows 0fr->1fr morphs the actual
+     content height (not a hard swap), fading in sync so the page below
+     rides the same animation instead of jumping. */
+  .reveal {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition: grid-template-rows var(--motion-base) var(--ease), opacity var(--motion-base) var(--ease);
+  }
+  .reveal.open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  .reveal-inner {
+    overflow: hidden;
+    min-height: 0;
   }
   .chevron {
     display: inline-block;
@@ -284,7 +318,10 @@
     padding: 4px 2px;
   }
 
-  @media (max-width: 720px) {
+  /* Queries the AppShell <main> content container, not the viewport,
+     so this fires based on actual available width in both sidebar
+     states rather than the raw window size. */
+  @container (max-width: 680px) {
     .week {
       grid-template-columns: repeat(7, minmax(118px, 1fr));
       overflow-x: auto;

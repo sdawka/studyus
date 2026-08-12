@@ -38,12 +38,16 @@
     return c ? hueFor({ slug: c.slug, color: c.color === null ? null : String(c.color) }) : 220;
   }
 
-  const PX_PER_HOUR = $derived(compact ? 48 : 64);
+  const PX_PER_HOUR = $derived(compact ? 56 : 64);
   const HARD_FLOOR = 6;
   const HARD_CEIL = 23;
-  const MIN_SPAN = $derived(compact ? 8 : 12);
+  // Compact is a summary widget, not a planning surface: trim the window
+  // tightly around whatever items actually exist instead of defaulting to
+  // a 9-17 workday span. Full planner (non-compact) is untouched below.
+  const MIN_SPAN = $derived(compact ? 6 : 12);
   const DEFAULT_START = $derived(compact ? 9 : 8);
   const DEFAULT_END = $derived(compact ? 17 : 20);
+  const MIN_BLOCK_HEIGHT = $derived(compact ? 27 : 24);
 
   const weekStartDate = $derived(new Date(`${weekStart}T00:00:00`));
   const days = $derived(Array.from({ length: 7 }, (_, i) => addDays(weekStartDate, i)));
@@ -80,6 +84,28 @@
   }
 
   const bounds = $derived.by(() => {
+    if (compact) {
+      // Tightest window containing the actual items, ±1h padding, floored
+      // at a MIN_SPAN so a single item doesn't render a cramped sliver.
+      if (timedItems.length === 0) {
+        return { start: DEFAULT_START, end: Math.min(HARD_CEIL, DEFAULT_START + MIN_SPAN) };
+      }
+      let minHour = Infinity;
+      let maxHour = -Infinity;
+      for (const i of timedItems) {
+        const start = new Date(i.date);
+        const end = i.end_date ? new Date(i.end_date) : new Date(start.getTime() + 30 * 60_000);
+        minHour = Math.min(minHour, start.getHours() + start.getMinutes() / 60);
+        maxHour = Math.max(maxHour, end.getHours() + end.getMinutes() / 60);
+      }
+      let start = Math.max(HARD_FLOOR, Math.floor(minHour) - 1);
+      let end = Math.min(HARD_CEIL, Math.ceil(maxHour) + 1);
+      if (end - start < MIN_SPAN) {
+        end = Math.min(HARD_CEIL, start + MIN_SPAN);
+        if (end - start < MIN_SPAN) start = Math.max(HARD_FLOOR, end - MIN_SPAN);
+      }
+      return { start, end };
+    }
     let minHour = DEFAULT_START;
     let maxHour = DEFAULT_END;
     for (const i of timedItems) {
@@ -102,6 +128,11 @@
     for (let h = bounds.start; h <= bounds.end; h++) ticks.push(h);
     return ticks;
   });
+
+  // Compact shows a label every 2 hours (indexed from the window start, so
+  // the start hour is always labeled) to cut hour-gutter noise; full
+  // planner keeps every hour labeled.
+  const labelTicks = $derived(compact ? hourTicks.filter((_, i) => i % 2 === 0) : hourTicks);
 
   const gridHeight = $derived((bounds.end - bounds.start) * PX_PER_HOUR);
 
@@ -158,7 +189,7 @@
   }
   function heightFor(startMs: number, endMs: number): number {
     const minutes = Math.max(1, (endMs - startMs) / 60_000);
-    return Math.max(24, (minutes / 60) * PX_PER_HOUR);
+    return Math.max(MIN_BLOCK_HEIGHT, (minutes / 60) * PX_PER_HOUR);
   }
 
   let now = $state(new Date());
@@ -284,7 +315,7 @@
 
   <div class="time-body" style={`height:${gridHeight}px`}>
     <div class="hour-gutter">
-      {#each hourTicks as h}
+      {#each labelTicks as h}
         <div class="hour-tick" style={`top:${(h - bounds.start) * PX_PER_HOUR}px`}>
           <span class="num">{hourLabel(h)}</span>
         </div>
@@ -362,7 +393,13 @@
   .header-row,
   .all-day-row {
     display: grid;
-    grid-template-columns: var(--gutter) repeat(7, 1fr);
+    /* --gutter is set inline only on .header-row; .all-day-row is its
+       sibling, not a descendant, so it never inherits that value.
+       Without this fallback the var() reference is invalid, the whole
+       grid-template-columns declaration drops to `none`, and every
+       all-day item collapses into one full-width column instead of
+       its actual day. */
+    grid-template-columns: var(--gutter, 56px) repeat(7, 1fr);
   }
   .gutter-cell {
     width: var(--gutter, 56px);
@@ -465,6 +502,20 @@
     font-size: 11px;
     color: var(--muted);
     font-variant-numeric: tabular-nums;
+  }
+  /* Compact is a summary widget: fewer, slightly bolder hour labels (every
+     2h, set in script) read more calmly than a full dense hourly gutter. */
+  .week-grid.compact .hour-tick {
+    font-size: 11.5px;
+    font-weight: var(--weight-med, 500);
+  }
+  /* Last-resort cap — the compact window is trimmed to items ± 1h (min
+     6h), so most days land well under this; it only catches a true
+     outlier (e.g. one item at 6am and another near midnight) so the
+     widget scrolls internally instead of blowing out the dashboard. */
+  .week-grid.compact .time-body {
+    max-height: 620px;
+    overflow-y: auto;
   }
   .day-columns {
     position: relative;

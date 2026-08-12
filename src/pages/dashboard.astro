@@ -203,6 +203,29 @@ if (userCourses.length === 0) {
   .rail {
     display: grid;
     gap: 22px;
+    /* .rail is a grid item in .grid's fixed 320px column; without this,
+       its default min-width:auto lets child content (e.g. RecordEventCard's
+       <select>) grow it past that column and off the page. */
+    min-width: 0;
+  }
+  /* Same default-min-width:auto issue one level down: RecordEventCard and
+     DueList's root .card sections are themselves grid items of .rail's
+     implicit grid, so they need the same override. */
+  .rail > :global(.card) {
+    min-width: 0;
+  }
+  /* One level deeper still: QuickEventForm's <form> lays its two
+     <label> fields out in a row, but the labels' default min-width:auto
+     (driven by the "Course" select's longest option text) keeps them
+     from shrinking to fit the 320px rail. Scoped to this page's rail
+     rather than editing that component. */
+  .rail :global(label) {
+    min-width: 0;
+  }
+  .rail :global(select),
+  .rail :global(input) {
+    min-width: 0;
+    max-width: 100%;
   }
 
   .setup-card p {
@@ -211,7 +234,10 @@ if (userCourses.length === 0) {
     margin: 8px 0 16px;
   }
 
-  @media (max-width: 1060px) {
+  /* Queries the AppShell <main> content container (sidebar-aware, not
+     the viewport) so the rail stacks based on actual available width
+     in both sidebar states. */
+  @container (max-width: 1000px) {
     .grid {
       grid-template-columns: 1fr;
     }

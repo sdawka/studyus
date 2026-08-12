@@ -77,17 +77,10 @@ const CONFIG = {
   // exit code. TODO(layout-rework): once that work lands, re-run without
   // this allowlist, confirm real pass/fail, and delete entries that now
   // pass consistently.
-  pendingRebaseline: [
-    { page: 'dashboard', check: 'rail-layout' },
-    { page: 'dashboard', check: 'no-overflow' }, // rail-driven overflow at some widths
-    // WeekView/WeekGrid.svelte (dashboard week strip) overflows the viewport
-    // right edge at narrow widths (e.g. 820px) — those components are
-    // mid-rework; see the FAILURES this produces before re-baselining.
-    { page: 'dashboard', check: 'no-right-edge-overflow' },
-    { page: 'feed', check: 'no-overflow' },
-    { page: 'feed', check: 'centered-gutters' },
-    { page: 'feed', check: 'no-right-edge-overflow' },
-  ],
+  // Re-baselined 2026-08-12 after the container-query layout rework landed —
+  // all previously-pending dashboard/feed checks now run for real. Add entries
+  // here ONLY while a known layout rework is in flight, with a TODO naming it.
+  pendingRebaseline: [],
 
   // Selectors to exclude from the "nothing overflows the right edge" scan:
   // Astro's dev toolbar is a fixed-position overlay outside app layout, and
@@ -182,11 +175,27 @@ async function checkNoRightEdgeOverflow(page) {
       const whitelisted = new Set(document.querySelectorAll(whitelistSelector));
       const vw = window.innerWidth;
       const violations = [];
+      // Elements inside an intentional horizontal scroller (overflow-x auto/
+      // scroll ancestor, e.g. the dashboard week strip at narrow widths) may
+      // legitimately extend past the viewport — they scroll within their
+      // container. Skip them; the page-level scrollWidth check still catches
+      // real page overflow.
+      // 'hidden' counts too: clipped content (e.g. the collapsed week-view
+      // reveal panel, which stays mounted at full width inside an
+      // overflow:hidden wrapper) can't cause page scroll either.
+      const insideClippingAncestor = (el) => {
+        for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+          const ox = getComputedStyle(a).overflowX;
+          if (ox === 'auto' || ox === 'scroll' || ox === 'hidden' || ox === 'clip') return true;
+        }
+        return false;
+      };
+      const insideHScroller = insideClippingAncestor;
       for (const el of document.querySelectorAll('*')) {
         if (whitelisted.has(el)) continue;
         const rect = el.getBoundingClientRect();
         if (rect.width === 0 && rect.height === 0) continue; // not rendered
-        if (rect.right > vw + tolerance) {
+        if (rect.right > vw + tolerance && !insideHScroller(el)) {
           const cls = typeof el.className === 'string' ? el.className : '';
           violations.push(
             `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${cls ? '.' + cls.split(' ').filter(Boolean).join('.') : ''} right=${rect.right.toFixed(1)} (vw=${vw})`,
@@ -203,12 +212,17 @@ async function checkNoRightEdgeOverflow(page) {
 async function checkDashboardRail(page, breakpoint) {
   return page.evaluate((bp) => {
     const main = document.querySelector('main');
-    const grid = document.querySelector('.grid');
-    const rail = document.querySelector('.rail');
+    // Scope to the content area — the sidebar also has a `.rail` element,
+    // and an unscoped querySelector matched that one first (false negative).
+    const grid = document.querySelector('main .grid');
+    const rail = document.querySelector('main .grid .rail, main .grid > .rail');
     if (!main || !grid || !rail) {
       return { ok: true, skipped: true, reason: 'dashboard rail markup not found (onboarding/empty state?)' };
     }
-    const mainWidth = main.getBoundingClientRect().width;
+    // Container queries measure the container's CONTENT box — compare against
+    // that, not the border-box (main has 32px inline padding).
+    const ms = getComputedStyle(main);
+    const mainWidth = main.clientWidth - parseFloat(ms.paddingLeft) - parseFloat(ms.paddingRight);
     const gridRect = grid.getBoundingClientRect();
     const railRect = rail.getBoundingClientRect();
     // Side-by-side: rail sits to the right of the grid's other column, same row.

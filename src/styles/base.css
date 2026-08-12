@@ -60,6 +60,12 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
 /* ---------- Cards ---------- */
 
 .card {
+  /* .card is routinely used as a flex/grid item (dashboard rail, main
+     column, etc.); without this its default min-width:auto lets an
+     intentionally-wide scrollable descendant (e.g. WeekView's 7-day
+     strip) grow the card — and everything above it — instead of
+     scrolling inside its own bounds. */
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);

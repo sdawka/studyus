@@ -45,8 +45,12 @@ const { courses } = Astro.props;
 
             <div class="health">
               <div class="grade">
-                <span class="grade-num figure">{c.weightedGrade !== null ? `${c.weightedGrade}%` : '—'}</span>
-                <span class="grade-lbl">weighted grade</span>
+                {c.weightedGrade !== null ? (
+                  <span class="grade-num figure">{c.weightedGrade}%</span>
+                ) : (
+                  <span class="grade-num grade-empty">—</span>
+                )}
+                <span class="grade-lbl">{c.weightedGrade !== null ? 'weighted grade' : 'no grades yet'}</span>
               </div>
               <div class="mastery">
                 <div class="bar"><span style={`width:${masteryPct}%`}></span></div>
@@ -97,6 +101,16 @@ const { courses } = Astro.props;
     align-items: flex-start;
     justify-content: space-between;
     gap: var(--space-2, 8px);
+    /* .head is itself a grid item of .course-card; without this, its
+       default min-width:auto lets the nowrap title's content size grow
+       the row past the card's actual (fixed) track width. */
+    min-width: 0;
+  }
+  /* StatusChip is a fixed-content pill — it must never shrink to make
+     room; all shrink pressure in .head goes to .ident so the title
+     truncates instead of squeezing or clipping the status pill. */
+  .head :global(.status-chip) {
+    flex-shrink: 0;
   }
   .ident {
     display: flex;
@@ -127,6 +141,12 @@ const { courses } = Astro.props;
   }
   .grade-num {
     letter-spacing: -0.02em;
+  }
+  .grade-empty {
+    font-size: 15px;
+    font-weight: var(--weight-med, 500);
+    line-height: 1.1;
+    color: var(--muted);
   }
   .grade-lbl {
     font-size: 10.5px;

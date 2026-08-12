@@ -10,7 +10,7 @@
   --course-h: 220;
 
   /* Structural: main content column width, same across all themes. */
-  --content-max: 1240px;
+  --content-max: 1320px;
 }
 
 /* Per-course color: components set style="--course-h: N" (0-360, from
