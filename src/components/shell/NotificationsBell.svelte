@@ -113,13 +113,17 @@
 </script>
 
 <div class="popover-anchor" bind:this={anchorEl}>
-  <button type="button" class="icon-btn" onclick={onToggle} aria-expanded={open} title="Notifications" aria-label="Notifications">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M6 17h12 M6 17a6 6 0 0 1 12 0 M12 3a4 4 0 0 0-4 4v1a6 6 0 0 0 0 0 M10.5 20a1.5 1.5 0 0 0 3 0" />
-    </svg>
-    {#if unreadCount > 0}
-      <span class="badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
-    {/if}
+  <button type="button" class="icon-btn pill-btn" onclick={onToggle} aria-expanded={open} title="Notifications" aria-label="Notifications">
+    <span class="icon-wrap">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+      </svg>
+      {#if unreadCount > 0}
+        <span class="badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+      {/if}
+    </span>
+    <span class="pill-label">Notifications</span>
   </button>
 
   {#if open}
@@ -161,10 +165,53 @@
 <style>
   .popover-anchor { position: relative; }
 
+  /* Pill-on-hover, matching the Record event pill's language: the circular
+     icon button widens to reveal a text label. Width transitions to an
+     explicit px value (not `auto`) so it actually animates. The badge is
+     anchored to the icon itself (not the button) so it stays put — pinned
+     to the bell's corner — whether the pill is collapsed or expanded. */
+  .pill-btn {
+    display: inline-flex;
+    align-items: center;
+    width: 34px;
+    overflow: hidden;
+    transition: width var(--motion-base) var(--ease);
+  }
+  .icon-wrap {
+    position: relative;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    margin-left: 8px;
+  }
+  .pill-label {
+    max-width: 0;
+    margin-left: 0;
+    opacity: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 12.5px;
+    font-weight: 600;
+    transition: max-width var(--motion-base) var(--ease), opacity var(--motion-base) var(--ease),
+      margin-left var(--motion-base) var(--ease);
+  }
+  .pill-btn:hover,
+  .pill-btn:focus-visible {
+    width: 140px;
+  }
+  .pill-btn:hover .pill-label,
+  .pill-btn:focus-visible .pill-label {
+    max-width: 100px;
+    margin-left: 6px;
+    opacity: 1;
+  }
+
   .badge {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: -4px;
+    right: -6px;
     min-width: 15px;
     height: 15px;
     padding: 0 3px;
