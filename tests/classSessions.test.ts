@@ -28,7 +28,7 @@ beforeEach(async () => {
 });
 
 function isoWeekdayOf(noonMs: number): number {
-  const dow = new Date(noonMs).getDay();
+  const dow = new Date(noonMs).getUTCDay();
   return dow === 0 ? 7 : dow;
 }
 
@@ -43,8 +43,8 @@ describe('sweep (via listClassSessions)', () => {
     const todayNoon = toLocalNoon(new Date().toISOString());
     for (const row of first) {
       expect(meetingDays).toContain(isoWeekdayOf(row.date));
-      expect(new Date(row.date).getHours()).toBe(12);
-      expect(new Date(row.date).getMinutes()).toBe(0);
+      expect(new Date(row.date).getUTCHours()).toBe(12);
+      expect(new Date(row.date).getUTCMinutes()).toBe(0);
       expect(row.date).toBeLessThanOrEqual(todayNoon);
       expect(row.source).toBe('schedule');
       expect(row.status).toBeNull();

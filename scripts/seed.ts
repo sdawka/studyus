@@ -340,23 +340,33 @@ async function main() {
   // something to act on.
   const CLASS_SESSION_WINDOW_DAYS = 28;
 
+  // Explicit UTC, matching services/classSessions.ts::toLocalNoon exactly
+  // (that service's "local noon" is really UTC noon, since the Workers
+  // runtime it actually runs in is always UTC). This script runs under
+  // plain Node on a host with a real local TZ, so using the runtime-implicit
+  // setHours/getDate/getDay here (as an earlier version of this script did)
+  // silently drifted the seeded date a few hours off of what the sweep
+  // generates for the same calendar day — the UNIQUE(course_id, date) index
+  // then couldn't catch the two as the same row, producing a same-day
+  // duplicate (one 'seed'-sourced, one 'schedule'-sourced). Being explicit
+  // UTC here removes that drift entirely.
   function localNoonDaysAgo(daysAgo: number): number {
     const d = new Date(now);
-    d.setDate(d.getDate() - daysAgo);
-    d.setHours(12, 0, 0, 0);
+    d.setUTCDate(d.getUTCDate() - daysAgo);
+    d.setUTCHours(12, 0, 0, 0);
     return d.getTime();
   }
 
   function isoWeekdayOf(noonMs: number): number {
-    const dow = new Date(noonMs).getDay();
+    const dow = new Date(noonMs).getUTCDay();
     return dow === 0 ? 7 : dow;
   }
 
   function yyyymmdd(ms: number): string {
     const d = new Date(ms);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
     return `${y}${m}${day}`;
   }
 
@@ -380,6 +390,17 @@ async function main() {
       if (meetingDays.includes(isoWeekdayOf(noon))) sessionDates.push(noon);
     }
 
+    // Self-healing cleanup: delete any 'seed'-sourced row for this course
+    // that doesn't land exactly on one of the UTC-noon dates computed above
+    // — e.g. a row written by a pre-fix run of this script at host-local
+    // noon rather than UTC noon, which would otherwise sit forever as a
+    // same-day duplicate alongside the correctly-timed row (they're a few
+    // hours apart, so the UNIQUE(course_id, date) index never caught them).
+    const validDatesList = sessionDates.length ? sessionDates.join(',') : '-1';
+    statements.push(
+      `DELETE FROM class_sessions WHERE course_id=${sqlStr(courseId)} AND source='seed' AND date NOT IN (${validDatesList});`,
+    );
+
     sessionDates.forEach((dateMs, idx) => {
       const key = `demo-csess-${slug}-${yyyymmdd(dateMs)}`;
       const sessionId = deterministicId('csess', key);
@@ -393,10 +414,17 @@ async function main() {
         status = frac < 0.8 ? 'attended' : frac < 0.9 ? 'missed' : null;
       }
 
+      // Conflict target is (course_id, date) — not id — because that's the
+      // constraint that actually enforces "one row per class day": if the
+      // live generation sweep (source='schedule') already claimed this day
+      // for this course, this seed row doesn't error or duplicate. It does
+      // still enrich an unmarked row with the seed's deterministic demo
+      // status (COALESCE keeps whichever status is already non-null) — a
+      // real/backfilled status is never overwritten, only a still-null one.
       statements.push(
         `INSERT INTO class_sessions (id, user_id, course_id, date, status, note, source, created_at)
          VALUES (${sqlStr(sessionId)}, ${sqlStr(userId)}, ${sqlStr(courseId)}, ${dateMs}, ${sqlStr(status)}, NULL, 'seed', ${now})
-         ON CONFLICT(id) DO NOTHING;`,
+         ON CONFLICT(course_id, date) DO UPDATE SET status = COALESCE(status, excluded.status);`,
       );
     });
   });

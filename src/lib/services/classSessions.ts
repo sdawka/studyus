@@ -21,10 +21,20 @@ const SWEEP_WINDOW_DAYS = 70;
 const LECTURE_EVENT_TYPES = ['lecture_attended', 'lecture_missed'] as const;
 
 // Epoch ms at local noon of the calendar day containing `ms` — noon avoids a
-// TZ day-shift when the value is later rendered as an ISO date.
+// TZ day-shift when the value is later rendered as an ISO date. "Local" here
+// means UTC explicitly (setUTCHours, not setHours): the Workers runtime this
+// service actually runs in is always UTC, so this has never behaved
+// differently in production/tests, but scripts/seed.ts runs under plain
+// Node on a host with a real local TZ — using the runtime-implicit
+// `setHours` there silently drifted the seeded date off of what this sweep
+// generates for the same calendar day (see the "duplicate row" bug this
+// fixed: a seed-sourced row for the same day landed a few hours off from a
+// schedule-sourced one, so the UNIQUE(course_id, date) index never caught
+// the collision). Being explicit here — and in seed.ts's equivalent helper
+// — removes the ambiguity for both callers.
 function localNoon(ms: number): number {
   const d = new Date(ms);
-  d.setHours(12, 0, 0, 0);
+  d.setUTCHours(12, 0, 0, 0);
   return d.getTime();
 }
 
@@ -33,9 +43,9 @@ export function toLocalNoon(iso: string): number {
   return localNoon(toEpochMs(iso));
 }
 
-// ISO weekday: Mon=1..Sun=7 (JS Date#getDay is Sun=0..Sat=6).
+// ISO weekday: Mon=1..Sun=7 (JS Date#getUTCDay is Sun=0..Sat=6).
 function isoWeekday(noonMs: number): number {
-  const dow = new Date(noonMs).getDay();
+  const dow = new Date(noonMs).getUTCDay();
   return dow === 0 ? 7 : dow;
 }
 
