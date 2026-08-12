@@ -6,7 +6,9 @@ import { resources as resourcesTable } from '../../../db/schema';
 import { and, eq } from 'drizzle-orm';
 import { getCourseBySlug } from '../../../lib/services/courses';
 import { NotFoundError, notFound } from '../../../lib/handleNotFound';
+import { hueFor } from '../../../lib/courseHue';
 import ResourceCard from '../../../components/feed/ResourceCard.svelte';
+import ResourceTile from '../../../components/course/ResourceTile.svelte';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
@@ -29,61 +31,145 @@ const resourcesByKind: Record<string, typeof courseResources> = { canonical: [],
 for (const r of courseResources) {
   (resourcesByKind[r.kind] ??= []).push(r);
 }
-const KIND_LABELS: Record<string, string> = { canonical: 'Canonical', user_shared: 'Shared by you' };
+const canonicalResources = resourcesByKind.canonical;
+const userSharedResources = resourcesByKind.user_shared;
 const feedResources = resourcesByKind.feed;
+const total = courseResources.length;
+const courseH = hueFor(course);
+
+const summaryParts = [
+  canonicalResources.length > 0 && `${canonicalResources.length} official`,
+  feedResources.length > 0 && `${feedResources.length} from the feed`,
+  userSharedResources.length > 0 && `${userSharedResources.length} shared by you`,
+].filter(Boolean);
 ---
 <CourseLayout course={course} active="resources">
-  {(['canonical', 'user_shared'] as const).map((kind) => (
-    resourcesByKind[kind].length > 0 && (
-      <div class="resource-group">
-        <h3>{KIND_LABELS[kind]}</h3>
-        <ul class="resource-list">
-          {resourcesByKind[kind].map((r) => (
-            <li>
-              <a href={r.url} target="_blank" rel="noopener">{r.label}</a>
-              {r.pinned && <span class="pin">pinned</span>}
-            </li>
+  <div class="resources-page" style={`--course-h: ${courseH}`}>
+    {total > 0 && (
+      <p class="summary-line">
+        <strong class="num">{total}</strong> resource{total === 1 ? '' : 's'}
+        {summaryParts.length > 0 && <span> · {summaryParts.join(' · ')}</span>}
+      </p>
+    )}
+
+    <section class="resource-section">
+      <div class="section-head">
+        <span class="kicker">Course materials</span>
+        <span class="count-pill pill pill-idle">{canonicalResources.length}</span>
+      </div>
+      {canonicalResources.length > 0 ? (
+        <div class="tile-grid">
+          {canonicalResources.map((r) => (
+            <ResourceTile client:load resource={{ id: r.id, url: r.url, label: r.label, pinned: r.pinned }} />
           ))}
-        </ul>
-      </div>
-    )
-  ))}
+        </div>
+      ) : (
+        <p class="empty">No official materials posted for this course yet.</p>
+      )}
+    </section>
 
-  {feedResources.length > 0 && (
-    <div class="resource-group feed-group">
-      <h3>Feed</h3>
-      <div class="resource-masonry">
-        {feedResources.map((r) => (
-          <ResourceCard
-            client:load
-            resource={{
-              id: r.id,
-              url: r.url,
-              label: r.label,
-              kind: r.kind,
-              courseId: r.courseId,
-              kcId: r.kcId,
-              pinned: r.pinned,
-              createdAt: r.createdAt ?? undefined,
-            }}
-            course={{ id: course.id, title: course.title, slug: course.slug, code: course.code, color: course.color }}
-          />
-        ))}
+    <section class="resource-section">
+      <div class="section-head">
+        <span class="kicker">Feed</span>
+        <span class="count-pill pill pill-idle">{feedResources.length}</span>
+        {feedResources.length > 0 && <span class="section-desc">Community links shared for this course</span>}
       </div>
-    </div>
-  )}
+      {feedResources.length > 0 ? (
+        <div class="resource-masonry">
+          {feedResources.map((r) => (
+            <ResourceCard
+              client:load
+              resource={{
+                id: r.id,
+                url: r.url,
+                label: r.label,
+                kind: r.kind,
+                courseId: r.courseId,
+                kcId: r.kcId,
+                pinned: r.pinned,
+                createdAt: r.createdAt ?? undefined,
+              }}
+              course={{ id: course.id, title: course.title, slug: course.slug, code: course.code, color: course.color }}
+            />
+          ))}
+        </div>
+      ) : (
+        <p class="empty">No resources yet — share one from the Feed.</p>
+      )}
+    </section>
 
-  {courseResources.length === 0 && <p class="placeholder">No resources for this course yet.</p>}
+    <section class="resource-section">
+      <div class="section-head">
+        <span class="kicker">Shared by you</span>
+        <span class="count-pill pill pill-idle">{userSharedResources.length}</span>
+      </div>
+      {userSharedResources.length > 0 ? (
+        <div class="tile-grid">
+          {userSharedResources.map((r) => (
+            <ResourceTile
+              client:load
+              resource={{ id: r.id, url: r.url, label: r.label, pinned: r.pinned }}
+              deletable
+            />
+          ))}
+        </div>
+      ) : (
+        <p class="empty">Nothing shared yet — save a link to this course from the Feed.</p>
+      )}
+    </section>
+  </div>
 </CourseLayout>
 
 <style>
-  .placeholder { color: var(--muted); font-size: 0.9rem; }
-  .resource-group { margin-bottom: 1.5rem; }
-  .resource-group h3 { margin: 0 0 0.4rem 0; font-size: 0.95rem; }
-  .resource-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
-  .resource-list a { color: var(--accent); text-decoration: none; }
-  .pin { margin-left: 0.5rem; font-size: 0.7rem; color: var(--muted); }
-  .resource-masonry { columns: 2 240px; column-gap: 16px; width: 100%; }
-  .resource-masonry > * { break-inside: avoid; margin-bottom: 16px; display: inline-block; width: 100%; }
-  @media (max-width: 600px) { .resource-masonry { columns: 1; } }
+  .resources-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .summary-line {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .summary-line strong {
+    color: var(--text);
+  }
+
+  .resource-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  .count-pill {
+    min-width: 20px;
+    justify-content: center;
+  }
+
+  .section-desc {
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-left: var(--space-1);
+  }
+
+  .tile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--space-3);
+  }
+
+  .resource-masonry { columns: 2 240px; column-gap: var(--space-4); width: 100%; }
+  .resource-masonry > * { break-inside: avoid; margin-bottom: var(--space-4); display: inline-block; width: 100%; }
+
+  @container (max-width: 600px) {
+    .resource-masonry { columns: 1; }
+  }
 </style>
