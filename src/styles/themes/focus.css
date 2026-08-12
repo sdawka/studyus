@@ -1,77 +1,79 @@
 /* ============================================================
-   Theme: Focus — converted from prototype/variation-focus (hex -> OKLCH,
-   2dp). Compact, low-chroma, "focus tool" signature: sidebar is pinned
-   dark in BOTH schemes (declared once, in the light block — nothing in
-   the dark blocks below overrides --sidebar-*, so it stays pinned).
+   Theme: Focus — "dense, sharp, indigo command-center."
+   Space Grotesk display voice over an Inter body, cool blue-violet
+   neutrals, the tightest spacing/radii/motion of the three themes.
+   Sidebar is pinned dark in BOTH schemes (declared once, in the
+   light block — nothing in the dark blocks below overrides
+   --sidebar-*, so it stays pinned).
    ============================================================ */
 
 [data-theme='focus'] {
-  --bg:        oklch(97% 0.001 286);
+  --bg:        oklch(96% 0.003 264);
   --surface:   oklch(100% 0 0);
-  --surface-2: oklch(98% 0.001 286);
-  --text:      oklch(22% 0.008 286);
-  --muted:     oklch(53% 0.014 286);
-  --faint:     oklch(69% 0.012 286);
-  --border:    oklch(92% 0.004 286);
-  --hairline:  oklch(94% 0.003 286);
+  --surface-2: oklch(97.5% 0.004 264);
+  --text:      oklch(18% 0.014 264);
+  --muted:     oklch(50% 0.02 264);
+  --faint:     oklch(66% 0.016 264);
+  --border:    oklch(91% 0.006 264);
+  --hairline:  oklch(93.5% 0.005 264);
   --hover:     var(--surface-2);
 
-  --accent:      oklch(54% 0.184 278);
-  --accent-ink:  oklch(41% 0.16 278);
-  --accent-soft: oklch(95% 0.017 286);
-  --accent-contrast: oklch(99% 0.005 278);
+  --accent:      oklch(52% 0.19 267);
+  --accent-ink:  oklch(39% 0.165 267);
+  --accent-soft: oklch(94% 0.024 267);
+  --accent-contrast: oklch(99% 0.006 267);
 
-  --good:      oklch(56% 0.137 152);
-  --good-ink:  oklch(40% 0.12 152);
-  --good-soft: oklch(96% 0.02 160);
-  --warn:        oklch(62% 0.129 73);
-  --warn-ink:    oklch(46% 0.11 73);
-  --warn-soft:   oklch(96% 0.027 84);
-  --danger:      oklch(55% 0.172 25);
-  --danger-ink:  oklch(42% 0.15 25);
-  --danger-soft: oklch(95% 0.019 18);
+  --good:      oklch(55% 0.145 152);
+  --good-ink:  oklch(39% 0.125 152);
+  --good-soft: oklch(95.5% 0.024 160);
+  --warn:        oklch(61% 0.14 73);
+  --warn-ink:    oklch(45% 0.12 73);
+  --warn-soft:   oklch(95.5% 0.03 84);
+  --danger:      oklch(54% 0.185 25);
+  --danger-ink:  oklch(41% 0.16 25);
+  --danger-soft: oklch(94.5% 0.022 18);
 
-  /* Pinned dark rail — the theme's signature, from the #18181c ramp.
+  /* Pinned dark rail — the theme's signature, cool blue-violet near-black.
      Not redeclared in the dark blocks below on purpose. */
-  --sidebar-bg:          oklch(21% 0.008 286);
-  --sidebar-text:        oklch(84% 0.008 286);
-  --sidebar-muted:       oklch(66% 0.014 286);
-  --sidebar-border:      oklch(28% 0.011 286);
-  --sidebar-active-bg:   oklch(27% 0.015 286);
-  --sidebar-active-text: oklch(97% 0.003 286);
+  --sidebar-bg:          oklch(18% 0.014 264);
+  --sidebar-text:        oklch(85% 0.01 264);
+  --sidebar-muted:       oklch(64% 0.018 264);
+  --sidebar-border:      oklch(26% 0.016 264);
+  --sidebar-active-bg:   oklch(25% 0.022 264);
+  --sidebar-active-text: oklch(98% 0.004 264);
 
-  --radius-lg: 8px;
-  --radius-md: 6px;
-  --radius-sm: 4px;
-  --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --radius-lg: 10px;
+  --radius-md: 7px;
+  --radius-sm: 5px;
+  --font-display: 'Space Grotesk Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-body: 'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
   --font-size-base: 13px;
-  --shadow-card: 0 1px 2px oklch(0% 0 0 / 0.06);
-  --shadow-pop: 0 2px 6px oklch(0% 0 0 / 0.12);
+  --shadow-card: 0 1px 1px oklch(0% 0 0 / 0.07);
+  --shadow-pop: 0 1px 4px oklch(0% 0 0 / 0.14);
 
-  --course-l: 50%;
-  --course-c: 0.06;
-  --course-ink-l: 38%;
-  --course-ink-c: 0.05;
-  --course-soft-l: 95%;
-  --course-soft-c: 0.02;
+  --course-l: 48%;
+  --course-c: 0.07;
+  --course-ink-l: 36%;
+  --course-ink-c: 0.06;
+  --course-soft-l: 94%;
+  --course-soft-c: 0.024;
 
-  --weight-med: 510;
-  --weight-semi: 550;
-  --weight-bold: 650;
-  --tracking-caps: 0.08em;
+  --weight-med: 520;
+  --weight-semi: 600;
+  --weight-bold: 700;
+  --tracking-caps: 0.06em;
 
   --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 28px;
+  --space-2: 7px;
+  --space-3: 10px;
+  --space-4: 14px;
+  --space-5: 18px;
+  --space-6: 24px;
 
-  --motion-fast: 120ms;
-  --motion-base: 180ms;
-  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --motion-fast: 90ms;
+  --motion-base: 140ms;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   --pop-w-sm: 180px;
   --pop-w-md: 300px;
@@ -83,73 +85,73 @@
    absent — they stay pinned to the light block's dark rail. */
 @media (prefers-color-scheme: dark) {
   [data-theme='focus']:not([data-scheme='light']) {
-    --bg:        oklch(19% 0.006 286);
-    --surface:   oklch(22% 0.008 286);
-    --surface-2: oklch(23% 0.008 286);
-    --text:      oklch(93% 0.003 286);
-    --muted:     oklch(68% 0.01 286);
-    --faint:     oklch(53% 0.012 286);
-    --border:    oklch(30% 0.009 286);
-    --hairline:  oklch(26% 0.008 286);
+    --bg:        oklch(16% 0.01 264);
+    --surface:   oklch(20% 0.013 264);
+    --surface-2: oklch(23% 0.015 264);
+    --text:      oklch(94% 0.004 264);
+    --muted:     oklch(69% 0.014 264);
+    --faint:     oklch(52% 0.016 264);
+    --border:    oklch(29% 0.014 264);
+    --hairline:  oklch(25% 0.012 264);
     --hover:     var(--surface-2);
 
-    --accent:      oklch(61% 0.161 281);
-    --accent-ink:  oklch(74% 0.13 281);
-    --accent-soft: oklch(27% 0.058 282);
-    --accent-contrast: oklch(18% 0.02 281);
+    --accent:      oklch(64% 0.155 268);
+    --accent-ink:  oklch(76% 0.125 268);
+    --accent-soft: oklch(28% 0.055 267);
+    --accent-contrast: oklch(15% 0.02 267);
 
-    --good:      oklch(72% 0.154 154);
-    --good-ink:  oklch(82% 0.12 154);
-    --good-soft: oklch(26% 0.037 160);
-    --warn:        oklch(75% 0.13 80);
-    --warn-ink:    oklch(85% 0.1 80);
-    --warn-soft:   oklch(29% 0.041 87);
-    --danger:      oklch(67% 0.154 20);
-    --danger-ink:  oklch(80% 0.11 20);
-    --danger-soft: oklch(25% 0.04 15);
+    --good:      oklch(70% 0.15 154);
+    --good-ink:  oklch(80% 0.12 154);
+    --good-soft: oklch(25% 0.04 160);
+    --warn:        oklch(74% 0.13 80);
+    --warn-ink:    oklch(84% 0.1 80);
+    --warn-soft:   oklch(28% 0.045 87);
+    --danger:      oklch(66% 0.16 20);
+    --danger-ink:  oklch(79% 0.115 20);
+    --danger-soft: oklch(24% 0.042 15);
 
-    --shadow-card: 0 1px 2px oklch(0% 0 0 / 0.35);
-    --shadow-pop: 0 2px 6px oklch(0% 0 0 / 0.45);
+    --shadow-card: 0 1px 1px oklch(0% 0 0 / 0.4);
+    --shadow-pop: 0 1px 5px oklch(0% 0 0 / 0.5);
 
-    --course-l: 68%;
-    --course-ink-l: 76%;
-    --course-soft-l: 28%;
-    --course-soft-c: 0.04;
+    --course-l: 66%;
+    --course-ink-l: 74%;
+    --course-soft-l: 26%;
+    --course-soft-c: 0.045;
   }
 }
 
 /* KEEP IN SYNC with the media block above. */
 [data-theme='focus'][data-scheme='dark'] {
-  --bg:        oklch(19% 0.006 286);
-  --surface:   oklch(22% 0.008 286);
-  --surface-2: oklch(23% 0.008 286);
-  --text:      oklch(93% 0.003 286);
-  --muted:     oklch(68% 0.01 286);
-  --faint:     oklch(53% 0.012 286);
-  --border:    oklch(30% 0.009 286);
-  --hairline:  oklch(26% 0.008 286);
+  --bg:        oklch(16% 0.01 264);
+  --surface:   oklch(20% 0.013 264);
+  --surface-2: oklch(23% 0.015 264);
+  --text:      oklch(94% 0.004 264);
+  --muted:     oklch(69% 0.014 264);
+  --faint:     oklch(52% 0.016 264);
+  --border:    oklch(29% 0.014 264);
+  --hairline:  oklch(25% 0.012 264);
   --hover:     var(--surface-2);
 
-  --accent:      oklch(61% 0.161 281);
-  --accent-ink:  oklch(74% 0.13 281);
-  --accent-soft: oklch(27% 0.058 282);
-  --accent-contrast: oklch(18% 0.02 281);
+  --accent:      oklch(64% 0.155 268);
+  --accent-ink:  oklch(76% 0.125 268);
+  --accent-soft: oklch(28% 0.055 267);
+  --accent-contrast: oklch(15% 0.02 267);
 
-  --good:      oklch(72% 0.154 154);
-  --good-ink:  oklch(82% 0.12 154);
-  --good-soft: oklch(26% 0.037 160);
-  --warn:        oklch(75% 0.13 80);
-  --warn-ink:    oklch(85% 0.1 80);
-  --warn-soft:   oklch(29% 0.041 87);
-  --danger:      oklch(67% 0.154 20);
-  --danger-ink:  oklch(80% 0.11 20);
-  --danger-soft: oklch(25% 0.04 15);
+  --good:      oklch(70% 0.15 154);
+  --good-ink:  oklch(80% 0.12 154);
+  --good-soft: oklch(25% 0.04 160);
+  --warn:        oklch(74% 0.13 80);
+  --warn-ink:    oklch(84% 0.1 80);
+  --warn-soft:   oklch(28% 0.045 87);
+  --danger:      oklch(66% 0.16 20);
+  --danger-ink:  oklch(79% 0.115 20);
+  --danger-soft: oklch(24% 0.042 15);
 
-  --shadow-card: 0 1px 2px oklch(0% 0 0 / 0.35);
-  --shadow-pop: 0 2px 6px oklch(0% 0 0 / 0.45);
+  --shadow-card: 0 1px 1px oklch(0% 0 0 / 0.4);
+  --shadow-pop: 0 1px 5px oklch(0% 0 0 / 0.5);
 
-  --course-l: 68%;
-  --course-ink-l: 76%;
-  --course-soft-l: 28%;
-  --course-soft-c: 0.04;
+  --course-l: 66%;
+  --course-ink-l: 74%;
+  --course-soft-l: 26%;
+  --course-soft-c: 0.045;
 }
