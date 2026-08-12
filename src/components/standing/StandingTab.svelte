@@ -13,6 +13,7 @@
   import MasteryCard from './MasteryCard.svelte';
   import DeadlinesCard from './DeadlinesCard.svelte';
   import AttendanceCard from './AttendanceCard.svelte';
+  import PracticeCard from './PracticeCard.svelte';
   import RecentActivityCard from './RecentActivityCard.svelte';
 
   interface Props {
@@ -28,6 +29,7 @@
     id: string;
     title: string;
     type: string;
+    kind: 'official' | 'practice';
     due_date: string | null;
     weight_pct: number | null;
     grade_received: number | null;
@@ -98,6 +100,11 @@
 
   loadAll();
 
+  let practiceRefreshToken = $state(0);
+  function bumpPracticeRefresh() {
+    practiceRefreshToken += 1;
+  }
+
   async function refetchGrade() {
     try {
       const res = await fetch(`/api/v1/grades/summary`);
@@ -124,13 +131,14 @@
 
   <div class="grid">
     <div class="main">
-      <AssessmentsCard {assessments} onGraded={refetchGrade} />
+      <AssessmentsCard {courseId} {assessments} onGraded={refetchGrade} onPracticeChange={bumpPracticeRefresh} />
       <DeadlinesCard {deadlines} />
       <MasteryCard {branches} />
     </div>
 
     <aside class="rail">
       <AttendanceCard {courseId} meetingDaysInitial={meetingDays} />
+      <PracticeCard {courseId} {courseSlug} refreshToken={practiceRefreshToken} />
       <RecentActivityCard {events} />
     </aside>
   </div>
