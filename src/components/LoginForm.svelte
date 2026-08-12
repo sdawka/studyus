@@ -65,7 +65,7 @@
   }
   button {
     background: var(--accent);
-    color: white;
+    color: var(--surface);
     border: none;
     border-radius: 8px;
     padding: 0.65rem;

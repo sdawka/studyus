@@ -180,8 +180,8 @@
     height: 15px;
     padding: 0 3px;
     border-radius: 999px;
-    background: var(--danger, #dc2626);
-    color: white;
+    background: var(--danger);
+    color: var(--surface);
     font-size: 9.5px;
     font-weight: 700;
     display: grid;

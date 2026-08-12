@@ -63,7 +63,7 @@
 
   .coming-soon-badge {
     background: var(--accent);
-    color: white;
+    color: var(--surface);
     padding: 0.25rem 0.75rem;
     border-radius: 12px;
     font-size: 0.75rem;
@@ -105,14 +105,14 @@
     border: 1px solid var(--border);
     border-radius: 6px;
     font-size: 0.9rem;
-    background: white;
+    background: var(--surface);
     color: var(--text);
     font-family: inherit;
   }
 
   .cta-button {
     background: var(--accent);
-    color: white;
+    color: var(--surface);
     border: none;
     border-radius: 6px;
     padding: 0.6rem;

@@ -67,7 +67,7 @@ Error `code`s in use: `invalid_input` (400, includes Zod validation failures), `
 ### GET /courses
 **Query**: `include=mastery` (optional) — adds `mastery` (0-100, rollup average of the course's KC mastery caches) and `status` (`not-started|learning|review|mastered`) to each course. Without it, both fields are `null`.
 
-**Response** (200): array of course objects — all `courses` table columns in snake_case, plus `mastery`/`status`.
+**Response** (200): array of course objects — all `courses` table columns in snake_case, plus `mastery`/`status`. **Archived courses are excluded** by default (`listCourses` service defaults `includeArchived` to `false`); this route has no query param to opt back in — the one place that needs to see archived courses is the `/courses` page itself, which calls the service directly with `includeArchived: true` and renders them in a collapsed "Archived" section.
 
 ### GET /courses/:slug
 Course + branches + KCs (matches draft shape exactly: `{ ...course, branches: [{ ...branch, kcs: [...] }] }`).
@@ -319,9 +319,9 @@ All constants live in `MASTERY_CONSTANTS` in that file.
 
 ---
 
-## v1.1 Additions (draft)
+## v1.1 Additions (final)
 
-**Status**: DRAFT until P3 (retirement + cross-theme verification pass). Shapes below are frozen enough for P2 agents to build against, but not yet exercised end-to-end. P3 promotes this section to frozen and folds it into the body above.
+**Status**: FROZEN as of P3. Every shape below has been exercised end-to-end against the running dev server (login, settings PATCH round-trip, course create/archive, notifications sweep idempotency + mark-read, notes with course links, tutor conversation list) in addition to the automated test suite (115 passing).
 
 ### User settings
 
@@ -353,7 +353,8 @@ Frozen route shapes (P2A owns the implementation):
 
 - `POST /courses` — strict body `{ code, title, term?, credits?, instructor?, overview?, color_hue? }`. Server derives `slug = slugify(code)` with `-2`/`-3` collision suffixing, and auto-creates one "General" branch (`sort_order: 0`) in the same `db.batch`.
 - `PATCH /courses/:id` — same optional fields plus `archived`; **never** regenerates `slug`. Note the documented asymmetry: this lives in `[slug].ts` but treats the route param as an `id` for mutations (GET-by-slug, PATCH/DELETE-by-id).
-- `color_hue`: integer 0-360, OKLCH hue. Stored in the existing `courses.color` column (as text). Convention: components set `style="--course-h: N"` from it; `tokens.css` derives `--course`/`--course-ink`/`--course-soft` from theme-owned `--course-l/-c` knobs, so the same hue reads correctly in every theme × scheme. Courses seeded before this column was populated, or created without `color_hue`, fall back client-side to a stable hash of the slug (see `Sidebar.astro::hashHue`) — never `null`-render a course tint.
+- `color_hue`: integer 0-360, OKLCH hue. Stored in the existing `courses.color` column (as text). Convention: components set `style="--course-h: N"` from it; `tokens.css` derives `--course`/`--course-ink`/`--course-soft` from theme-owned `--course-l/-c` knobs, so the same hue reads correctly in every theme × scheme. Courses seeded before this column was populated, or created without `color_hue`, fall back client-side to a stable hash of the slug (`src/lib/courseHue.ts::hashHue` — the single canonical implementation; all consumers import it, no inline copies) — never `null`-render a course tint.
+- `archived`: `listCourses(db, userId, opts)` defaults `includeArchived` to `false`, so an archived course drops out of the sidebar, dashboard, and every course picker (feed/notes/tasks/planner) automatically. The `/courses` index page is the one exception — it calls with `includeArchived: true` and renders archived courses in a collapsed `<details>` section below the active ones.
 
 ### Tutor conversations list
 

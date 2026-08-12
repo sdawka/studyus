@@ -122,7 +122,7 @@
 
   .btn-primary {
     background: var(--accent);
-    color: white;
+    color: var(--surface);
     border: none;
     border-radius: 8px;
     padding: 0.65rem 1rem;
@@ -189,7 +189,7 @@
 
   .note-card:hover {
     border-color: var(--accent);
-    box-shadow: 0 4px 8px rgba(63, 111, 216, 0.1);
+    box-shadow: 0 4px 8px color-mix(in oklch, var(--accent) 10%, transparent);
   }
 
   .note-header {

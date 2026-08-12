@@ -147,7 +147,7 @@
   .grade-input { width: 4.5rem; padding: 0.3rem 0.4rem; border: 1px solid var(--border); border-radius: 6px; }
   button {
     background: var(--accent);
-    color: white;
+    color: var(--surface);
     border: none;
     border-radius: 6px;
     padding: 0.35rem 0.7rem;

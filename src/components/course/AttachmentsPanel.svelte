@@ -144,7 +144,7 @@
     padding: 0.2rem 0.55rem;
     font-size: 0.78rem;
     cursor: pointer;
-    color: #b91c1c;
+    color: var(--danger);
   }
   .dropzone {
     border: 1.5px dashed var(--border);
@@ -154,7 +154,7 @@
     color: var(--muted);
     font-size: 0.9rem;
   }
-  .dropzone.drag { border-color: var(--accent); background: #f5f8ff; }
+  .dropzone.drag { border-color: var(--accent); background: var(--accent-soft); }
   .file-label { color: var(--accent); cursor: pointer; text-decoration: underline; }
-  .error { color: #b91c1c; font-size: 0.85rem; margin: 0; }
+  .error { color: var(--danger); font-size: 0.85rem; margin: 0; }
 </style>

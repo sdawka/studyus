@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { hueFor } from '../dashboard/courseHue';
+  import { hueFor } from '../../lib/courseHue';
 
   interface CalendarItem {
     id: string;

@@ -41,8 +41,14 @@ function shapeCourse(row: typeof courses.$inferSelect) {
   return { ...rest, colorHue: parsed !== null && Number.isFinite(parsed) ? parsed : null };
 }
 
-export async function listCourses(db: Db, userId: string, opts: { includeMastery?: boolean } = {}) {
-  const rows = await db.select().from(courses).where(eq(courses.userId, userId));
+export async function listCourses(
+  db: Db,
+  userId: string,
+  opts: { includeMastery?: boolean; includeArchived?: boolean } = {},
+) {
+  const rows = (await db.select().from(courses).where(eq(courses.userId, userId))).filter(
+    (c) => opts.includeArchived || !c.archived,
+  );
   if (!opts.includeMastery) return rows.map((c) => ({ ...c, mastery: null, status: null }));
 
   const allKcs = await db.select({ courseId: kcs.courseId, mastery: kcs.mastery, status: kcs.status }).from(kcs);

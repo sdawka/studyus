@@ -234,7 +234,7 @@
   }
 
   .add-task-form {
-    background: white;
+    background: var(--surface);
     padding: 1.5rem;
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -268,14 +268,14 @@
   .task-date-input:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(63, 111, 216, 0.1);
+    box-shadow: 0 0 0 3px var(--accent-soft);
   }
 
   .course-selector-label {
     display: block;
     font-size: 0.9rem;
     margin-bottom: 0.5rem;
-    color: #374151;
+    color: var(--text);
     font-weight: 500;
   }
 
@@ -305,7 +305,7 @@
 
   .btn-primary {
     background: var(--accent);
-    color: white;
+    color: var(--surface);
     border: none;
     border-radius: 6px;
     padding: 0.65rem 1rem;
@@ -315,7 +315,7 @@
   }
 
   .btn-primary:hover:not(:disabled) {
-    background: #3460c5;
+    filter: brightness(0.92);
   }
 
   .btn-primary:disabled {
@@ -324,11 +324,11 @@
   }
 
   .error-message {
-    color: #991b1b;
+    color: var(--danger-ink);
     font-size: 0.9rem;
     margin-top: 0.75rem;
     padding: 0.75rem 1rem;
-    background: #fee2e2;
+    background: var(--danger-soft);
     border-radius: 6px;
   }
 
@@ -353,22 +353,22 @@
   }
 
   .section-title.overdue {
-    border-bottom-color: #dc2626;
-    color: #991b1b;
+    border-bottom-color: var(--danger);
+    color: var(--danger-ink);
   }
 
   .section-title.today {
-    border-bottom-color: #059669;
-    color: #065f46;
+    border-bottom-color: var(--good);
+    color: var(--good-ink);
   }
 
   .section-title.upcoming {
-    border-bottom-color: #3b82f6;
-    color: #1e40af;
+    border-bottom-color: var(--accent);
+    color: var(--accent-ink);
   }
 
   .section-title.done {
-    border-bottom-color: #9ca3af;
+    border-bottom-color: var(--faint);
     color: var(--muted);
   }
 

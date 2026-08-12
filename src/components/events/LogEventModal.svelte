@@ -288,14 +288,14 @@
   .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: color-mix(in oklch, var(--text) 40%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 100;
   }
   .modal {
-    background: white;
+    background: var(--surface);
     border-radius: 12px;
     padding: 1.5rem;
     width: 420px;
@@ -316,17 +316,17 @@
   }
   .type-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .type-btn {
-    background: var(--hover-bg);
+    background: var(--hover);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.45rem 0.7rem;
     font-size: 0.85rem;
     cursor: pointer;
   }
-  .type-btn:hover { background: #e5e9f2; }
+  .type-btn:hover { background: var(--hover); border-color: var(--accent); }
   form { display: flex; flex-direction: column; gap: 0.85rem; }
   .selected-type { display: flex; align-items: center; gap: 0.7rem; margin: 0; font-size: 0.95rem; }
-  label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.88rem; color: #374151; }
+  label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.88rem; color: var(--text); }
   input, select, textarea {
     padding: 0.5rem 0.65rem;
     border: 1px solid var(--border);
@@ -337,7 +337,7 @@
   .link { background: none; border: none; color: var(--accent); cursor: pointer; padding: 0; font-size: 0.85rem; }
   .primary {
     background: var(--accent);
-    color: white;
+    color: var(--surface);
     border: none;
     border-radius: 8px;
     padding: 0.6rem;
@@ -346,11 +346,11 @@
   }
   .primary:disabled { opacity: 0.6; cursor: default; }
   .confirmation {
-    background: #eef4ff;
-    color: #2f4d99;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
     border-radius: 8px;
     padding: 0.75rem 0.9rem;
     font-size: 0.9rem;
   }
-  .error { color: #b91c1c; font-size: 0.85rem; margin: 0; }
+  .error { color: var(--danger); font-size: 0.85rem; margin: 0; }
 </style>

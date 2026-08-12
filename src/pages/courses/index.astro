@@ -10,9 +10,11 @@ import MasteryBar from '../../components/course/MasteryBar.astro';
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
 
-const courses = await listCourses(db, userId, { includeMastery: true });
+const allCourses = await listCourses(db, userId, { includeMastery: true, includeArchived: true });
+const courses = allCourses.filter((c) => !c.archived);
+const archivedCourses = allCourses.filter((c) => c.archived);
 
-const courseIds = courses.map((c) => c.id);
+const courseIds = allCourses.map((c) => c.id);
 const allKcs = courseIds.length
   ? await db.select({ courseId: kcs.courseId, status: kcs.status }).from(kcs).where(inArray(kcs.courseId, courseIds))
   : [];
@@ -76,6 +78,26 @@ function statusSummary(courseId: string): string {
     </section>
   ))}
   {courses.length === 0 && <p>No courses yet.</p>}
+
+  {archivedCourses.length > 0 && (
+    <details class="archived-group">
+      <summary>Archived <span class="count">{archivedCourses.length}</span></summary>
+      <div class="grid">
+        {archivedCourses.map((course) => (
+          <a class="card archived" href={`/courses/${course.slug}`}>
+            <div class="card-head">
+              <span class="code">{course.code}</span>
+              {course.credits != null && <span class="credits">{course.credits} cr</span>}
+            </div>
+            <h3 class="title">{course.title}</h3>
+            {course.instructor && <p class="instructor">{course.instructor}</p>}
+            <MasteryBar mastery={course.mastery} status={course.status} />
+            <p class="kc-summary">{statusSummary(course.id)}</p>
+          </a>
+        ))}
+      </div>
+    </details>
+  )}
 </AppShell>
 
 <style>
@@ -94,7 +116,7 @@ function statusSummary(courseId: string): string {
   }
   .card {
     display: block;
-    background: var(--panel, #fff);
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.1rem 1.2rem;
@@ -103,6 +125,18 @@ function statusSummary(courseId: string): string {
     transition: border-color 0.15s ease;
   }
   .card:hover { border-color: var(--accent); }
+  .card.archived { opacity: 0.72; }
+  .archived-group { margin-top: 1rem; }
+  .archived-group summary {
+    cursor: pointer;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin: 0 0 0.9rem 0;
+  }
+  .archived-group .count { font-weight: 400; color: var(--muted); }
+  .archived-group .grid { margin-top: 0.9rem; }
   .card-head {
     display: flex;
     justify-content: space-between;

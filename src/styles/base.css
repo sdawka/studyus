@@ -167,6 +167,15 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
   border-radius: var(--radius-sm);
 }
 
+/* A small italic aside for editorializing facts — never a banner/toast. */
+.aside-muted {
+  font-style: italic;
+  font-size: 0.82rem;
+  color: var(--muted);
+  padding-left: 0.6rem;
+  border-left: 2px dashed var(--border);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }

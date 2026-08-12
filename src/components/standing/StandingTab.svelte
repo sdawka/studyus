@@ -339,7 +339,7 @@
 
   button {
     background: var(--accent);
-    color: white;
+    color: var(--surface);
     border: none;
     border-radius: 6px;
     padding: 0.4rem 0.75rem;

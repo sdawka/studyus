@@ -1,10 +1,25 @@
 # studyus Roadmap: Deferred Features
 
-**M0–M5 Status (2026-08-11)**: Core v1 complete. Frozen API contract (docs/api.md), mastery fold, core UI, AI tutor, quick_quiz flows shipped. Features below remain deferred post-v1.
+**M0–M5 Status (2026-08-11)**: Core v1 complete. Frozen API contract (docs/api.md), mastery fold, core UI, AI tutor, quick_quiz flows shipped.
+
+**v1.1 Status (2026-08-12)**: Rename (studybuddy → studyus, incl. session cookie name) + full UI overhaul shipped. See "v1.1 Shipped Summary" below. Features under "Deferred Features (Post-v1)" remain deferred; a few new deferrals were added by v1.1's own scoping decisions (called out inline).
 
 Each deferred feature is prioritized and scoped to avoid scope creep during post-v1 development.
 
 ---
+
+## v1.1 Shipped Summary
+
+- **Rename**: studybuddy → studyus across infra (`wrangler.jsonc`, `package.json`, seed script, session cookie name `studyus_session`), UI strings, and ~17 docs files. `rg -i studybuddy` clean outside `courses/` + `prototype/` (frozen reference dirs).
+- **Design system**: 3 themes (compass default, focus, campus) × light/dark/system scheme, OKLCH tokens in `src/styles/{tokens,base}.css` + `themes/{compass,focus,campus}.css`. No-flash theming via `ThemeScript.astro` + SSR-stamped `<html>` attributes from `users.settings`. The prior "notebook" theme, its `COMPAT` alias block, and `notebook.css` were retired in P3 — zero remaining references to the old `--panel`/`--ink`/`--paper`/`--rule`/`--serif`-family variable names or `.sheet`/`.margin-note`/`.status-good`/`.status-warn` classes anywhere in `src/`.
+- **Shell**: collapsible Sidebar (Home, current-term courses w/ hue tints, Add course, past-terms) + sticky Header (Record Event pill, scratchpad popup, todo dropdown, notifications bell, avatar menu) replacing the old two-group sidebar nav.
+- **Dashboard**: campus-style composition (WeekStrip, GradeSnapshot, CourseMiniGrid, RecordEventCard, DueList) replacing the old calendar-strip layout.
+- **Planner**: `/planner` full-viewport modal over AppShell (PlannerView/CalendarGrid/AgendaList); `/calendar` now a 302 redirect there.
+- **Course subroutes**: `/courses/[slug]/{index,concepts,notes,resources,practice,play}` replacing the single tabbed course page — Practice (drills: StudyFlow + QuickQuiz) and Play (exploratory: interactive models + self-explain) are new, distinct from each other per the user's "drills vs. exploratory" split.
+- **Notifications**: real `notifications` D1 table with read state, idempotent sweep (assessment-due, task-overdue, KC-review, session-unfinished, grade-recorded), 30-day/100-row retention.
+- **Add course**: `POST /courses` (slug collision suffixing, auto General branch) + `PATCH /courses/:id` (incl. `archived`, `color_hue`); archived courses now excluded by default from every list/picker (`listCourses` service, `includeArchived` opt-in), with a collapsed "Archived" section on `/courses` as the one exception.
+- **Per-course color**: single canonical `hueFor`/`hashHue` in `src/lib/courseHue.ts` (previously duplicated inline across Sidebar.astro, CourseLayout.astro, and two planner components).
+- **Tests**: 115 passing (up from v1's 94) — notifications sweep/dedupe/retention, course create/archive/slug-collision, settings merge, tutor list filter, archived-filter default.
 
 ## M0–M5 Completion Summary
 
@@ -29,6 +44,16 @@ Each deferred feature is prioritized and scoped to avoid scope creep during post
 ---
 
 ## Deferred Features (Post-v1)
+
+### v1.1-Specific Deferrals
+
+Called out separately because they were explicitly scoped out during v1.1 planning (`docs/api.md`'s `tasks.source` and courses sections note the seams left for these):
+
+- **System-generated tasks**: the `tasks.source` column (`user | system`) is additive and ready, but nothing produces `system`-sourced tasks yet — e.g. auto-creating a task from an overdue assessment or a notification. Natural pairing with the notifications sweep once it exists.
+- **Branch/KC CRUD**: `POST /courses` auto-creates one "General" branch; there's still no way to add/edit/delete branches or KCs after course creation outside the seed script. Needed before "add a course" is a complete self-serve flow.
+- **Deploy pipeline**: v1.1 was explicitly local-only per its build plan (no deploys during P0-P3); there's still no CI/CD or `wrangler deploy` step wired to this rename/shell — see "CI/CD pipeline definition" under Operational TODOs below, now also blocking a production rollout of the new shell.
+
+Still-deferred from v1 (unchanged by v1.1, see full detail further down): Flue agents + channels, global knowledge map, iPad client, multi-user signup, argon2 password hashing.
 
 ### Core Features
 

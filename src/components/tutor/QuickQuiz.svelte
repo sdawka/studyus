@@ -152,20 +152,20 @@
   .setup { display: flex; flex-direction: column; gap: 1rem; max-width: 320px; }
   .setup label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; }
   select { padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border); }
-  button { padding: 0.6rem 1rem; border-radius: 8px; border: none; cursor: pointer; background: var(--accent); color: white; font-size: 0.95rem; }
+  button { padding: 0.6rem 1rem; border-radius: 8px; border: none; cursor: pointer; background: var(--accent); color: var(--surface); font-size: 0.95rem; }
   button:disabled { opacity: 0.6; cursor: default; }
   .question { display: flex; flex-direction: column; gap: 1rem; }
   .progress { color: var(--muted); font-size: 0.85rem; margin: 0; }
   .options { display: flex; flex-direction: column; gap: 0.5rem; }
-  .option { background: var(--hover-bg); color: var(--text); text-align: left; }
-  .option.selected { background: var(--accent); color: white; }
+  .option { background: var(--hover); color: var(--text); text-align: left; }
+  .option.selected { background: var(--accent); color: var(--surface); }
   .next-btn { align-self: flex-start; }
   .score-screen { display: flex; flex-direction: column; gap: 1rem; }
   .result { border-left: 3px solid var(--border); padding-left: 0.75rem; }
-  .result.correct { border-color: #059669; }
-  .result.incorrect { border-color: #b91c1c; }
-  .explanation { color: #374151; font-size: 0.9rem; margin: 0.2rem 0 0 0; }
+  .result.correct { border-color: var(--good); }
+  .result.incorrect { border-color: var(--danger); }
+  .explanation { color: var(--text); font-size: 0.9rem; margin: 0.2rem 0 0 0; }
   .deltas h4 { margin: 0 0 0.4rem 0; font-size: 0.9rem; }
-  .error { color: #b91c1c; }
+  .error { color: var(--danger); }
   .muted { color: var(--muted); font-size: 0.9rem; }
 </style>

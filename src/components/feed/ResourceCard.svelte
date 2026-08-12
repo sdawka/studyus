@@ -95,7 +95,7 @@
 
   .resource-card:hover {
     border-color: var(--accent);
-    box-shadow: 0 2px 8px rgba(63, 111, 216, 0.1);
+    box-shadow: 0 2px 8px color-mix(in oklch, var(--accent) 10%, transparent);
   }
 
   .card-header {

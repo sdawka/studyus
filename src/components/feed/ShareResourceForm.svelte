@@ -171,12 +171,12 @@
   select:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(63, 111, 216, 0.1);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 10%, transparent);
   }
 
   button {
     background: var(--accent);
-    color: white;
+    color: var(--surface);
     border: none;
     border-radius: 6px;
     padding: 0.65rem 1rem;

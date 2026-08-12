@@ -63,7 +63,7 @@
   </div>
 
   {#if step === 1}
-    <div class="sheet panel">
+    <div class="card panel">
       <h2>What studyus is</h2>
       <p class="stepdesc">Two sides, one place to keep track of your semester.</p>
       <div class="two-col">
@@ -76,14 +76,14 @@
           <p>What you're actually learning and how well — course concepts, a study flow, an AI tutor, and a feed of readings.</p>
         </div>
       </div>
-      <div class="margin-note">Everything here is purely informational — no scores to game, no streaks to keep alive.</div>
+      <div class="aside-muted">Everything here is purely informational — no scores to game, no streaks to keep alive.</div>
       <div class="nav-row">
         <span></span>
         <button type="button" class="ink-btn" onclick={() => goTo(2)}>Continue</button>
       </div>
     </div>
   {:else if step === 2}
-    <div class="sheet panel">
+    <div class="card panel">
       <h2>How learning is modeled</h2>
       <p class="stepdesc">The short version of how mastery numbers get calculated.</p>
       <ol class="explain-list">
@@ -91,7 +91,7 @@
         <li><strong>Events.</strong> Anything that touches a concept gets logged as an event — a lecture attended, a graded quiz, a study session, a tutor chat.</li>
         <li><strong>Mastery.</strong> Each concept's mastery is calculated from its own event history — more successful, recent evidence pushes it up; going quiet lets it drift back down.</li>
       </ol>
-      <div class="margin-note">Nothing is guessed — every number traces back to something you or a course actually logged.</div>
+      <div class="aside-muted">Nothing is guessed — every number traces back to something you or a course actually logged.</div>
       <div class="coming-soon">
         <span class="cs-dot"></span>
         <div>
@@ -106,7 +106,7 @@
       </div>
     </div>
   {:else if step === 3}
-    <div class="sheet panel">
+    <div class="card panel">
       <h2>Your courses <span class="num">{courses.length} imported</span></h2>
       <p class="stepdesc">These came in from your course records. Adding or removing courses yourself is a later iteration.</p>
       {#if courses.length === 0}
@@ -129,7 +129,7 @@
       </div>
     </div>
   {:else if step === 4}
-    <div class="sheet panel">
+    <div class="card panel">
       <h2>You, this term</h2>
       <p class="stepdesc">A name and a term label — both optional, both editable later from your profile.</p>
       <label class="field">
@@ -193,7 +193,7 @@
   .explain-list { margin: 0 0 1rem; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.92rem; }
   .explain-list li::marker { color: var(--muted); }
 
-  .margin-note { margin: 1rem 0; }
+  .aside-muted { margin: 1rem 0; }
 
   .coming-soon {
     display: flex;
@@ -252,7 +252,7 @@
     font-family: var(--font-display);
     font-size: 0.9rem;
     font-weight: 600;
-    color: white;
+    color: var(--surface);
     background: var(--accent);
     border: none;
     border-radius: 3px;

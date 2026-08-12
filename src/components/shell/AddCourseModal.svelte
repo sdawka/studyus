@@ -176,7 +176,7 @@
   .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: color-mix(in oklch, var(--text) 40%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -246,7 +246,7 @@
   }
   .primary {
     background: var(--accent);
-    color: var(--accent-ink, white);
+    color: var(--surface);
     border: none;
     border-radius: var(--radius-sm, 8px);
     padding: 0.6rem;
@@ -254,5 +254,5 @@
     cursor: pointer;
   }
   .primary:disabled { opacity: 0.6; cursor: default; }
-  .error { color: var(--danger, #b91c1c); font-size: 0.85rem; margin: 0; }
+  .error { color: var(--danger); font-size: 0.85rem; margin: 0; }
 </style>

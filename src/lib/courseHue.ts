@@ -1,8 +1,6 @@
 // Shared per-course hue: courses.color stores an OKLCH hue int 0-360.
 // Courses created before hue assignment (or missing it) fall back to a
 // stable hash of the slug so the tint is at least consistent across renders.
-// Mirrors the fallback already used in Sidebar.astro — kept here too so
-// dashboard/planner components don't need to reach into shell internals.
 export function hashHue(slug: string): number {
   let h = 0;
   for (let i = 0; i < slug.length; i++) h = (h * 31 + slug.charCodeAt(i)) >>> 0;

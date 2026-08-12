@@ -1,8 +1,9 @@
 ---
 import { env } from 'cloudflare:workers';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { getDb } from '../../db/client';
 import { courses } from '../../db/schema';
+import { hueFor } from '../../lib/courseHue';
 import Icon from './Icon.astro';
 
 const userId = Astro.locals.user!.id;
@@ -13,19 +14,7 @@ const db = getDb(env.DB);
 const allCourses = await db
   .select({ slug: courses.slug, code: courses.code, title: courses.title, term: courses.term, color: courses.color })
   .from(courses)
-  .where(eq(courses.userId, userId));
-
-// Fallback hue for courses that predate color assignment: a stable hash of
-// the slug, so the tint is at least consistent across renders.
-function hashHue(slug: string): number {
-  let h = 0;
-  for (let i = 0; i < slug.length; i++) h = (h * 31 + slug.charCodeAt(i)) >>> 0;
-  return h % 360;
-}
-function hueFor(c: { slug: string; color: string | null }): number {
-  const parsed = c.color ? Number(c.color) : NaN;
-  return Number.isFinite(parsed) ? parsed : hashHue(c.slug);
-}
+  .where(and(eq(courses.userId, userId), eq(courses.archived, false)));
 
 const currentCourses = allCourses.filter((c) => !currentTerm || c.term === currentTerm);
 const pastCourses = allCourses.filter((c) => currentTerm && c.term !== currentTerm);

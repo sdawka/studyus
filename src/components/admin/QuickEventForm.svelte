@@ -83,7 +83,7 @@
     flex-direction: column;
     gap: 0.3rem;
     font-size: 0.85rem;
-    color: #374151;
+    color: var(--muted);
   }
   select {
     padding: 0.5rem 0.6rem;
@@ -94,7 +94,7 @@
   }
   button {
     background: var(--accent);
-    color: white;
+    color: var(--surface);
     border: none;
     border-radius: 8px;
     padding: 0.55rem 1rem;
@@ -102,6 +102,6 @@
     cursor: pointer;
   }
   button:disabled { opacity: 0.6; cursor: default; }
-  .ok { color: #15803d; font-size: 0.85rem; }
-  .error { color: #b91c1c; font-size: 0.85rem; }
+  .ok { color: var(--good); font-size: 0.85rem; }
+  .error { color: var(--danger); font-size: 0.85rem; }
 </style>

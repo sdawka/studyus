@@ -2,8 +2,7 @@
    Structural tokens — derivations that don't vary by theme.
    Theme files (themes/compass.css, themes/focus.css, themes/campus.css)
    own the actual color/radius/font *values*; this file only wires up
-   values that are computed FROM theme-owned knobs (course color) plus
-   the temporary legacy-name COMPAT layer.
+   values that are computed FROM theme-owned knobs (course color).
    ============================================================ */
 
 :root {
@@ -15,39 +14,3 @@
   --course-ink: oklch(var(--course-ink-l) var(--course-ink-c) var(--course-h));
   --course-soft: oklch(var(--course-soft-l) var(--course-soft-c) var(--course-h));
 }
-
-/* COMPAT — delete in P3 (with notebook.css). Lets ~25 existing components
-   that read notebook.css's legacy variable names re-theme for free. */
-:root {
-  --panel: var(--surface);
-  --hover-bg: var(--hover);
-  --ink: var(--accent);
-  --ink-soft: var(--hover);
-  --ink-dim: var(--muted);
-  --ink-text: var(--text);
-  --paper: var(--surface);
-  --paper-deep: var(--bg);
-  --paper-muted: var(--muted);
-  --rule: var(--border);
-  --rule-strong: var(--border);
-  --margin-ink: var(--warn);
-  --serif: var(--font-body);
-}
-
-/* COMPAT shims — minimal plain card-ish styles so pages built for the old
-   notebook.css (profile.astro etc.) don't shatter under the new tokens. */
-.sheet {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm, 6px);
-  padding: 1.25rem 1.5rem;
-}
-.margin-note {
-  font-style: italic;
-  font-size: 0.82rem;
-  color: var(--accent);
-  padding-left: 0.6rem;
-  border-left: 2px dashed var(--warn);
-}
-.status-good { color: var(--good); }
-.status-warn { color: var(--warn); }

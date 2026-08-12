@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
 import { branches, courses, users } from '../src/db/schema';
-import { createCourse, updateCourse } from '../src/lib/services/courses';
+import { createCourse, listCourses, updateCourse } from '../src/lib/services/courses';
 import { eq } from 'drizzle-orm';
 
 const db = getDb(env.DB);
@@ -67,5 +67,27 @@ describe('courses.updateCourse', () => {
     expect(updated.archived).toBe(true);
     expect(updated.colorHue).toBe(65);
     expect(updated.slug).toBe('patch-101');
+  });
+});
+
+describe('courses.listCourses archived filter', () => {
+  it('excludes archived courses by default', async () => {
+    const active = await createCourse(db, userId, { code: 'ARCH 100', title: 'Active' });
+    const archived = await createCourse(db, userId, { code: 'ARCH 200', title: 'Archived' });
+    await updateCourse(db, userId, archived.id, { archived: true });
+
+    const rows = await listCourses(db, userId);
+    expect(rows.map((c) => c.id)).toContain(active.id);
+    expect(rows.map((c) => c.id)).not.toContain(archived.id);
+  });
+
+  it('includes archived courses when includeArchived is set', async () => {
+    const active = await createCourse(db, userId, { code: 'ARCH 300', title: 'Active' });
+    const archived = await createCourse(db, userId, { code: 'ARCH 400', title: 'Archived' });
+    await updateCourse(db, userId, archived.id, { archived: true });
+
+    const rows = await listCourses(db, userId, { includeArchived: true });
+    expect(rows.map((c) => c.id)).toContain(active.id);
+    expect(rows.map((c) => c.id)).toContain(archived.id);
   });
 });

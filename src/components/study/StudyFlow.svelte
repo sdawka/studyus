@@ -417,7 +417,7 @@
 <style>
   .study-flow { max-width: 640px; }
   .card {
-    background: white;
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.5rem;
@@ -433,9 +433,9 @@
     font-size: 0.92rem;
     cursor: pointer;
     border: 1px solid var(--border);
-    background: var(--hover-bg);
+    background: var(--hover);
   }
-  .primary { background: var(--accent); color: white; border: none; }
+  .primary { background: var(--accent); color: var(--surface); border: none; }
   .primary:disabled { opacity: 0.6; cursor: default; }
   .ghost { background: none; }
   .link { background: none; border: none; color: var(--accent); cursor: pointer; padding: 0; text-align: left; font-size: 0.88rem; }
@@ -451,7 +451,7 @@
     flex-direction: column;
     gap: 0.3rem;
   }
-  .course-card:hover { background: var(--hover-bg); }
+  .course-card:hover { background: var(--hover); }
   .code { font-weight: 600; font-size: 0.85rem; }
   .title { font-size: 0.82rem; color: var(--muted); }
   .mastery-bar { height: 5px; background: var(--border); border-radius: 999px; overflow: hidden; }
@@ -466,9 +466,9 @@
   .kc-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.25rem 0; }
   .kc-check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
   .kc-row select { padding: 0.3rem 0.5rem; border-radius: 6px; border: 1px solid var(--border); font-size: 0.8rem; }
-  .reflection { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.88rem; color: #374151; }
+  .reflection { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.88rem; color: var(--text); }
   .reflection textarea { padding: 0.5rem; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.9rem; }
-  .deltas { margin: 0; padding-left: 1.1rem; font-size: 0.88rem; color: #374151; }
+  .deltas { margin: 0; padding-left: 1.1rem; font-size: 0.88rem; color: var(--text); }
   .muted { color: var(--muted); font-size: 0.9rem; }
-  .error { color: #b91c1c; font-size: 0.9rem; }
+  .error { color: var(--danger); font-size: 0.9rem; }
 </style>

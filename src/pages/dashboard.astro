@@ -5,7 +5,7 @@ import GradeSnapshot from '../components/dashboard/GradeSnapshot.astro';
 import CourseMiniGrid from '../components/dashboard/CourseMiniGrid.astro';
 import DueList from '../components/dashboard/DueList.astro';
 import RecordEventCard from '../components/dashboard/RecordEventCard.astro';
-import { hueFor } from '../components/dashboard/courseHue';
+import { hueFor } from '../lib/courseHue';
 import { env } from 'cloudflare:workers';
 import { inArray } from 'drizzle-orm';
 import { getDb } from '../db/client';

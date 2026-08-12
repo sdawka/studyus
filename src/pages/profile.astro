@@ -36,7 +36,7 @@ const STATUS_LABELS: Record<string, string> = {
 <AppShell title="Profile">
   <h1>Profile</h1>
 
-  <section class="sheet summary-sheet">
+  <section class="card summary-sheet">
     <h2>Overall standing</h2>
     <div class="standing-row">
       <div class="standing-num">
@@ -54,11 +54,11 @@ const STATUS_LABELS: Record<string, string> = {
         <div class="lbl">day streak, longest</div>
       </div>
     </div>
-    <div class="margin-note">Streaks count consecutive UTC days with at least one logged event — attendance, grades, study, and tutor sessions all count.</div>
+    <div class="aside-muted">Streaks count consecutive UTC days with at least one logged event — attendance, grades, study, and tutor sessions all count.</div>
   </section>
 
   <div class="cols">
-    <section class="sheet">
+    <section class="card">
       <h2>Mastery by course</h2>
       {profile.by_course.length === 0 ? (
         <p class="placeholder">No courses yet.</p>
@@ -74,7 +74,7 @@ const STATUS_LABELS: Record<string, string> = {
       )}
     </section>
 
-    <section class="sheet">
+    <section class="card">
       <h2>Concepts by status <span class="num">{totalKcs} total</span></h2>
       {totalKcs === 0 ? (
         <p class="placeholder">No concepts imported yet.</p>
@@ -94,12 +94,12 @@ const STATUS_LABELS: Record<string, string> = {
     </section>
   </div>
 
-  <section class="sheet">
+  <section class="card">
     <h2>Recent activity</h2>
     <EventTimeline client:load limit={20} />
   </section>
 
-  <section class="sheet knowledge-map-stub">
+  <section class="card knowledge-map-stub">
     <h2>Global knowledge map <span class="cs-tag">coming later</span></h2>
     <p class="stepdesc">
       A single map of every concept across every course, showing how they connect and where the gaps are — sketched
@@ -110,13 +110,13 @@ const STATUS_LABELS: Record<string, string> = {
         <span class="node" style={`left: ${8 + ((i * 37) % 84)}%; top: ${12 + ((i * 53) % 70)}%`}></span>
       ))}
     </div>
-    <div class="margin-note">No fake data here — this is a layout placeholder, not a preview of real connections.</div>
+    <div class="aside-muted">No fake data here — this is a layout placeholder, not a preview of real connections.</div>
   </section>
 </AppShell>
 
 <style>
-  section.sheet { margin-bottom: 1.75rem; }
-  .sheet h2 { font-size: 1.05rem; margin: 0 0 1rem; }
+  section.card { margin-bottom: 1.75rem; }
+  .card h2 { font-size: 1.05rem; margin: 0 0 1rem; }
   .num { color: var(--muted); font-weight: 400; font-size: 0.8rem; margin-left: 0.4rem; }
   .placeholder { color: var(--muted); font-size: 0.9rem; }
 
@@ -124,7 +124,7 @@ const STATUS_LABELS: Record<string, string> = {
   .standing-num .big { font-size: 2rem; font-weight: 600; color: var(--accent); line-height: 1; }
   .standing-num .lbl { font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-top: 0.25rem; }
   .divider { width: 1px; height: 2.6rem; background: var(--hairline); }
-  .margin-note { margin-top: 0.9rem; }
+  .aside-muted { margin-top: 0.9rem; }
 
   .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
   @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }

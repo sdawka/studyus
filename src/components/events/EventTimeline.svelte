@@ -258,7 +258,7 @@
   .edit-actions { display: flex; gap: 0.4rem; }
   .edit-actions button {
     background: var(--accent);
-    color: white;
+    color: var(--surface);
     border: none;
     border-radius: 6px;
     padding: 0.35rem 0.6rem;

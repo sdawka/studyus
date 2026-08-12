@@ -133,7 +133,7 @@
   .messages { display: flex; flex-direction: column; gap: 0.75rem; min-height: 200px; }
   .bubble { padding: 0.65rem 0.9rem; border-radius: 10px; max-width: 85%; white-space: pre-wrap; }
   .bubble p { margin: 0; }
-  .bubble.user { align-self: flex-end; background: var(--accent); color: white; }
+  .bubble.user { align-self: flex-end; background: var(--accent); color: var(--surface); }
   .bubble.assistant { align-self: flex-start; background: var(--hover); color: var(--text); }
   .empty { color: var(--muted); font-size: 0.9rem; }
   form { display: flex; gap: 0.5rem; }
@@ -145,7 +145,7 @@
     font-size: 1rem;
   }
   button { padding: 0.6rem 0.9rem; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9rem; }
-  button[type='submit'] { background: var(--accent); color: white; }
+  button[type='submit'] { background: var(--accent); color: var(--surface); }
   button:disabled { opacity: 0.6; cursor: default; }
   .end-btn { background: var(--border); color: var(--text); }
   .error { color: var(--danger); font-size: 0.85rem; }
