@@ -7,11 +7,11 @@
 // response body isn't considered fully sent until that stream closes, so
 // the write completes before the request is done even without an explicit
 // ExecutionContext/waitUntil wired up yet.
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import type { Db } from '../../../db/client';
-import { branches, courses, notes, noteLinks, tutorConversations, tutorMessages } from '../../../db/schema';
+import { branches, courses, kcs, notes, noteLinks, tutorConversations, tutorMessages } from '../../../db/schema';
 import type { KcType } from '../../schemas/kcs';
-import type { CreateConversationInput, EndConversationInput, TutorMode } from '../../schemas/tutor';
+import type { CreateConversationInput, EndConversationInput, ListConversationsQuery, TutorMode } from '../../schemas/tutor';
 import { createEvent, getKcEvents } from '../events';
 import { NotFoundError, requireOwnedKc } from '../util';
 import { buildSystemPrompt, modeForKcType, type TutorContext } from './prompts';
@@ -37,6 +37,31 @@ export async function createConversation(db: Db, userId: string, input: CreateCo
 
   const rows = await db.select().from(tutorConversations).where(eq(tutorConversations.id, id)).limit(1);
   return rows[0];
+}
+
+// Powers the course Play tab's "past explorations" list: newest-first
+// conversations for the caller, optionally scoped to a course (via the
+// conversation's kc) or a single kc, with kc_name joined in for display.
+export async function listConversations(db: Db, userId: string, query: ListConversationsQuery) {
+  const conditions = [eq(tutorConversations.userId, userId)];
+  if (query.kc) conditions.push(eq(tutorConversations.kcId, query.kc));
+  if (query.course) conditions.push(eq(kcs.courseId, query.course));
+
+  const rows = await db
+    .select({
+      id: tutorConversations.id,
+      kcId: tutorConversations.kcId,
+      kcName: kcs.name,
+      mode: tutorConversations.mode,
+      createdAt: tutorConversations.createdAt,
+    })
+    .from(tutorConversations)
+    .innerJoin(kcs, eq(kcs.id, tutorConversations.kcId))
+    .where(and(...conditions))
+    .orderBy(desc(tutorConversations.createdAt))
+    .limit(query.limit ?? 20);
+
+  return rows;
 }
 
 async function requireOwnedConversation(db: Db, userId: string, conversationId: string) {

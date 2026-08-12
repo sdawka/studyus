@@ -1,0 +1,67 @@
+---
+import CourseLayout from '../../../layouts/CourseLayout.astro';
+import { env } from 'cloudflare:workers';
+import { getDb } from '../../../db/client';
+import { getCourseBySlug, listCourses } from '../../../lib/services/courses';
+import { listSessions } from '../../../lib/services/sessions';
+import { NotFoundError, notFound } from '../../../lib/handleNotFound';
+import PracticePanel from '../../../components/course/PracticePanel.svelte';
+
+const db = getDb(env.DB);
+const userId = Astro.locals.user!.id;
+const slug = Astro.params.slug!;
+
+let course;
+try {
+  course = await getCourseBySlug(db, userId, slug);
+} catch (err) {
+  if (err instanceof NotFoundError) return notFound(Astro);
+  throw err;
+}
+
+const coursesWithMastery = await listCourses(db, userId, { includeMastery: true });
+const studyCourse = coursesWithMastery.find((c) => c.id === course.id) ?? {
+  id: course.id,
+  slug: course.slug,
+  code: course.code,
+  title: course.title,
+  mastery: null,
+  status: null,
+};
+
+// StudyFlow's resume banner only makes sense for a session tied to this
+// course — a general/other-course open session belongs on the general
+// /study door, not here.
+const sessions = await listSessions(db, userId, { course: course.id });
+const openSession = sessions
+  .filter((s) => !s.endedAt)
+  .sort((a, b) => b.startedAt - a.startedAt)[0] ?? null;
+
+const drillKcs = course.branches
+  .flatMap((b) => b.kcs)
+  .filter((kc) => ['fact', 'association', 'concept', 'rule'].includes(kc.kcType))
+  .map((kc) => ({ id: kc.id, name: kc.name, kcType: kc.kcType, mastery: kc.mastery, status: kc.status }));
+---
+<CourseLayout course={course} active="practice">
+  <PracticePanel
+    client:load
+    course={{
+      id: studyCourse.id,
+      slug: studyCourse.slug,
+      code: studyCourse.code,
+      title: studyCourse.title,
+      mastery: studyCourse.mastery,
+      status: studyCourse.status,
+    }}
+    courseSlug={course.slug}
+    drillKcs={drillKcs}
+    openSession={openSession && {
+      id: openSession.id,
+      courseId: openSession.courseId,
+      courseCode: course.code,
+      intendedEventType: openSession.intendedEventType,
+      plannedMinutes: openSession.plannedMinutes,
+      startedAt: openSession.startedAt,
+    }}
+  />
+</CourseLayout>

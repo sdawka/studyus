@@ -22,3 +22,10 @@ export const endConversationSchema = z.strictObject({
   final_rating: z.number().int().min(1).max(5).optional(),
 });
 export type EndConversationInput = z.infer<typeof endConversationSchema>;
+
+export const listConversationsQuerySchema = z.strictObject({
+  course: idSchema.optional(),
+  kc: idSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+});
+export type ListConversationsQuery = z.infer<typeof listConversationsQuerySchema>;

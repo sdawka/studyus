@@ -1,8 +1,6 @@
 ---
-// Wraps AppShell with the 6-tab course header. Only /courses/[slug]/index.astro
-// adopts this in P1 — the tab links below point at subroutes that don't exist
-// yet (concepts/notes/resources/practice/play land in P2C) so they 404 for
-// now; that's expected mid-build, not a bug.
+// Wraps AppShell with the 6-tab course header. All six subroutes
+// (index/concepts/notes/resources/practice/play, P2C) adopt this layout.
 import AppShell from './AppShell.astro';
 
 interface Course {
@@ -29,8 +27,16 @@ const TABS: { id: Props['active']; label: string; href: string }[] = [
   { id: 'play', label: 'Play', href: `/courses/${course.slug}/play` },
 ];
 
+// Fallback hue for courses that predate color assignment — same hash as
+// Sidebar.astro::hashHue, kept in sync there (not imported to avoid coupling
+// this layout to the sidebar module).
+function hashHue(slug: string): number {
+  let h = 0;
+  for (let i = 0; i < slug.length; i++) h = (h * 31 + slug.charCodeAt(i)) >>> 0;
+  return h % 360;
+}
 const hue = Number(course.color ?? NaN);
-const courseH = Number.isFinite(hue) ? hue : 220;
+const courseH = Number.isFinite(hue) ? hue : hashHue(course.slug);
 ---
 <AppShell title={`${course.code} · ${course.title}`}>
   <nav class="tab-bar" slot="header-center" aria-label="Course sections">

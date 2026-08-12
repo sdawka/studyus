@@ -4,8 +4,16 @@ import { getDb } from '../../../../../db/client';
 import { apiOk } from '../../../../../lib/api';
 import { withServiceErrors } from '../../../../../lib/apiErrors';
 import { toApi } from '../../../../../lib/serialize';
-import { createConversationSchema } from '../../../../../lib/schemas/tutor';
-import { createConversation } from '../../../../../lib/services/tutor/conversations';
+import { createConversationSchema, listConversationsQuerySchema } from '../../../../../lib/schemas/tutor';
+import { createConversation, listConversations } from '../../../../../lib/services/tutor/conversations';
+
+export const GET: APIRoute = async ({ url, locals }) =>
+  withServiceErrors(async () => {
+    const query = listConversationsQuerySchema.parse(Object.fromEntries(url.searchParams));
+    const db = getDb(env.DB);
+    const conversations = await listConversations(db, locals.user!.id, query);
+    return apiOk({ conversations: toApi(conversations) });
+  });
 
 export const POST: APIRoute = async ({ request, locals }) =>
   withServiceErrors(async () => {

@@ -2,14 +2,8 @@
 import CourseLayout from '../../../layouts/CourseLayout.astro';
 import { env } from 'cloudflare:workers';
 import { getDb } from '../../../db/client';
-import { attachments, noteLinks, notes, resources as resourcesTable } from '../../../db/schema';
-import { and, desc, eq } from 'drizzle-orm';
 import { getCourseBySlug } from '../../../lib/services/courses';
 import { NotFoundError, notFound } from '../../../lib/handleNotFound';
-import MasteryBar from '../../../components/course/MasteryBar.astro';
-import StatusChip from '../../../components/course/StatusChip.astro';
-import KcTypeBadge from '../../../components/course/KcTypeBadge.astro';
-import AttachmentsPanel from '../../../components/course/AttachmentsPanel.svelte';
 import StandingTab from '../../../components/standing/StandingTab.svelte';
 
 const db = getDb(env.DB);
@@ -23,194 +17,31 @@ try {
   if (err instanceof NotFoundError) return notFound(Astro);
   throw err;
 }
-
-const linkedNotes = await db
-  .select({ id: notes.id, title: notes.title, updatedAt: notes.updatedAt })
-  .from(noteLinks)
-  .innerJoin(notes, eq(noteLinks.noteId, notes.id))
-  .where(and(eq(noteLinks.courseId, course.id), eq(notes.userId, userId)))
-  .orderBy(desc(notes.updatedAt));
-
-const courseAttachments = await db
-  .select()
-  .from(attachments)
-  .where(and(eq(attachments.courseId, course.id), eq(attachments.userId, userId)))
-  .orderBy(desc(attachments.createdAt));
-
-const courseResources = await db
-  .select()
-  .from(resourcesTable)
-  .where(and(eq(resourcesTable.courseId, course.id), eq(resourcesTable.userId, userId)));
-
-const resourcesByKind: Record<string, typeof courseResources> = { canonical: [], feed: [], user_shared: [] };
-for (const r of courseResources) {
-  (resourcesByKind[r.kind] ??= []).push(r);
-}
-const KIND_LABELS: Record<string, string> = { canonical: 'Canonical', feed: 'Feed', user_shared: 'Shared by you' };
 ---
 <CourseLayout course={course} active="overview">
   {course.overview && <p class="overview">{course.overview}</p>}
 
-  <nav class="tabs" aria-label="Course sections">
-    <button type="button" class="tab-btn" data-tab="standing">Standing</button>
-    <button type="button" class="tab-btn" data-tab="concepts">Concepts</button>
-    <button type="button" class="tab-btn" data-tab="notes">Notes &amp; Uploads</button>
-    <button type="button" class="tab-btn" data-tab="resources">Resources</button>
-  </nav>
-
-  <section class="tab-panel" id="tab-standing">
-    <StandingTab client:load courseId={course.id} courseSlug={course.slug} />
-  </section>
-
-  <section class="tab-panel" id="tab-concepts">
-    {course.branches.length === 0 && <p class="placeholder">No branches yet.</p>}
-    {course.branches.map((branch) => (
-      <div class="branch">
-        <h3>{branch.name}</h3>
-        <ul class="kc-list">
-          {branch.kcs.map((kc) => (
-            <li>
-              <a class="kc-row" href={`/courses/${course.slug}/kc/${kc.id}`}>
-                <span class="kc-name">{kc.name}</span>
-                <KcTypeBadge kcType={kc.kcType} />
-                <span class="kc-bar"><MasteryBar mastery={kc.mastery} status={kc.status} /></span>
-                <StatusChip status={kc.status} />
-              </a>
-            </li>
-          ))}
-          {branch.kcs.length === 0 && <li class="placeholder">No KCs in this branch.</li>}
-        </ul>
-      </div>
-    ))}
-  </section>
-
-  <section class="tab-panel" id="tab-notes">
-    <div class="notes-uploads">
-      <div class="col">
-        <h3>Linked notes</h3>
-        {linkedNotes.length === 0 && <p class="placeholder">No notes linked to this course yet.</p>}
-        <ul class="note-list">
-          {linkedNotes.map((n) => (
-            <li><a href={`/notes/${n.id}`}>{n.title}</a></li>
-          ))}
-        </ul>
-      </div>
-      <div class="col">
-        <h3>Attachments</h3>
-        <AttachmentsPanel
-          client:load
-          courseId={course.id}
-          initialAttachments={courseAttachments.map((a) => ({
-            id: a.id,
-            filename: a.filename,
-            contentType: a.contentType,
-            sizeBytes: a.sizeBytes,
-          }))}
-        />
-      </div>
-    </div>
-  </section>
-
-  <section class="tab-panel" id="tab-resources">
-    {Object.entries(resourcesByKind).map(([kind, items]) => (
-      items.length > 0 && (
-        <div class="resource-group">
-          <h3>{KIND_LABELS[kind] ?? kind}</h3>
-          <ul class="resource-list">
-            {items.map((r) => (
-              <li>
-                <a href={r.url} target="_blank" rel="noopener">{r.label}</a>
-                {r.pinned && <span class="pin">pinned</span>}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )
-    ))}
-    {courseResources.length === 0 && <p class="placeholder">No resources for this course yet.</p>}
-  </section>
+  <StandingTab client:load courseId={course.id} courseSlug={course.slug} />
 </CourseLayout>
 
 <script>
-  const TABS = ['standing', 'concepts', 'notes', 'resources'];
-  const buttons = document.querySelectorAll<HTMLButtonElement>('.tab-btn');
-  const panels = Object.fromEntries(
-    TABS.map((t) => [t, document.getElementById(`tab-${t}`)]),
-  ) as Record<string, HTMLElement | null>;
-
-  function activate(tab: string) {
-    const active = TABS.includes(tab) ? tab : 'standing';
-    for (const t of TABS) {
-      panels[t]?.classList.toggle('active', t === active);
-    }
-    buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === active));
+  // Legacy hash-tab redirects from the pre-subroute course page
+  // (index.astro used to host all four tabs behind #hash routing).
+  const HASH_ROUTES: Record<string, string> = {
+    concepts: 'concepts',
+    notes: 'notes',
+    resources: 'resources',
+  };
+  const hash = location.hash.replace('#', '');
+  const target = HASH_ROUTES[hash];
+  if (target) {
+    location.replace(`${location.pathname.replace(/\/$/, '')}/${target}`);
+  } else if (hash) {
+    // #standing (or anything else) just strips the hash — overview is home.
+    history.replaceState(null, '', location.pathname);
   }
-
-  buttons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const tab = btn.dataset.tab!;
-      history.replaceState(null, '', `#${tab}`);
-      activate(tab);
-    });
-  });
-
-  activate(location.hash.replace('#', ''));
 </script>
 
 <style>
-  .course-header { margin-bottom: 1.5rem; }
-  .breadcrumb { font-size: 0.8rem; color: var(--muted); margin: 0 0 0.4rem 0; }
-  .breadcrumb a { color: var(--muted); text-decoration: none; }
-  .head-top h1 { margin: 0 0 0.2rem 0; font-size: 1.4rem; }
-  .meta-line { margin: 0 0 0.6rem 0; font-size: 0.9rem; color: var(--muted); }
-  .overview { margin: 0; color: var(--text); max-width: 700px; }
-
-  .tabs {
-    display: flex;
-    gap: 0.25rem;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 1.5rem;
-  }
-  .tab-btn {
-    background: none;
-    border: none;
-    padding: 0.6rem 0.9rem;
-    font-size: 0.9rem;
-    cursor: pointer;
-    color: var(--muted);
-    border-bottom: 2px solid transparent;
-  }
-  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
-
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
-
-  .placeholder { color: var(--muted); font-size: 0.9rem; }
-
-  .branch { margin-bottom: 1.75rem; }
-  .branch h3 { margin: 0 0 0.5rem 0; font-size: 1rem; }
-  .kc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
-  .kc-row {
-    display: flex;
-    align-items: center;
-    gap: 0.9rem;
-    padding: 0.55rem 0.8rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    text-decoration: none;
-    color: var(--text);
-  }
-  .kc-row:hover { border-color: var(--accent); }
-  .kc-name { flex: 1; font-size: 0.92rem; }
-  .kc-bar { width: 140px; }
-
-  .notes-uploads { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-  .note-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
-  .note-list a { color: var(--accent); text-decoration: none; }
-
-  .resource-group { margin-bottom: 1.5rem; }
-  .resource-group h3 { margin: 0 0 0.4rem 0; font-size: 0.95rem; }
-  .resource-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
-  .resource-list a { color: var(--accent); text-decoration: none; }
-  .pin { margin-left: 0.5rem; font-size: 0.7rem; color: var(--muted); }
+  .overview { margin: 0 0 22px; color: var(--text); max-width: 700px; }
 </style>

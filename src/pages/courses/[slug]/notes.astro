@@ -1,0 +1,70 @@
+---
+import CourseLayout from '../../../layouts/CourseLayout.astro';
+import { env } from 'cloudflare:workers';
+import { getDb } from '../../../db/client';
+import { attachments, noteLinks, notes } from '../../../db/schema';
+import { and, desc, eq } from 'drizzle-orm';
+import { getCourseBySlug } from '../../../lib/services/courses';
+import { NotFoundError, notFound } from '../../../lib/handleNotFound';
+import AttachmentsPanel from '../../../components/course/AttachmentsPanel.svelte';
+
+const db = getDb(env.DB);
+const userId = Astro.locals.user!.id;
+const slug = Astro.params.slug!;
+
+let course;
+try {
+  course = await getCourseBySlug(db, userId, slug);
+} catch (err) {
+  if (err instanceof NotFoundError) return notFound(Astro);
+  throw err;
+}
+
+// Scratchpad-saved notes are ordinary notes with a course link, so they
+// show up here automatically alongside notes linked any other way.
+const linkedNotes = await db
+  .select({ id: notes.id, title: notes.title, updatedAt: notes.updatedAt })
+  .from(noteLinks)
+  .innerJoin(notes, eq(noteLinks.noteId, notes.id))
+  .where(and(eq(noteLinks.courseId, course.id), eq(notes.userId, userId)))
+  .orderBy(desc(notes.updatedAt));
+
+const courseAttachments = await db
+  .select()
+  .from(attachments)
+  .where(and(eq(attachments.courseId, course.id), eq(attachments.userId, userId)))
+  .orderBy(desc(attachments.createdAt));
+---
+<CourseLayout course={course} active="notes">
+  <div class="notes-uploads">
+    <div class="col">
+      <h3>Linked notes</h3>
+      {linkedNotes.length === 0 && <p class="placeholder">No notes linked to this course yet.</p>}
+      <ul class="note-list">
+        {linkedNotes.map((n) => (
+          <li><a href={`/notes/${n.id}`}>{n.title}</a></li>
+        ))}
+      </ul>
+    </div>
+    <div class="col">
+      <h3>Attachments</h3>
+      <AttachmentsPanel
+        client:load
+        courseId={course.id}
+        initialAttachments={courseAttachments.map((a) => ({
+          id: a.id,
+          filename: a.filename,
+          contentType: a.contentType,
+          sizeBytes: a.sizeBytes,
+        }))}
+      />
+    </div>
+  </div>
+</CourseLayout>
+
+<style>
+  .placeholder { color: var(--muted); font-size: 0.9rem; }
+  .notes-uploads { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+  .note-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+  .note-list a { color: var(--accent); text-decoration: none; }
+</style>

@@ -1,0 +1,64 @@
+---
+import CourseLayout from '../../../layouts/CourseLayout.astro';
+import { env } from 'cloudflare:workers';
+import { getDb } from '../../../db/client';
+import { getCourseBySlug } from '../../../lib/services/courses';
+import { NotFoundError, notFound } from '../../../lib/handleNotFound';
+import MasteryBar from '../../../components/course/MasteryBar.astro';
+import StatusChip from '../../../components/course/StatusChip.astro';
+import KcTypeBadge from '../../../components/course/KcTypeBadge.astro';
+
+const db = getDb(env.DB);
+const userId = Astro.locals.user!.id;
+const slug = Astro.params.slug!;
+
+let course;
+try {
+  course = await getCourseBySlug(db, userId, slug);
+} catch (err) {
+  if (err instanceof NotFoundError) return notFound(Astro);
+  throw err;
+}
+---
+<CourseLayout course={course} active="concepts">
+  {course.branches.length === 0 && <p class="placeholder">No branches yet.</p>}
+  {course.branches.map((branch) => (
+    <div class="branch">
+      <h3>{branch.name}</h3>
+      <ul class="kc-list">
+        {branch.kcs.map((kc) => (
+          <li>
+            <a class="kc-row" href={`/courses/${course.slug}/kc/${kc.id}`}>
+              <span class="kc-name">{kc.name}</span>
+              <KcTypeBadge kcType={kc.kcType} />
+              <span class="kc-bar"><MasteryBar mastery={kc.mastery} status={kc.status} /></span>
+              <StatusChip status={kc.status} />
+            </a>
+          </li>
+        ))}
+        {branch.kcs.length === 0 && <li class="placeholder">No KCs in this branch.</li>}
+      </ul>
+    </div>
+  ))}
+</CourseLayout>
+
+<style>
+  .placeholder { color: var(--muted); font-size: 0.9rem; }
+
+  .branch { margin-bottom: 1.75rem; }
+  .branch h3 { margin: 0 0 0.5rem 0; font-size: 1rem; }
+  .kc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+  .kc-row {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text);
+  }
+  .kc-row:hover { border-color: var(--accent); }
+  .kc-name { flex: 1; font-size: 0.92rem; }
+  .kc-bar { width: 140px; }
+</style>

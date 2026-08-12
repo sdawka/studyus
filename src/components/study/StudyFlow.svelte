@@ -24,8 +24,13 @@
   interface Props {
     courses: Course[];
     openSession: OpenSession | null;
+    // Set from a course's Practice tab: skips the course-pick step and pins
+    // the session to that course (still falls back to 'course' if the id
+    // isn't found among `courses`, e.g. a stale prop).
+    preselectedCourseId?: string | null;
   }
-  const { courses, openSession }: Props = $props();
+  const { courses, openSession, preselectedCourseId = null }: Props = $props();
+  const preselected = preselectedCourseId ? courses.find((c) => c.id === preselectedCourseId) ?? null : null;
 
   type StudyType = { label: string; value: 'practice_done' | 'reading_done' | 'retrieval_practice' | 'video_watched' | 'quick_quiz' };
   const STUDY_TYPES: StudyType[] = [
@@ -37,9 +42,9 @@
   ];
 
   type Step = 'resume' | 'course' | 'duration' | 'type' | 'running' | 'complete' | 'done';
-  let step = $state<Step>(openSession ? 'resume' : 'course');
+  let step = $state<Step>(openSession ? 'resume' : preselected ? 'duration' : 'course');
 
-  let selectedCourse = $state<Course | null>(null);
+  let selectedCourse = $state<Course | null>(preselected);
   let plannedMinutes = $state(25);
   let customMinutes = $state('');
   let intendedType = $state<StudyType['value'] | null>(null);
@@ -258,12 +263,12 @@
 
   function startOver() {
     sessionId = null;
-    selectedCourse = null;
+    selectedCourse = preselected;
     intendedType = null;
     elapsedSeconds = 0;
     reflection = '';
     result = null;
-    step = 'course';
+    step = preselected ? 'duration' : 'course';
   }
 </script>
 

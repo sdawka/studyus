@@ -1,0 +1,36 @@
+---
+import CourseLayout from '../../../layouts/CourseLayout.astro';
+import { env } from 'cloudflare:workers';
+import { getDb } from '../../../db/client';
+import { getCourseBySlug } from '../../../lib/services/courses';
+import { listConversations } from '../../../lib/services/tutor/conversations';
+import { NotFoundError, notFound } from '../../../lib/handleNotFound';
+import PlayPanel from '../../../components/course/PlayPanel.svelte';
+
+const db = getDb(env.DB);
+const userId = Astro.locals.user!.id;
+const slug = Astro.params.slug!;
+
+let course;
+try {
+  course = await getCourseBySlug(db, userId, slug);
+} catch (err) {
+  if (err instanceof NotFoundError) return notFound(Astro);
+  throw err;
+}
+
+const allKcs = course.branches.flatMap((b) => b.kcs);
+const principleKcs = allKcs.filter((kc) => kc.kcType === 'principle');
+const conceptKcs = allKcs.filter((kc) => kc.kcType === 'concept');
+
+const conversations = await listConversations(db, userId, { course: course.id, limit: 10 });
+---
+<CourseLayout course={course} active="play">
+  <PlayPanel
+    client:load
+    courseSlug={course.slug}
+    principleKcs={principleKcs.map((kc) => ({ id: kc.id, name: kc.name, kcType: kc.kcType, mastery: kc.mastery }))}
+    conceptKcs={conceptKcs.map((kc) => ({ id: kc.id, name: kc.name, kcType: kc.kcType, mastery: kc.mastery }))}
+    conversations={conversations.map((c) => ({ id: c.id, kcId: c.kcId, kcName: c.kcName, mode: c.mode, createdAt: c.createdAt }))}
+  />
+</CourseLayout>
