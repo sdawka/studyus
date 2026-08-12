@@ -9,6 +9,7 @@ import type { CreateAssessmentInput, UpdateAssessmentInput, AssessmentType } fro
 import { toEpochMs } from '../schemas/common';
 import { createEvent } from './events';
 import type { EventType } from '../schemas/events';
+import { createNotification } from './notifications';
 import { NotFoundError, requireOwnedCourse } from './util';
 
 // Single source of truth for assessment type -> assessment event type,
@@ -94,6 +95,16 @@ export async function updateAssessment(db: Db, userId: string, assessmentId: str
       });
       masteryDeltas.push(...deltas);
     }
+
+    const pct = gradeMax > 0 ? Math.round((updated.gradeReceived! / gradeMax) * 100) : null;
+    await createNotification(db, {
+      userId,
+      type: 'grade_recorded',
+      title: pct !== null ? `Grade recorded: ${updated.title} — ${pct}%` : `Grade recorded: ${updated.title}`,
+      courseId: updated.courseId,
+      href: `/courses/${(await requireOwnedCourse(db, userId, updated.courseId)).slug}`,
+      dedupeKey: `grade_recorded:${assessmentId}`,
+    });
   }
 
   return { assessment: updated, masteryDeltas };

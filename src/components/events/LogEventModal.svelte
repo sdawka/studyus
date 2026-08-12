@@ -1,6 +1,14 @@
 <script lang="ts">
-  // Global "Record event" modal, mounted once in AppShell. Renders its own
-  // trigger button so the shell only needs to place the island.
+  // Record-event modal. As of P2A this no longer renders its own trigger —
+  // HeaderActions.svelte owns the "Record event" pill and controls
+  // visibility via the bindable `open` prop (also toggled by the "e"
+  // keyboard shortcut), so it can be one island among several popovers
+  // instead of mounting its own always-present button.
+  interface Props {
+    open?: boolean;
+  }
+  let { open = $bindable(false) }: Props = $props();
+
   type EventType =
     | 'lecture_attended'
     | 'lecture_missed'
@@ -60,7 +68,6 @@
   type Course = { id: string; slug: string; code: string; title: string };
   type Kc = { id: string; name: string };
 
-  let open = $state(false);
   let selectedType = $state<EventType | null>(null);
   let courses = $state<Course[]>([]);
   let coursesLoaded = $state(false);
@@ -104,12 +111,15 @@
     }
   }
 
-  function openModal() {
-    open = true;
-    confirmation = null;
-    submitError = null;
-    void loadCourses();
-  }
+  // Fires whenever a parent (HeaderActions) flips `open` to true — replaces
+  // the old click-triggered openModal() now that there's no in-component button.
+  $effect(() => {
+    if (open) {
+      confirmation = null;
+      submitError = null;
+      void loadCourses();
+    }
+  });
 
   function closeModal() {
     open = false;
@@ -185,8 +195,6 @@
     }
   }
 </script>
-
-<button type="button" class="record-event-btn" onclick={openModal}>Record event</button>
 
 {#if open}
   <div class="overlay" role="presentation" onclick={closeModal}>
@@ -277,17 +285,6 @@
 {/if}
 
 <style>
-  .record-event-btn {
-    margin-top: auto;
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 0.6rem 0.8rem;
-    font-size: 0.9rem;
-    cursor: pointer;
-    width: 100%;
-  }
   .overlay {
     position: fixed;
     inset: 0;

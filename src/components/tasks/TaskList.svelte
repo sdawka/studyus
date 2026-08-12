@@ -1,17 +1,16 @@
 <script lang="ts">
+  import TaskItem from './TaskItem.svelte';
+  import type { TaskItemTask } from './TaskItem.svelte';
+
   interface Course {
     id: string;
     code: string;
     title: string;
+    color?: string | number | null;
+    color_hue?: number | null;
   }
 
-  interface Task {
-    id: string;
-    title: string;
-    completed: boolean;
-    due_date?: string;
-    courses: Array<{ id: string; code: string }>;
-  }
+  type Task = TaskItemTask;
 
   interface Props {
     initialTasks: Task[];
@@ -20,6 +19,15 @@
 
   let { initialTasks, courses } = $props();
   let tasks = $state<Task[]>(initialTasks);
+
+  let courseHues = $derived.by(() => {
+    const map: Record<string, number> = {};
+    for (const c of courses as Course[]) {
+      const hue = c.color_hue ?? (c.color !== null && c.color !== undefined ? Number(c.color) : null);
+      if (hue !== null && !Number.isNaN(hue)) map[c.id] = hue;
+    }
+    return map;
+  });
   let newTaskTitle = $state('');
   let newTaskDueDate = $state('');
   let newTaskCourseIds = $state<string[]>([]);
@@ -100,53 +108,12 @@
     }
   }
 
-  async function toggleTask(taskId: string, completed: boolean) {
-    try {
-      const res = await fetch(`/api/v1/tasks/${taskId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed: !completed }),
-      });
-
-      if (!res.ok) {
-        error = 'Failed to update task';
-        return;
-      }
-
-      const json = await res.json();
-      tasks = tasks.map((t) => (t.id === taskId ? json.data : t));
-    } catch (err) {
-      error = 'Network error, please try again.';
-    }
+  function handleToggle(updated: Task) {
+    tasks = tasks.map((t) => (t.id === updated.id ? updated : t));
   }
 
-  async function deleteTask(taskId: string) {
-    if (!confirm('Delete this task?')) return;
-
-    try {
-      const res = await fetch(`/api/v1/tasks/${taskId}`, {
-        method: 'DELETE',
-      });
-
-      if (!res.ok) {
-        error = 'Failed to delete task';
-        return;
-      }
-
-      tasks = tasks.filter((t) => t.id !== taskId);
-    } catch (err) {
-      error = 'Network error, please try again.';
-    }
-  }
-
-  function formatDate(dateStr?: string) {
-    if (!dateStr) return 'No due date';
-    try {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    } catch {
-      return dateStr;
-    }
+  function handleDelete(taskId: string) {
+    tasks = tasks.filter((t) => t.id !== taskId);
   }
 
   function toggleCourse(courseId: string) {
@@ -216,35 +183,8 @@
       <section class="task-section">
         <h2 class="section-title overdue">Overdue ({categorized.overdue.length})</h2>
         <div class="task-list">
-          {#each categorized.overdue as task}
-            <div class="task-item">
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onchange={() => toggleTask(task.id, task.completed)}
-                class="task-checkbox"
-              />
-              <div class="task-info">
-                <span class="task-title">{task.title}</span>
-                {#if task.due_date}
-                  <span class="task-date">{formatDate(task.due_date)}</span>
-                {/if}
-                {#if task.courses.length > 0}
-                  <div class="task-chips">
-                    {#each task.courses as course}
-                      <span class="chip">{course.code}</span>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-              <button
-                class="btn-delete"
-                onclick={() => deleteTask(task.id)}
-                title="Delete task"
-              >
-                Delete
-              </button>
-            </div>
+          {#each categorized.overdue as task (task.id)}
+            <TaskItem {task} {courseHues} ontoggle={handleToggle} ondelete={handleDelete} />
           {/each}
         </div>
       </section>
@@ -254,35 +194,8 @@
       <section class="task-section">
         <h2 class="section-title today">Today ({categorized.today.length})</h2>
         <div class="task-list">
-          {#each categorized.today as task}
-            <div class="task-item">
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onchange={() => toggleTask(task.id, task.completed)}
-                class="task-checkbox"
-              />
-              <div class="task-info">
-                <span class="task-title">{task.title}</span>
-                {#if task.due_date}
-                  <span class="task-date">{formatDate(task.due_date)}</span>
-                {/if}
-                {#if task.courses.length > 0}
-                  <div class="task-chips">
-                    {#each task.courses as course}
-                      <span class="chip">{course.code}</span>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-              <button
-                class="btn-delete"
-                onclick={() => deleteTask(task.id)}
-                title="Delete task"
-              >
-                Delete
-              </button>
-            </div>
+          {#each categorized.today as task (task.id)}
+            <TaskItem {task} {courseHues} ontoggle={handleToggle} ondelete={handleDelete} />
           {/each}
         </div>
       </section>
@@ -292,35 +205,8 @@
       <section class="task-section">
         <h2 class="section-title upcoming">Upcoming ({categorized.upcoming.length})</h2>
         <div class="task-list">
-          {#each categorized.upcoming as task}
-            <div class="task-item">
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onchange={() => toggleTask(task.id, task.completed)}
-                class="task-checkbox"
-              />
-              <div class="task-info">
-                <span class="task-title">{task.title}</span>
-                {#if task.due_date}
-                  <span class="task-date">{formatDate(task.due_date)}</span>
-                {/if}
-                {#if task.courses.length > 0}
-                  <div class="task-chips">
-                    {#each task.courses as course}
-                      <span class="chip">{course.code}</span>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-              <button
-                class="btn-delete"
-                onclick={() => deleteTask(task.id)}
-                title="Delete task"
-              >
-                Delete
-              </button>
-            </div>
+          {#each categorized.upcoming as task (task.id)}
+            <TaskItem {task} {courseHues} ontoggle={handleToggle} ondelete={handleDelete} />
           {/each}
         </div>
       </section>
@@ -330,35 +216,8 @@
       <section class="task-section">
         <h2 class="section-title done">Done ({categorized.done.length})</h2>
         <div class="task-list">
-          {#each categorized.done as task}
-            <div class="task-item completed">
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onchange={() => toggleTask(task.id, task.completed)}
-                class="task-checkbox"
-              />
-              <div class="task-info">
-                <span class="task-title">{task.title}</span>
-                {#if task.due_date}
-                  <span class="task-date">{formatDate(task.due_date)}</span>
-                {/if}
-                {#if task.courses.length > 0}
-                  <div class="task-chips">
-                    {#each task.courses as course}
-                      <span class="chip">{course.code}</span>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-              <button
-                class="btn-delete"
-                onclick={() => deleteTask(task.id)}
-                title="Delete task"
-              >
-                Delete
-              </button>
-            </div>
+          {#each categorized.done as task (task.id)}
+            <TaskItem {task} {courseHues} ontoggle={handleToggle} ondelete={handleDelete} />
           {/each}
         </div>
       </section>
@@ -519,81 +378,4 @@
     gap: 0.5rem;
   }
 
-  .task-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    transition: all 0.2s;
-  }
-
-  .task-item:hover {
-    border-color: var(--accent);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  }
-
-  .task-item.completed {
-    background: #f9fafb;
-  }
-
-  .task-checkbox {
-    margin-top: 0.35rem;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
-  .task-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .task-title {
-    font-weight: 500;
-    color: var(--text);
-  }
-
-  .task-item.completed .task-title {
-    text-decoration: line-through;
-    color: #9ca3af;
-  }
-
-  .task-date {
-    font-size: 0.85rem;
-    color: var(--muted);
-  }
-
-  .task-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    margin-top: 0.25rem;
-  }
-
-  .chip {
-    font-size: 0.8rem;
-    padding: 0.25rem 0.5rem;
-    background: #f3f4f6;
-    border-radius: 3px;
-    color: var(--muted);
-  }
-
-  .btn-delete {
-    background: none;
-    border: none;
-    color: #9ca3af;
-    cursor: pointer;
-    font-size: 0.85rem;
-    padding: 0.35rem 0.5rem;
-    white-space: nowrap;
-  }
-
-  .btn-delete:hover {
-    color: #ef4444;
-  }
 </style>

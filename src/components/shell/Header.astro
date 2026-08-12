@@ -1,11 +1,14 @@
 ---
-// Sticky header shell. Kept dumb — P2A wires up NotificationsBell,
-// TodoDropdown, ScratchpadPopup, AvatarMenu as HeaderActions.svelte; this
-// version keeps LogEventModal working (it renders its own trigger button)
-// and stubs the rest as disabled placeholders so the feature set doesn't
-// regress mid-build.
-import LogEventModal from '../events/LogEventModal.svelte';
-import Icon from './Icon.astro';
+// Sticky header shell. Kept dumb — right-cluster interactivity (record
+// event, scratchpad, todo, notifications, avatar menu) lives in the
+// HeaderActions.svelte island; this file just fetches what the island needs
+// server-side (user identity + course list for hue/course-select context)
+// and mounts it.
+import { env } from 'cloudflare:workers';
+import { getDb } from '../../db/client';
+import { listCourses } from '../../lib/services/courses';
+import { toApi } from '../../lib/serialize';
+import HeaderActions from './HeaderActions.svelte';
 
 const user = Astro.locals.user!;
 const initials = (user.name || user.email)
@@ -14,23 +17,23 @@ const initials = (user.name || user.email)
   .join('')
   .slice(0, 2)
   .toUpperCase();
+
+const db = getDb(env.DB);
+const courses = await listCourses(db, user.id);
+const apiCourses = toApi(courses).map((c: Record<string, unknown>) => ({
+  id: c.id,
+  code: c.code,
+  slug: c.slug,
+  title: c.title,
+  color: c.color,
+}));
 ---
 <header class="app-header">
   <div class="center">
     <slot name="center" />
   </div>
   <div class="actions">
-    <LogEventModal client:load />
-    <button type="button" class="icon-btn" aria-disabled="true" title="coming in this build">
-      <Icon name="bell" />
-    </button>
-    <button type="button" class="icon-btn" aria-disabled="true" title="coming in this build">
-      <Icon name="check-square" />
-    </button>
-    <button type="button" class="icon-btn" aria-disabled="true" title="coming in this build">
-      <Icon name="pencil" />
-    </button>
-    <a class="avatar" href="/profile" title={user.name || user.email}>{initials}</a>
+    <HeaderActions client:load userName={user.name || user.email} userInitials={initials} courses={apiCourses} />
   </div>
 </header>
 
@@ -51,29 +54,4 @@ const initials = (user.name || user.email)
   }
   .center { flex: 1; min-width: 0; display: flex; align-items: center; height: 100%; }
   .actions { display: flex; align-items: center; gap: 8px; flex: none; }
-
-  .icon-btn {
-    display: grid;
-    place-items: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 999px;
-    color: var(--muted);
-  }
-  .icon-btn:hover { background: var(--hover); }
-  .icon-btn[aria-disabled='true'] { opacity: 0.4; cursor: default; }
-  .icon-btn[aria-disabled='true']:hover { background: none; }
-
-  .avatar {
-    display: grid;
-    place-items: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--accent-soft);
-    color: var(--accent-ink);
-    font: 650 12px/1 var(--font-display);
-    letter-spacing: 0.02em;
-    text-decoration: none;
-  }
 </style>
