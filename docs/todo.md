@@ -4,9 +4,32 @@
 
 **v1.1 Status (2026-08-12)**: Rename (studybuddy → studyus, incl. session cookie name) + full UI overhaul shipped. See "v1.1 Shipped Summary" below. Features under "Deferred Features (Post-v1)" remain deferred; a few new deferrals were added by v1.1's own scoping decisions (called out inline).
 
+**v1.2 Status (2026-08-12)**: Unified calendar data plane, design-token/popover foundation, three theme design passes (fonts + colors + spacing + motion, structure unchanged), planner overhaul (week time-grid default, EventPopover, PlannerRail, inline session create, deep links), dashboard recomposition (CourseCards, collapsible WeekView), and a Pinterest-style feed masonry shipped. See "v1.2 Shipped Summary" below. Note: the components named in "v1.1 Shipped Summary" below (WeekStrip, GradeSnapshot, CourseMiniGrid) were deleted as part of v1.2's dashboard recomposition — that section is left as a historical record of what v1.1 shipped, not a description of current code.
+
 Each deferred feature is prioritized and scoped to avoid scope creep during post-v1 development.
 
 ---
+
+## v1.2 Shipped Summary
+
+- **Calendar data plane**: unified `CalendarItem` type (`src/lib/types/calendar.ts`) across all 4 item kinds (`assessment_due`, `task_due`, `study_session`, `event_logged`) with `end_date`/`all_day`/`href`, produced solely by `getCalendar` (`src/lib/services/calendar.ts`). Migration `0002_clean_sandman.sql` adds `study_sessions.scheduled_at` so planner-created sessions have a time. Demo seed data (`scripts/seed.ts`) now includes assessments+grades, tasks, events, and study sessions for the current term (`Winter 2025`), idempotent and deterministic, so the planner/dashboard render something realistic out of the box.
+- **Design-token / UI foundation**: `base.css` popover primitives (`.popover`/`.panel-head`/`.footer-link`/`.icon-btn`) shared by every popup in the app; new tokens `--accent-contrast`, `--space-1..6`, `--motion-fast/-base`, `--weight-med/-semi/-bold`, `--tracking-caps`, `--pop-w-sm/-md/-lg`; global `--content-max` centered main column; **default scheme is now `light`** (`resolveSettings` in `src/lib/services/user.ts`), was `system`.
+- **Three theme design passes**: compass (Figtree display / flat cards / airy spacing), focus (Space Grotesk + Inter / indigo hue 264 / dense), campus (Fraunces + Nunito / warm paper / brick accent) — self-hosted `@fontsource` variable fonts per theme in `src/styles/fonts/{compass,focus,campus}.css`. Themes vary only fonts/colors/spacing/motion; component structure is identical across all three (see `docs/architecture/overview.md`'s Design Tokens section). Per-theme rationale docs at `docs/design/{compass,focus,campus}.md`.
+- **Course-hue fix**: hue derivation (`--course`/`--course-ink`/`--course-soft`) moved from `:root` to the universal selector `*` in `tokens.css`, so a per-element `--course-h` override actually takes effect.
+- **Planner**: week time-grid (`WeekGrid`) is now the default view (spec: `docs/design/planner-ux.md`), `EventPopover` for viewing/editing an item, `PlannerRail` for due-soon unscheduled tasks/assessments, inline scheduled-session create via `CreateSessionPopover`, `?event=&date=` deep links, and click-through from month/agenda cells into the week view.
+- **Dashboard**: `CourseCards` merges grade + mastery + assessment progress per course; `WeekView` is a collapsed/expanded island (state in `sb:weekview`). The old `WeekStrip`/`GradeSnapshot`/`CourseMiniGrid` components were deleted.
+- **Feed**: Pinterest-style masonry grid, favicon tiles per resource (fetched from the link's hostname), course chip filters.
+
+### v1.2-Specific Deferrals
+
+Called out separately because they were identified but explicitly not built during this pass:
+
+- **Planner mini-month jump**: no compact month-picker dropdown for jumping the week/month view to an arbitrary date — only prev/next and "today" navigation exist today.
+- **Session DELETE endpoint**: `/api/v1/sessions` only has `POST` (create) and `PATCH .../complete`; there's no `DELETE`, so `EventPopover` can't offer a delete action for scheduled study sessions.
+- **PlannerRail click-to-schedule**: clicking a rail item jumps the grid to that item's week but doesn't schedule it; there's no click-to-schedule or drag-to-schedule from the rail onto the grid yet (v2).
+- **App-wide horizontal overflow at ~400px viewport width**: a layout overflow issue exists somewhere in the shell/page grid below ~400px; not tracked down or fixed in this pass.
+- **Term-position bar on course cards**: `CourseCards` shows grade/mastery/assessment progress but no "week N of M" term-position indicator — needs term start/end bounds, which aren't modeled yet (`courses.term` is a free-text string, not a date range).
+- **Fonts on unauthenticated pages**: `login.astro` renders standalone (doesn't use `AppShell.astro`) and imports `tokens.css`/`themes/*.css`/`base.css` directly but not any `fonts/*.css` — confirmed the login page falls back to system fonts regardless of the active theme, since the `@fontsource` `@font-face` declarations never load there.
 
 ## v1.1 Shipped Summary
 

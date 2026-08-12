@@ -34,14 +34,17 @@ Mastery is **never stored directly** — it's computed on-demand from an append-
 - API contract is frozen at end of M1; iPad and web apps build against the same specification.
 
 ### Design Tokens — 3 Themes × 2 Schemes
-The whole app shares one token vocabulary, split across three files under `src/styles/`:
-- **`tokens.css`** — theme-agnostic derivations only: `--course`/`--course-ink`/`--course-soft` computed from a per-element `--course-h` (0-360, set inline from `courses.color`) plus theme-owned `--course-l/-c` knobs, so the same hue reads correctly in every theme × scheme combination.
-- **`base.css`** — reset + primitives that read tokens only, never define colors: `.card`, `.btn`/`.btn-primary`/`.btn-secondary`, `.pill`/`.pill-ok`/`.pill-warn`/`.pill-danger`, `.chip`, `.bar`, `.kicker`, `.empty`, `.aside-muted`.
-- **`themes/{compass,focus,campus}.css`** — the actual OKLCH color/radius/font *values*, one file per theme. Each defines a light block, an `@media (prefers-color-scheme: dark) [data-theme=X]:not([data-scheme=light])` block, and an explicit `[data-scheme=dark]` block — the same token names resolve differently per theme × scheme, never duplicated as separate class names.
+The whole app shares one token vocabulary, split across files under `src/styles/`:
+- **`tokens.css`** — theme-agnostic derivations only: `--course`/`--course-ink`/`--course-soft` computed from a per-element `--course-h` (0-360, set inline from `courses.color`) plus theme-owned `--course-l/-c` knobs, so the same hue reads correctly in every theme × scheme combination. Derived on the universal selector `*` (not `:root`) so a per-element `--course-h` override actually re-evaluates — a `:root`-level derivation would pin every element to one hue.
+- **`base.css`** — reset + primitives that read tokens only, never define colors: `.card`, `.btn`/`.btn-primary`/`.btn-secondary`, `.pill`/`.pill-ok`/`.pill-warn`/`.pill-danger`, `.chip`, `.bar`, `.kicker`, `.empty`, `.aside-muted`, plus a **popover primitive set** shared by every header popup (notifications, todo, scratchpad, avatar menu, planner's EventPopover/CreateSessionPopover): `.popover` (surface + `--shadow-pop`, width via `--pop-w` set inline from a theme's `--pop-w-sm/-md/-lg`), `.panel-head`, `.footer-link`, `.icon-btn`.
+- **`themes/{compass,focus,campus}.css`** — the actual OKLCH color/radius/font/spacing/motion *values*, one file per theme. Each defines a light block, an `@media (prefers-color-scheme: dark) [data-theme=X]:not([data-scheme=light])` block, and an explicit `[data-scheme=dark]` block — the same token names resolve differently per theme × scheme, never duplicated as separate class names.
+- **`fonts/{compass,focus,campus}.css`** — self-hosted `@fontsource` variable-font `@font-face` declarations, one file per theme, imported alongside its `themes/*.css` counterpart wherever `AppShell.astro` is used. Compass loads Figtree (display) over the system body/mono stack; focus loads Space Grotesk (display) + Inter (body); campus loads Fraunces (display) + Nunito (body). **`login.astro` does not import `AppShell` and does not import any `fonts/*.css`** — the login page renders in system fonts regardless of theme (see `docs/todo.md`).
 
-Token contract (present in every theme file): `--bg --surface --surface-2 --text --muted --faint --border --hairline --hover`; `--accent --accent-ink --accent-soft`; status triples `--good/-ink/-soft --warn/-ink/-soft --danger/-ink/-soft`; sidebar group `--sidebar-bg/-text/-muted/-border/-active-bg/-active-text` (lets focus keep its pinned-dark rail regardless of scheme); structure `--radius-lg/md/sm --font-display/body/mono --font-size-base --shadow-card --shadow-pop`.
+Token contract (present in every theme file): `--bg --surface --surface-2 --text --muted --faint --border --hairline --hover`; `--accent --accent-ink --accent-soft --accent-contrast` (a readable-on-accent text color, for solid-accent buttons/badges); status triples `--good/-ink/-soft --warn/-ink/-soft --danger/-ink/-soft`; sidebar group `--sidebar-bg/-text/-muted/-border/-active-bg/-active-text` (lets focus keep its pinned-dark rail regardless of scheme); structure `--radius-lg/md/sm --font-display/body/mono --font-size-base --shadow-card --shadow-pop`; density/motion `--space-1..6 --motion-fast/-base --weight-med/-semi/-bold --tracking-caps --pop-w-sm/-md/-lg`.
 
-`<html data-theme>` (absent = compass) + `data-scheme` (absent = system) select the active theme/scheme; `ThemeScript.astro` stamps both pre-paint from `localStorage` (`sb:theme`/`sb:scheme`), mirrored server-side from `users.settings` on the next full load. Three themes: **compass** (default, cool neutral), **focus** (pinned-dark sidebar, higher-contrast accent), **campus** (warm paper tones). A prior "notebook" theme and its `--panel`/`--ink`/`--paper`/`--rule`/`--serif`-family legacy variable names (plus `.sheet`/`.margin-note`/`.status-good`/`.status-warn` compatibility classes) were retired in P3 — every consumer was converted onto the token vocabulary above (`.card` for card-ish blocks, `.aside-muted` for the old margin-note aside styling), and `notebook.css` was deleted. `rg` for any of those retired names/classes now returns nothing under `src/`.
+**Themes vary tokens only, never structure.** Compass, focus, and campus differ solely in the *values* behind fonts/colors/spacing/motion — no theme introduces its own component selectors, markup, or class names; the same `.card`/`.btn`/`.popover` etc. render everywhere, just styled differently. Each theme's rationale (voice, type, color story, density, motion, do/don't list) lives in its own doc: `docs/design/compass.md`, `docs/design/focus.md`, `docs/design/campus.md`.
+
+`<html data-theme>` (absent = compass) + `data-scheme` select the active theme/scheme; `ThemeScript.astro` stamps both pre-paint from `localStorage` (`sb:theme`/`sb:scheme`), mirrored server-side from `users.settings` on the next full load. **The default scheme is now `light`** (`resolveSettings` in `src/lib/services/user.ts` defaults new/unset `settings.scheme` to `'light'`, not `'system'`); `'system'` is still a selectable option in `/settings` — choosing it clears the `data-scheme` attribute so the OS `prefers-color-scheme` media query decides, and `ThemeScript.astro` only falls back to stamping `light` itself when there's neither an SSR-stamped attribute nor a `localStorage` override (e.g. no user settings yet), so an OS in dark mode never flashes dark before the user has chosen anything. Three themes: **compass** (default, cool neutral), **focus** (pinned-dark sidebar, higher-contrast accent), **campus** (warm paper tones). A prior "notebook" theme and its `--panel`/`--ink`/`--paper`/`--rule`/`--serif`-family legacy variable names (plus `.sheet`/`.margin-note`/`.status-good`/`.status-warn` compatibility classes) were retired in P3 — every consumer was converted onto the token vocabulary above (`.card` for card-ish blocks, `.aside-muted` for the old margin-note aside styling), and `notebook.css` was deleted. `rg` for any of those retired names/classes now returns nothing under `src/`.
 
 ## Repo Structure
 
@@ -65,41 +68,77 @@ src/
   db/
     schema.ts                             # Drizzle schema (all tables)
     client.ts                             # `db` singleton, db.batch pattern
+  styles/
+    tokens.css                            # Theme-agnostic derivations (--course/-ink/-soft)
+    base.css                              # Reset + primitives (.card/.btn/.pill/.popover/...)
+    themes/
+      compass.css                         # Per-theme OKLCH color/radius/spacing/motion values
+      focus.css
+      campus.css
+    fonts/
+      compass.css                         # Per-theme @fontsource @font-face declarations
+      focus.css
+      campus.css
   lib/
     auth/                                 # Token generation, session mgmt, PBKDF2
     schemas/                              # Zod validators (users, courses, events, etc.)
+    types/
+      calendar.ts                         # CalendarItem (FROZEN shape; getCalendar is sole producer)
+    plannerDates.ts                       # Week/month date-math helpers shared by planner components
+    courseHue.ts                          # Canonical hueFor/hashHue (one definition, no duplicates)
+    api.ts                                # Request/response envelope helpers
+    apiErrors.ts                          # withServiceErrors / apiError mapping
+    serialize.ts                          # toApi (db row → API shape)
     services/                             # Pure service functions
       courses.ts
       events.ts (and mastery fold logic)
       mastery.ts (KC score computation)
       grades.ts
-      calendar.ts
+      calendar.ts                         # getCalendar — unified CalendarItem across all 4 types
       notes.ts
       tasks.ts
       resources.ts
-      sessions.ts (cookie mgmt)
+      sessions.ts (study session create/complete; scheduled_at for planner-created sessions)
       profile.ts
+      user.ts                             # resolveSettings (theme/scheme/sidebar defaults)
       tutor/
         openrouter.ts
         prompts.ts
         modelSpec.ts
     flows/                                # Agentic flows
       quick_quiz.ts                       # Pattern flow: pick KCs, generate, grade, append
-    api.ts                                # Request/response envelope helpers
   layouts/
-    AppShell.astro                        # Two-group sidebar, nav, footer
-  components/                             # By feature (admin/, learning/, shared/)
-    admin/
-      CalendarView.svelte
-      GradeTable.svelte
-      ...
-    learning/
-      ScaffoldChat.svelte
-      InteractiveModel.svelte
-      ...
-    shared/
-      RecordEventModal.svelte
-      ...
+    AppShell.astro                        # Sidebar + Header shell; imports tokens/fonts/themes/base.css
+  components/                             # By feature
+    admin/                                # GradeTable.svelte, QuickEventForm.svelte
+    course/                               # AttachmentsPanel, MasteryBar, PlayPanel, PracticePanel, ...
+    dashboard/
+      CourseCards.astro                   # Merged grade + mastery + assessment-progress cards
+      WeekView.svelte                     # Collapsed/expanded week island (sb:weekview)
+      DueList.astro
+      RecordEventCard.astro
+    events/                               # EventTimeline.svelte, LogEventModal.svelte
+    feed/                                 # ResourceCard (favicon tiles), ShareResourceForm, StudySessionStub
+    notes/                                # NotesList, NoteEditor, LinkPicker
+    onboarding/                           # OnboardingFlow.svelte
+    planner/
+      PlannerView.svelte                  # week/month/agenda switch, filter, deep-link resolution
+      WeekGrid.svelte                     # default time-grid view
+      CalendarGrid.svelte                 # month view
+      AgendaList.svelte
+      EventPopover.svelte
+      CreateSessionPopover.svelte         # inline scheduled-session create
+      PlannerRail.svelte                  # unscheduled tasks/assessments due-soon rail
+    settings/                             # AppearanceSettings.svelte
+    shell/
+      AppShell-adjacent: Sidebar.astro, Header.astro, HeaderActions.svelte,
+      ThemeScript.astro, AddCourseModal.svelte, AvatarMenu.svelte,
+      NotificationsBell.svelte, ScratchpadPopup.svelte, TodoDropdown.svelte,
+      popover.svelte.ts (shared popover open/close state), Icon.astro
+    standing/                             # StandingTab.svelte
+    study/                                # StudyFlow.svelte
+    tasks/                                # TaskList, TaskItem
+    tutor/                                # ScaffoldChat, InteractiveModel, QuickQuiz
   pages/
     /login.astro
     /index.astro
@@ -180,6 +219,9 @@ docs/
     tutor.md
     cloudflare.md
     agentic-channels.md
+  design/
+    compass.md, focus.md, campus.md      # Per-theme voice/type/color/density/motion rationale
+    planner-ux.md                         # Planner spec (week grid default, popovers, deep links) — frozen
   api.md (FROZEN v1, M1)
   decisions/
     ADR-001-astro-ssr-on-cloudflare.md
@@ -211,7 +253,7 @@ Deploys are intentionally out of scope for now (local wrangler only — see `doc
 
 ### Visual QA
 
-`scripts/visual-qa.mjs` screenshots the app across all themes/schemes/pages plus interaction states (popovers, modals, collapsed sidebar, narrow viewport) via Playwright, capturing JS errors along the way. The review workflow — parallel reviewer agents, triage discipline, known gotchas (Vite deps-cache corruption, truncated-HTML-as-island-SSR-crash) — is documented in `.claude/skills/visual-qa/SKILL.md`. Run it after any UI change.
+`scripts/visual-qa.mjs` drives Playwright against a running dev server and captures JS console/page errors along the way. Scope: the full 3-theme × 2-scheme matrix on the four pages most sensitive to token changes (dashboard, a course page, planner, settings); every other page (courses, concepts, notes, resources, practice, play, feed, tasks, notes-index, profile) single-pass at compass/light; interaction-state shots (notifications/todo/scratchpad/avatar popovers, record-event and add-course modals, planner's EventPopover + month-view switch); the feed masonry reflow at two viewport widths; and sidebar-collapsed + narrow-viewport passes. The review workflow — parallel reviewer agents, triage discipline, known gotchas (Vite deps-cache corruption, truncated-HTML-as-island-SSR-crash) — is documented in `.claude/skills/visual-qa/SKILL.md`. Run it after any UI change.
 
 ## TODO
 

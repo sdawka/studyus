@@ -379,6 +379,8 @@ Additive column, `text` enum `user | system`, default `'user'`. Existing inserts
 
 **Status**: additive to the FROZEN v1 contract above. No existing field or endpoint shape changed; `assessment_due`/`task_due` calendar items gained new fields (backward compatible for any client ignoring unknown keys).
 
+**Erratum to the v1.1 settings section**: the resolved default for `settings.scheme` is now `light` (was `system`) — a fresh user renders the light scheme regardless of OS preference; `system` remains a selectable value. The v1.1 example above showing `"scheme": "system"` reflects the old default.
+
 ### Calendar — new item types + shape
 
 Migration `0002` adds `study_sessions.scheduled_at` (nullable integer, epoch ms) — a session may now be *planned* ahead of time, not just logged retroactively. This retires the M1 "Deviation from draft" note above: `study_session` calendar items are now implemented.

@@ -20,7 +20,9 @@ cockpit.
 - Weight is a tool for hierarchy: `--weight-bold` runs to 700 so headings
   and hero stats read as unmistakably heavier than body text.
   `--tracking-caps` is tightened to 0.06em — enough presence on uppercase
-  labels without feeling loose.
+  labels without feeling loose. Base size is 13px — smaller than compass
+  (15px) or campus (15.5px), on purpose: focus trades reading comfort for
+  density, matching its "cockpit, not a calm workspace" voice.
 
 ## Color
 
