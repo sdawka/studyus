@@ -241,6 +241,16 @@ Still-deferred from v1 (unchanged by v1.1, see full detail further down): Flue a
 
 ## Operational
 
+### CI/CD Pipeline
+
+**Current**: No CI at all — `npm test`, `npm run check`, and `npm run check:layout` are run locally, on the honor system, before committing. See "Deploy pipeline" note above (still local-only wrangler, no `wrangler deploy` step either).
+
+**Post-v1**: A GitHub Actions workflow on PR/push that runs, in order: `npm test` (Vitest + pool-workers), `npm run check` (wrangler types + astro check), `npm run build` (astro build — catches anything the type checker doesn't). Layout checks (`npm run check:layout`) need a running dev server plus Playwright under Node 20 (see `scripts/layout-check.cjs` header) — either spin up `astro dev` in the background in CI and point the script at it, or defer this step to a separate, slower workflow if startup cost is a problem.
+
+**Also blocking `npm run check` from being fully clean today**: `scripts/seed.ts` and `vitest.config.ts` need `@types/node` (`nodejs_compat` flag requires it per wrangler's own guidance) — not installed yet to avoid a lockfile race with concurrent agent work at the time this was written. `npm i --save-dev @types/node` is a same-day fix once that's safe to do.
+
+**Scope**: `.github/workflows/ci.yml`, secrets for any Cloudflare API tokens if a deploy step is added later, `@types/node` install.
+
 ### Monitoring & Observability
 
 **Post-v1**: Deploy production monitoring:

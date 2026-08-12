@@ -8,7 +8,8 @@ import { toApi } from '../../lib/serialize';
 import { NotFoundError, notFound } from '../../lib/handleNotFound';
 import NoteEditor from '../../components/notes/NoteEditor.svelte';
 
-if (!Astro.locals.user) return Astro.redirect('/login');
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/login');
 
 const db = getDb(env.DB);
 const { id } = Astro.params;
@@ -17,18 +18,18 @@ if (!id) return notFound(Astro);
 
 let note;
 try {
-  note = await getNote(db, Astro.locals.user.id, id);
+  note = await getNote(db, user.id, id);
 } catch (err) {
   if (err instanceof NotFoundError) return notFound(Astro);
   throw err;
 }
 
-const courses = await listCourses(db, Astro.locals.user.id);
+const courses = await listCourses(db, user.id);
 
 // Get KCs for each course
 const coursesWithKcs = await Promise.all(
   courses.map(async (course) => {
-    const courseDetail = await getCourseBySlug(db, Astro.locals.user.id, course.slug);
+    const courseDetail = await getCourseBySlug(db, user.id, course.slug);
     return {
       id: course.id,
       code: course.code,

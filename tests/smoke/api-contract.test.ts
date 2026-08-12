@@ -395,7 +395,7 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
         request: createReq,
         locals: { user: { id: fixture.userId } },
       }) as any);
-      const eventId = (await createRes.json()).data.id;
+      const eventId = ((await createRes.json()) as any).data.id;
 
       // Update it
       const updateReq = new Request('http://local.test/api/v1', {
@@ -408,7 +408,7 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
         locals: { user: { id: fixture.userId } },
       }) as any);
       expect(updateRes.status).toBe(200);
-      const body = (await updateRes.json()).data;
+      const body = ((await updateRes.json()) as any).data;
       expect(body.type).toBe('video_watched');
     });
 
@@ -422,7 +422,7 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
         request: createReq,
         locals: { user: { id: fixture.userId } },
       }) as any);
-      const eventId = (await createRes.json()).data.id;
+      const eventId = ((await createRes.json()) as any).data.id;
 
       // Delete it
       const delRes = await eventsDetailRoutes.DELETE(astroContext({
@@ -484,7 +484,7 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
         request: createReq,
         locals: { user: { id: fixture.userId } },
       }) as any);
-      const taskId = (await createRes.json()).data.id;
+      const taskId = ((await createRes.json()) as any).data.id;
 
       // Update
       const patchReq = new Request('http://local.test/api/v1', {
@@ -550,7 +550,7 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
         request: createReq,
         locals: { user: { id: fixture.userId } },
       }) as any);
-      const noteId = (await createRes.json()).data.id;
+      const noteId = ((await createRes.json()) as any).data.id;
 
       // Get
       const getRes = await notesDetailRoutes.GET(astroContext({
@@ -559,7 +559,7 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
         locals: { user: { id: fixture.userId } },
       }) as any);
       expect(getRes.status).toBe(200);
-      const note = (await getRes.json()).data;
+      const note = ((await getRes.json()) as any).data;
       expect(note.id).toBe(noteId);
 
       // Patch
@@ -613,7 +613,7 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
         request: createReq,
         locals: { user: { id: fixture.userId } },
       }) as any);
-      const resourceId = (await createRes.json()).data.id;
+      const resourceId = ((await createRes.json()) as any).data.id;
 
       // Delete
       const delRes = await resourcesDetailRoutes.DELETE(astroContext({
@@ -816,7 +816,7 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
         request: createReq,
         locals: { user: { id: fixture.userId } },
       }) as any);
-      const convId = (await createRes.json()).data.id;
+      const convId = ((await createRes.json()) as any).data.id;
 
       // Get
       const getRes = await tutorConvDetailRoutes.GET(astroContext({
@@ -840,7 +840,7 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
         request: createReq,
         locals: { user: { id: fixture.userId } },
       }) as any);
-      const convId = (await createRes.json()).data.id;
+      const convId = ((await createRes.json()) as any).data.id;
 
       // End
       const endReq = new Request('http://local.test/api/v1', {

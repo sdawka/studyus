@@ -33,6 +33,9 @@ Mastery is **never stored directly** — it's computed on-demand from an append-
 - The same API surfaces for native clients (iPad app later).
 - API contract is frozen at end of M1; iPad and web apps build against the same specification.
 
+### Client State (nanostores)
+Cross-island state that used to be prop-threaded or duplicated per-component now lives in `nanostores` atoms under `src/lib/stores/`. Svelte 5 subscribes directly via the `$storeName` auto-subscription (nanostores atoms implement `.subscribe`) — no `@nanostores/svelte` adapter needed. Two atoms so far: `ui.ts`'s `activePopover` (which of the header's popovers — scratchpad/todo/bell/avatar — is open; previously local `$state` in `HeaderActions.svelte`) and `courseContext.ts`'s `courseContext` (the course the user is currently viewing, `{id, slug, code, title} | null`, SSR-safe default `null`). `CourseLayout.astro` mounts a tiny invisible `CourseContextSetter.svelte` island (`client:load`) on every course subpage to publish it; `ScratchpadPopup`, `TodoDropdown`, and `LogEventModal` read it to default a course selection — always just a default, never enforced.
+
 ### Design Tokens — 3 Themes × 2 Schemes
 The whole app shares one token vocabulary, split across files under `src/styles/`:
 - **`tokens.css`** — theme-agnostic derivations only: `--course`/`--course-ink`/`--course-soft` computed from a per-element `--course-h` (0-360, set inline from `courses.color`) plus theme-owned `--course-l/-c` knobs, so the same hue reads correctly in every theme × scheme combination. Derived on the universal selector `*` (not `:root`) so a per-element `--course-h` override actually re-evaluates — a `:root`-level derivation would pin every element to one hue.
@@ -247,9 +250,29 @@ npm run dev                             # Astro on workerd, hot-reload
 
 # Tests
 npm test                                # Vitest with pool-workers
+
+# Type checking (run before committing)
+npm run check                           # wrangler types + astro check
+
+# Layout regression guard (needs a running dev server)
+npm run check:layout                    # scripts/layout-check.cjs
 ```
 
 Deploys are intentionally out of scope for now (local wrangler only — see `docs/todo.md`).
+
+### Type checking
+
+`npm run check` regenerates the Cloudflare `Env` types (`wrangler types` → `worker-configuration.d.ts`, gitignored, regenerate whenever `wrangler.jsonc` bindings change) and then runs `astro check` (which also covers `.ts`/`.svelte` files, not just `.astro`). `src/env.d.ts` augments the generated global `Cloudflare.Env`/`Env` with `OPENROUTER_API_KEY` (a secret set via `.dev.vars`/`wrangler secret put`, not a `wrangler.jsonc` var, so wrangler's generator doesn't know about it). There are no git hooks wired up — run `npm run check` yourself before committing; CI wiring is tracked in `docs/todo.md`.
+
+As of this writing `npm run check` is clean except: `scripts/seed.ts` and `vitest.config.ts` (blocked on installing `@types/node` — deferred to avoid a lockfile race with concurrent agent work, see `docs/todo.md`), and pre-existing errors inside files under active rework by other agents at the time (`src/components/shell/Header.astro`, `src/pages/feed.astro`) — check with `npm run check` for the current count before assuming either is still true.
+
+### Layout regression guard
+
+`scripts/layout-check.cjs` is an assertion-based Playwright script (no screenshots) that logs in and checks layout invariants across a viewport × sidebar-state matrix, so a regression in the container/breakpoint math fails fast instead of waiting for a human to notice a squished page. It checks, per page: no horizontal page overflow, the main content column staying centered with equal gutters once it's narrower than its container, and no element bleeding past the viewport's right edge; on `/dashboard` specifically, that the rail (320px column) goes side-by-side vs. stacks based on the actual measured container width vs. the `@container` breakpoint read live out of `dashboard.astro`; and that each of the 4 header popovers stays fully on-screen when opened. Pages covered: dashboard, feed, planner, tasks, notes, profile, and a course's overview/concepts/resources tabs, at widths 1440/1280/1024/820 in both sidebar states.
+
+Like `visual-qa.mjs`, it needs Playwright under Node 20 (see the comment header in the script for the exact `NODE_PATH` invocation) and a running dev server — pass the base URL as an argument or via `LAYOUT_CHECK_BASE_URL`.
+
+**Regression guards**: the CONFIG block at the top of the script (content-max, sidebar widths, breakpoints, viewport list) mirrors current values in `tokens.css`/`AppShell.astro`/`dashboard.astro` — update it there first if you intentionally change one of those. A `pendingRebaseline` list marks checks that are allowed to fail without breaking the exit code, for layout under active rework elsewhere; when that work lands, remove the relevant entries and confirm the checks pass for real rather than leaving them pending indefinitely.
 
 ### Visual QA
 

@@ -53,3 +53,4 @@ Reviewers report only — they never edit files.
 ## TODO
 - Baseline/diff mode (compare against last accepted shots) once the UI stabilizes.
 - Add axe-core accessibility pass to the harness.
+- For hard layout invariants (no horizontal overflow, centered gutters, dashboard rail side-by-side/stacked, popovers on-screen) prefer `scripts/layout-check.cjs` (`npm run check:layout`) over a screenshot review — it's assert-based and exits non-zero, so it belongs in a regression-guard loop rather than a one-off visual pass. See `docs/architecture/overview.md`'s "Layout regression guard" section for invocation and re-baselining. Run both after layout-affecting changes: layout-check for invariants, this skill for anything that needs a human/LLM eye (contrast, spacing taste, theme identity).

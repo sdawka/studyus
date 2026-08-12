@@ -1,5 +1,5 @@
 /// <reference types="astro/client" />
-/// <reference types="@cloudflare/workers-types" />
+/// <reference path="../worker-configuration.d.ts" />
 
 type User = typeof import('./db/schema').users.$inferSelect;
 
@@ -9,12 +9,13 @@ declare namespace App {
   }
 }
 
-declare module 'cloudflare:workers' {
+// D1Database, R2Bucket, and the `Cloudflare.Env`/`Env` globals used by
+// `import { env } from 'cloudflare:workers'` come from worker-configuration.d.ts
+// (regenerate with `npx wrangler types` after changing wrangler.jsonc bindings).
+// OPENROUTER_API_KEY is a secret (wrangler secret put / .dev.vars), not a
+// `vars` entry, so wrangler's generator doesn't know about it — augment here.
+declare namespace Cloudflare {
   interface Env {
-    DB: D1Database;
-    UPLOADS: R2Bucket;
-    OPENROUTER_MODEL: string;
     OPENROUTER_API_KEY: string;
   }
-  export const env: Env;
 }

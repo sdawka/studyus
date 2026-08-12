@@ -25,7 +25,7 @@ async function derive(password: string, salt: Uint8Array, iterations: number): P
     ['deriveBits'],
   );
   return crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: salt.buffer as ArrayBuffer, iterations, hash: 'SHA-256' },
     keyMaterial,
     HASH_BITS,
   );

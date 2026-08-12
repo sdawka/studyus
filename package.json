@@ -14,7 +14,10 @@
     "db:migrate:local": "wrangler d1 migrations apply studyus --local",
     "db:migrate:remote": "wrangler d1 migrations apply studyus --remote",
     "db:seed": "tsx scripts/seed.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check:types": "wrangler types && astro check",
+    "check:layout": "node scripts/layout-check.cjs",
+    "check": "npm run check:types"
   },
   "dependencies": {
     "@astrojs/cloudflare": "~14.2.0",
