@@ -1,9 +1,12 @@
 # Compass — design language
 
-Compass is the default theme. Voice: **airy, light, precise.** It should feel like a
-well-run studio — plenty of breathing room, one confident accent color, flat surfaces
-that separate by border and background step rather than shadow, and information
-presented with quiet precision (tabular numbers, small caps labels, calm motion).
+Compass is the default theme. Charter feel: **minimal, clean, informational** — a quiet
+instrument, not a poster. Ink is earned by data that changes a decision (grades, overdue
+dates, mastery %), never by decoration or by structure repeating itself. Whitespace is
+the primary hierarchy tool — rank matters more than emphasis-by-color. Numbers are the
+heroes: the largest, calmest, most confident marks on the page, in tabular figures with
+room to breathe. Everything else — kickers, pills, borders — is quiet infrastructure
+that recedes the instant you stop needing it.
 
 ## Type
 
@@ -18,6 +21,11 @@ presented with quiet precision (tabular numbers, small caps labels, calm motion)
   tabular data.
 - Base size 15px. Weight scale is restrained: 510 (medium), 550 (semibold), 650 (bold)
   — never true 700/800; Compass should never look shouty.
+- Hero numbers (grades, weighted %, mastery) use `.figure`: `--text-figure: 32px` at
+  `--weight-semi`, tabular figures. Scale is the only lever — no separate numeral face;
+  `--font-num`/`--font-kicker` stay unset so both fall back to body, and `--font-title`
+  stays unset so it falls back to `--font-display` (Figtree). Compass earns hierarchy
+  from size and space, not from a proliferation of typefaces.
 
 ## Color
 
@@ -31,9 +39,20 @@ presented with quiet precision (tabular numbers, small caps labels, calm motion)
 - Light neutrals are cool, barely-tinted grays (hue 240, near-zero chroma) — the goal is
   "paper," not "gray box."
 - Dark neutrals keep the same hue family, inverted. Because cards carry no shadow, the
-  dark ramp separates `--surface`/`--surface-2` from `--bg` by a full step (~7 L) so
-  cards still read as distinct panels purely from background contrast + a visible
-  hairline border.
+  dark ramp separates `--surface` (25% L) and `--border` (36% L) further from `--bg`
+  (16% L, untouched) than a naive inversion would — cards need to read as distinct
+  panels purely from background contrast + a visible hairline border, with no
+  elevation to lean on.
+- `--hairline` recedes further from `--border` than it might in a shadow-led theme:
+  94.5% L in light (vs. `--border` at 90% L) and 30% L in dark (vs. `--border` at 36%
+  L) — it should disappear the instant you're not tracing a boundary, leaving `--border`
+  as the one line that actually reads as structure.
+- The planner now-line stays on its charter default: `--now-line-color` and
+  `--now-line-glow` are left unset in this theme, which resolves to `var(--danger)` and
+  `none` respectively — a calm, ungloved line, not an accent callout.
+- `--nav-active-tick` is left unset (defaults to `0`) — the active sidebar item's only
+  affordance is the `--sidebar-active-bg` fill; a tick mark would be a second signal for
+  one fact.
 
 ## Elevation
 

@@ -13,7 +13,7 @@
   --muted:     oklch(46% 0.018 240);
   --faint:     oklch(62% 0.014 240);
   --border:    oklch(90% 0.006 240);
-  --hairline:  oklch(93.5% 0.004 240);
+  --hairline:  oklch(94.5% 0.004 240);
   --hover:     var(--hairline);
 
   --accent:      oklch(56% 0.12 170);
@@ -60,6 +60,9 @@
   --weight-bold: 650;
   --tracking-caps: 0.08em;
 
+  /* Hero numbers get scale, stay calm: semibold cap, no separate face. */
+  --text-figure: 32px;
+
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 13px;
@@ -81,13 +84,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-scheme='light']) {
     --bg:        oklch(16% 0.006 240);
-    --surface:   oklch(23% 0.009 240);
-    --surface-2: oklch(26% 0.009 240);
+    --surface:   oklch(25% 0.009 240);
+    --surface-2: oklch(28% 0.009 240);
     --text:      oklch(92% 0.006 240);
     --muted:     oklch(68% 0.016 240);
     --faint:     oklch(55% 0.014 240);
-    --border:    oklch(33% 0.011 240);
-    --hairline:  oklch(28% 0.009 240);
+    --border:    oklch(36% 0.011 240);
+    --hairline:  oklch(30% 0.009 240);
     --hover:     var(--hairline);
 
     --accent:      oklch(68% 0.12 170);
@@ -125,13 +128,13 @@
 /* KEEP IN SYNC with the media block above. */
 :root[data-scheme='dark'] {
   --bg:        oklch(16% 0.006 240);
-  --surface:   oklch(23% 0.009 240);
-  --surface-2: oklch(26% 0.009 240);
+  --surface:   oklch(25% 0.009 240);
+  --surface-2: oklch(28% 0.009 240);
   --text:      oklch(92% 0.006 240);
   --muted:     oklch(68% 0.016 240);
   --faint:     oklch(55% 0.014 240);
-  --border:    oklch(33% 0.011 240);
-  --hairline:  oklch(28% 0.009 240);
+  --border:    oklch(36% 0.011 240);
+  --hairline:  oklch(30% 0.009 240);
   --hover:     var(--hairline);
 
   --accent:      oklch(68% 0.12 170);
