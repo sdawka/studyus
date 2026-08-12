@@ -31,6 +31,14 @@ const SINGLE_PAGES = {
   notes: '/notes',
   profile: '/profile',
 };
+// Dashboard-with-expanded-week is per-theme×scheme but overkill for the full
+// matrix — just the 3 themes in light + compass dark.
+const EXPANDED_WEEK_COMBOS = [
+  { theme: 'compass', scheme: 'light' },
+  { theme: 'focus', scheme: 'light' },
+  { theme: 'campus', scheme: 'light' },
+  { theme: 'compass', scheme: 'dark' },
+];
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, baseURL: BASE });
@@ -73,11 +81,39 @@ for (const theme of THEMES) {
   }
 }
 
+// Dashboard with the WeekView expanded (click its Expand toggle), a subset
+// of the theme×scheme matrix — 3 themes light + compass dark.
+for (const { theme, scheme } of EXPANDED_WEEK_COMBOS) {
+  await api('PATCH', '/api/v1/user', { settings: { theme, scheme } });
+  await shot(`dashboard-week-expanded--${theme}-${scheme}`, '/dashboard', {
+    before: async () => {
+      // Expanded/collapsed state persists in localStorage (sb:weekview) across
+      // page loads, so an unconditional click would collapse an already-expanded
+      // view on later combos. Only click if not already expanded.
+      if ((await page.locator('.week-grid').count()) > 0) return;
+      const el = page.locator('.toggle-btn').first();
+      if ((await el.count()) === 0) {
+        console.log(`MISSING selector for dashboard-week-expanded--${theme}-${scheme}: .toggle-btn`);
+        return;
+      }
+      await el.click();
+      await page.waitForTimeout(300);
+    },
+  });
+}
+
 // Reset to defaults for single-pass + interaction shots
 await api('PATCH', '/api/v1/user', { settings: { theme: 'compass', scheme: 'light' } });
 for (const [name, path] of Object.entries(SINGLE_PAGES)) {
   await shot(`${name}--compass-light`, path);
 }
+
+// Feed masonry column reflow at two widths (columns: 5 240px, single-col <600px)
+await page.setViewportSize({ width: 1440, height: 900 });
+await shot('feed-masonry--1440', '/feed');
+await page.setViewportSize({ width: 900, height: 900 });
+await shot('feed-masonry--900', '/feed');
+await page.setViewportSize({ width: 1440, height: 900 });
 
 // Interaction states (compass light, dashboard)
 const clickShot = async (name, selector) => {
@@ -89,14 +125,36 @@ const clickShot = async (name, selector) => {
   await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: false });
   console.log(`shot ${name}`);
 };
-await clickShot('popover-bell', '[aria-label*="otification"], button:has(svg):near(:text("")) >> nth=0');
-await clickShot('popover-todo', '[aria-label*="odo"], [aria-label*="ask"]');
-await clickShot('popover-scratchpad', '[aria-label*="cratch"]');
-await clickShot('popover-avatar', '[aria-label*="ccount"], [aria-label*="menu"], [aria-label*="vatar"]');
+await clickShot('popover-bell', 'button[title="Notifications"]');
+await clickShot('popover-todo', 'button[title="To-do"]');
+await clickShot('popover-scratchpad', 'button[title="Scratchpad"]');
+await clickShot('popover-avatar', 'button.avatar');
 await clickShot('modal-record-event', 'button:text-matches("record event", "i")');
 await clickShot('modal-add-course', '#add-course-btn, button:text-matches("add course", "i")');
 
-// Sidebar collapsed + narrow viewport
+// Planner: select an event (opens EventPopover) and switch to month view
+await page.goto(BASE + '/planner', { waitUntil: 'networkidle' });
+const eventBlock = page.locator('[data-event-id]').first();
+if ((await eventBlock.count()) === 0) {
+  console.log('MISSING selector for planner-event-selected: [data-event-id]');
+} else {
+  await eventBlock.click();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${OUT}/planner-event-selected.png`, fullPage: false });
+  console.log('shot planner-event-selected');
+}
+await page.goto(BASE + '/planner', { waitUntil: 'networkidle' });
+const monthToggle = page.locator('.view-toggle .chip:text-matches("^month$", "i")');
+if ((await monthToggle.count()) === 0) {
+  console.log('MISSING selector for planner-month-view: .view-toggle .chip:text-matches("month")');
+} else {
+  await monthToggle.click();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${OUT}/planner-month-view.png`, fullPage: true });
+  console.log('shot planner-month-view');
+}
+
+// Sidebar collapsed + narrow viewports
 await page.goto(BASE + '/dashboard', { waitUntil: 'networkidle' });
 await page.evaluate(() => { document.documentElement.dataset.sidebar = 'collapsed'; });
 await page.waitForTimeout(300);
@@ -107,8 +165,15 @@ await page.goto(BASE + '/dashboard', { waitUntil: 'networkidle' });
 await page.screenshot({ path: `${OUT}/dashboard-narrow-820.png`, fullPage: true });
 console.log('shot dashboard-narrow-820');
 
-// Restore defaults
-await api('PATCH', '/api/v1/user', { settings: { theme: 'compass', scheme: 'system' } });
+// Known overflow issue at 400px — evidence shot
+await page.setViewportSize({ width: 400, height: 900 });
+await page.goto(BASE + '/dashboard', { waitUntil: 'networkidle' });
+await page.screenshot({ path: `${OUT}/dashboard-narrow-400.png`, fullPage: true });
+console.log('shot dashboard-narrow-400');
+await page.setViewportSize({ width: 1440, height: 900 });
+
+// Restore defaults (light is now the default scheme, not system)
+await api('PATCH', '/api/v1/user', { settings: { theme: 'compass', scheme: 'light' } });
 await browser.close();
 if (errors.length) {
   console.log('\nJS ERRORS CAPTURED:');
