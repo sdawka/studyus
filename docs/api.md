@@ -1,10 +1,12 @@
-# StudyBuddy API — FROZEN v1 (M1, 2026-08-11)
+# studyus API — FROZEN v1 (M1, 2026-08-11)
 
 **Status**: FROZEN v1. This is the contract the iPad client (and any other native/agentic caller) builds against. Changes after this point are additive-only (new optional fields, new endpoints) unless a new major version is introduced. `tutor/*` and `flows/*` were reserved for M4 and are now implemented — see those sections below (the streaming message endpoint and the `end`/quick_quiz-answers endpoints return a non-`{data}` or additive shape respectively, called out where relevant).
 
 **Base URL**: `/api/v1`
 
-**Auth**: Session-based via HttpOnly cookie, name `studybuddy_session` (not `session_token` — corrected from the draft). Unauthenticated requests to any `/api/v1/*` route other than `/api/v1/auth/*` → `401 Unauthorized`.
+**Auth**: Session-based via HttpOnly cookie, name `studyus_session` (not `session_token` — corrected from the draft). Unauthenticated requests to any `/api/v1/*` route other than `/api/v1/auth/*` → `401 Unauthorized`.
+
+> **v1.1 erratum**: the session cookie was renamed from `studybuddy_session` to `studyus_session` as part of the StudyBuddy→studyus app rename. This is a documented API change — clients checking the cookie name directly must update it.
 
 **Envelope** (unchanged from draft):
 ```json
@@ -37,7 +39,7 @@ Error `code`s in use: `invalid_input` (400, includes Zod validation failures), `
 ```json
 { "data": { "user": { "id": "uuid", "email": "string", "name": "string|null" } } }
 ```
-**Errors**: `401 unauthorized` (wrong credentials), `400 invalid_input` (missing/malformed fields). Sets the `studybuddy_session` HttpOnly cookie.
+**Errors**: `401 unauthorized` (wrong credentials), `400 invalid_input` (missing/malformed fields). Sets the `studyus_session` HttpOnly cookie.
 
 ### POST /auth/logout
 **Response** (200): `{ "data": { "ok": true } }`

@@ -1,6 +1,6 @@
 # Events & Mastery: The KLI Framework
 
-This document distills **Koedinger, Corbett & Perfetti's Knowledge-Learning-Instruction (KLI) Framework** (Cognitive Science 36(5), 2012; [PDF](http://pact.cs.cmu.edu/pubs/Koedinger,%20Corbett,%20Perfetti%202012-KLI.pdf)) and explains how StudyBuddy's event model and mastery inference implement it.
+This document distills **Koedinger, Corbett & Perfetti's Knowledge-Learning-Instruction (KLI) Framework** (Cognitive Science 36(5), 2012; [PDF](http://pact.cs.cmu.edu/pubs/Koedinger,%20Corbett,%20Perfetti%202012-KLI.pdf)) and explains how studyus's event model and mastery inference implement it.
 
 ## Ontology: KCs, Events, and Performance
 
@@ -20,7 +20,7 @@ Three types of observable events drive learning:
    - Quiz, homework problem, exam, self-report confidence.
    - Reveal performance, which reveals learning.
 
-**Critical insight**: A single interaction is often **both IE and AE simultaneously**. A tutored problem step gives feedback (instruction) AND records whether the student got it right (assessment). So instead of categorizing events as "instructional" or "assessment," StudyBuddy uses **dual-role boolean flags**: `is_instructional`, `is_assessment`.
+**Critical insight**: A single interaction is often **both IE and AE simultaneously**. A tutored problem step gives feedback (instruction) AND records whether the student got it right (assessment). So instead of categorizing events as "instructional" or "assessment," studyus uses **dual-role boolean flags**: `is_instructional`, `is_assessment`.
 
 Examples:
 - `lecture_attended`: IE=true, AE=false (instruction only; no performance measure).
@@ -83,9 +83,9 @@ KLI predicts that instructional effectiveness *asymmetrically depends on KC type
 
 Consequence: **Spaced retrieval is safe universally**. Every tutor mode ends with a retrieval prompt. But sense-making instruction is gated on KC type.
 
-## Tutor Modes (StudyBuddy Implementation)
+## Tutor Modes (studyus Implementation)
 
-StudyBuddy's tutor selects a mode based on `kc_type`:
+studyus's tutor selects a mode based on `kc_type`:
 
 | kc_type | Mode | Method | Typical Flow |
 |---------|------|--------|--------------|
@@ -97,7 +97,7 @@ StudyBuddy's tutor selects a mode based on `kc_type`:
 
 ## Mastery Measurement (CMU DataShop Convention)
 
-StudyBuddy adopts CMU's DataShop conventions for measuring mastery:
+studyus adopts CMU's DataShop conventions for measuring mastery:
 
 ### Opportunity Count
 For each (learner, KC), count the number of *independent attempts* on tasks involving that KC. This allows comparison across learners and tracking of learning curves.
@@ -111,7 +111,7 @@ On the *first attempt* of a task involving a KC:
 ### Learning Curves
 Plot error rate vs. opportunity count. Typical pattern: exponential decay (fewer errors as practice accumulates).
 
-### StudyBuddy v1 Fold (Mastery Score Derivation)
+### studyus v1 Fold (Mastery Score Derivation)
 
 **The fold is a pure function**: given a list of events for a (user, KC), compute a mastery score 0–100.
 

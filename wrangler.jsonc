@@ -1,12 +1,12 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "studybuddy",
+  "name": "studyus",
   "compatibility_date": "2026-08-01",
   "compatibility_flags": ["nodejs_compat"],
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "studybuddy",
+      "database_name": "studyus",
       "database_id": "local-placeholder",
       "migrations_dir": "migrations"
     }
@@ -14,7 +14,7 @@
   "r2_buckets": [
     {
       "binding": "UPLOADS",
-      "bucket_name": "studybuddy-uploads"
+      "bucket_name": "studyus-uploads"
     }
   ],
   "vars": {

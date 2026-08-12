@@ -90,7 +90,7 @@ async function main() {
   const coursesData: CourseJson[] = JSON.parse(readFileSync(coursesPath, 'utf-8'));
 
   const seedEmail = process.env.SEED_USER_EMAIL || 'student@example.com';
-  const seedPassword = process.env.SEED_USER_PASSWORD || 'studybuddy';
+  const seedPassword = process.env.SEED_USER_PASSWORD || 'studyus';
   const passwordHash = await pbkdf2Hash(seedPassword);
   const userId = deterministicId('user', seedEmail);
 
@@ -152,13 +152,13 @@ async function main() {
     });
   }
 
-  const dir = mkdtempSync(join(tmpdir(), 'studybuddy-seed-'));
+  const dir = mkdtempSync(join(tmpdir(), 'studyus-seed-'));
   const sqlPath = join(dir, 'seed.sql');
   writeFileSync(sqlPath, statements.join('\n'));
 
   execFileSync(
     'npx',
-    ['wrangler', 'd1', 'execute', 'studybuddy', dbFlag, '--file', sqlPath],
+    ['wrangler', 'd1', 'execute', 'studyus', dbFlag, '--file', sqlPath],
     { stdio: 'inherit' },
   );
 

@@ -12,7 +12,7 @@ const courses = await listCourses(db, user.id);
 const courseSummaries = courses.map((c) => ({ id: c.id, code: c.code, title: c.title, term: c.term }));
 ---
 <AppShell title="Onboarding">
-  <h1>Welcome to StudyBuddy</h1>
+  <h1>Welcome to studyus</h1>
   <p class="lede">A few quick steps to get oriented — skippable any time, all editable later from your profile.</p>
   <OnboardingFlow client:load courses={courseSummaries} initialName={user.name} initialTerm={user.currentTerm} />
 </AppShell>

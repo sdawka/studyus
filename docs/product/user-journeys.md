@@ -1,4 +1,4 @@
-# StudyBuddy User Journeys
+# studyus User Journeys
 
 ## Onboarding (First-Time User)
 

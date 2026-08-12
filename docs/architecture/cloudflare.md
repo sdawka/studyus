@@ -35,26 +35,26 @@ All bindings, database config, and environment variables go here:
 
 ```jsonc
 {
-  "name": "studybuddy",
+  "name": "studyus",
   "main": "dist/server/entry.mjs",
   "type": "service",
   "compatibility_date": "2024-10-31",
 
   "env": {
     "production": {
-      "name": "studybuddy-prod",
-      "route": "https://studybuddy.example.com/*"
+      "name": "studyus-prod",
+      "route": "https://studyus.example.com/*"
     },
     "staging": {
-      "name": "studybuddy-staging",
-      "route": "https://staging.studybuddy.example.com/*"
+      "name": "studyus-staging",
+      "route": "https://staging.studyus.example.com/*"
     }
   },
 
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "studybuddy",
+      "database_name": "studyus",
       "database_id": "...",
       "migrations_dir": "migrations"
     }
@@ -63,7 +63,7 @@ All bindings, database config, and environment variables go here:
   "r2_buckets": [
     {
       "binding": "UPLOADS",
-      "bucket_name": "studybuddy-uploads"
+      "bucket_name": "studyus-uploads"
     }
   ],
 
@@ -151,10 +151,10 @@ Migrations are SQL files in `migrations/`. Apply them locally:
 
 ```bash
 # Apply all pending migrations to local D1
-wrangler d1 migrations apply studybuddy --local
+wrangler d1 migrations apply studyus --local
 
 # Apply to remote D1 (production)
-wrangler d1 migrations apply studybuddy --remote
+wrangler d1 migrations apply studyus --remote
 ```
 
 Migrations are tracked in the `_cf_migrations` table and are idempotent (Drizzle generates safe migrations).

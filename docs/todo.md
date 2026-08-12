@@ -1,4 +1,4 @@
-# StudyBuddy Roadmap: Deferred Features
+# studyus Roadmap: Deferred Features
 
 **M0–M5 Status (2026-08-11)**: Core v1 complete. Frozen API contract (docs/api.md), mastery fold, core UI, AI tutor, quick_quiz flows shipped. Features below remain deferred post-v1.
 
@@ -130,7 +130,7 @@ Each deferred feature is prioritized and scoped to avoid scope creep during post
 **Post-v1**: Deploy Flue agents to multiple channels:
 
 - **Telegram channel**: `/quiz` → quick MCQ on the bus.
-- **SMS channel** (Twilio): "Text START to StudyBuddy" → tutor over SMS.
+- **SMS channel** (Twilio): "Text START to studyus" → tutor over SMS.
 - **Discord bot**: Study group channel integration (announce events, record study sessions).
 - **Email digest**: Daily study recommendation based on mastery.
 - **Slack bot**: For schools with institutional Slack.

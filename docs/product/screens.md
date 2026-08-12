@@ -1,4 +1,4 @@
-# StudyBuddy Screen Inventory
+# studyus Screen Inventory
 
 All pages wrapped in `AppShell.astro` with a two-group sidebar (Admin: Dashboard / Calendar / Grades; Learning: Feed / Courses / Study / Notes / Tasks / Profile). Global "Record event" modal in nav. `*` marks Svelte islands.
 
@@ -6,7 +6,7 @@ All pages wrapped in `AppShell.astro` with a two-group sidebar (Admin: Dashboard
 |---|---|---|
 | `/login` | Session login | LoginForm* |
 | `/` | Redirect → onboarding or dashboard | (redirect logic in middleware) |
-| `/onboarding` | 4-step stepper (skippable): what StudyBuddy is (admin + learning sides) → how KCs/events → mastery works, in plain language → confirm the imported courses → set display name + current term (`PATCH /user`, stamps `onboarded_at`). Personalized pacing/goals shown as a visible, disabled "coming soon" item. | OnboardingFlow* |
+| `/onboarding` | 4-step stepper (skippable): what studyus is (admin + learning sides) → how KCs/events → mastery works, in plain language → confirm the imported courses → set display name + current term (`PATCH /user`, stamps `onboarded_at`). Personalized pacing/goals shown as a visible, disabled "coming soon" item. | OnboardingFlow* |
 | `/dashboard` | 7-day calendar strip, grade snapshot, due tasks, quick event log | CalendarStrip*, GradeSnapshot*, TasksWidget*, EventLog |
 | `/calendar` | Month + agenda views, **course filter dropdown**, scoped to current term by default | CalendarView* |
 | `/grades` | Assessments, weights, current standing, grade entry | GradeTable*, GradeEntryForm* |

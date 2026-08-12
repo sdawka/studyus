@@ -37,8 +37,8 @@ async function callOpenRouter(opts: {
     headers: {
       Authorization: `Bearer ${opts.apiKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://studybuddy.local',
-      'X-Title': 'StudyBuddy',
+      'HTTP-Referer': 'https://studyus.local',
+      'X-Title': 'studyus',
     },
     body: JSON.stringify({
       model: opts.model,

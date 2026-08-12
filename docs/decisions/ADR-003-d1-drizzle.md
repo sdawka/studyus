@@ -6,7 +6,7 @@
 
 ## Context
 
-StudyBuddy needs a relational database for:
+studyus needs a relational database for:
 - User courses, branches, KCs.
 - Event log (append-mostly, but editable).
 - Assessments, grades, session history.
@@ -44,8 +44,8 @@ Alternatives:
 1. Update `src/db/schema.ts`.
 2. Run `drizzle-kit generate` → generates SQL in `migrations/`.
 3. Commit migration files.
-4. On deploy: `wrangler d1 migrations apply studybuddy --remote`.
-5. On local dev: `wrangler d1 migrations apply studybuddy --local`.
+4. On deploy: `wrangler d1 migrations apply studyus --remote`.
+5. On local dev: `wrangler d1 migrations apply studyus --local`.
 
 ## Notes
 

@@ -6,7 +6,7 @@
 
 ## Context
 
-Lucia (popular session library) was deprecated in 2024; maintainer recommends hand-rolling. StudyBuddy requires:
+Lucia (popular session library) was deprecated in 2024; maintainer recommends hand-rolling. studyus requires:
 - Session creation on login.
 - Session validation on every request (middleware).
 - Session cleanup on logout.

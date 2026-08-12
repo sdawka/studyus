@@ -6,7 +6,7 @@
 
 ## Context
 
-StudyBuddy UI requires both:
+studyus UI requires both:
 - **Static, SEO-friendly pages** (dashboard, course index, profile).
 - **Interactive islands** (calendar picker, grade entry, tutor chat, file upload, form state).
 

@@ -6,7 +6,7 @@
 
 ## Context
 
-StudyBuddy allows students to upload materials to courses (study guides, lecture notes, problem solutions). We need:
+studyus allows students to upload materials to courses (study guides, lecture notes, problem solutions). We need:
 - Scalable storage (not database blobs).
 - Fast streaming (download large PDFs quickly).
 - Course & user isolation (no cross-course leaks).

@@ -1,4 +1,4 @@
-# StudyBuddy Product Vision
+# studyus Product Vision
 
 ## Target User
 

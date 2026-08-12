@@ -1,5 +1,5 @@
 {
-  "name": "studybuddy",
+  "name": "studyus",
   "type": "module",
   "version": "0.1.0",
   "private": true,
@@ -11,8 +11,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "db:generate": "drizzle-kit generate",
-    "db:migrate:local": "wrangler d1 migrations apply studybuddy --local",
-    "db:migrate:remote": "wrangler d1 migrations apply studybuddy --remote",
+    "db:migrate:local": "wrangler d1 migrations apply studyus --local",
+    "db:migrate:remote": "wrangler d1 migrations apply studyus --remote",
     "db:seed": "tsx scripts/seed.ts",
     "test": "vitest run"
   },

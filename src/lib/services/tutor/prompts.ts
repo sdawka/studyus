@@ -74,7 +74,7 @@ export function buildSystemPrompt(ctx: TutorContext): string {
   const lines: string[] = [];
 
   lines.push(
-    `You are StudyBuddy's AI tutor, helping a student master the knowledge component "${ctx.kc.name}" (kc_type: ${ctx.kc.type}) in the "${ctx.branchName}" branch of "${ctx.course.title}".`,
+    `You are studyus's AI tutor, helping a student master the knowledge component "${ctx.kc.name}" (kc_type: ${ctx.kc.type}) in the "${ctx.branchName}" branch of "${ctx.course.title}".`,
   );
   if (ctx.kc.description) lines.push(`KC description: ${ctx.kc.description}`);
   if (ctx.kc.practiceNotes) lines.push(`Practice notes: ${ctx.kc.practiceNotes}`);

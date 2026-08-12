@@ -2,7 +2,7 @@
 
 **Status**: Fully specced for v1 design-for; **implementation post-v1** (Flue API still experimental).
 
-This document describes how StudyBuddy will integrate **Flue** (`@flue/server`, `@flue/client` 2.x — the Astro team's agent harness) to deliver learning across multiple channels (web, Telegram, SMS, Discord) without duplicating business logic.
+This document describes how studyus will integrate **Flue** (`@flue/server`, `@flue/client` 2.x — the Astro team's agent harness) to deliver learning across multiple channels (web, Telegram, SMS, Discord) without duplicating business logic.
 
 ## The Pattern: Services → Tools → Agents → Channels
 
@@ -247,7 +247,7 @@ This allows analysis like: "How does Telegram quiz participation affect mastery 
 
 ## Security & Scalability
 
-- **Authentication**: Agents only operate on behalf of authenticated users (userId passed in context). Telegram/SMS channel routers verify user identity before invoking agents (e.g., Telegram user_id → StudyBuddy user_id mapping).
+- **Authentication**: Agents only operate on behalf of authenticated users (userId passed in context). Telegram/SMS channel routers verify user identity before invoking agents (e.g., Telegram user_id → studyus user_id mapping).
 - **Rate limiting**: Per-user message cap + per-agent throughput limits to prevent abuse.
 - **Durable Object persistence**: Agent state is persistent; conversations can span multiple messages and even survive Worker restarts.
 

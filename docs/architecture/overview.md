@@ -1,4 +1,4 @@
-# StudyBuddy Architecture Overview
+# studyus Architecture Overview
 
 ## Stack (Pinned 2026-08-11)
 
@@ -190,7 +190,7 @@ docs/
 # Setup
 npm install
 cp .dev.vars.example .dev.vars          # Add OPENROUTER_KEY
-wrangler d1 migrations apply studybuddy --local
+wrangler d1 migrations apply studyus --local
 npm run seed                            # Idempotent: courses.json → D1
 
 # Dev server

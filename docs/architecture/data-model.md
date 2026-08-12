@@ -1,4 +1,4 @@
-# StudyBuddy Data Model
+# studyus Data Model
 
 ## Tables (Drizzle + D1)
 

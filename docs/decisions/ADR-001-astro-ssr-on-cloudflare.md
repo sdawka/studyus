@@ -6,7 +6,7 @@
 
 ## Context
 
-StudyBuddy requires:
+studyus requires:
 - Server-side rendering (SSR) for session auth middleware and data-driven pages.
 - Real-time integration with D1 database and R2 storage.
 - Frozen API contract for native client (iPad app).

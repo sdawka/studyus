@@ -6,7 +6,7 @@
 
 ## Context
 
-StudyBuddy tracks learning via **KLI framework**: Knowledge Components acquire through events (instructional, assessment). Mastery must:
+studyus tracks learning via **KLI framework**: Knowledge Components acquire through events (instructional, assessment). Mastery must:
 - Reflect recent performance (recency matters).
 - Include exposure from instruction (not just assessment).
 - Allow manual event edits (typos, late grades).

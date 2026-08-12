@@ -1,6 +1,6 @@
-# StudyBuddy Documentation Map
+# studyus Documentation Map
 
-This directory holds product and architecture documentation for StudyBuddy, a KLI-grounded study platform for university students. Docs follow a **fractal structure**: high-level conceptual docs first, each ending with a `## TODO` section that defers lower-level details to later iterations without breaking abstraction.
+This directory holds product and architecture documentation for studyus, a KLI-grounded study platform for university students. Docs follow a **fractal structure**: high-level conceptual docs first, each ending with a `## TODO` section that defers lower-level details to later iterations without breaking abstraction.
 
 ## Structure
 

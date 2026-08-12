@@ -64,7 +64,7 @@
 
   {#if step === 1}
     <div class="sheet panel">
-      <h2>What StudyBuddy is</h2>
+      <h2>What studyus is</h2>
       <p class="stepdesc">Two sides, one place to keep track of your semester.</p>
       <div class="two-col">
         <div class="side">
