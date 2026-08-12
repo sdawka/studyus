@@ -1,132 +1,65 @@
 ---
-import '../styles/notebook.css';
-import LogEventModal from '../components/events/LogEventModal.svelte';
+import '../styles/tokens.css';
+import '../styles/themes/compass.css';
+import '../styles/themes/focus.css';
+import '../styles/themes/campus.css';
+import '../styles/base.css';
+import ThemeScript from '../components/shell/ThemeScript.astro';
+import Sidebar from '../components/shell/Sidebar.astro';
+import Header from '../components/shell/Header.astro';
+import { resolveSettings } from '../lib/services/user';
 
 interface Props {
   title: string;
 }
 const { title } = Astro.props;
 
-const adminLinks = [
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/calendar', label: 'Calendar' },
-  { href: '/grades', label: 'Grades' },
-];
-
-const learningLinks = [
-  { href: '/feed', label: 'Feed' },
-  { href: '/courses', label: 'Courses' },
-  { href: '/study', label: 'Study' },
-  { href: '/notes', label: 'Notes' },
-  { href: '/tasks', label: 'Tasks' },
-  { href: '/profile', label: 'Profile' },
-];
-
-const currentPath = Astro.url.pathname;
+const settings = resolveSettings(Astro.locals.user?.settings);
+const themeAttr = settings.theme === 'compass' ? undefined : settings.theme;
+const schemeAttr = settings.scheme === 'system' ? undefined : settings.scheme;
+const sidebarAttr = settings.sidebar_collapsed ? 'collapsed' : undefined;
 ---
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme={themeAttr} data-scheme={schemeAttr} data-sidebar={sidebarAttr}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title} · studyus</title>
-    <style>
-      body {
-        margin: 0;
-        display: flex;
-        min-height: 100vh;
-      }
-      nav.sidebar {
-        width: 224px;
-        flex-shrink: 0;
-        background: var(--paper);
-        border-right: 1px solid var(--rule-strong);
-        padding: 1.75rem 1.1rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1.9rem;
-      }
-      .brand {
-        display: flex;
-        align-items: baseline;
-        gap: 0.4rem;
-        padding: 0 0.5rem 1rem;
-        border-bottom: 2px solid var(--rule-strong);
-        margin-bottom: 0.25rem;
-      }
-      .brand .mark {
-        font-weight: 600;
-        font-size: 1.2rem;
-        letter-spacing: 0.01em;
-      }
-      .brand .tag {
-        font-size: 0.72rem;
-        color: var(--muted);
-        font-style: italic;
-      }
-      .nav-group h2 {
-        font-size: 0.68rem;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--muted);
-        margin: 0 0 0.5rem 0.5rem;
-        font-weight: 600;
-      }
-      .nav-group ul {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 0.15rem;
-      }
-      .nav-group a {
-        display: block;
-        padding: 0.45rem 0.6rem;
-        border-radius: 3px;
-        color: var(--text);
-        text-decoration: none;
-        font-size: 0.92rem;
-      }
-      .nav-group a:hover { background: var(--ink-soft); }
-      .nav-group a.active { background: var(--ink); color: white; font-weight: 600; }
-      main {
-        flex: 1;
-        padding: 2.5rem 3rem;
-        max-width: 980px;
-      }
-      main h1 { margin-top: 0; }
-      nav.sidebar > :global(.record-event-btn) {
-        margin-top: auto;
-      }
-    </style>
+    <ThemeScript />
   </head>
   <body>
-    <nav class="sidebar">
-      <div class="brand">
-        <span class="mark">studyus</span>
-        <span class="tag">a notebook for the semester</span>
+    <div class="shell">
+      <Sidebar />
+      <div class="shell-main">
+        <Header>
+          <slot name="header-center" slot="center" />
+        </Header>
+        <main>
+          <slot />
+        </main>
       </div>
-      <div class="nav-group">
-        <h2>Admin</h2>
-        <ul>
-          {adminLinks.map((link) => (
-            <li><a href={link.href} class={currentPath === link.href ? 'active' : ''}>{link.label}</a></li>
-          ))}
-        </ul>
-      </div>
-      <div class="nav-group">
-        <h2>Learning</h2>
-        <ul>
-          {learningLinks.map((link) => (
-            <li><a href={link.href} class={currentPath === link.href ? 'active' : ''}>{link.label}</a></li>
-          ))}
-        </ul>
-      </div>
-      <LogEventModal client:load />
-    </nav>
-    <main>
-      <slot />
-    </main>
+    </div>
   </body>
 </html>
+
+<style>
+  .shell {
+    display: grid;
+    grid-template-columns: var(--sidebar-w, 240px) 1fr;
+    min-height: 100vh;
+  }
+  :global(html[data-sidebar='collapsed']) .shell {
+    grid-template-columns: 60px 1fr;
+  }
+  .shell-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  main {
+    flex: 1;
+    padding: 28px 32px 56px;
+    max-width: 1240px;
+    width: 100%;
+  }
+</style>

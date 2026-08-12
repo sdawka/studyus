@@ -1,0 +1,94 @@
+---
+// Wraps AppShell with the 6-tab course header. Only /courses/[slug]/index.astro
+// adopts this in P1 — the tab links below point at subroutes that don't exist
+// yet (concepts/notes/resources/practice/play land in P2C) so they 404 for
+// now; that's expected mid-build, not a bug.
+import AppShell from './AppShell.astro';
+
+interface Course {
+  slug: string;
+  code: string;
+  title: string;
+  term: string | null;
+  instructor: string | null;
+  color: string | null;
+}
+
+interface Props {
+  course: Course;
+  active: 'overview' | 'concepts' | 'notes' | 'resources' | 'practice' | 'play';
+}
+const { course, active } = Astro.props;
+
+const TABS: { id: Props['active']; label: string; href: string }[] = [
+  { id: 'overview', label: 'Overview', href: `/courses/${course.slug}` },
+  { id: 'concepts', label: 'Concepts', href: `/courses/${course.slug}/concepts` },
+  { id: 'notes', label: 'Class notes', href: `/courses/${course.slug}/notes` },
+  { id: 'resources', label: 'Resources', href: `/courses/${course.slug}/resources` },
+  { id: 'practice', label: 'Practice', href: `/courses/${course.slug}/practice` },
+  { id: 'play', label: 'Play', href: `/courses/${course.slug}/play` },
+];
+
+const hue = Number(course.color ?? NaN);
+const courseH = Number.isFinite(hue) ? hue : 220;
+---
+<AppShell title={`${course.code} · ${course.title}`}>
+  <nav class="tab-bar" slot="header-center" aria-label="Course sections">
+    {TABS.map((t) => (
+      <a href={t.href} aria-current={t.id === active ? 'page' : undefined}>{t.label}</a>
+    ))}
+  </nav>
+
+  <div class="course-head" style={`--course-h: ${courseH}`}>
+    <span class="code-badge">{course.code}</span>
+    <h1>{course.title}</h1>
+    <p class="meta">
+      {course.term && <span>{course.term}</span>}
+      {course.instructor && <span> · {course.instructor}</span>}
+    </p>
+  </div>
+
+  <slot />
+</AppShell>
+
+<style>
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    height: 100%;
+    align-items: center;
+    overflow-x: auto;
+  }
+  .tab-bar a {
+    position: relative;
+    top: 1px;
+    padding: 8px 4px;
+    margin: 0 8px;
+    font-size: 13.5px;
+    font-weight: 550;
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+  }
+  .tab-bar a:hover { color: var(--text); }
+  .tab-bar a[aria-current='page'] {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+
+  .course-head { margin-bottom: 22px; }
+  .code-badge {
+    display: inline-flex;
+    align-items: center;
+    background: var(--course-soft);
+    color: var(--course-ink);
+    border-radius: var(--radius-sm);
+    padding: 3px 9px;
+    font: 650 11.5px/1 var(--font-mono);
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  .course-head h1 { font-size: 24px; letter-spacing: -0.015em; margin: 2px 0 4px; }
+  .course-head .meta { color: var(--muted); font-size: 13.5px; }
+</style>

@@ -1,0 +1,85 @@
+---
+import AppShell from '../layouts/AppShell.astro';
+import AppearanceSettings from '../components/settings/AppearanceSettings.svelte';
+import { resolveSettings } from '../lib/services/user';
+
+const user = Astro.locals.user!;
+const settings = resolveSettings(user.settings);
+---
+<AppShell title="Settings">
+  <h1>Settings</h1>
+
+  <section class="card settings-section">
+    <div class="card-head"><h2>Appearance</h2></div>
+    <AppearanceSettings client:load settings={settings} />
+  </section>
+
+  <section class="card settings-section">
+    <div class="card-head"><h2>Profile</h2></div>
+    <form id="profile-form" class="profile-form">
+      <label>
+        Name
+        <input type="text" name="name" value={user.name ?? ''} />
+      </label>
+      <label>
+        Current term
+        <input type="text" name="current_term" value={user.currentTerm ?? ''} placeholder="e.g. Fall 2026" />
+      </label>
+      <button type="submit" class="btn btn-primary">Save</button>
+      <span id="profile-saved" class="saved-msg" hidden>Saved</span>
+    </form>
+  </section>
+
+  <section class="card settings-section">
+    <div class="card-head"><h2>Account</h2></div>
+    <p class="account-email">{user.email}</p>
+    <button type="button" id="logout-btn" class="btn btn-secondary">Log out</button>
+  </section>
+</AppShell>
+
+<script>
+  const form = document.getElementById('profile-form') as HTMLFormElement | null;
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = new FormData(form);
+    const body: Record<string, string | null> = {
+      name: String(data.get('name') || ''),
+      current_term: String(data.get('current_term') || '') || null,
+    };
+    const res = await fetch('/api/v1/user', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const savedMsg = document.getElementById('profile-saved');
+    if (res.ok && savedMsg) {
+      savedMsg.hidden = false;
+      setTimeout(() => { savedMsg.hidden = true; }, 2000);
+    }
+  });
+
+  document.getElementById('logout-btn')?.addEventListener('click', async () => {
+    await fetch('/api/v1/auth/logout', {
+      method: 'POST',
+      headers: { Origin: window.location.origin },
+    });
+    window.location.href = '/login';
+  });
+</script>
+
+<style>
+  h1 { margin-bottom: 20px; }
+  .settings-section { margin-bottom: 18px; max-width: 560px; }
+  .profile-form { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+  .profile-form label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); width: 100%; }
+  .profile-form input {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+  }
+  .saved-msg { font-size: 12.5px; color: var(--good-ink); }
+  .account-email { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+</style>

@@ -1,0 +1,141 @@
+/* ============================================================
+   Theme: Campus — converted from prototype/variation-campus (hex -> OKLCH,
+   2dp). Warm cream cards, terracotta accent, "ui-rounded" display font.
+   ============================================================ */
+
+[data-theme='campus'] {
+  --bg:        oklch(97% 0.013 82);
+  --surface:   oklch(99% 0.006 85);
+  --surface-2: oklch(98% 0.018 81);
+  --text:      oklch(27% 0.013 72);
+  --muted:     oklch(54% 0.027 80);
+  --faint:     oklch(69% 0.035 79);
+  --border:    oklch(91% 0.033 81);
+  --hairline:  oklch(94% 0.025 83);
+  --hover:     var(--surface-2);
+
+  --accent:      oklch(63% 0.137 53);
+  --accent-ink:  oklch(54% 0.123 51);
+  --accent-soft: oklch(93% 0.034 66);
+
+  --good:      oklch(53% 0.089 143);
+  --good-ink:  oklch(40% 0.08 143);
+  --good-soft: oklch(94% 0.025 138);
+  --warn:        oklch(65% 0.12 77);
+  --warn-ink:    oklch(48% 0.1 77);
+  --warn-soft:   oklch(96% 0.031 87);
+  --danger:      oklch(56% 0.147 30);
+  --danger-ink:  oklch(46% 0.13 30);
+  --danger-soft: oklch(94% 0.024 37);
+
+  --sidebar-bg:          var(--surface);
+  --sidebar-text:        var(--text);
+  --sidebar-muted:       var(--muted);
+  --sidebar-border:      var(--border);
+  --sidebar-active-bg:   var(--accent-soft);
+  --sidebar-active-text: var(--accent-ink);
+
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+  --font-display: ui-rounded, 'SF Pro Rounded', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --font-body: -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'SF Mono', ui-monospace, Menlo, monospace;
+  --font-size-base: 15px;
+  --shadow-card: 0 1px 2px rgba(70,45,10,.05), 0 8px 20px -6px rgba(70,45,10,.10);
+  --shadow-pop: 0 4px 10px -2px rgba(70,45,10,.10), 0 16px 32px -10px rgba(70,45,10,.16);
+
+  --course-l: 55%;
+  --course-c: 0.09;
+  --course-ink-l: 42%;
+  --course-ink-c: 0.08;
+  --course-soft-l: 94%;
+  --course-soft-c: 0.035;
+}
+
+/* KEEP IN SYNC: this media block and the explicit [data-scheme=dark]
+   block below must carry identical values. */
+@media (prefers-color-scheme: dark) {
+  [data-theme='campus']:not([data-scheme='light']) {
+    --bg:        oklch(23% 0.017 75);
+    --surface:   oklch(26% 0.023 75);
+    --surface-2: oklch(29% 0.021 67);
+    --text:      oklch(95% 0.022 83);
+    --muted:     oklch(78% 0.034 79);
+    --faint:     oklch(60% 0.035 78);
+    --border:    oklch(34% 0.029 71);
+    --hairline:  oklch(31% 0.026 69);
+    --hover:     var(--surface-2);
+
+    --accent:      oklch(71% 0.133 56);
+    --accent-ink:  oklch(79% 0.116 61);
+    --accent-soft: oklch(35% 0.042 59);
+
+    --good:      oklch(69% 0.095 141);
+    --good-ink:  oklch(80% 0.08 141);
+    --good-soft: oklch(32% 0.031 134);
+    --warn:        oklch(74% 0.111 78);
+    --warn-ink:    oklch(84% 0.09 78);
+    --warn-soft:   oklch(32% 0.032 80);
+    --danger:      oklch(70% 0.12 29);
+    --danger-ink:  oklch(80% 0.1 29);
+    --danger-soft: oklch(30% 0.036 33);
+
+    --sidebar-bg:          var(--surface);
+    --sidebar-text:        var(--text);
+    --sidebar-muted:       var(--muted);
+    --sidebar-border:      var(--border);
+    --sidebar-active-bg:   var(--accent-soft);
+    --sidebar-active-text: var(--accent-ink);
+
+    --shadow-card: 0 1px 2px rgba(0,0,0,.3), 0 8px 20px -6px rgba(0,0,0,.4);
+    --shadow-pop: 0 4px 10px -2px rgba(0,0,0,.4), 0 16px 32px -10px rgba(0,0,0,.5);
+
+    --course-l: 72%;
+    --course-ink-l: 80%;
+    --course-soft-l: 32%;
+    --course-soft-c: 0.05;
+  }
+}
+
+/* KEEP IN SYNC with the media block above. */
+[data-theme='campus'][data-scheme='dark'] {
+  --bg:        oklch(23% 0.017 75);
+  --surface:   oklch(26% 0.023 75);
+  --surface-2: oklch(29% 0.021 67);
+  --text:      oklch(95% 0.022 83);
+  --muted:     oklch(78% 0.034 79);
+  --faint:     oklch(60% 0.035 78);
+  --border:    oklch(34% 0.029 71);
+  --hairline:  oklch(31% 0.026 69);
+  --hover:     var(--surface-2);
+
+  --accent:      oklch(71% 0.133 56);
+  --accent-ink:  oklch(79% 0.116 61);
+  --accent-soft: oklch(35% 0.042 59);
+
+  --good:      oklch(69% 0.095 141);
+  --good-ink:  oklch(80% 0.08 141);
+  --good-soft: oklch(32% 0.031 134);
+  --warn:        oklch(74% 0.111 78);
+  --warn-ink:    oklch(84% 0.09 78);
+  --warn-soft:   oklch(32% 0.032 80);
+  --danger:      oklch(70% 0.12 29);
+  --danger-ink:  oklch(80% 0.1 29);
+  --danger-soft: oklch(30% 0.036 33);
+
+  --sidebar-bg:          var(--surface);
+  --sidebar-text:        var(--text);
+  --sidebar-muted:       var(--muted);
+  --sidebar-border:      var(--border);
+  --sidebar-active-bg:   var(--accent-soft);
+  --sidebar-active-text: var(--accent-ink);
+
+  --shadow-card: 0 1px 2px rgba(0,0,0,.3), 0 8px 20px -6px rgba(0,0,0,.4);
+  --shadow-pop: 0 4px 10px -2px rgba(0,0,0,.4), 0 16px 32px -10px rgba(0,0,0,.5);
+
+  --course-l: 72%;
+  --course-ink-l: 80%;
+  --course-soft-l: 32%;
+  --course-soft-c: 0.05;
+}

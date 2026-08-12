@@ -1,0 +1,132 @@
+/* ============================================================
+   Theme: Focus — converted from prototype/variation-focus (hex -> OKLCH,
+   2dp). Compact, low-chroma, "focus tool" signature: sidebar is pinned
+   dark in BOTH schemes (declared once, in the light block — nothing in
+   the dark blocks below overrides --sidebar-*, so it stays pinned).
+   ============================================================ */
+
+[data-theme='focus'] {
+  --bg:        oklch(97% 0.001 286);
+  --surface:   oklch(100% 0 0);
+  --surface-2: oklch(98% 0.001 286);
+  --text:      oklch(22% 0.008 286);
+  --muted:     oklch(53% 0.014 286);
+  --faint:     oklch(69% 0.012 286);
+  --border:    oklch(92% 0.004 286);
+  --hairline:  oklch(94% 0.003 286);
+  --hover:     var(--surface-2);
+
+  --accent:      oklch(54% 0.184 278);
+  --accent-ink:  oklch(41% 0.16 278);
+  --accent-soft: oklch(95% 0.017 286);
+
+  --good:      oklch(56% 0.137 152);
+  --good-ink:  oklch(40% 0.12 152);
+  --good-soft: oklch(96% 0.02 160);
+  --warn:        oklch(62% 0.129 73);
+  --warn-ink:    oklch(46% 0.11 73);
+  --warn-soft:   oklch(96% 0.027 84);
+  --danger:      oklch(55% 0.172 25);
+  --danger-ink:  oklch(42% 0.15 25);
+  --danger-soft: oklch(95% 0.019 18);
+
+  /* Pinned dark rail — the theme's signature, from the #18181c ramp.
+     Not redeclared in the dark blocks below on purpose. */
+  --sidebar-bg:          oklch(21% 0.008 286);
+  --sidebar-text:        oklch(84% 0.008 286);
+  --sidebar-muted:       oklch(57% 0.014 286);
+  --sidebar-border:      oklch(28% 0.011 286);
+  --sidebar-active-bg:   oklch(27% 0.015 286);
+  --sidebar-active-text: oklch(97% 0.003 286);
+
+  --radius-lg: 8px;
+  --radius-md: 6px;
+  --radius-sm: 4px;
+  --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-size-base: 13px;
+  --shadow-card: 0 1px 2px oklch(0% 0 0 / 0.06);
+  --shadow-pop: 0 2px 6px oklch(0% 0 0 / 0.12);
+
+  --course-l: 50%;
+  --course-c: 0.06;
+  --course-ink-l: 38%;
+  --course-ink-c: 0.05;
+  --course-soft-l: 95%;
+  --course-soft-c: 0.02;
+}
+
+/* KEEP IN SYNC: this media block and the explicit [data-scheme=dark]
+   block below must carry identical values. Sidebar vars intentionally
+   absent — they stay pinned to the light block's dark rail. */
+@media (prefers-color-scheme: dark) {
+  [data-theme='focus']:not([data-scheme='light']) {
+    --bg:        oklch(19% 0.006 286);
+    --surface:   oklch(22% 0.008 286);
+    --surface-2: oklch(23% 0.008 286);
+    --text:      oklch(93% 0.003 286);
+    --muted:     oklch(68% 0.01 286);
+    --faint:     oklch(53% 0.012 286);
+    --border:    oklch(30% 0.009 286);
+    --hairline:  oklch(26% 0.008 286);
+    --hover:     var(--surface-2);
+
+    --accent:      oklch(61% 0.161 281);
+    --accent-ink:  oklch(74% 0.13 281);
+    --accent-soft: oklch(27% 0.058 282);
+
+    --good:      oklch(72% 0.154 154);
+    --good-ink:  oklch(82% 0.12 154);
+    --good-soft: oklch(26% 0.037 160);
+    --warn:        oklch(75% 0.13 80);
+    --warn-ink:    oklch(85% 0.1 80);
+    --warn-soft:   oklch(29% 0.041 87);
+    --danger:      oklch(67% 0.154 20);
+    --danger-ink:  oklch(80% 0.11 20);
+    --danger-soft: oklch(25% 0.04 15);
+
+    --shadow-card: 0 1px 2px oklch(0% 0 0 / 0.35);
+    --shadow-pop: 0 2px 6px oklch(0% 0 0 / 0.45);
+
+    --course-l: 68%;
+    --course-ink-l: 76%;
+    --course-soft-l: 28%;
+    --course-soft-c: 0.04;
+  }
+}
+
+/* KEEP IN SYNC with the media block above. */
+[data-theme='focus'][data-scheme='dark'] {
+  --bg:        oklch(19% 0.006 286);
+  --surface:   oklch(22% 0.008 286);
+  --surface-2: oklch(23% 0.008 286);
+  --text:      oklch(93% 0.003 286);
+  --muted:     oklch(68% 0.01 286);
+  --faint:     oklch(53% 0.012 286);
+  --border:    oklch(30% 0.009 286);
+  --hairline:  oklch(26% 0.008 286);
+  --hover:     var(--surface-2);
+
+  --accent:      oklch(61% 0.161 281);
+  --accent-ink:  oklch(74% 0.13 281);
+  --accent-soft: oklch(27% 0.058 282);
+
+  --good:      oklch(72% 0.154 154);
+  --good-ink:  oklch(82% 0.12 154);
+  --good-soft: oklch(26% 0.037 160);
+  --warn:        oklch(75% 0.13 80);
+  --warn-ink:    oklch(85% 0.1 80);
+  --warn-soft:   oklch(29% 0.041 87);
+  --danger:      oklch(67% 0.154 20);
+  --danger-ink:  oklch(80% 0.11 20);
+  --danger-soft: oklch(25% 0.04 15);
+
+  --shadow-card: 0 1px 2px oklch(0% 0 0 / 0.35);
+  --shadow-pop: 0 2px 6px oklch(0% 0 0 / 0.45);
+
+  --course-l: 68%;
+  --course-ink-l: 76%;
+  --course-soft-l: 28%;
+  --course-soft-c: 0.04;
+}

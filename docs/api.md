@@ -316,3 +316,57 @@ All constants live in `MASTERY_CONSTANTS` in that file.
 - Adaptive difficulty within a tutor conversation; mode-switching mid-conversation; multi-turn lesson planning (see `docs/architecture/tutor.md`).
 - `quick_quiz`'s `study_sessions.reflection`-as-JSON-blob storage is a v1 shortcut — a dedicated `quiz_items` table would be cleaner if quizzes grow more structure (partial credit, free-response, etc).
 - OpenRouter live verification: local dev has no `OPENROUTER_API_KEY` set in `.dev.vars` as of this writing — tutor/flow tests mock the OpenRouter `fetch` call; a real key is needed to verify actual model behavior (prompt quality, model-spec emission rate) end-to-end.
+
+---
+
+## v1.1 Additions (draft)
+
+**Status**: DRAFT until P3 (retirement + cross-theme verification pass). Shapes below are frozen enough for P2 agents to build against, but not yet exercised end-to-end. P3 promotes this section to frozen and folds it into the body above.
+
+### User settings
+
+`GET /user` and `PATCH /user` responses now include a resolved `settings` object (never partial — missing fields resolve to defaults):
+
+```json
+{ "data": { "...": "...", "settings": { "theme": "compass", "scheme": "system", "sidebar_collapsed": false } } }
+```
+
+`PATCH /user` accepts an optional `settings` object (any subset of the three fields) which **merges** onto the stored value — it is not a replace. Example: `PATCH /user { "settings": { "theme": "focus" } }` leaves `scheme`/`sidebar_collapsed` untouched.
+
+- `theme`: `compass | focus | campus` (default `compass`)
+- `scheme`: `light | dark | system` (default `system`)
+- `sidebar_collapsed`: boolean (default `false`)
+
+Resolution logic lives in `src/lib/services/user.ts::resolveSettings` / `DEFAULT_SETTINGS` — call it anywhere `users.settings` (raw JSON, possibly `{}` or missing fields) is read, both server-side (`.astro` SSR) and in the `GET`/`PATCH /user` routes.
+
+### Notifications (P2A implements; schema only in P1)
+
+Table `notifications` (migration `0001`): `id`, `user_id` (FK cascade), `type` (`assessment_due | task_overdue | kc_review | session_unfinished | grade_recorded`), `title`, `body?`, `course_id?` (FK set-null), `href`, `dedupe_key` (UNIQUE — sweep inserts are `ON CONFLICT DO NOTHING` keyed on this, e.g. `assessment_due:<id>`, `task_overdue:<id>:<dueDate>`), `read_at?`, `created_at`; indexed on `(user_id, read_at, created_at)`.
+
+Frozen route shapes (P2A owns the implementation):
+
+- `GET /notifications?unread=&limit=` → `{ data: { notifications: [...], unread_count: n } }` — runs the idempotent sweep first.
+- `PATCH /notifications/:id/read` → marks one notification read.
+- `POST /notifications/read-all` → marks all of the caller's unread notifications read.
+
+### Courses — create/update
+
+- `POST /courses` — strict body `{ code, title, term?, credits?, instructor?, overview?, color_hue? }`. Server derives `slug = slugify(code)` with `-2`/`-3` collision suffixing, and auto-creates one "General" branch (`sort_order: 0`) in the same `db.batch`.
+- `PATCH /courses/:id` — same optional fields plus `archived`; **never** regenerates `slug`. Note the documented asymmetry: this lives in `[slug].ts` but treats the route param as an `id` for mutations (GET-by-slug, PATCH/DELETE-by-id).
+- `color_hue`: integer 0-360, OKLCH hue. Stored in the existing `courses.color` column (as text). Convention: components set `style="--course-h: N"` from it; `tokens.css` derives `--course`/`--course-ink`/`--course-soft` from theme-owned `--course-l/-c` knobs, so the same hue reads correctly in every theme × scheme. Courses seeded before this column was populated, or created without `color_hue`, fall back client-side to a stable hash of the slug (see `Sidebar.astro::hashHue`) — never `null`-render a course tint.
+
+### Tutor conversations list
+
+`GET /tutor/conversations?course=&kc=&limit=` → newest-first list with `kc_name` joined in. Powers the course Play tab (P2C).
+
+### tasks.source
+
+Additive column, `text` enum `user | system`, default `'user'`. Existing inserts are unaffected. `system` is reserved for future system-generated tasks (e.g. from the notifications sweep) — no generator exists yet.
+
+### Shell contract (for P2 agents, not an HTTP shape but frozen here since other agents build against it)
+
+- `AppShell.astro` exposes one named slot, `header-center`, forwarded into `Header.astro`'s `center` slot — pass course tabs / breadcrumbs / nothing there.
+- `CustomEvent('open-add-course')` is dispatched on `window` by the sidebar's "+ Add course" button (`Sidebar.astro`, `#add-course-btn`) — P2D's AddCourseModal listens for it instead of the sidebar knowing about the modal.
+- `localStorage` keys: `sb:theme`, `sb:scheme`, `sb:sidebar` (values `'expanded'|'collapsed'`) — written by `ThemeScript.astro` (read-only mirror) and by `AppearanceSettings.svelte` / the sidebar collapse toggle (read-write). SSR is the source of truth on load; localStorage only prevents a flash between a client-side settings change and the next full page load.
+- `data-theme` (absent = compass), `data-scheme` (absent = system), `data-sidebar` (absent = expanded, `'collapsed'` otherwise) are the three `<html>` attributes the whole theme system keys off.
+- `--course-h` is a plain CSS custom property, not a token — set it inline (`style="--course-h: 235"`) on any element that should render in a course's color; everything else (`--course`, `--course-ink`, `--course-soft`) derives from it via `tokens.css`.

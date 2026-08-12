@@ -103,14 +103,19 @@ async function main() {
      ON CONFLICT(email) DO NOTHING;`,
   );
 
-  for (const course of coursesData) {
+  // Per-course accent hue (OKLCH H, 0-360): a spaced list so adjacent courses
+  // in a term don't land on visually similar hues, assigned by list index.
+  const COURSE_HUES = [235, 25, 150, 305, 65, 190, 340, 105, 45];
+
+  for (const [courseIdx, course] of coursesData.entries()) {
     const courseId = deterministicId('course', course.slug);
+    const colorHue = COURSE_HUES[courseIdx % COURSE_HUES.length];
     statements.push(
       `INSERT INTO courses (id, user_id, code, slug, title, credits, term, instructor, prereqs, overview, source_url, color, archived, created_at)
-       VALUES (${sqlStr(courseId)}, ${sqlStr(userId)}, ${sqlStr(course.code)}, ${sqlStr(course.slug)}, ${sqlStr(course.title)}, ${sqlStr(course.credits)}, ${sqlStr(course.term)}, ${sqlStr(course.instructor)}, ${sqlStr(course.prereqs)}, ${sqlStr(course.overview)}, ${sqlStr(course.source)}, NULL, 0, ${Date.now()})
+       VALUES (${sqlStr(courseId)}, ${sqlStr(userId)}, ${sqlStr(course.code)}, ${sqlStr(course.slug)}, ${sqlStr(course.title)}, ${sqlStr(course.credits)}, ${sqlStr(course.term)}, ${sqlStr(course.instructor)}, ${sqlStr(course.prereqs)}, ${sqlStr(course.overview)}, ${sqlStr(course.source)}, ${sqlStr(colorHue)}, 0, ${Date.now()})
        ON CONFLICT(slug) DO UPDATE SET
          code=excluded.code, title=excluded.title, credits=excluded.credits, term=excluded.term,
-         instructor=excluded.instructor, prereqs=excluded.prereqs, overview=excluded.overview, source_url=excluded.source_url;`,
+         instructor=excluded.instructor, prereqs=excluded.prereqs, overview=excluded.overview, source_url=excluded.source_url, color=excluded.color;`,
     );
 
     (course.branches || []).forEach((branch, branchIdx) => {

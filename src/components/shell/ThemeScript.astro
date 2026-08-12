@@ -1,0 +1,29 @@
+---
+// No-flash theming: SSR already stamped data-theme/data-scheme/data-sidebar
+// from the user's resolved settings. This tiny inline script only corrects
+// for a localStorage override made client-side (e.g. right after a settings
+// change, before the next SSR round-trip) so a reload never flashes the
+// wrong theme. Must run before first paint — kept dependency-free and tiny.
+---
+<script is:inline>
+  (function () {
+    try {
+      var html = document.documentElement;
+      var theme = localStorage.getItem('sb:theme');
+      var scheme = localStorage.getItem('sb:scheme');
+      var sidebar = localStorage.getItem('sb:sidebar');
+      if (theme && html.getAttribute('data-theme') !== theme) {
+        if (theme === 'compass') html.removeAttribute('data-theme');
+        else html.setAttribute('data-theme', theme);
+      }
+      if (scheme && html.getAttribute('data-scheme') !== scheme) {
+        if (scheme === 'system') html.removeAttribute('data-scheme');
+        else html.setAttribute('data-scheme', scheme);
+      }
+      if (sidebar && html.getAttribute('data-sidebar') !== sidebar) {
+        if (sidebar === 'expanded') html.removeAttribute('data-sidebar');
+        else html.setAttribute('data-sidebar', sidebar);
+      }
+    } catch (e) {}
+  })();
+</script>

@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
 
 // Convention: text ids via crypto.randomUUID(); integer timestamps in epoch ms.
 const id = () =>
@@ -205,6 +205,9 @@ export const tasks = sqliteTable('tasks', {
   title: text('title').notNull(),
   dueDate: integer('due_date'),
   done: integer('done', { mode: 'boolean' }).notNull().default(false),
+  // 'system' is reserved for future system-generated tasks (e.g. from the
+  // notifications sweep); nothing produces those yet in v1.1.
+  source: text('source', { enum: ['user', 'system'] }).notNull().default('user'),
   createdAt: createdAt(),
 });
 
@@ -292,3 +295,30 @@ export const tutorMessages = sqliteTable('tutor_messages', {
   content: text('content').notNull(),
   createdAt: createdAt(),
 });
+
+// ---------------------------------------------------------------------------
+// Notifications (v1.1)
+// ---------------------------------------------------------------------------
+
+export const notifications = sqliteTable(
+  'notifications',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    type: text('type', {
+      enum: ['assessment_due', 'task_overdue', 'kc_review', 'session_unfinished', 'grade_recorded'],
+    }).notNull(),
+    title: text('title').notNull(),
+    body: text('body'),
+    courseId: text('course_id').references(() => courses.id, { onDelete: 'set null' }),
+    href: text('href').notNull(),
+    // Sweep-generated notifications are idempotent via ON CONFLICT DO NOTHING
+    // keyed on this — e.g. `assessment_due:<id>`, `task_overdue:<id>:<dueDate>`.
+    dedupeKey: text('dedupe_key').notNull().unique(),
+    readAt: integer('read_at'),
+    createdAt: createdAt(),
+  },
+  (table) => [index('notifications_user_read_created_idx').on(table.userId, table.readAt, table.createdAt)],
+);

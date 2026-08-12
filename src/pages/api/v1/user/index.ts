@@ -4,7 +4,7 @@ import { getDb } from '../../../../db/client';
 import { apiOk } from '../../../../lib/api';
 import { withServiceErrors } from '../../../../lib/apiErrors';
 import { updateUserSchema } from '../../../../lib/schemas/user';
-import { updateUser } from '../../../../lib/services/user';
+import { resolveSettings, updateUser } from '../../../../lib/services/user';
 
 export const GET: APIRoute = async ({ locals }) => {
   const user = locals.user!;
@@ -14,6 +14,7 @@ export const GET: APIRoute = async ({ locals }) => {
     name: user.name,
     current_term: user.currentTerm,
     onboarded_at: user.onboardedAt ? new Date(user.onboardedAt).toISOString() : null,
+    settings: resolveSettings(user.settings),
   });
 };
 
@@ -29,5 +30,6 @@ export const PATCH: APIRoute = async ({ request, locals }) =>
       name: updated.name,
       current_term: updated.currentTerm,
       onboarded_at: updated.onboardedAt ? new Date(updated.onboardedAt).toISOString() : null,
+      settings: resolveSettings(updated.settings),
     });
   });

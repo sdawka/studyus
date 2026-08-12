@@ -1,5 +1,5 @@
 ---
-import AppShell from '../../../layouts/AppShell.astro';
+import CourseLayout from '../../../layouts/CourseLayout.astro';
 import { env } from 'cloudflare:workers';
 import { getDb } from '../../../db/client';
 import { attachments, noteLinks, notes, resources as resourcesTable } from '../../../db/schema';
@@ -48,18 +48,8 @@ for (const r of courseResources) {
 }
 const KIND_LABELS: Record<string, string> = { canonical: 'Canonical', feed: 'Feed', user_shared: 'Shared by you' };
 ---
-<AppShell title={course.title}>
-  <header class="course-header">
-    <p class="breadcrumb"><a href="/courses">Courses</a> / {course.code}</p>
-    <div class="head-top">
-      <h1>{course.code} — {course.title}</h1>
-    </div>
-    <p class="meta-line">
-      {course.term && <span>{course.term}</span>}
-      {course.instructor && <span> · {course.instructor}</span>}
-    </p>
-    {course.overview && <p class="overview">{course.overview}</p>}
-  </header>
+<CourseLayout course={course} active="overview">
+  {course.overview && <p class="overview">{course.overview}</p>}
 
   <nav class="tabs" aria-label="Course sections">
     <button type="button" class="tab-btn" data-tab="standing">Standing</button>
@@ -139,7 +129,7 @@ const KIND_LABELS: Record<string, string> = { canonical: 'Canonical', feed: 'Fee
     ))}
     {courseResources.length === 0 && <p class="placeholder">No resources for this course yet.</p>}
   </section>
-</AppShell>
+</CourseLayout>
 
 <script>
   const TABS = ['standing', 'concepts', 'notes', 'resources'];

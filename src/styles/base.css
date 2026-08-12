@@ -1,0 +1,172 @@
+/* ============================================================
+   Base reset + primitives, theme-agnostic (reads tokens only).
+   Ported from prototype/css/app.css, restyled onto the token vocabulary.
+   ============================================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 400 var(--font-size-base, 15px) / 1.55 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+a { color: inherit; }
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.num {
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Cards ---------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+}
+
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 13.5px;
+  font-weight: 550;
+  letter-spacing: 0.02em;
+  transition: all 0.15s;
+}
+
+.btn:hover { border-color: var(--muted); }
+.btn:active { transform: translateY(1px); }
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--surface);
+}
+
+.btn-primary:hover { filter: brightness(0.94); }
+
+.btn-secondary {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.btn[disabled], .btn[aria-disabled="true"] { opacity: 0.45; pointer-events: none; }
+
+/* ---------- Pills, chips ---------- */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 550;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.pill-ok     { background: var(--good-soft); color: var(--good-ink); }
+.pill-warn   { background: var(--warn-soft); color: var(--warn-ink); }
+.pill-danger { background: var(--danger-soft); color: var(--danger-ink); }
+.pill-idle   { background: var(--hairline); color: var(--muted); }
+
+.chip {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 510;
+  letter-spacing: 0.01em;
+  color: var(--muted);
+  transition: all 0.15s;
+}
+
+.chip:hover { border-color: var(--muted); color: var(--text); }
+
+.chip[aria-pressed="true"] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--surface);
+}
+
+/* ---------- Progress bars ---------- */
+
+.bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--hairline);
+  overflow: hidden;
+}
+
+.bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.bar.low > span { background: var(--warn); }
+
+/* ---------- Misc ---------- */
+
+.kicker {
+  font: 600 11px/1.5 var(--font-body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.empty {
+  padding: 22px 10px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13.5px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}

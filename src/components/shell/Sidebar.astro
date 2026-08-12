@@ -1,0 +1,286 @@
+---
+import { env } from 'cloudflare:workers';
+import { eq } from 'drizzle-orm';
+import { getDb } from '../../db/client';
+import { courses } from '../../db/schema';
+import Icon from './Icon.astro';
+
+const userId = Astro.locals.user!.id;
+const currentTerm = Astro.locals.user!.currentTerm;
+const currentPath = Astro.url.pathname;
+
+const db = getDb(env.DB);
+const allCourses = await db
+  .select({ slug: courses.slug, code: courses.code, title: courses.title, term: courses.term, color: courses.color })
+  .from(courses)
+  .where(eq(courses.userId, userId));
+
+// Fallback hue for courses that predate color assignment: a stable hash of
+// the slug, so the tint is at least consistent across renders.
+function hashHue(slug: string): number {
+  let h = 0;
+  for (let i = 0; i < slug.length; i++) h = (h * 31 + slug.charCodeAt(i)) >>> 0;
+  return h % 360;
+}
+function hueFor(c: { slug: string; color: string | null }): number {
+  const parsed = c.color ? Number(c.color) : NaN;
+  return Number.isFinite(parsed) ? parsed : hashHue(c.slug);
+}
+
+const currentCourses = allCourses.filter((c) => !currentTerm || c.term === currentTerm);
+const pastCourses = allCourses.filter((c) => currentTerm && c.term !== currentTerm);
+
+function isActive(slug: string): boolean {
+  return currentPath === `/courses/${slug}` || currentPath.startsWith(`/courses/${slug}/`);
+}
+
+function monogram(code: string): string {
+  const letters = code.replace(/[^A-Za-z]/g, '');
+  return (letters.slice(0, 2) || code.slice(0, 2)).toUpperCase();
+}
+---
+<nav class="sidebar">
+  <a class="brand" href="/dashboard">
+    <span class="brand-mark">su</span>
+    <span class="brand-label">studyus</span>
+  </a>
+
+  <a class="nav-item" href="/dashboard" class:list={{ active: currentPath === '/dashboard' }} title="Home">
+    <Icon name="house" />
+    <span class="label">Home</span>
+  </a>
+
+  <div class="nav-group">
+    <p class="kicker sidebar-kicker">Courses</p>
+    <ul class="course-list">
+      {currentCourses.map((c) => (
+        <li>
+          <a
+            class="course-item"
+            class:list={{ active: isActive(c.slug) }}
+            href={`/courses/${c.slug}`}
+            style={`--course-h: ${hueFor(c)}`}
+            title={`${c.code} — ${c.title}`}
+          >
+            <span class="rail"></span>
+            <span class="monogram">{monogram(c.code)}</span>
+            <span class="text">
+              <span class="code">{c.code}</span>
+              <span class="title">{c.title}</span>
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    {pastCourses.length > 0 && (
+      <details class="past-terms">
+        <summary>Past terms<span class="cnt">{pastCourses.length}</span></summary>
+        <ul class="course-list">
+          {pastCourses.map((c) => (
+            <li>
+              <a
+                class="course-item"
+                class:list={{ active: isActive(c.slug) }}
+                href={`/courses/${c.slug}`}
+                style={`--course-h: ${hueFor(c)}`}
+                title={`${c.code} — ${c.title}`}
+              >
+                <span class="rail"></span>
+                <span class="monogram">{monogram(c.code)}</span>
+                <span class="text">
+                  <span class="code">{c.code}</span>
+                  <span class="title">{c.title}</span>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </details>
+    )}
+
+    <button type="button" class="nav-item add-course" id="add-course-btn">
+      <Icon name="plus" />
+      <span class="label">Add course</span>
+    </button>
+  </div>
+
+  <div class="spacer"></div>
+
+  <div class="nav-group footer-group">
+    <a class="nav-item" href="/feed" title="Feed">
+      <Icon name="calendar" />
+      <span class="label">Feed</span>
+    </a>
+    <a class="nav-item" href="/settings" title="Settings">
+      <Icon name="gear" />
+      <span class="label">Settings</span>
+    </a>
+    <button type="button" class="nav-item collapse-toggle" id="sidebar-collapse-toggle" title="Collapse sidebar">
+      <Icon name="chevron-left" />
+      <span class="label">Collapse</span>
+    </button>
+  </div>
+</nav>
+
+<script>
+  document.getElementById('add-course-btn')?.addEventListener('click', () => {
+    const evt = new CustomEvent('open-add-course');
+    window.dispatchEvent(evt);
+  });
+
+  const toggle = document.getElementById('sidebar-collapse-toggle');
+  toggle?.addEventListener('click', () => {
+    const html = document.documentElement;
+    const collapsed = html.getAttribute('data-sidebar') === 'collapsed';
+    if (collapsed) {
+      html.removeAttribute('data-sidebar');
+      localStorage.setItem('sb:sidebar', 'expanded');
+    } else {
+      html.setAttribute('data-sidebar', 'collapsed');
+      localStorage.setItem('sb:sidebar', 'collapsed');
+    }
+  });
+</script>
+
+<style>
+  .sidebar {
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    border-right: 1px solid var(--sidebar-border);
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 14px 10px 12px;
+    gap: 2px;
+    overflow-y: auto;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px 14px;
+    text-decoration: none;
+    color: var(--sidebar-text);
+    font: 600 15px/1 var(--font-display);
+    letter-spacing: -0.01em;
+  }
+  .brand-mark {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    background: var(--accent);
+    color: var(--surface);
+    font: 700 11px/1 var(--font-display);
+    flex: none;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 8px;
+    border-radius: var(--radius-sm);
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 510;
+    width: 100%;
+    text-align: left;
+  }
+  .nav-item:hover { background: var(--sidebar-active-bg); }
+  .nav-item.active { background: var(--sidebar-active-bg); color: var(--sidebar-active-text); font-weight: 600; }
+
+  .nav-group { margin-top: 10px; }
+  .sidebar-kicker { padding: 0 8px 6px; }
+
+  .course-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+  .course-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 8px 7px 11px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--sidebar-text);
+  }
+  .course-item:hover { background: var(--sidebar-active-bg); }
+  .course-item .rail {
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 3px;
+    border-radius: 2px;
+    background: transparent;
+  }
+  .course-item.active { background: var(--sidebar-active-bg); }
+  .course-item.active .rail { background: var(--course); }
+  .course-item .monogram {
+    display: none;
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    background: var(--course-soft);
+    color: var(--course-ink);
+    font: 700 10.5px/1 var(--font-display);
+    align-items: center;
+    justify-content: center;
+  }
+  .course-item .text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .course-item .code {
+    font: 650 10.5px/1 var(--font-mono);
+    letter-spacing: 0.04em;
+    color: var(--course-ink);
+  }
+  .course-item .title {
+    font-size: 12.5px;
+    color: var(--sidebar-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .add-course { color: var(--sidebar-muted); }
+
+  .past-terms { margin-top: 4px; }
+  .past-terms summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 6px 8px;
+    font-size: 11.5px;
+    color: var(--sidebar-muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .past-terms summary::-webkit-details-marker { display: none; }
+  .past-terms .cnt { font-size: 10.5px; opacity: 0.7; }
+
+  .spacer { flex: 1; }
+  .footer-group { margin-top: 0; display: flex; flex-direction: column; gap: 2px; border-top: 1px solid var(--sidebar-border); padding-top: 8px; }
+
+  .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ---------- Collapsed state ---------- */
+  :global(html[data-sidebar='collapsed']) .sidebar { width: 60px; }
+  :global(html[data-sidebar='collapsed']) .brand-label,
+  :global(html[data-sidebar='collapsed']) .label,
+  :global(html[data-sidebar='collapsed']) .course-item .text,
+  :global(html[data-sidebar='collapsed']) .sidebar-kicker,
+  :global(html[data-sidebar='collapsed']) .past-terms {
+    visibility: hidden;
+    width: 0;
+    overflow: hidden;
+  }
+  :global(html[data-sidebar='collapsed']) .course-item .monogram { display: flex; }
+  :global(html[data-sidebar='collapsed']) .course-item { justify-content: center; padding-left: 8px; }
+  :global(html[data-sidebar='collapsed']) .collapse-toggle svg { transform: rotate(180deg); }
+</style>
