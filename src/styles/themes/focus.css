@@ -34,7 +34,7 @@
      Not redeclared in the dark blocks below on purpose. */
   --sidebar-bg:          oklch(21% 0.008 286);
   --sidebar-text:        oklch(84% 0.008 286);
-  --sidebar-muted:       oklch(57% 0.014 286);
+  --sidebar-muted:       oklch(66% 0.014 286);
   --sidebar-border:      oklch(28% 0.011 286);
   --sidebar-active-bg:   oklch(27% 0.015 286);
   --sidebar-active-text: oklch(97% 0.003 286);

@@ -94,7 +94,7 @@
 </script>
 
 <div class="popover-anchor" bind:this={anchorEl}>
-  <button type="button" class="icon-btn" onclick={onToggle} aria-expanded={open} title="To-do">
+  <button type="button" class="icon-btn" onclick={onToggle} aria-expanded={open} title="To-do" aria-label="To-do list">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M9 12l2 2 4-4 M5 5h14v14H5z" />
     </svg>

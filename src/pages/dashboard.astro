@@ -83,10 +83,10 @@ if (userCourses.length === 0) {
   const weekday = new Date(mostUrgent.dueDate).toLocaleDateString(undefined, { weekday: 'long' });
   const courseLabel = mostUrgent.courseCode ? ` — ${mostUrgent.courseCode} first` : '';
   headline = days < 0 ? `${mostUrgent.title} is overdue${courseLabel}.` : `${mostUrgent.title} ${weekday}${courseLabel}.`;
-  sub = `${userCourses.length} course${userCourses.length === 1 ? '' : 's'} in progress this term.`;
+  sub = `${userCourses.length} course${userCourses.length === 1 ? '' : 's'} in progress.`;
 } else {
   headline = "Here's your week at a glance.";
-  sub = `${userCourses.length} course${userCourses.length === 1 ? '' : 's'} in progress this term — nothing urgent due.`;
+  sub = `${userCourses.length} course${userCourses.length === 1 ? '' : 's'} in progress — nothing urgent due.`;
 }
 ---
 

@@ -1,6 +1,6 @@
 import { and, desc, eq } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { noteLinks, notes } from '../../db/schema';
+import { courses, kcs, noteLinks, notes } from '../../db/schema';
 import type { CreateNoteInput, UpdateNoteInput } from '../schemas/notes';
 import { NotFoundError } from './util';
 
@@ -14,7 +14,32 @@ function shapeNote(note: typeof notes.$inferSelect) {
 
 export async function listNotes(db: Db, userId: string) {
   const rows = await db.select().from(notes).where(eq(notes.userId, userId)).orderBy(desc(notes.updatedAt));
-  return rows.map(shapeNote);
+  const links = rows.length
+    ? await db
+        .select({
+          noteId: noteLinks.noteId,
+          courseId: noteLinks.courseId,
+          kcId: noteLinks.kcId,
+          courseCode: courses.code,
+          kcName: kcs.name,
+        })
+        .from(noteLinks)
+        .innerJoin(notes, eq(noteLinks.noteId, notes.id))
+        .leftJoin(courses, eq(noteLinks.courseId, courses.id))
+        .leftJoin(kcs, eq(noteLinks.kcId, kcs.id))
+        .where(eq(notes.userId, userId))
+    : [];
+  const byNote = new Map<string, { course_id?: string; kc_id?: string; label?: string }[]>();
+  for (const l of links) {
+    const list = byNote.get(l.noteId) ?? [];
+    list.push({
+      course_id: l.courseId ?? undefined,
+      kc_id: l.kcId ?? undefined,
+      label: l.kcName ?? l.courseCode ?? undefined,
+    });
+    byNote.set(l.noteId, list);
+  }
+  return rows.map((row) => ({ ...shapeNote(row), links: byNote.get(row.id) ?? [] }));
 }
 
 async function insertLinks(db: Db, noteId: string, links: CreateNoteInput['links']) {

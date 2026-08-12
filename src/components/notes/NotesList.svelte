@@ -4,7 +4,7 @@
     title: string;
     content: string;
     updated_at: string;
-    links: Array<{ course_id?: string; kc_id?: string }>;
+    links: Array<{ course_id?: string; kc_id?: string; label?: string }>;
   }
 
   interface Props {
@@ -89,14 +89,13 @@
             <h3>{note.title || 'Untitled note'}</h3>
             <span class="note-date">{formatDate(note.updated_at)}</span>
           </div>
-          {#if note.links.length > 0}
+          {#if (note.links?.length ?? 0) > 0}
             <div class="note-chips">
               {#each note.links as link}
-                {#if link.course_id}
-                  <span class="chip">{link.course_id}</span>
-                {/if}
-                {#if link.kc_id}
-                  <span class="chip">{link.kc_id}</span>
+                {#if link.label}
+                  <span class="chip">{link.label}</span>
+                {:else if link.course_id || link.kc_id}
+                  <span class="chip">linked</span>
                 {/if}
               {/each}
             </div>

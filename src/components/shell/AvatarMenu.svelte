@@ -25,7 +25,7 @@
 </script>
 
 <div class="popover-anchor" bind:this={anchorEl}>
-  <button type="button" class="avatar" onclick={onToggle} aria-expanded={open} title={name}>
+  <button type="button" class="avatar" onclick={onToggle} aria-expanded={open} title={name} aria-label="Account menu">
     {initials}
   </button>
 

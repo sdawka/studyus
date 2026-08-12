@@ -67,7 +67,7 @@
 </script>
 
 <div class="popover-anchor" bind:this={anchorEl}>
-  <button type="button" class="icon-btn" onclick={onToggle} aria-expanded={open} title="Scratchpad">
+  <button type="button" class="icon-btn" onclick={onToggle} aria-expanded={open} title="Scratchpad" aria-label="Scratchpad">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M4 20h4L19.5 8.5a2 2 0 0 0-2.83-2.83L6 17v3ZM14.5 6.5l3 3" />
     </svg>

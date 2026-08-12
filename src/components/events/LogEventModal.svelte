@@ -194,10 +194,17 @@
       submitting = false;
     }
   }
+
+  function portalToBody(node: HTMLElement) {
+    document.body.appendChild(node);
+    return { destroy: () => node.remove() };
+  }
 </script>
 
+<!-- The sticky header's backdrop-filter creates a containing block that traps
+     position:fixed descendants, so the overlay must escape to <body>. -->
 {#if open}
-  <div class="overlay" role="presentation" onclick={closeModal}>
+  <div class="overlay" role="presentation" onclick={closeModal} use:portalToBody>
     <div class="modal" role="dialog" aria-modal="true" onclick={(e) => e.stopPropagation()}>
       <div class="modal-header">
         <h2>Record event</h2>
