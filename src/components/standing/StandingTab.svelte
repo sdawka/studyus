@@ -47,31 +47,37 @@
   let assessments = $state<Assessment[]>([]);
   let weightedGrade = $state<number | null>(null);
   let events = $state<EventRow[]>([]);
+  let attendanceEvents = $state<EventRow[]>([]);
   let deadlines = $state<CalendarItem[]>([]);
 
   let gradeDrafts = $state<Record<string, { received: string; max: string }>>({});
   let gradeSavingId = $state<string | null>(null);
   let gradeFeedback = $state<Record<string, string>>({});
   let attendanceSaving = $state(false);
+  let attendanceDeletingId = $state<string | null>(null);
+  let showAllAttendance = $state(false);
   let eventTypeDrafts = $state<Record<string, string>>({});
   let eventSavingId = $state<string | null>(null);
   let eventFeedback = $state<Record<string, string>>({});
+
+  const ATTENDANCE_ROW_LIMIT = 8;
 
   async function loadAll() {
     loading = true;
     loadError = null;
     try {
-      const [courseRes, assessmentsRes, gradesRes, eventsRes, calendarRes] = await Promise.all([
+      const [courseRes, assessmentsRes, gradesRes, eventsRes, attendanceRes, calendarRes] = await Promise.all([
         fetch(`/api/v1/courses/${courseSlug}`),
         fetch(`/api/v1/courses/${courseId}/assessments`),
         fetch(`/api/v1/grades/summary`),
         fetch(`/api/v1/events?course=${courseId}&limit=50`),
+        fetch(`/api/v1/events?course=${courseId}&types=lecture_attended,lecture_missed&limit=200`),
         fetch(
           `/api/v1/calendar?course=${courseId}&from=${new Date().toISOString()}&to=${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()}`,
         ),
       ]);
 
-      if (!courseRes.ok || !assessmentsRes.ok || !gradesRes.ok || !eventsRes.ok || !calendarRes.ok) {
+      if (!courseRes.ok || !assessmentsRes.ok || !gradesRes.ok || !eventsRes.ok || !attendanceRes.ok || !calendarRes.ok) {
         loadError = 'Could not load standing data.';
         return;
       }
@@ -91,6 +97,8 @@
       events = (await eventsRes.json()).data;
       eventTypeDrafts = Object.fromEntries(events.map((e) => [e.id, e.type]));
 
+      attendanceEvents = (await attendanceRes.json()).data;
+
       deadlines = (await calendarRes.json()).data;
     } catch {
       loadError = 'Network error, please try again.';
@@ -101,12 +109,15 @@
 
   loadAll();
 
-  const attendanceEvents = $derived(events.filter((e) => e.type === 'lecture_attended' || e.type === 'lecture_missed'));
   const attendancePct = $derived.by(() => {
     if (attendanceEvents.length === 0) return null;
     const attended = attendanceEvents.filter((e) => e.type === 'lecture_attended').length;
     return Math.round((attended / attendanceEvents.length) * 100);
   });
+  const attendanceAttendedCount = $derived(attendanceEvents.filter((e) => e.type === 'lecture_attended').length);
+  const visibleAttendanceEvents = $derived(
+    showAllAttendance ? attendanceEvents : attendanceEvents.slice(0, ATTENDANCE_ROW_LIMIT),
+  );
 
   async function logAttendance(type: 'lecture_attended' | 'lecture_missed') {
     attendanceSaving = true;
@@ -118,10 +129,25 @@
       });
       if (res.ok) {
         const created = (await res.json()).data;
-        events = [{ id: created.id, type: created.type, ts: created.ts, source: created.source, kc_id: created.kc_id }, ...events];
+        const row: EventRow = { id: created.id, type: created.type, ts: created.ts, source: created.source, kc_id: created.kc_id };
+        events = [row, ...events];
+        attendanceEvents = [row, ...attendanceEvents];
       }
     } finally {
       attendanceSaving = false;
+    }
+  }
+
+  async function deleteAttendanceRow(eventId: string) {
+    attendanceDeletingId = eventId;
+    try {
+      const res = await fetch(`/api/v1/events/${eventId}`, { method: 'DELETE' });
+      if (res.ok) {
+        attendanceEvents = attendanceEvents.filter((e) => e.id !== eventId);
+        events = events.filter((e) => e.id !== eventId);
+      }
+    } finally {
+      attendanceDeletingId = null;
     }
   }
 
@@ -187,6 +213,7 @@
       const res = await fetch(`/api/v1/events/${eventId}`, { method: 'DELETE' });
       if (res.ok) {
         events = events.filter((e) => e.id !== eventId);
+        attendanceEvents = attendanceEvents.filter((e) => e.id !== eventId);
       }
     } finally {
       eventSavingId = null;
@@ -201,6 +228,10 @@
   function formatDate(iso: string | null): string {
     if (!iso) return 'No due date';
     return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function formatShortDate(iso: string): string {
+    return new Date(iso).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
   }
 </script>
 
@@ -250,11 +281,45 @@
 
   <section class="block">
     <h2>Attendance</h2>
-    <p class="big-stat figure">{attendancePct !== null ? `${attendancePct}% attended` : 'No attendance logged yet'}</p>
+    {#if attendancePct !== null}
+      <p class="big-stat figure">{attendancePct}% attended</p>
+      <p class="attendance-caption num">{attendanceAttendedCount} of {attendanceEvents.length} classes attended</p>
+    {:else}
+      <p class="big-stat figure">No attendance logged yet</p>
+    {/if}
     <div class="attendance-buttons">
       <button type="button" onclick={() => logAttendance('lecture_attended')} disabled={attendanceSaving}>Attended</button>
       <button type="button" class="secondary" onclick={() => logAttendance('lecture_missed')} disabled={attendanceSaving}>Missed</button>
     </div>
+
+    {#if attendanceEvents.length === 0}
+      <p class="empty">No classes logged yet — use the buttons below after each lecture.</p>
+    {:else}
+      <ul class="attendance-list">
+        {#each visibleAttendanceEvents as e (e.id)}
+          <li>
+            <span class="attendance-date num">{formatShortDate(e.ts)}</span>
+            <span class="pill" class:pill-ok={e.type === 'lecture_attended'} class:pill-danger={e.type === 'lecture_missed'}>
+              {e.type === 'lecture_attended' ? 'Attended' : 'Missed'}
+            </span>
+            {#if e.source === 'manual'}
+              <button
+                type="button"
+                class="row-delete"
+                aria-label="Delete this attendance record"
+                onclick={() => deleteAttendanceRow(e.id)}
+                disabled={attendanceDeletingId === e.id}
+              >×</button>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+      {#if attendanceEvents.length > ATTENDANCE_ROW_LIMIT}
+        <button type="button" class="show-all-btn" onclick={() => (showAllAttendance = !showAllAttendance)}>
+          {showAllAttendance ? 'Show fewer' : `Show all (${attendanceEvents.length})`}
+        </button>
+      {/if}
+    {/if}
   </section>
 
   <section class="block">
@@ -349,7 +414,39 @@
   button.secondary { background: var(--muted); }
   button.danger { background: var(--danger); }
   button:disabled { opacity: 0.6; cursor: default; }
-  .attendance-buttons { display: flex; gap: 0.6rem; margin-top: 0.75rem; }
+  .attendance-buttons { display: flex; gap: 0.6rem; margin-top: 0.75rem; margin-bottom: 1rem; }
+  .attendance-caption { color: var(--muted); font-size: 0.85rem; margin-top: 0.2rem; }
+
+  .attendance-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+  .attendance-list li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: 0.88rem;
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .attendance-list li:last-child { border-bottom: none; }
+  .attendance-date { color: var(--muted); min-width: 6.5rem; }
+  .row-delete {
+    background: none;
+    color: var(--muted);
+    padding: 0 0.35rem;
+    font-size: 1rem;
+    line-height: 1;
+    margin-left: auto;
+    border-radius: 4px;
+  }
+  .row-delete:hover { color: var(--danger); background: var(--hover); }
+  .show-all-btn {
+    background: none;
+    color: var(--accent);
+    padding: 0.3rem 0;
+    font-size: 0.82rem;
+    font-weight: 550;
+    margin-top: var(--space-2);
+  }
+  .show-all-btn:hover { text-decoration: underline; }
 
   .branch-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
   .branch-list li { display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; }

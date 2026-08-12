@@ -76,5 +76,12 @@ export const listEventsQuerySchema = z.strictObject({
   // ms (via toEpochMs) at the service boundary.
   from: isoDatetimeSchema.optional(),
   to: isoDatetimeSchema.optional(),
+  // Comma-separated list of event types to filter to (e.g. attendance-only
+  // views). Additive filter — omitting it preserves prior unfiltered behavior.
+  types: z
+    .string()
+    .transform((s) => s.split(',').map((t) => t.trim()).filter(Boolean))
+    .pipe(z.array(z.enum(EVENT_TYPES)).min(1))
+    .optional(),
 });
 export type ListEventsQuery = z.infer<typeof listEventsQuerySchema>;

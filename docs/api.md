@@ -411,6 +411,10 @@ Migration `0002` adds `study_sessions.scheduled_at` (nullable integer, epoch ms)
 
 `GET /events` gains optional `from`/`to` (ISO datetimes, parsed like the calendar query) filtering on `ts`. Each returned event row now also includes `kc_name` (joined from `kcs`, `null` when the event has no `kc_id`) alongside the existing fields — additive.
 
+### Events — types filter
+
+`GET /events` gains an optional `types` query param: a comma-separated list of event types (e.g. `types=lecture_attended,lecture_missed`) to restrict results to, applied via `IN` alongside the existing `course`/`kc`/`from`/`to` filters. Combine with `limit` (still defaults to 20, max 200) to fetch a complete, correctly-scoped window for a specific event kind (e.g. all attendance events for a course) instead of relying on a large generic `limit` and filtering client-side, which risks truncating the set when other event types crowd the window.
+
 ### Study sessions — scheduling
 
 `POST /sessions` accepts an optional `scheduled_at` (ISO). When present the session is a *planned* session: `started_at` is stamped with the same value (the column stays `NOT NULL`), so an unstarted planned session still sorts/filters correctly wherever `started_at` is read. `PATCH /sessions/:id/complete` accepts an optional `scheduled_at` too, to reschedule a still-planned session in the same call that completes or edits it. `GET /sessions` gains optional `from`/`to`, windowed on `COALESCE(scheduled_at, started_at)` (same convention as the calendar).

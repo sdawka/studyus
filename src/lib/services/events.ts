@@ -2,7 +2,7 @@
 // create/update/delete recomputes the affected KC's mastery cache in the
 // same db.batch as the event mutation, so the cache is never observably
 // stale relative to the log it's derived from.
-import { and, desc, eq, gte, lte, ne } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lte, ne } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { events, kcs } from '../../db/schema';
 import type { CreateEventInput, ListEventsQuery, UpdateEventInput } from '../schemas/events';
@@ -80,6 +80,7 @@ export async function listEvents(db: Db, userId: string, query: ListEventsQuery)
   if (query.kc) conditions.push(eq(events.kcId, query.kc));
   if (query.from) conditions.push(gte(events.ts, toEpochMs(query.from)));
   if (query.to) conditions.push(lte(events.ts, toEpochMs(query.to)));
+  if (query.types) conditions.push(inArray(events.type, query.types));
 
   const rows = await db
     .select({ event: events, kcName: kcs.name })
