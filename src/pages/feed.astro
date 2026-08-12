@@ -178,8 +178,11 @@ const canonicalResources = allResources
 
   /* Queries the AppShell <main> content container, not the viewport,
      so this fires based on actual available width in both sidebar
-     states rather than the raw window size. */
-  @container (max-width: 540px) {
+     states rather than the raw window size. 540px minus main's 64px
+     horizontal padding — @container measures content-box, so the
+     written value must subtract that padding to land the breakpoint
+     where main's own rendered width actually crosses 540px. */
+  @container (max-width: 476px) {
     .resource-masonry {
       columns: 1;
     }

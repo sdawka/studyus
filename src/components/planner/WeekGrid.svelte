@@ -463,6 +463,11 @@
     background: color-mix(in oklch, var(--surface-2) 60%, var(--bg));
   }
   .all-day-pill {
+    /* Flex item of .all-day-cell; without this its default min-width:auto
+       (driven by the nowrap title's own content) keeps it from shrinking
+       below its natural width, defeating the overflow/ellipsis below —
+       latent until the --gutter fallback fix made cells properly narrow. */
+    min-width: 0;
     text-align: left;
     font-size: 11.5px;
     font-weight: 550;

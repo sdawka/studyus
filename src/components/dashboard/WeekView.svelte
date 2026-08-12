@@ -320,8 +320,11 @@
 
   /* Queries the AppShell <main> content container, not the viewport,
      so this fires based on actual available width in both sidebar
-     states rather than the raw window size. */
-  @container (max-width: 680px) {
+     states rather than the raw window size. 680px minus main's 64px
+     horizontal padding — @container measures content-box, so the
+     written value must subtract that padding to land the breakpoint
+     where main's own rendered width actually crosses 680px. */
+  @container (max-width: 616px) {
     .week {
       grid-template-columns: repeat(7, minmax(118px, 1fr));
       overflow-x: auto;

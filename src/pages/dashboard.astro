@@ -236,8 +236,12 @@ if (userCourses.length === 0) {
 
   /* Queries the AppShell <main> content container (sidebar-aware, not
      the viewport) so the rail stacks based on actual available width
-     in both sidebar states. */
-  @container (max-width: 1000px) {
+     in both sidebar states. Threshold is 1000px of *main's own rendered
+     width* minus its 64px horizontal padding (32px each side) — @container
+     always measures the container's content-box, not border-box, so the
+     written value must subtract that padding to land the stack point
+     where "main width < 1000px" actually reads as intended. */
+  @container (max-width: 936px) {
     .grid {
       grid-template-columns: 1fr;
     }
