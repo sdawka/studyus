@@ -97,7 +97,7 @@
     width: 100%;
     padding: 0.5rem;
     border: none;
-    background: white;
+    background: var(--surface);
     cursor: pointer;
     font-size: 0.85rem;
     align-items: center;
@@ -106,23 +106,23 @@
   }
 
   .course-header:hover {
-    background: #f9fafb;
+    background: var(--surface-2);
   }
 
   .course-code {
     font-weight: 600;
-    color: #1e40af;
+    color: var(--accent);
     min-width: 60px;
   }
 
   .course-title {
     flex: 1;
-    color: #374151;
+    color: var(--text);
     font-size: 0.8rem;
   }
 
   .toggle {
-    color: #9ca3af;
+    color: var(--muted);
     font-weight: bold;
   }
 
@@ -130,8 +130,8 @@
     width: 100%;
     padding: 0.4rem 0.5rem;
     border: none;
-    background: #f3f4f6;
-    color: #374151;
+    background: var(--surface-2);
+    color: var(--text);
     font-size: 0.8rem;
     cursor: pointer;
     text-align: left;
@@ -151,8 +151,8 @@
     width: 100%;
     padding: 0.35rem 0.5rem 0.35rem 1.5rem;
     border: none;
-    background: white;
-    color: #374151;
+    background: var(--surface);
+    color: var(--text);
     font-size: 0.8rem;
     cursor: pointer;
     text-align: left;
@@ -160,8 +160,8 @@
   }
 
   .kc-link-btn:hover {
-    background: #f9fafb;
-    color: #1e40af;
+    background: var(--surface-2);
+    color: var(--accent);
   }
 
   .kc-link-btn:last-of-type {

@@ -132,7 +132,7 @@
   }
 
   .btn-primary:hover:not(:disabled) {
-    background: #3460c5;
+    filter: brightness(0.94);
   }
 
   .btn-primary:disabled {
@@ -141,8 +141,8 @@
   }
 
   .error-message {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--danger-soft);
+    color: var(--danger-ink);
     padding: 0.75rem 1rem;
     border-radius: 8px;
     font-size: 0.9rem;
@@ -162,7 +162,7 @@
 
   .zero-state p:first-child {
     font-weight: 500;
-    color: #374151;
+    color: var(--text);
   }
 
   .zero-state button {
@@ -183,7 +183,7 @@
     border-radius: 8px;
     text-decoration: none;
     color: inherit;
-    background: white;
+    background: var(--surface);
     transition: all 0.2s;
   }
 
@@ -209,7 +209,7 @@
 
   .note-date {
     font-size: 0.8rem;
-    color: #9ca3af;
+    color: var(--muted);
     white-space: nowrap;
   }
 
@@ -223,7 +223,7 @@
   .chip {
     font-size: 0.8rem;
     padding: 0.3rem 0.6rem;
-    background: #f3f4f6;
+    background: var(--surface-2);
     border-radius: 4px;
     color: var(--muted);
   }

@@ -155,14 +155,14 @@
     border: 1px solid var(--border);
     border-radius: 6px;
     font-size: 0.95rem;
-    background: white;
+    background: var(--surface);
     color: var(--text);
     font-family: inherit;
   }
 
   input:disabled,
   select:disabled {
-    background: #f9fafb;
+    background: var(--surface-2);
     color: var(--muted);
     cursor: not-allowed;
   }
@@ -187,7 +187,7 @@
   }
 
   button:hover:not(:disabled) {
-    background: #3558b5;
+    filter: brightness(0.94);
   }
 
   button:disabled {
@@ -196,20 +196,20 @@
   }
 
   .error {
-    color: #b91c1c;
+    color: var(--danger);
     font-size: 0.85rem;
     margin: 0;
     padding: 0.5rem 0.75rem;
-    background: #fee2e2;
+    background: var(--danger-soft);
     border-radius: 4px;
   }
 
   .success {
-    color: #15803d;
+    color: var(--good);
     font-size: 0.85rem;
     margin: 0;
     padding: 0.5rem 0.75rem;
-    background: #dcfce7;
+    background: var(--good-soft);
     border-radius: 4px;
   }
 </style>

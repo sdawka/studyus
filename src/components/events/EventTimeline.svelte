@@ -221,7 +221,7 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.6rem 0.8rem;
-    background: white;
+    background: var(--surface);
   }
   .row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
   .row-main { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
@@ -235,8 +235,8 @@
     border-radius: 999px;
     letter-spacing: 0.02em;
   }
-  .badge-ie { background: #e0ecff; color: #2f4d99; }
-  .badge-ae { background: #fde8d2; color: #9a5b12; }
+  .badge-ie { background: var(--accent-soft); color: var(--accent); }
+  .badge-ae { background: var(--warn-soft); color: var(--warn); }
   .score { font-weight: 500; color: var(--text); }
   .link {
     background: none;
@@ -246,7 +246,7 @@
     font-size: 0.85rem;
     padding: 0;
   }
-  .link.danger { color: #b91c1c; }
+  .link.danger { color: var(--danger); }
   .link:disabled { opacity: 0.5; cursor: default; }
   .edit-form { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
   .edit-form input, .edit-form select {
@@ -267,5 +267,5 @@
   }
   .edit-actions button.ghost { background: none; color: var(--muted); }
   .muted { color: var(--muted); font-size: 0.9rem; }
-  .error { color: #b91c1c; font-size: 0.9rem; }
+  .error { color: var(--danger); font-size: 0.9rem; }
 </style>

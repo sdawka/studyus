@@ -83,7 +83,7 @@
 
 <style>
   .resource-card {
-    background: var(--panel);
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1rem;
@@ -138,8 +138,8 @@
   }
 
   .delete-btn:hover {
-    background-color: #fee2e2;
-    color: #dc2626;
+    background-color: var(--danger-soft);
+    color: var(--danger);
   }
 
   .delete-btn:disabled {
@@ -164,7 +164,7 @@
   }
 
   .course-chip {
-    background: #e0e7ff;
+    background: var(--accent-soft);
     color: var(--accent);
     padding: 0.25rem 0.75rem;
     border-radius: 12px;
@@ -175,7 +175,7 @@
   }
 
   .course-chip:hover {
-    background: #c7d2fe;
+    background: color-mix(in oklch, var(--accent-soft) 80%, var(--accent) 20%);
   }
 
   .pinned-badge {

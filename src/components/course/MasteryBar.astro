@@ -6,12 +6,12 @@ interface Props {
 const { mastery, status } = Astro.props;
 const pct = mastery ?? 0;
 const statusColors: Record<string, string> = {
-  'not-started': '#9ca3af',
-  learning: '#f59e0b',
-  review: 'var(--accent)',
-  mastered: '#16a34a',
+  'not-started': 'var(--faint)',
+  learning: 'var(--warn)',
+  review: 'var(--warn)',
+  mastered: 'var(--good)',
 };
-const color = statusColors[status ?? ''] ?? '#9ca3af';
+const color = statusColors[status ?? ''] ?? 'var(--faint)';
 ---
 <div class="mastery-bar" role="img" aria-label={`Mastery ${pct}%${status ? `, ${status}` : ''}`}>
   <div class="track">
@@ -30,7 +30,7 @@ const color = statusColors[status ?? ''] ?? '#9ca3af';
     flex: 1;
     height: 6px;
     border-radius: 4px;
-    background: #eef0f3;
+    background: var(--hairline);
     overflow: hidden;
   }
   .fill {

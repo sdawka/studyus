@@ -318,7 +318,7 @@
 
 <style>
   .block {
-    background: #ffffff;
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem 1.5rem;
@@ -327,15 +327,15 @@
   .block h2 { margin: 0 0 0.75rem 0; font-size: 1rem; }
   .big-stat { font-size: 1.5rem; font-weight: 700; margin: 0; }
   .muted { color: var(--muted); font-size: 0.9rem; }
-  .error { color: #b91c1c; font-size: 0.9rem; }
+  .error { color: var(--danger); font-size: 0.9rem; }
   .reminder { color: var(--muted); font-size: 0.82rem; margin: 0 0 1rem 0; }
 
   table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
   th { text-align: left; padding: 0.4rem 0.5rem; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid var(--border); }
-  td { padding: 0.5rem; border-bottom: 1px solid var(--hover-bg); }
+  td { padding: 0.5rem; border-bottom: 1px solid var(--hover); }
   .capitalize { text-transform: capitalize; }
   .grade-input { width: 4.5rem; padding: 0.3rem 0.4rem; border: 1px solid var(--border); border-radius: 6px; }
-  .feedback-row td { color: #15803d; font-size: 0.8rem; padding-top: 0; }
+  .feedback-row td { color: var(--good); font-size: 0.8rem; padding-top: 0; }
 
   button {
     background: var(--accent);
@@ -347,25 +347,25 @@
     cursor: pointer;
   }
   button.secondary { background: var(--muted); }
-  button.danger { background: #b91c1c; }
+  button.danger { background: var(--danger); }
   button:disabled { opacity: 0.6; cursor: default; }
   .attendance-buttons { display: flex; gap: 0.6rem; margin-top: 0.75rem; }
 
   .branch-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
   .branch-list li { display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; }
   .branch-list li span:first-child { min-width: 10rem; }
-  .bar-track { flex: 1; height: 0.5rem; background: var(--hover-bg); border-radius: 4px; overflow: hidden; }
+  .bar-track { flex: 1; height: 0.5rem; background: var(--hover); border-radius: 4px; overflow: hidden; }
   .bar-fill { height: 100%; background: var(--accent); }
   .branch-pct { min-width: 2.5rem; text-align: right; color: var(--muted); }
 
   .deadline-list, .event-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
-  .deadline-list li { display: flex; gap: 0.75rem; font-size: 0.9rem; border-bottom: 1px solid var(--hover-bg); padding-bottom: 0.4rem; }
+  .deadline-list li { display: flex; gap: 0.75rem; font-size: 0.9rem; border-bottom: 1px solid var(--hover); padding-bottom: 0.4rem; }
   .deadline-date { color: var(--accent); font-weight: 600; min-width: 5rem; }
 
-  .event-list li { display: flex; align-items: center; gap: 0.6rem; font-size: 0.88rem; flex-wrap: wrap; border-bottom: 1px solid var(--hover-bg); padding-bottom: 0.4rem; }
+  .event-list li { display: flex; align-items: center; gap: 0.6rem; font-size: 0.88rem; flex-wrap: wrap; border-bottom: 1px solid var(--hover); padding-bottom: 0.4rem; }
   .event-date { color: var(--muted); min-width: 5rem; }
   .event-type { text-transform: capitalize; }
-  .source-tag { color: #9ca3af; font-size: 0.75rem; border: 1px solid var(--border); border-radius: 4px; padding: 0.1rem 0.35rem; }
+  .source-tag { color: var(--muted); font-size: 0.75rem; border: 1px solid var(--border); border-radius: 4px; padding: 0.1rem 0.35rem; }
   select { padding: 0.3rem 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; }
-  .feedback { color: #15803d; font-size: 0.8rem; }
+  .feedback { color: var(--good); font-size: 0.8rem; }
 </style>

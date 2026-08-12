@@ -55,7 +55,7 @@
     flex-direction: column;
     gap: 0.35rem;
     font-size: 0.9rem;
-    color: #374151;
+    color: var(--text);
   }
   input {
     padding: 0.55rem 0.7rem;
@@ -73,5 +73,5 @@
     cursor: pointer;
   }
   button:disabled { opacity: 0.6; cursor: default; }
-  .error { color: #b91c1c; font-size: 0.85rem; margin: 0; }
+  .error { color: var(--danger); font-size: 0.85rem; margin: 0; }
 </style>

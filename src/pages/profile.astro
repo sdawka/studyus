@@ -117,11 +117,11 @@ const STATUS_LABELS: Record<string, string> = {
 <style>
   section.sheet { margin-bottom: 1.75rem; }
   .sheet h2 { font-size: 1.05rem; margin: 0 0 1rem; }
-  .num { color: var(--ink-dim); font-weight: 400; font-size: 0.8rem; margin-left: 0.4rem; }
+  .num { color: var(--muted); font-weight: 400; font-size: 0.8rem; margin-left: 0.4rem; }
   .placeholder { color: var(--muted); font-size: 0.9rem; }
 
   .standing-row { display: flex; gap: 2.2rem; align-items: center; flex-wrap: wrap; }
-  .standing-num .big { font-size: 2rem; font-weight: 600; color: var(--ink); line-height: 1; }
+  .standing-num .big { font-size: 2rem; font-weight: 600; color: var(--accent); line-height: 1; }
   .standing-num .lbl { font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-top: 0.25rem; }
   .divider { width: 1px; height: 2.6rem; background: var(--hairline); }
   .margin-note { margin-top: 0.9rem; }
@@ -142,7 +142,7 @@ const STATUS_LABELS: Record<string, string> = {
   .fill { display: block; height: 100%; }
   .fill-not-started { background: var(--hairline); }
   .fill-learning { background: var(--warn); }
-  .fill-review { background: var(--ink-dim); }
+  .fill-review { background: var(--muted); }
   .fill-mastered { background: var(--good); }
   .status-count { width: 1.5rem; text-align: right; font-weight: 600; }
 
@@ -154,7 +154,7 @@ const STATUS_LABELS: Record<string, string> = {
     height: 140px;
     border: 1px dashed var(--hairline);
     border-radius: 3px;
-    background: var(--paper-deep, var(--bg));
+    background: var(--bg);
   }
   .node {
     position: absolute;
@@ -162,6 +162,6 @@ const STATUS_LABELS: Record<string, string> = {
     height: 8px;
     border-radius: 50%;
     background: var(--hairline);
-    border: 1px solid var(--rule-strong, var(--border));
+    border: 1px solid var(--border);
   }
 </style>

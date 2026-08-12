@@ -43,7 +43,7 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 1rem;
-    background: var(--panel, var(--bg));
+    background: var(--bg);
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -54,6 +54,6 @@
   input[type='range'] { width: 100%; }
   .outputs { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.9rem; }
   .output .label { font-weight: 500; margin-right: 0.4rem; }
-  .err { color: #b91c1c; }
+  .err { color: var(--danger); }
   .notes { color: var(--muted); font-size: 0.85rem; margin: 0; }
 </style>

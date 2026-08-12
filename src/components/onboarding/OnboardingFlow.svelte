@@ -165,13 +165,13 @@
     padding-bottom: 0.5rem;
     border-bottom: 2px solid var(--hairline);
   }
-  .step.active { color: var(--ink); border-color: var(--ink); font-weight: 600; }
+  .step.active { color: var(--accent); border-color: var(--accent); font-weight: 600; }
   .step.done { color: var(--good); border-color: var(--good); }
   .skip {
     background: none;
     border: none;
     color: var(--muted);
-    font-family: var(--serif);
+    font-family: var(--font-display);
     font-size: 0.82rem;
     font-style: italic;
     cursor: pointer;
@@ -183,7 +183,7 @@
 
   .panel { min-height: 300px; }
   h2 { font-size: 1.15rem; margin: 0 0 0.3rem; }
-  .num { color: var(--ink-dim); font-weight: 400; font-size: 0.8rem; margin-left: 0.4rem; }
+  .num { color: var(--muted); font-weight: 400; font-size: 0.8rem; margin-left: 0.4rem; }
   .stepdesc { color: var(--muted); font-size: 0.9rem; margin: 0 0 1.25rem; }
 
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
@@ -191,7 +191,7 @@
   .side p { margin: 0; font-size: 0.9rem; color: var(--text); }
 
   .explain-list { margin: 0 0 1rem; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.92rem; }
-  .explain-list li::marker { color: var(--ink-dim); }
+  .explain-list li::marker { color: var(--muted); }
 
   .margin-note { margin: 1rem 0; }
 
@@ -201,7 +201,7 @@
     align-items: flex-start;
     margin: 1rem 0 0;
     padding: 0.75rem 0.9rem;
-    background: var(--paper-deep, var(--bg));
+    background: var(--bg);
     border: 1px dashed var(--hairline);
     border-radius: 3px;
     opacity: 0.85;
@@ -236,30 +236,30 @@
 
   .field { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.88rem; margin-bottom: 1rem; max-width: 360px; }
   .field input {
-    font-family: var(--serif);
+    font-family: var(--font-display);
     font-size: 0.95rem;
     padding: 0.55rem 0.7rem;
     border: 1px solid var(--hairline);
     border-radius: 3px;
-    background: var(--paper-deep, var(--bg));
+    background: var(--bg);
     color: var(--text);
   }
-  .field input:focus { outline: 1px solid var(--ink); }
-  .error { color: var(--danger, #b91c1c); font-size: 0.85rem; }
+  .field input:focus { outline: 1px solid var(--accent); }
+  .error { color: var(--danger); font-size: 0.85rem; }
 
   .nav-row { display: flex; justify-content: space-between; margin-top: 1.5rem; }
   .ink-btn {
-    font-family: var(--serif);
+    font-family: var(--font-display);
     font-size: 0.9rem;
     font-weight: 600;
-    color: #fff;
-    background: var(--ink);
+    color: white;
+    background: var(--accent);
     border: none;
     border-radius: 3px;
     padding: 0.6rem 1.3rem;
     cursor: pointer;
   }
-  .ink-btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--ink); }
+  .ink-btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
   .ink-btn:disabled { opacity: 0.5; cursor: default; }
   .ink-btn:hover:not(:disabled) { opacity: 0.88; }
 </style>

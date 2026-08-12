@@ -338,7 +338,7 @@
   }
 
   .preview-content code {
-    background: #f3f4f6;
+    background: var(--surface-2);
     padding: 0.2rem 0.4rem;
     border-radius: 3px;
     font-family: 'Courier New', monospace;
@@ -369,7 +369,7 @@
 
   .btn-primary:hover:not(:disabled),
   .btn-secondary:hover {
-    background: #3460c5;
+    filter: brightness(0.94);
   }
 
   .btn-primary:disabled {
@@ -382,16 +382,16 @@
   }
 
   .btn-secondary:hover {
-    background: #4b5563;
+    filter: brightness(1.1);
   }
 
   .success-message {
-    color: #059669;
+    color: var(--good);
     font-size: 0.9rem;
   }
 
   .error-message {
-    color: #991b1b;
+    color: var(--danger-ink);
     font-size: 0.9rem;
   }
 
@@ -423,7 +423,7 @@
     gap: 0.5rem;
     align-items: center;
     padding: 0.5rem;
-    background: white;
+    background: var(--surface);
     border-radius: 4px;
     font-size: 0.85rem;
   }
@@ -436,19 +436,19 @@
   }
 
   .link-badge.course {
-    background: #dbeafe;
-    color: #1e40af;
+    background: var(--accent-soft);
+    color: var(--accent);
   }
 
   .link-badge.kc {
-    background: #ddd6fe;
-    color: #6d28d9;
+    background: var(--accent-soft);
+    color: var(--accent);
   }
 
   .btn-remove {
     background: none;
     border: none;
-    color: #9ca3af;
+    color: var(--muted);
     cursor: pointer;
     font-size: 1.2rem;
     padding: 0;
@@ -460,7 +460,7 @@
   }
 
   .btn-remove:hover {
-    color: #ef4444;
+    color: var(--danger);
   }
 
   @media (max-width: 960px) {

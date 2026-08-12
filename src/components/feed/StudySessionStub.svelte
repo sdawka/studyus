@@ -39,7 +39,7 @@
 
 <style>
   .study-session-stub {
-    background: linear-gradient(135deg, #f0f4ff 0%, #f5f7ff 100%);
+    background: linear-gradient(135deg, color-mix(in oklch, var(--accent-soft) 80%, var(--surface)), color-mix(in oklch, var(--accent-soft) 50%, var(--surface)));
     border: 2px dashed var(--accent);
     border-radius: 12px;
     padding: 1.5rem;
