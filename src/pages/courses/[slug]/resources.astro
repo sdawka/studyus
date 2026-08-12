@@ -52,7 +52,7 @@ const feedResources = resourcesByKind.feed;
   {feedResources.length > 0 && (
     <div class="resource-group feed-group">
       <h3>Feed</h3>
-      <div class="resource-stream">
+      <div class="resource-masonry">
         {feedResources.map((r) => (
           <ResourceCard
             client:load
@@ -66,7 +66,7 @@ const feedResources = resourcesByKind.feed;
               pinned: r.pinned,
               createdAt: r.createdAt ?? undefined,
             }}
-            course={{ id: course.id, title: course.title, slug: course.slug, code: course.code }}
+            course={{ id: course.id, title: course.title, slug: course.slug, code: course.code, color: course.color }}
           />
         ))}
       </div>
@@ -83,5 +83,7 @@ const feedResources = resourcesByKind.feed;
   .resource-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
   .resource-list a { color: var(--accent); text-decoration: none; }
   .pin { margin-left: 0.5rem; font-size: 0.7rem; color: var(--muted); }
-  .resource-stream { display: flex; flex-direction: column; gap: 1rem; }
+  .resource-masonry { columns: 2 240px; column-gap: 16px; width: 100%; }
+  .resource-masonry > * { break-inside: avoid; margin-bottom: 16px; display: inline-block; width: 100%; }
+  @media (max-width: 600px) { .resource-masonry { columns: 1; } }
 </style>
