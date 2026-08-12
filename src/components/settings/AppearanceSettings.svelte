@@ -10,10 +10,10 @@
   let scheme = $state(settings.scheme);
   let saving = $state(false);
 
-  const THEMES: { id: Settings['theme']; label: string; bg: string; surface: string; accent: string }[] = [
-    { id: 'compass', label: 'Compass', bg: '#f7f8f9', surface: '#ffffff', accent: '#1f9b78' },
-    { id: 'focus', label: 'Focus', bg: '#f6f6f7', surface: '#ffffff', accent: '#5b5bd6' },
-    { id: 'campus', label: 'Campus', bg: '#faf5ec', surface: '#fffdf9', accent: '#c96f2e' },
+  const THEMES: { id: Settings['theme']; label: string; bg: string; surface: string; accent: string; font: string }[] = [
+    { id: 'compass', label: 'Compass', bg: '#f7f8f9', surface: '#ffffff', accent: '#1f9b78', font: "'Figtree Variable', 'Avenir Next', 'Söhne', -apple-system, BlinkMacSystemFont, system-ui, sans-serif" },
+    { id: 'focus', label: 'Focus', bg: '#f6f6f7', surface: '#ffffff', accent: '#5b5bd6', font: "'Space Grotesk Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" },
+    { id: 'campus', label: 'Campus', bg: '#faf5ec', surface: '#fffdf9', accent: '#c96f2e', font: "'Fraunces Variable', Georgia, 'Times New Roman', serif" },
   ];
 
   function stampHtml() {
@@ -63,6 +63,7 @@
     >
       <span class="preview" style={`background:${t.bg}`}>
         <span class="preview-surface" style={`background:${t.surface}`}></span>
+        <span class="preview-glyph" style={`font-family:${t.font}; color:${t.accent}`}>Aa</span>
         <span class="preview-accent" style={`background:${t.accent}`}></span>
       </span>
       <span class="name">{t.label}</span>
@@ -118,6 +119,14 @@
     width: 22px;
     height: 8px;
     border-radius: 3px;
+  }
+  .preview-glyph {
+    position: absolute;
+    right: 10px;
+    top: 6px;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1;
   }
   .name { font-size: 12.5px; font-weight: 550; }
 

@@ -183,7 +183,12 @@ function monogram(code: string): string {
     text-align: left;
   }
   .nav-item:hover { background: var(--sidebar-active-bg); }
-  .nav-item.active { background: var(--sidebar-active-bg); color: var(--sidebar-active-text); font-weight: 600; }
+  .nav-item.active {
+    background: var(--sidebar-active-bg);
+    color: var(--sidebar-active-text);
+    font-weight: 600;
+    border-left: var(--nav-active-tick, 0) solid var(--accent);
+  }
 
   .nav-group { margin-top: 10px; }
   .sidebar-kicker { padding: 0 8px 6px; }

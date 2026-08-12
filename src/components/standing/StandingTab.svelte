@@ -211,7 +211,7 @@
 {:else}
   <section class="block">
     <h2>Weighted grade</h2>
-    <p class="big-stat">{weightedGrade !== null ? `${weightedGrade}%` : 'No grades entered yet'}</p>
+    <p class="big-stat figure">{weightedGrade !== null ? `${weightedGrade}%` : 'No grades entered yet'}</p>
   </section>
 
   <section class="block">
@@ -230,9 +230,9 @@
               <td>{a.title}</td>
               <td class="capitalize">{a.type}</td>
               <td>{formatDate(a.due_date)}</td>
-              <td>{a.weight_pct !== null ? `${a.weight_pct}%` : '—'}</td>
-              <td><input type="number" min="0" bind:value={gradeDrafts[a.id].received} class="grade-input" /></td>
-              <td><input type="number" min="0" bind:value={gradeDrafts[a.id].max} class="grade-input" /></td>
+              <td class="num">{a.weight_pct !== null ? `${a.weight_pct}%` : '—'}</td>
+              <td><input type="number" min="0" bind:value={gradeDrafts[a.id].received} class="grade-input num" /></td>
+              <td><input type="number" min="0" bind:value={gradeDrafts[a.id].max} class="grade-input num" /></td>
               <td>
                 <button type="button" onclick={() => saveGrade(a.id)} disabled={gradeSavingId === a.id}>
                   {gradeSavingId === a.id ? 'Saving…' : 'Save'}
@@ -250,7 +250,7 @@
 
   <section class="block">
     <h2>Attendance</h2>
-    <p class="big-stat">{attendancePct !== null ? `${attendancePct}% attended` : 'No attendance logged yet'}</p>
+    <p class="big-stat figure">{attendancePct !== null ? `${attendancePct}% attended` : 'No attendance logged yet'}</p>
     <div class="attendance-buttons">
       <button type="button" onclick={() => logAttendance('lecture_attended')} disabled={attendanceSaving}>Attended</button>
       <button type="button" class="secondary" onclick={() => logAttendance('lecture_missed')} disabled={attendanceSaving}>Missed</button>
@@ -267,7 +267,7 @@
           <li>
             <span>{b.name}</span>
             <div class="bar-track"><div class="bar-fill" style="width: {branchMastery(b)}%"></div></div>
-            <span class="branch-pct">{branchMastery(b)}%</span>
+            <span class="branch-pct num">{branchMastery(b)}%</span>
           </li>
         {/each}
       </ul>
@@ -325,7 +325,7 @@
     margin-bottom: 1.25rem;
   }
   .block h2 { margin: 0 0 0.75rem 0; font-size: 1rem; }
-  .big-stat { font-size: 1.5rem; font-weight: 700; margin: 0; }
+  .big-stat { margin: 0; }
   .muted { color: var(--muted); font-size: 0.9rem; }
   .error { color: var(--danger); font-size: 0.9rem; }
   .reminder { color: var(--muted); font-size: 0.82rem; margin: 0 0 1rem 0; }

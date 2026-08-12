@@ -38,26 +38,26 @@ const { courses } = Astro.props;
             <div class="head">
               <div class="ident">
                 <span class="code">{c.code}</span>
-                <span class="title">{c.title}</span>
+                <span class="title card-title">{c.title}</span>
               </div>
               <StatusChip status={c.status} />
             </div>
 
             <div class="health">
               <div class="grade">
-                <span class="grade-num num">{c.weightedGrade !== null ? `${c.weightedGrade}%` : '—'}</span>
+                <span class="grade-num figure">{c.weightedGrade !== null ? `${c.weightedGrade}%` : '—'}</span>
                 <span class="grade-lbl">weighted grade</span>
               </div>
               <div class="mastery">
                 <div class="bar"><span style={`width:${masteryPct}%`}></span></div>
-                <span class="mastery-cap">{c.masteredKcs} of {c.totalKcs} concepts</span>
+                <span class="mastery-cap num">{c.masteredKcs} of {c.totalKcs} concepts</span>
                 {c.stale && <span class="stale-hint">No study activity in 7+ days</span>}
               </div>
             </div>
 
             {c.assessmentsTotal > 0 && (
               <div class="progress">
-                <span class="progress-txt">
+                <span class="progress-txt num">
                   {c.assessmentsCompleted} of {c.assessmentsTotal} assessment{c.assessmentsTotal === 1 ? '' : 's'} done
                 </span>
               </div>
@@ -110,8 +110,6 @@ const { courses } = Astro.props;
     color: var(--course-ink);
   }
   .title {
-    font-weight: 620;
-    font-size: 14px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -128,7 +126,6 @@ const { courses } = Astro.props;
     flex-shrink: 0;
   }
   .grade-num {
-    font: 700 22px/1.1 var(--font-display);
     letter-spacing: -0.02em;
   }
   .grade-lbl {
@@ -144,7 +141,7 @@ const { courses } = Astro.props;
     gap: 4px;
   }
   .mastery .bar > span {
-    background: var(--course);
+    background: var(--accent);
   }
   .mastery-cap {
     font-size: 11px;

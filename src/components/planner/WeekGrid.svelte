@@ -491,7 +491,8 @@
     left: 0;
     right: 0;
     height: 0;
-    border-top: 2px solid var(--danger);
+    border-top: 2px solid var(--now-line-color, var(--danger));
+    box-shadow: var(--now-line-glow, none);
     z-index: 3;
   }
   .now-dot {
@@ -501,7 +502,8 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--danger);
+    background: var(--now-line-color, var(--danger));
+    box-shadow: var(--now-line-glow, none);
   }
   .event-block {
     position: absolute;

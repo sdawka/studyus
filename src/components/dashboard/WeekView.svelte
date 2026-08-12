@@ -147,7 +147,6 @@
           {:else}
             {#each itemsByDay[i].slice(0, MAX_CHIPS) as item (item.id)}
               <div class="chip-evt" style={`--course-h:${hueForItem(item)}`} title={shortTitle(item)}>
-                <span class="dot"></span>
                 <span class="t">{shortTitle(item)}</span>
                 {#if !item.all_day}<span class="time">{timeFmt.format(new Date(item.date))}</span>{/if}
               </div>
@@ -259,13 +258,6 @@
     border: 1px solid var(--course);
     color: var(--course-ink);
     overflow: hidden;
-  }
-  .chip-evt .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--course);
-    flex-shrink: 0;
   }
   .chip-evt .t {
     font-weight: 560;
