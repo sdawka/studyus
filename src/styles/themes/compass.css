@@ -21,9 +21,9 @@
   --accent-soft: oklch(95.5% 0.025 170);
   --accent-contrast: oklch(99% 0.005 170);
 
-  --good:      oklch(54% 0.13 145);
-  --good-ink:  oklch(40% 0.11 145);
-  --good-soft: oklch(95% 0.03 145);
+  --good:      oklch(53% 0.13 163);
+  --good-ink:  oklch(38% 0.1 163);
+  --good-soft: oklch(95% 0.028 163);
   --warn:        oklch(64% 0.14 70);
   --warn-ink:    oklch(48% 0.12 60);
   --warn-soft:   oklch(96% 0.035 80);
@@ -41,11 +41,11 @@
   --radius-lg: 14px;
   --radius-md: 9px;
   --radius-sm: 6px;
-  --font-display: 'Avenir Next', 'Söhne', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-display: 'Figtree Variable', 'Avenir Next', 'Söhne', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
   --font-size-base: 15px;
-  --shadow-card: 0 1px 2px oklch(20% 0.02 240 / 0.06), 0 4px 10px -4px oklch(20% 0.02 240 / 0.08);
+  --shadow-card: none;
   --shadow-pop: 0 10px 30px oklch(20% 0.02 240 / 0.10);
 
   --course-l: 50%;
@@ -62,14 +62,14 @@
 
   --space-1: 4px;
   --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 28px;
+  --space-3: 13px;
+  --space-4: 18px;
+  --space-5: 24px;
+  --space-6: 32px;
 
-  --motion-fast: 120ms;
-  --motion-base: 180ms;
-  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --motion-fast: 130ms;
+  --motion-base: 200ms;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   --pop-w-sm: 180px;
   --pop-w-md: 300px;
@@ -80,14 +80,14 @@
    block below must carry identical values. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-scheme='light']) {
-    --bg:        oklch(17% 0.006 240);
-    --surface:   oklch(21% 0.008 240);
-    --surface-2: oklch(24% 0.008 240);
+    --bg:        oklch(16% 0.006 240);
+    --surface:   oklch(23% 0.009 240);
+    --surface-2: oklch(26% 0.009 240);
     --text:      oklch(92% 0.006 240);
     --muted:     oklch(68% 0.016 240);
     --faint:     oklch(55% 0.014 240);
-    --border:    oklch(32% 0.01 240);
-    --hairline:  oklch(26% 0.008 240);
+    --border:    oklch(33% 0.011 240);
+    --hairline:  oklch(28% 0.009 240);
     --hover:     var(--hairline);
 
     --accent:      oklch(68% 0.12 170);
@@ -95,9 +95,9 @@
     --accent-soft: oklch(28% 0.04 170);
     --accent-contrast: oklch(18% 0.02 170);
 
-    --good:      oklch(66% 0.13 145);
-    --good-ink:  oklch(78% 0.1 145);
-    --good-soft: oklch(28% 0.04 145);
+    --good:      oklch(65% 0.13 163);
+    --good-ink:  oklch(78% 0.1 163);
+    --good-soft: oklch(28% 0.04 163);
     --warn:        oklch(70% 0.14 70);
     --warn-ink:    oklch(80% 0.11 70);
     --warn-soft:   oklch(30% 0.045 80);
@@ -105,14 +105,14 @@
     --danger-ink:  oklch(76% 0.14 27);
     --danger-soft: oklch(30% 0.05 27);
 
-    --sidebar-bg:          oklch(15% 0.006 240);
+    --sidebar-bg:          oklch(14% 0.006 240);
     --sidebar-text:        var(--text);
     --sidebar-muted:       var(--muted);
-    --sidebar-border:      oklch(28% 0.008 240);
+    --sidebar-border:      oklch(29% 0.009 240);
     --sidebar-active-bg:   var(--accent-soft);
     --sidebar-active-text: var(--accent-ink);
 
-    --shadow-card: 0 1px 2px oklch(0% 0 0 / 0.3), 0 4px 10px -4px oklch(0% 0 0 / 0.4);
+    --shadow-card: none;
     --shadow-pop: 0 10px 30px oklch(0% 0 0 / 0.5);
 
     --course-l: 70%;
@@ -124,14 +124,14 @@
 
 /* KEEP IN SYNC with the media block above. */
 :root[data-scheme='dark'] {
-  --bg:        oklch(17% 0.006 240);
-  --surface:   oklch(21% 0.008 240);
-  --surface-2: oklch(24% 0.008 240);
+  --bg:        oklch(16% 0.006 240);
+  --surface:   oklch(23% 0.009 240);
+  --surface-2: oklch(26% 0.009 240);
   --text:      oklch(92% 0.006 240);
   --muted:     oklch(68% 0.016 240);
   --faint:     oklch(55% 0.014 240);
-  --border:    oklch(32% 0.01 240);
-  --hairline:  oklch(26% 0.008 240);
+  --border:    oklch(33% 0.011 240);
+  --hairline:  oklch(28% 0.009 240);
   --hover:     var(--hairline);
 
   --accent:      oklch(68% 0.12 170);
@@ -139,9 +139,9 @@
   --accent-soft: oklch(28% 0.04 170);
   --accent-contrast: oklch(18% 0.02 170);
 
-  --good:      oklch(66% 0.13 145);
-  --good-ink:  oklch(78% 0.1 145);
-  --good-soft: oklch(28% 0.04 145);
+  --good:      oklch(65% 0.13 163);
+  --good-ink:  oklch(78% 0.1 163);
+  --good-soft: oklch(28% 0.04 163);
   --warn:        oklch(70% 0.14 70);
   --warn-ink:    oklch(80% 0.11 70);
   --warn-soft:   oklch(30% 0.045 80);
@@ -149,14 +149,14 @@
   --danger-ink:  oklch(76% 0.14 27);
   --danger-soft: oklch(30% 0.05 27);
 
-  --sidebar-bg:          oklch(15% 0.006 240);
+  --sidebar-bg:          oklch(14% 0.006 240);
   --sidebar-text:        var(--text);
   --sidebar-muted:       var(--muted);
-  --sidebar-border:      oklch(28% 0.008 240);
+  --sidebar-border:      oklch(29% 0.009 240);
   --sidebar-active-bg:   var(--accent-soft);
   --sidebar-active-text: var(--accent-ink);
 
-  --shadow-card: 0 1px 2px oklch(0% 0 0 / 0.3), 0 4px 10px -4px oklch(0% 0 0 / 0.4);
+  --shadow-card: none;
   --shadow-pop: 0 10px 30px oklch(0% 0 0 / 0.5);
 
   --course-l: 70%;
