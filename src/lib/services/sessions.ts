@@ -2,7 +2,7 @@
 // the events service — using the session's intended_event_type when it maps
 // to a known EVENT_TYPE, falling back to 'practice_done' (dual-role) so a
 // session always registers as at least some evidence of study.
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { sessionKcs, studySessions } from '../../db/schema';
 import type { CompleteStudySessionInput, CreateStudySessionInput, ListSessionsQuery } from '../schemas/sessions';
@@ -19,7 +19,11 @@ export async function createSession(db: Db, userId: string, input: CreateStudySe
   if (input.course_id) await requireOwnedCourse(db, userId, input.course_id);
 
   const id = crypto.randomUUID();
-  const startedAt = Date.now();
+  const scheduledAt = input.scheduled_at ? toEpochMs(input.scheduled_at) : null;
+  // A planned session has no "started" moment yet, but started_at is
+  // NOT NULL — stamp it with the scheduled time too so ordering and the
+  // calendar's COALESCE(scheduled_at, started_at) both land on the same value.
+  const startedAt = scheduledAt ?? Date.now();
   await db.insert(studySessions).values({
     id,
     userId,
@@ -27,6 +31,7 @@ export async function createSession(db: Db, userId: string, input: CreateStudySe
     intendedEventType: input.intended_event_type,
     plannedMinutes: input.planned_minutes ?? null,
     startedAt,
+    scheduledAt,
   });
 
   if (input.kc_ids?.length) {
@@ -40,6 +45,10 @@ export async function createSession(db: Db, userId: string, input: CreateStudySe
 export async function listSessions(db: Db, userId: string, query: ListSessionsQuery) {
   const conditions = [eq(studySessions.userId, userId)];
   if (query.course) conditions.push(eq(studySessions.courseId, query.course));
+  // Range over COALESCE(scheduled_at, started_at), matching the calendar's
+  // windowing of study sessions.
+  if (query.from) conditions.push(sql`coalesce(${studySessions.scheduledAt}, ${studySessions.startedAt}) >= ${toEpochMs(query.from)}`);
+  if (query.to) conditions.push(sql`coalesce(${studySessions.scheduledAt}, ${studySessions.startedAt}) <= ${toEpochMs(query.to)}`);
   return db.select().from(studySessions).where(and(...conditions));
 }
 
@@ -53,10 +62,13 @@ async function requireOwnedSession(db: Db, userId: string, sessionId: string) {
 export async function completeSession(db: Db, userId: string, sessionId: string, input: CompleteStudySessionInput) {
   const session = await requireOwnedSession(db, userId, sessionId);
 
-  await db
-    .update(studySessions)
-    .set({ endedAt: toEpochMs(input.ended_at), reflection: input.reflection ?? null })
-    .where(eq(studySessions.id, sessionId));
+  const patch: Partial<typeof studySessions.$inferInsert> = {
+    endedAt: toEpochMs(input.ended_at),
+    reflection: input.reflection ?? null,
+  };
+  if (input.scheduled_at) patch.scheduledAt = toEpochMs(input.scheduled_at);
+
+  await db.update(studySessions).set(patch).where(eq(studySessions.id, sessionId));
 
   const touchedKcIds = input.kc_ids_touched?.length
     ? input.kc_ids_touched

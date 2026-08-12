@@ -65,4 +65,29 @@ describe('events service', () => {
     expect(remaining.map((e) => e.id)).not.toContain(second.event.id);
     expect(remaining.map((e) => e.id)).toContain(first.event.id);
   });
+
+  it('listEvents joins kc_name and filters on a from/to ts window', async () => {
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    const inWindow = await createEvent(db, userId, { type: 'lecture_attended', kc_id: kcId, ts: new Date(now).toISOString() });
+    const outOfWindow = await createEvent(db, userId, { type: 'lecture_attended', kc_id: kcId, ts: new Date(now - 30 * dayMs).toISOString() });
+    const noKc = await createEvent(db, userId, { type: 'reading_done', ts: new Date(now).toISOString() });
+
+    const rows = await listEvents(db, userId, {
+      from: new Date(now - dayMs).toISOString(),
+      to: new Date(now + dayMs).toISOString(),
+      limit: 50,
+    });
+
+    const ids = rows.map((r) => r.id);
+    expect(ids).toContain(inWindow.event.id);
+    expect(ids).not.toContain(outOfWindow.event.id);
+    expect(ids).toContain(noKc.event.id);
+
+    const withKc = rows.find((r) => r.id === inWindow.event.id);
+    expect(withKc?.kcName).toBe('Test KC');
+    const withoutKc = rows.find((r) => r.id === noKc.event.id);
+    expect(withoutKc?.kcName).toBeNull();
+  });
 });

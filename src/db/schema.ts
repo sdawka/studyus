@@ -254,6 +254,7 @@ export const studySessions = sqliteTable('study_sessions', {
   plannedMinutes: integer('planned_minutes'),
   startedAt: integer('started_at').notNull(),
   endedAt: integer('ended_at'),
+  scheduledAt: integer('scheduled_at'),
   reflection: text('reflection'),
   createdAt: createdAt(),
 });

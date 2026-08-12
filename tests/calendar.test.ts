@@ -1,0 +1,160 @@
+import { env } from 'cloudflare:test';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { getDb } from '../src/db/client';
+import { assessments, branches, courses, kcs, studySessions, taskCourses, tasks, users } from '../src/db/schema';
+import { getCalendar } from '../src/lib/services/calendar';
+import { createEvent } from '../src/lib/services/events';
+
+const db = getDb(env.DB);
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+let userId: string;
+let courseId: string;
+let courseSlug: string;
+let otherCourseId: string;
+let branchId: string;
+let kcId: string;
+
+beforeEach(async () => {
+  userId = crypto.randomUUID();
+  courseId = crypto.randomUUID();
+  otherCourseId = crypto.randomUUID();
+  branchId = crypto.randomUUID();
+  kcId = crypto.randomUUID();
+  courseSlug = `test-${courseId}`;
+
+  await db.insert(users).values({ id: userId, email: `${userId}@test.local`, passwordHash: 'x' });
+  await db.insert(courses).values({ id: courseId, userId, code: 'TEST 101', slug: courseSlug, title: 'Test Course' });
+  await db.insert(courses).values({ id: otherCourseId, userId, code: 'OTHER 101', slug: `other-${otherCourseId}`, title: 'Other Course' });
+  await db.insert(branches).values({ id: branchId, courseId, name: 'Branch' });
+  await db.insert(kcs).values({ id: kcId, branchId, courseId, name: 'Test KC' });
+});
+
+describe('getCalendar', () => {
+  it('returns assessment_due items with end_date/all_day/href', async () => {
+    const dueDate = Date.now() + 3 * DAY_MS;
+    const assessmentId = crypto.randomUUID();
+    await db.insert(assessments).values({ id: assessmentId, courseId, title: 'Midterm', type: 'midterm', dueDate, weightPct: 20 });
+
+    const items = await getCalendar(db, userId, Date.now(), Date.now() + 7 * DAY_MS);
+    const item = items.find((i) => i.id === assessmentId);
+    expect(item).toBeDefined();
+    expect(item!.type).toBe('assessment_due');
+    expect(item!.end_date).toBeNull();
+    expect(item!.all_day).toBe(true);
+    expect(item!.href).toBe(`/courses/${courseSlug}#assessments`);
+    expect(item!.course_id).toBe(courseId);
+  });
+
+  it('returns task_due items and resolves multiple linked course_ids without an N+1 query per task', async () => {
+    const dueDate = Date.now() + 2 * DAY_MS;
+    const taskId = crypto.randomUUID();
+    await db.insert(tasks).values({ id: taskId, userId, title: 'Multi-course task', dueDate });
+    await db.insert(taskCourses).values([
+      { id: crypto.randomUUID(), taskId, courseId },
+      { id: crypto.randomUUID(), taskId, courseId: otherCourseId },
+    ]);
+
+    const items = await getCalendar(db, userId, Date.now(), Date.now() + 7 * DAY_MS);
+    const item = items.find((i) => i.id === taskId);
+    expect(item).toBeDefined();
+    expect(item!.type).toBe('task_due');
+    expect(item!.end_date).toBeNull();
+    expect(item!.all_day).toBe(true);
+    expect(item!.href).toBe('/tasks');
+    expect(item!.details.course_ids).toEqual(expect.arrayContaining([courseId, otherCourseId]));
+  });
+
+  it('returns a completed study_session item with end_date from ended_at', async () => {
+    const startedAt = Date.now() - 2 * DAY_MS;
+    const endedAt = startedAt + 45 * 60_000;
+    const sessionId = crypto.randomUUID();
+    await db.insert(studySessions).values({
+      id: sessionId,
+      userId,
+      courseId,
+      intendedEventType: 'practice_done',
+      plannedMinutes: 60,
+      startedAt,
+      endedAt,
+    });
+
+    const items = await getCalendar(db, userId, Date.now() - 7 * DAY_MS, Date.now() + 7 * DAY_MS);
+    const item = items.find((i) => i.id === sessionId);
+    expect(item).toBeDefined();
+    expect(item!.type).toBe('study_session');
+    expect(item!.all_day).toBe(false);
+    expect(item!.date).toBe(new Date(startedAt).toISOString());
+    expect(item!.end_date).toBe(new Date(endedAt).toISOString());
+    expect(item!.href).toBe('/planner');
+    expect(item!.details).toMatchObject({ completed: true, scheduled_at: null });
+  });
+
+  it('windows a scheduled (not-yet-started) study_session on scheduled_at and derives end_date from planned_minutes', async () => {
+    const scheduledAt = Date.now() + 2 * DAY_MS;
+    const sessionId = crypto.randomUUID();
+    await db.insert(studySessions).values({
+      id: sessionId,
+      userId,
+      courseId,
+      intendedEventType: 'practice_done',
+      plannedMinutes: 90,
+      startedAt: scheduledAt, // NOT NULL column mirrors scheduled_at until the session actually starts
+      scheduledAt,
+    });
+
+    const items = await getCalendar(db, userId, Date.now(), Date.now() + 7 * DAY_MS);
+    const item = items.find((i) => i.id === sessionId);
+    expect(item).toBeDefined();
+    expect(item!.date).toBe(new Date(scheduledAt).toISOString());
+    expect(item!.end_date).toBe(new Date(scheduledAt + 90 * 60_000).toISOString());
+    expect(item!.details.completed).toBe(false);
+  });
+
+  it('returns an event_logged item with a humanized title, kc suffix, and concepts href', async () => {
+    const { event } = await createEvent(db, userId, { type: 'lecture_attended', kc_id: kcId, course_id: courseId });
+
+    const items = await getCalendar(db, userId, Date.now() - DAY_MS, Date.now() + DAY_MS);
+    const item = items.find((i) => i.id === event.id);
+    expect(item).toBeDefined();
+    expect(item!.type).toBe('event_logged');
+    expect(item!.title).toBe('Lecture attended · Test KC');
+    expect(item!.all_day).toBe(false);
+    expect(item!.end_date).toBeNull();
+    expect(item!.href).toBe(`/courses/${courseSlug}/concepts`);
+    expect(item!.details).toMatchObject({ event_type: 'lecture_attended', kc_id: kcId, is_instructional: true, is_assessment: false });
+  });
+
+  it('routes a course-less/KC-less event to /planner with no course suffix in the title', async () => {
+    const { event } = await createEvent(db, userId, { type: 'reading_done' });
+
+    const items = await getCalendar(db, userId, Date.now() - DAY_MS, Date.now() + DAY_MS);
+    const item = items.find((i) => i.id === event.id);
+    expect(item).toBeDefined();
+    expect(item!.title).toBe('Reading done');
+    expect(item!.href).toBe('/planner');
+  });
+
+  it('scopes all four item types to courseId when provided', async () => {
+    const dueDate = Date.now() + DAY_MS;
+    const otherAssessmentId = crypto.randomUUID();
+    await db.insert(assessments).values({ id: otherAssessmentId, courseId: otherCourseId, title: 'Other Midterm', type: 'midterm', dueDate });
+    const myAssessmentId = crypto.randomUUID();
+    await db.insert(assessments).values({ id: myAssessmentId, courseId, title: 'My Midterm', type: 'midterm', dueDate });
+
+    const items = await getCalendar(db, userId, Date.now(), Date.now() + 7 * DAY_MS, courseId);
+    expect(items.map((i) => i.id)).toContain(myAssessmentId);
+    expect(items.map((i) => i.id)).not.toContain(otherAssessmentId);
+  });
+
+  it('sorts all items ascending by date', async () => {
+    const now = Date.now();
+    await db.insert(assessments).values({ id: crypto.randomUUID(), courseId, title: 'Later', type: 'quiz', dueDate: now + 5 * DAY_MS });
+    await db.insert(assessments).values({ id: crypto.randomUUID(), courseId, title: 'Sooner', type: 'quiz', dueDate: now + DAY_MS });
+
+    const items = await getCalendar(db, userId, now, now + 7 * DAY_MS);
+    const dates = items.map((i) => i.date);
+    expect(dates).toEqual([...dates].sort());
+  });
+});

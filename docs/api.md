@@ -372,3 +372,47 @@ Additive column, `text` enum `user | system`, default `'user'`. Existing inserts
 - `localStorage` keys: `sb:theme`, `sb:scheme`, `sb:sidebar` (values `'expanded'|'collapsed'`) — written by `ThemeScript.astro` (read-only mirror) and by `AppearanceSettings.svelte` / the sidebar collapse toggle (read-write). SSR is the source of truth on load; localStorage only prevents a flash between a client-side settings change and the next full page load.
 - `data-theme` (absent = compass), `data-scheme` (absent = system), `data-sidebar` (absent = expanded, `'collapsed'` otherwise) are the three `<html>` attributes the whole theme system keys off.
 - `--course-h` is a plain CSS custom property, not a token — set it inline (`style="--course-h: 235"`) on any element that should render in a course's color; everything else (`--course`, `--course-ink`, `--course-soft`) derives from it via `tokens.css`.
+
+---
+
+## v1.2 Additions
+
+**Status**: additive to the FROZEN v1 contract above. No existing field or endpoint shape changed; `assessment_due`/`task_due` calendar items gained new fields (backward compatible for any client ignoring unknown keys).
+
+### Calendar — new item types + shape
+
+Migration `0002` adds `study_sessions.scheduled_at` (nullable integer, epoch ms) — a session may now be *planned* ahead of time, not just logged retroactively. This retires the M1 "Deviation from draft" note above: `study_session` calendar items are now implemented.
+
+`GET /calendar` items now use the shared `CalendarItem` shape (`src/lib/types/calendar.ts`, frozen for other agents to build against):
+
+```json
+{
+  "id": "uuid",
+  "type": "assessment_due|task_due|study_session|event_logged",
+  "title": "string",
+  "date": "iso",
+  "end_date": "iso|null",
+  "all_day": true,
+  "course_id": "uuid|null",
+  "href": "string|null",
+  "details": {}
+}
+```
+
+- `assessment_due` / `task_due`: unchanged data, plus `end_date: null`, `all_day: true`, and `href` (`/courses/:slug#assessments` for assessments, `/tasks` for tasks). The task N+1 (one `task_courses` query per task) is fixed — one grouped `inArray` query covers every task in the window.
+- `study_session` (new): windowed on `COALESCE(scheduled_at, started_at)`. `end_date` is `ended_at` if the session completed, else `started_at/scheduled_at + planned_minutes` (default 60). `title` is `"Study: <course code|General>"`, `href: "/planner"`. `details`: `{ intended_event_type, planned_minutes, started_at, ended_at, scheduled_at, completed }`.
+- `event_logged` (new): windowed on `events.ts`. `title` is the humanized event type (e.g. `lecture_attended` → `"Lecture attended"`), suffixed with `" · <kc name>"` when the event has a KC. `href` is `/courses/:slug/concepts` when a KC is attached, else `/planner`. `details`: `{ event_type, kc_id, kc_name, is_instructional, is_assessment, source }`.
+
+`course_id` (query param) filters all four item sources, matching the existing single-course-scoping behavior.
+
+### Events — from/to window + kc_name
+
+`GET /events` gains optional `from`/`to` (ISO datetimes, parsed like the calendar query) filtering on `ts`. Each returned event row now also includes `kc_name` (joined from `kcs`, `null` when the event has no `kc_id`) alongside the existing fields — additive.
+
+### Study sessions — scheduling
+
+`POST /sessions` accepts an optional `scheduled_at` (ISO). When present the session is a *planned* session: `started_at` is stamped with the same value (the column stays `NOT NULL`), so an unstarted planned session still sorts/filters correctly wherever `started_at` is read. `PATCH /sessions/:id/complete` accepts an optional `scheduled_at` too, to reschedule a still-planned session in the same call that completes or edits it. `GET /sessions` gains optional `from`/`to`, windowed on `COALESCE(scheduled_at, started_at)` (same convention as the calendar).
+
+### Seed demo data
+
+`scripts/seed.ts` now seeds a deterministic, idempotent demo data block (re-running the seed refreshes dates rather than duplicating rows) for the user's **current-term** courses only (`users.current_term`, set to `"Winter 2025"` by the seed script — the courses in `courses/courses.json` whose `term` string includes that value): 3 assessments per course (one past-due and graded, one due soon, one due later), 6 tasks total (one overdue, several upcoming, two linked to courses), ~12 logged events across courses/KCs over the past two weeks, and 5 study sessions (3 completed in the past week, 2 scheduled in the next week via `scheduled_at`) — enough for the planner/dashboard week views to render something realistic out of the box.

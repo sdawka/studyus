@@ -1,0 +1,1 @@
+ALTER TABLE `study_sessions` ADD `scheduled_at` integer;

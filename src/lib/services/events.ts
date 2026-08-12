@@ -2,7 +2,7 @@
 // create/update/delete recomputes the affected KC's mastery cache in the
 // same db.batch as the event mutation, so the cache is never observably
 // stale relative to the log it's derived from.
-import { and, desc, eq, ne } from 'drizzle-orm';
+import { and, desc, eq, gte, lte, ne } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { events, kcs } from '../../db/schema';
 import type { CreateEventInput, ListEventsQuery, UpdateEventInput } from '../schemas/events';
@@ -78,13 +78,18 @@ export async function listEvents(db: Db, userId: string, query: ListEventsQuery)
   const conditions = [eq(events.userId, userId)];
   if (query.course) conditions.push(eq(events.courseId, query.course));
   if (query.kc) conditions.push(eq(events.kcId, query.kc));
+  if (query.from) conditions.push(gte(events.ts, toEpochMs(query.from)));
+  if (query.to) conditions.push(lte(events.ts, toEpochMs(query.to)));
 
-  return db
-    .select()
+  const rows = await db
+    .select({ event: events, kcName: kcs.name })
     .from(events)
+    .leftJoin(kcs, eq(events.kcId, kcs.id))
     .where(and(...conditions))
     .orderBy(desc(events.ts))
     .limit(query.limit ?? 20);
+
+  return rows.map((r) => ({ ...r.event, kcName: r.kcName }));
 }
 
 export async function getKcEvents(db: Db, userId: string, kcId: string, opts: { limit?: number; offset?: number } = {}) {

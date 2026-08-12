@@ -10,6 +10,9 @@ import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { EVENT_ROLE_FLAGS } from '../src/lib/schemas/events';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 type CourseConcept = {
   name: string;
@@ -93,19 +96,27 @@ async function main() {
   const seedPassword = process.env.SEED_USER_PASSWORD || 'studyus';
   const passwordHash = await pbkdf2Hash(seedPassword);
   const userId = deterministicId('user', seedEmail);
+  const now = Date.now();
 
   const statements: string[] = [];
 
   // --- user (upsert by email) ---
+  // current_term determines which courses the demo data block (below) treats
+  // as "in progress" — kept in sync with the courses.json term string that's
+  // actually current relative to the other terms in that file.
+  const CURRENT_TERM = 'Winter 2025';
   statements.push(
     `INSERT INTO users (id, email, password_hash, name, current_term, settings, onboarded_at, created_at)
-     VALUES (${sqlStr(userId)}, ${sqlStr(seedEmail)}, ${sqlStr(passwordHash)}, ${sqlStr('Student')}, NULL, '{}', NULL, ${Date.now()})
-     ON CONFLICT(email) DO NOTHING;`,
+     VALUES (${sqlStr(userId)}, ${sqlStr(seedEmail)}, ${sqlStr(passwordHash)}, ${sqlStr('Student')}, ${sqlStr(CURRENT_TERM)}, '{}', NULL, ${Date.now()})
+     ON CONFLICT(email) DO UPDATE SET current_term=excluded.current_term;`,
   );
 
   // Per-course accent hue (OKLCH H, 0-360): a spaced list so adjacent courses
   // in a term don't land on visually similar hues, assigned by list index.
   const COURSE_HUES = [235, 25, 150, 305, 65, 190, 340, 105, 45];
+
+  // Populated per-course below; feeds the demo data block after the main loop.
+  const currentTermCourses: { id: string; slug: string; kcs: { id: string; name: string }[] }[] = [];
 
   for (const [courseIdx, course] of coursesData.entries()) {
     const courseId = deterministicId('course', course.slug);
@@ -117,6 +128,8 @@ async function main() {
          code=excluded.code, title=excluded.title, credits=excluded.credits, term=excluded.term,
          instructor=excluded.instructor, prereqs=excluded.prereqs, overview=excluded.overview, source_url=excluded.source_url, color=excluded.color;`,
     );
+
+    const courseKcs: { id: string; name: string }[] = [];
 
     (course.branches || []).forEach((branch, branchIdx) => {
       const branchId = deterministicId('branch', `${course.slug}:${branch.branch}`);
@@ -135,6 +148,7 @@ async function main() {
            ON CONFLICT(id) DO UPDATE SET
              name=excluded.name, kc_type=excluded.kc_type, practice_notes=excluded.practice_notes, sort_order=excluded.sort_order;`,
         );
+        courseKcs.push({ id: kcId, name: concept.name });
       });
     });
 
@@ -153,6 +167,143 @@ async function main() {
         `INSERT INTO resources (id, user_id, url, label, kind, course_id, kc_id, pinned, added_by, created_at)
          VALUES (${sqlStr(resourceId)}, ${sqlStr(userId)}, ${sqlStr(link.url)}, ${sqlStr(link.label)}, 'feed', ${sqlStr(courseId)}, NULL, 0, ${sqlStr('seed')}, ${Date.now()})
          ON CONFLICT(id) DO UPDATE SET label=excluded.label;`,
+      );
+    });
+
+    if (course.term.includes(CURRENT_TERM)) {
+      currentTermCourses.push({ id: courseId, slug: course.slug, kcs: courseKcs });
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // Demo data (v1.2): assessments/tasks/events/study sessions for the
+  // current-term courses only, so the planner/dashboard have something
+  // realistic to render. Idempotent — all ids are deterministic and every
+  // insert is ON CONFLICT DO UPDATE, so dates refresh (relative to `now`)
+  // on every seed run instead of accumulating duplicates.
+  const ASSESSMENT_TITLES = {
+    past: ['Midterm 1', 'Term Test 1', 'Quiz 3'],
+    near: ['Assignment 3', 'Problem Set 4', 'Lab report 2'],
+    far: ['Lab report 2', 'Assignment 5', 'Midterm 2'],
+  };
+
+  currentTermCourses.forEach(({ id: courseId, slug }, courseIdx) => {
+    const pastDue = now - 10 * DAY_MS;
+    const nearDue = now + (2 + (courseIdx % 8)) * DAY_MS; // 2-9 days out
+    const farDue = now + (15 + (courseIdx % 7)) * DAY_MS; // 15-21 days out
+    const gradePct = 72 + ((courseIdx * 5) % 17); // 72-88%
+
+    const pastId = deterministicId('assessment', `demo:${slug}:past`);
+    const nearId = deterministicId('assessment', `demo:${slug}:near`);
+    const farId = deterministicId('assessment', `demo:${slug}:far`);
+
+    statements.push(
+      `INSERT INTO assessments (id, course_id, title, type, due_date, weight_pct, grade_received, grade_max, created_at)
+       VALUES (${sqlStr(pastId)}, ${sqlStr(courseId)}, ${sqlStr(ASSESSMENT_TITLES.past[courseIdx % ASSESSMENT_TITLES.past.length])}, 'midterm', ${pastDue}, 20, ${gradePct}, 100, ${now})
+       ON CONFLICT(id) DO UPDATE SET due_date=excluded.due_date, grade_received=excluded.grade_received;`,
+      `INSERT INTO assessments (id, course_id, title, type, due_date, weight_pct, grade_received, grade_max, created_at)
+       VALUES (${sqlStr(nearId)}, ${sqlStr(courseId)}, ${sqlStr(ASSESSMENT_TITLES.near[courseIdx % ASSESSMENT_TITLES.near.length])}, 'assignment', ${nearDue}, 10, NULL, 100, ${now})
+       ON CONFLICT(id) DO UPDATE SET due_date=excluded.due_date;`,
+      `INSERT INTO assessments (id, course_id, title, type, due_date, weight_pct, grade_received, grade_max, created_at)
+       VALUES (${sqlStr(farId)}, ${sqlStr(courseId)}, ${sqlStr(ASSESSMENT_TITLES.far[courseIdx % ASSESSMENT_TITLES.far.length])}, 'lab', ${farDue}, 15, NULL, 100, ${now})
+       ON CONFLICT(id) DO UPDATE SET due_date=excluded.due_date;`,
+    );
+  });
+
+  // --- tasks (6 total, spread across current-term courses; 2 linked) ---
+  const TASK_SPECS: { title: string; dueOffsetDays: number; done: boolean }[] = [
+    { title: 'Submit lab report', dueOffsetDays: -2, done: false }, // overdue
+    { title: 'Finish problem set', dueOffsetDays: 1, done: false },
+    { title: 'Read chapter 7', dueOffsetDays: 3, done: false },
+    { title: 'Prepare tutorial questions', dueOffsetDays: 6, done: false },
+    { title: 'Start final project outline', dueOffsetDays: 12, done: false },
+    { title: 'Review midterm material', dueOffsetDays: 18, done: false },
+  ];
+
+  TASK_SPECS.forEach((spec, i) => {
+    const taskId = deterministicId('task', `demo-task-${i + 1}`);
+    const dueDate = now + spec.dueOffsetDays * DAY_MS;
+    statements.push(
+      `INSERT INTO tasks (id, user_id, title, due_date, done, source, created_at)
+       VALUES (${sqlStr(taskId)}, ${sqlStr(userId)}, ${sqlStr(spec.title)}, ${dueDate}, ${spec.done}, 'user', ${now})
+       ON CONFLICT(id) DO UPDATE SET due_date=excluded.due_date, title=excluded.title, done=excluded.done;`,
+    );
+
+    // Link the first two tasks to a current-term course so the calendar's
+    // task_due items resolve a course_id.
+    if (i < 2 && currentTermCourses.length) {
+      const linkedCourse = currentTermCourses[i % currentTermCourses.length];
+      const linkId = deterministicId('taskcourse', `demo-task-${i + 1}:${linkedCourse.id}`);
+      statements.push(
+        `INSERT INTO task_courses (id, task_id, course_id)
+         VALUES (${sqlStr(linkId)}, ${sqlStr(taskId)}, ${sqlStr(linkedCourse.id)})
+         ON CONFLICT(id) DO NOTHING;`,
+      );
+    }
+  });
+
+  // --- logged events (~12 over the past 14 days, across courses/KCs) ---
+  const EVENT_TYPE_POOL = ['lecture_attended', 'reading_done', 'practice_done', 'quiz_taken'] as const;
+  const coursesWithKcs = currentTermCourses.filter((c) => c.kcs.length > 0);
+
+  if (coursesWithKcs.length) {
+    for (let i = 0; i < 12; i++) {
+      const course = coursesWithKcs[i % coursesWithKcs.length];
+      const kc = course.kcs[i % course.kcs.length];
+      const type = EVENT_TYPE_POOL[i % EVENT_TYPE_POOL.length];
+      const flags = EVENT_ROLE_FLAGS[type];
+      const daysAgo = 1 + ((i * 3) % 14); // spread across the past 14 days
+      const ts = now - daysAgo * DAY_MS;
+      const isAssessmentType = type === 'practice_done' || type === 'quiz_taken';
+      const payload = isAssessmentType ? { correct: i % 3 !== 0 } : {};
+      const eventId = deterministicId('event', `demo-event-${i + 1}`);
+
+      statements.push(
+        `INSERT INTO events (id, user_id, ts, type, is_instructional, is_assessment, kc_id, course_id, session_id, payload, source, created_at)
+         VALUES (${sqlStr(eventId)}, ${sqlStr(userId)}, ${ts}, ${sqlStr(type)}, ${sqlStr(flags.isInstructional)}, ${sqlStr(flags.isAssessment)}, ${sqlStr(kc.id)}, ${sqlStr(course.id)}, NULL, ${sqlStr(JSON.stringify(payload))}, 'seed', ${now})
+         ON CONFLICT(id) DO UPDATE SET ts=excluded.ts, payload=excluded.payload;`,
+      );
+    }
+  }
+
+  // --- study sessions (3 completed in the past week, 2 scheduled ahead) ---
+  function atLocalTime(dayOffset: number, hour: number, minute = 0): number {
+    const d = new Date(now);
+    d.setDate(d.getDate() + dayOffset);
+    d.setHours(hour, minute, 0, 0);
+    return d.getTime();
+  }
+
+  if (currentTermCourses.length) {
+    const completedSpecs = [
+      { dayOffset: -1, hour: 18, minutes: 60 },
+      { dayOffset: -3, hour: 19, minutes: 75 },
+      { dayOffset: -5, hour: 20, minutes: 90 },
+    ];
+    completedSpecs.forEach((spec, i) => {
+      const course = currentTermCourses[i % currentTermCourses.length];
+      const sessionId = deterministicId('session', `demo-session-completed-${i + 1}`);
+      const startedAt = atLocalTime(spec.dayOffset, spec.hour);
+      const endedAt = startedAt + spec.minutes * 60_000;
+      statements.push(
+        `INSERT INTO study_sessions (id, user_id, course_id, intended_event_type, planned_minutes, started_at, ended_at, scheduled_at, reflection, created_at)
+         VALUES (${sqlStr(sessionId)}, ${sqlStr(userId)}, ${sqlStr(course.id)}, 'practice_done', ${spec.minutes}, ${startedAt}, ${endedAt}, NULL, ${sqlStr('Worked through practice problems and reviewed weak spots.')}, ${now})
+         ON CONFLICT(id) DO UPDATE SET started_at=excluded.started_at, ended_at=excluded.ended_at;`,
+      );
+    });
+
+    const scheduledSpecs = [
+      { dayOffset: 2, hour: 17, minutes: 60 },
+      { dayOffset: 5, hour: 19, minutes: 90 },
+    ];
+    scheduledSpecs.forEach((spec, i) => {
+      const course = currentTermCourses[(i + completedSpecs.length) % currentTermCourses.length];
+      const sessionId = deterministicId('session', `demo-session-scheduled-${i + 1}`);
+      const scheduledAt = atLocalTime(spec.dayOffset, spec.hour);
+      statements.push(
+        `INSERT INTO study_sessions (id, user_id, course_id, intended_event_type, planned_minutes, started_at, ended_at, scheduled_at, reflection, created_at)
+         VALUES (${sqlStr(sessionId)}, ${sqlStr(userId)}, ${sqlStr(course.id)}, 'practice_done', ${spec.minutes}, ${scheduledAt}, NULL, ${scheduledAt}, NULL, ${now})
+         ON CONFLICT(id) DO UPDATE SET started_at=excluded.started_at, scheduled_at=excluded.scheduled_at, planned_minutes=excluded.planned_minutes;`,
       );
     });
   }

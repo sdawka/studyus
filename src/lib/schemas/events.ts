@@ -72,5 +72,9 @@ export const listEventsQuerySchema = z.strictObject({
   course: idSchema.optional(),
   kc: idSchema.optional(),
   limit: z.coerce.number().int().min(1).max(200).optional(),
+  // ISO datetimes, matching the calendar query convention — parsed to epoch
+  // ms (via toEpochMs) at the service boundary.
+  from: isoDatetimeSchema.optional(),
+  to: isoDatetimeSchema.optional(),
 });
 export type ListEventsQuery = z.infer<typeof listEventsQuerySchema>;

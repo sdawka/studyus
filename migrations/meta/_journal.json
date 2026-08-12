@@ -15,6 +15,13 @@
       "when": 1786520082820,
       "tag": "0001_tidy_newton_destine",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1786545255212,
+      "tag": "0002_clean_sandman",
+      "breakpoints": true
     }
   ]
 }
