@@ -1,6 +1,13 @@
 <script lang="ts">
+  import { tick } from 'svelte';
+  import WeekGrid from './WeekGrid.svelte';
   import CalendarGrid from './CalendarGrid.svelte';
   import AgendaList from './AgendaList.svelte';
+  import PlannerRail from './PlannerRail.svelte';
+  import EventPopover from './EventPopover.svelte';
+  import CreateSessionPopover from './CreateSessionPopover.svelte';
+  import type { CalendarItem } from '../../lib/types/calendar';
+  import { addDays, addMonths, firstOfMonth, localDateKey, mondayOf, weekRangeLabel } from '../../lib/plannerDates';
 
   interface CourseOption {
     id: string;
@@ -8,48 +15,97 @@
     code: string;
     title: string;
     term: string | null;
-    color: string | null;
-  }
-  interface CalendarItem {
-    id: string;
-    type: 'assessment_due' | 'task_due';
-    title: string;
-    date: string;
-    course_id: string | null;
-    details: Record<string, unknown>;
+    color: number | null;
   }
 
   let {
     courses,
     currentTerm,
     initialItems,
-  }: { courses: CourseOption[]; currentTerm: string | null; initialItems: CalendarItem[] } = $props();
+    initialAnchor,
+    deepLinkEventId,
+  }: {
+    courses: CourseOption[];
+    currentTerm: string | null;
+    initialItems: CalendarItem[];
+    initialAnchor?: string;
+    deepLinkEventId?: string | null;
+  } = $props();
 
   const courseById = new Map(courses.map((c) => [c.id, c]));
   const currentTermCourseIds = new Set(courses.filter((c) => c.term === currentTerm).map((c) => c.id));
 
   type FilterMode = 'current_term' | 'all' | string; // string = specific course id
+  type View = 'week' | 'month' | 'agenda';
 
   let filter = $state<FilterMode>(currentTerm ? 'current_term' : 'all');
-  let view = $state<'month' | 'agenda'>('month');
-  let anchor = $state(new Date());
+  let view = $state<View>('week');
+
+  const seedAnchor = initialAnchor && !Number.isNaN(Date.parse(initialAnchor)) ? new Date(initialAnchor) : new Date();
+  let weekStart = $state(mondayOf(new Date()));
+  let monthAnchor = $state(firstOfMonth(seedAnchor));
+
   let items = $state<CalendarItem[]>(initialItems);
+  let railItems = $state<CalendarItem[]>([]);
   let loading = $state(false);
   let error = $state<string | null>(null);
 
-  function monthRange(d: Date) {
-    const from = new Date(d.getFullYear(), d.getMonth(), 1);
-    const to = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-    return { from, to };
-  }
+  let selectedId = $state<string | null>(null);
+  let selectedItem = $state<CalendarItem | null>(null);
+  let popoverAnchor = $state<{ x: number; y: number; width: number; height: number } | null>(null);
+  let showPopover = $state(false);
 
-  async function loadItems() {
+  let createSlot = $state<Date | null>(null);
+  let createAnchor = $state<{ x: number; y: number; width: number; height: number } | null>(null);
+
+  let rootEl = $state<HTMLElement | null>(null);
+  let pendingSelectItem: CalendarItem | null = null;
+  let lastPointerPos = { x: 0, y: 0 };
+  let didDeepLink = false;
+
+  const courseParam = $derived(filter !== 'current_term' && filter !== 'all' ? filter : undefined);
+
+  const weekStartKey = $derived(localDateKey(weekStart));
+
+  const visibleItems = $derived(
+    filter === 'current_term' ? items.filter((i) => i.course_id === null || currentTermCourseIds.has(i.course_id)) : items,
+  );
+
+  async function loadWeek() {
     loading = true;
     error = null;
     try {
-      const { from, to } = monthRange(anchor);
+      const from = weekStart;
+      const to = addDays(weekStart, 7);
       const params = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
-      if (filter !== 'current_term' && filter !== 'all') params.set('course', filter);
+      if (courseParam) params.set('course', courseParam);
+      const res = await fetch(`/api/v1/calendar?${params.toString()}`);
+      const json = await res.json();
+      if (!res.ok) {
+        error = json?.error?.message ?? 'Could not load calendar.';
+        return;
+      }
+      items = json.data as CalendarItem[];
+      if (pendingSelectItem) {
+        const item = pendingSelectItem;
+        pendingSelectItem = null;
+        await selectItem(item);
+      }
+    } catch {
+      error = 'Network error, please try again.';
+    } finally {
+      loading = false;
+    }
+  }
+
+  async function loadMonth() {
+    loading = true;
+    error = null;
+    try {
+      const from = monthAnchor;
+      const to = addMonths(monthAnchor, 1);
+      const params = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
+      if (courseParam) params.set('course', courseParam);
       const res = await fetch(`/api/v1/calendar?${params.toString()}`);
       const json = await res.json();
       if (!res.ok) {
@@ -64,29 +120,62 @@
     }
   }
 
-  const visibleItems = $derived(
-    filter === 'current_term' ? items.filter((i) => i.course_id === null || currentTermCourseIds.has(i.course_id)) : items,
+  async function loadRail() {
+    try {
+      const from = addDays(new Date(), -30);
+      const to = addDays(new Date(), 7);
+      const params = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
+      if (courseParam) params.set('course', courseParam);
+      const res = await fetch(`/api/v1/calendar?${params.toString()}`);
+      const json = await res.json();
+      if (!res.ok) return;
+      railItems = (json.data as CalendarItem[]).filter((i) => i.type === 'assessment_due' || i.type === 'task_due');
+    } catch {
+      // Rail is a secondary surface — a failed fetch just leaves it empty.
+    }
+  }
+
+  const visibleRailItems = $derived(
+    filter === 'current_term' ? railItems.filter((i) => i.course_id === null || currentTermCourseIds.has(i.course_id)) : railItems,
   );
 
-  function shiftMonth(delta: number) {
-    anchor = new Date(anchor.getFullYear(), anchor.getMonth() + delta, 1);
-    loadItems();
-  }
+  $effect(() => {
+    // Depends on weekStart, monthAnchor, view, courseParam.
+    if (view === 'week') void loadWeek();
+    else void loadMonth();
+  });
 
-  function onFilterChange() {
-    loadItems();
+  $effect(() => {
+    void loadRail();
+  });
+
+  function shiftWeek(delta: number) {
+    weekStart = addDays(weekStart, delta * 7);
   }
+  function shiftMonth(delta: number) {
+    monthAnchor = addMonths(monthAnchor, delta);
+  }
+  function goToday() {
+    if (view === 'week') weekStart = mondayOf(new Date());
+    else monthAnchor = firstOfMonth(new Date());
+  }
+  const isTodayInView = $derived.by(() => {
+    if (view === 'week') return weekStartKey === localDateKey(mondayOf(new Date()));
+    const now = new Date();
+    return monthAnchor.getFullYear() === now.getFullYear() && monthAnchor.getMonth() === now.getMonth();
+  });
+
+  const rangeLabel = $derived(
+    view === 'week' ? weekRangeLabel(weekStart) : monthAnchor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
+  );
 
   function dayKey(iso: string): string {
-    return iso.slice(0, 10);
+    return localDateKey(new Date(iso));
   }
 
-  const monthLabel = $derived(anchor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }));
-
   const monthCells = $derived.by(() => {
-    const firstOfMonth = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
-    const startWeekday = firstOfMonth.getDay();
-    const daysInMonth = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0).getDate();
+    const startWeekday = monthAnchor.getDay();
+    const daysInMonth = new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() + 1, 0).getDate();
     const itemsByDay = new Map<string, CalendarItem[]>();
     for (const item of visibleItems) {
       const key = dayKey(item.date);
@@ -97,22 +186,147 @@
     const cells: { date: Date | null; items: CalendarItem[] }[] = [];
     for (let i = 0; i < startWeekday; i++) cells.push({ date: null, items: [] });
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(anchor.getFullYear(), anchor.getMonth(), day);
-      const key = date.toISOString().slice(0, 10);
-      cells.push({ date, items: itemsByDay.get(key) ?? [] });
+      const date = new Date(monthAnchor.getFullYear(), monthAnchor.getMonth(), day);
+      cells.push({ date, items: itemsByDay.get(localDateKey(date)) ?? [] });
     }
     return cells;
   });
 
   const agendaItems = $derived([...visibleItems].sort((a, b) => a.date.localeCompare(b.date)));
+
+  function updateUrl(id: string | null) {
+    const url = new URL(window.location.href);
+    if (id) url.searchParams.set('event', id);
+    else url.searchParams.delete('event');
+    history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
+  }
+
+  async function selectItem(item: CalendarItem) {
+    selectedId = item.id;
+    selectedItem = item;
+    closeCreate();
+    await tick();
+    const el = rootEl?.querySelector<HTMLElement>(`[data-event-id="${item.id}"]`);
+    if (el) {
+      const r = el.getBoundingClientRect();
+      popoverAnchor = { x: r.left, y: r.top, width: r.width, height: r.height };
+      el.scrollIntoView({ block: 'nearest' });
+    } else {
+      popoverAnchor = { x: window.innerWidth / 2 - 20, y: window.innerHeight / 2 - 20, width: 40, height: 40 };
+    }
+    showPopover = true;
+    (window as any).__plannerBlockEscape = true;
+    updateUrl(item.id);
+  }
+
+  function closePopover() {
+    showPopover = false;
+    selectedId = null;
+    selectedItem = null;
+    (window as any).__plannerBlockEscape = false;
+    updateUrl(null);
+  }
+
+  function closeCreate() {
+    createSlot = null;
+    createAnchor = null;
+    (window as any).__plannerBlockEscape = false;
+  }
+
+  function handleSlotClick(start: Date) {
+    closePopover();
+    createSlot = start;
+    createAnchor = { x: lastPointerPos.x, y: lastPointerPos.y, width: 0, height: 0 };
+    (window as any).__plannerBlockEscape = true;
+  }
+
+  function handleSessionCreated() {
+    if (view === 'week') void loadWeek();
+    else void loadMonth();
+  }
+
+  function handleRailJump(date: Date, item: CalendarItem) {
+    view = 'week';
+    weekStart = mondayOf(date);
+    pendingSelectItem = item;
+  }
+
+  function onFilterChange() {
+    void loadRail();
+  }
+
+  // --- Deep-link resolution (?event=<id>) ---------------------------------
+  async function resolveDeepLink(id: string) {
+    let found = initialItems.find((i) => i.id === id);
+    if (!found) {
+      try {
+        const from = addDays(new Date(), -60);
+        const to = addDays(new Date(), 180);
+        const res = await fetch(`/api/v1/calendar?from=${from.toISOString()}&to=${to.toISOString()}`);
+        const json = await res.json();
+        if (res.ok) found = (json.data as CalendarItem[]).find((i) => i.id === id);
+      } catch {
+        // Give up quietly — deep link just won't resolve.
+      }
+    }
+    if (!found) return;
+    view = 'week';
+    weekStart = mondayOf(new Date(found.date));
+    pendingSelectItem = found;
+  }
+
+  $effect(() => {
+    if (didDeepLink || !deepLinkEventId) return;
+    didDeepLink = true;
+    void resolveDeepLink(deepLinkEventId);
+  });
+
+  // --- Keyboard shortcuts: t / arrows / Esc, inactive while typing --------
+  function isTypingTarget(el: EventTarget | null): boolean {
+    if (!(el instanceof HTMLElement)) return false;
+    const tag = el.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+  }
+
+  function onKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      if (showPopover) closePopover();
+      else if (createSlot) closeCreate();
+      return;
+    }
+    if (isTypingTarget(e.target)) return;
+    if (e.key === 't' || e.key === 'T') {
+      goToday();
+    } else if (e.key === 'ArrowLeft') {
+      if (view === 'week') shiftWeek(-1);
+      else shiftMonth(-1);
+    } else if (e.key === 'ArrowRight') {
+      if (view === 'week') shiftWeek(1);
+      else shiftMonth(1);
+    }
+  }
+
+  $effect(() => {
+    window.addEventListener('keydown', onKeydown);
+    return () => window.removeEventListener('keydown', onKeydown);
+  });
+
+  $effect(() => {
+    function onPointerDown(e: MouseEvent) {
+      lastPointerPos = { x: e.clientX, y: e.clientY };
+    }
+    rootEl?.addEventListener('mousedown', onPointerDown, true);
+    return () => rootEl?.removeEventListener('mousedown', onPointerDown, true);
+  });
 </script>
 
-<div class="planner-view">
+<div class="planner-view" bind:this={rootEl}>
   <div class="toolbar">
-    <div class="month-nav">
-      <button type="button" onclick={() => shiftMonth(-1)} aria-label="Previous month">‹</button>
-      <span class="month-label">{monthLabel}</span>
-      <button type="button" onclick={() => shiftMonth(1)} aria-label="Next month">›</button>
+    <div class="nav-group">
+      <button type="button" class="btn btn-secondary today-btn" disabled={isTodayInView} onclick={goToday}>Today</button>
+      <button type="button" class="chevron" onclick={() => (view === 'week' ? shiftWeek(-1) : shiftMonth(-1))} aria-label="Previous">‹</button>
+      <span class="range-label">{rangeLabel}</span>
+      <button type="button" class="chevron" onclick={() => (view === 'week' ? shiftWeek(1) : shiftMonth(1))} aria-label="Next">›</button>
     </div>
     <div class="controls">
       <select bind:value={filter} onchange={onFilterChange}>
@@ -125,6 +339,7 @@
         {/each}
       </select>
       <div class="view-toggle" role="group" aria-label="View">
+        <button type="button" class="chip" aria-pressed={view === 'week'} onclick={() => (view = 'week')}>Week</button>
         <button type="button" class="chip" aria-pressed={view === 'month'} onclick={() => (view = 'month')}>Month</button>
         <button type="button" class="chip" aria-pressed={view === 'agenda'} onclick={() => (view = 'agenda')}>Agenda</button>
       </div>
@@ -134,12 +349,43 @@
   {#if error}<p class="error">{error}</p>{/if}
   {#if loading}<p class="loading">Loading…</p>{/if}
 
-  {#if view === 'month'}
-    <CalendarGrid cells={monthCells} {courseById} />
-  {:else}
-    <AgendaList items={agendaItems} {courseById} />
-  {/if}
+  <div class="planner-body">
+    <div class="planner-main">
+      {#if view === 'week'}
+        <WeekGrid
+          items={visibleItems}
+          weekStart={weekStartKey}
+          {courses}
+          selectedId={selectedId}
+          onSelect={selectItem}
+          onSlotClick={handleSlotClick}
+        />
+      {:else if view === 'month'}
+        <CalendarGrid cells={monthCells} {courseById} {selectedId} onSelect={selectItem} />
+      {:else}
+        <AgendaList items={agendaItems} {courseById} {selectedId} onSelect={selectItem} />
+      {/if}
+    </div>
+    <div class="planner-side">
+      <h2 class="kicker">Plan ahead</h2>
+      <PlannerRail items={visibleRailItems} {courses} {selectedId} weekStart={weekStartKey} onSelect={selectItem} onJumpToWeek={handleRailJump} />
+    </div>
+  </div>
 </div>
+
+{#if showPopover && selectedItem && popoverAnchor}
+  <EventPopover
+    item={selectedItem}
+    course={selectedItem.course_id ? courseById.get(selectedItem.course_id) : undefined}
+    anchorRect={popoverAnchor}
+    onClose={closePopover}
+    onDeleted={() => (view === 'week' ? loadWeek() : loadMonth())}
+  />
+{/if}
+
+{#if createSlot && createAnchor}
+  <CreateSessionPopover start={createSlot} anchorRect={createAnchor} {courses} onClose={closeCreate} onCreated={handleSessionCreated} />
+{/if}
 
 <style>
   .planner-view {
@@ -154,12 +400,16 @@
     flex-wrap: wrap;
     gap: 0.75rem;
   }
-  .month-nav {
+  .nav-group {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.6rem;
   }
-  .month-nav button {
+  .today-btn {
+    padding: 6px 13px;
+    font-size: 12.5px;
+  }
+  .chevron {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     width: 2rem;
@@ -168,14 +418,15 @@
     background: var(--surface);
     color: var(--text);
   }
-  .month-nav button:hover {
+  .chevron:hover {
     background: var(--hover);
   }
-  .month-label {
+  .range-label {
     font-weight: 600;
-    min-width: 10rem;
+    min-width: 12rem;
     text-align: center;
     font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
   }
   .controls {
     display: flex;
@@ -201,5 +452,26 @@
   .loading {
     color: var(--muted);
     font-size: 0.9rem;
+  }
+  .planner-body {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    gap: 20px;
+    align-items: start;
+  }
+  .planner-main {
+    min-width: 0;
+  }
+  .planner-side {
+    min-width: 0;
+  }
+  .planner-side .kicker {
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  @media (max-width: 1100px) {
+    .planner-body {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

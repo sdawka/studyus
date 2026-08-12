@@ -12,12 +12,25 @@ const currentTerm = Astro.locals.user!.currentTerm;
 
 const userCourses = await listCourses(db, userId);
 
-const now = new Date();
-const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime();
+// Deep-link support: /planner?event=<id>&date=<iso-date>. `date` anchors the
+// week to fetch/select from (a hint — if the event isn't found there,
+// PlannerView widens the search client-side); `event` is the item to select.
+const deepLinkEvent = Astro.url.searchParams.get('event');
+const deepLinkDate = Astro.url.searchParams.get('date');
+
+const anchor = deepLinkDate && !Number.isNaN(Date.parse(deepLinkDate)) ? new Date(deepLinkDate) : new Date();
+const monthStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1).getTime();
+const monthEnd = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1).getTime();
 const initialItems = await getCalendar(db, userId, monthStart, monthEnd);
 
-const courseOptions = userCourses.map((c) => ({ id: c.id, slug: c.slug, code: c.code, title: c.title, term: c.term, color: c.color }));
+const courseOptions = userCourses.map((c) => ({
+  id: c.id,
+  slug: c.slug,
+  code: c.code,
+  title: c.title,
+  term: c.term,
+  color: c.color === null ? null : Number(c.color),
+}));
 ---
 
 <AppShell title="Planner">
@@ -30,7 +43,14 @@ const courseOptions = userCourses.map((c) => ({ id: c.id, slug: c.slug, code: c.
           <span aria-hidden="true">×</span>
         </button>
       </div>
-      <PlannerView client:load courses={courseOptions} currentTerm={currentTerm} initialItems={initialItems} />
+      <PlannerView
+        client:load
+        courses={courseOptions}
+        currentTerm={currentTerm}
+        initialItems={initialItems}
+        initialAnchor={anchor.toISOString()}
+        deepLinkEventId={deepLinkEvent}
+      />
     </div>
   </div>
 </AppShell>
@@ -43,7 +63,9 @@ const courseOptions = userCourses.map((c) => ({ id: c.id, slug: c.slug, code: c.
   document.getElementById('planner-close')?.addEventListener('click', closePlanner);
   document.getElementById('planner-scrim')?.addEventListener('click', closePlanner);
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closePlanner();
+    // PlannerView sets this while its own popover/create-form is open, so a
+    // first Escape closes that instead of the whole modal.
+    if (e.key === 'Escape' && !window.__plannerBlockEscape) closePlanner();
   });
 </script>
 

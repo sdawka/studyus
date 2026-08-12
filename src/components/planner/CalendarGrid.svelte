@@ -1,26 +1,23 @@
 <script lang="ts">
+  import type { CalendarItem } from '../../lib/types/calendar';
   import { hueFor } from '../../lib/courseHue';
 
-  interface CalendarItem {
-    id: string;
-    type: 'assessment_due' | 'task_due';
-    title: string;
-    date: string;
-    course_id: string | null;
-    details: Record<string, unknown>;
-  }
   interface CourseInfo {
     code: string;
     slug: string;
-    color: string | null;
+    color: number | null;
   }
 
   let {
     cells,
     courseById,
+    selectedId = null,
+    onSelect,
   }: {
     cells: { date: Date | null; items: CalendarItem[] }[];
     courseById: Map<string, CourseInfo>;
+    selectedId?: string | null;
+    onSelect?: (item: CalendarItem) => void;
   } = $props();
 
   const today = new Date();
@@ -34,7 +31,7 @@
   }
   function hueForItem(item: CalendarItem): number {
     const c = courseFor(item);
-    return c ? hueFor(c) : 220;
+    return c ? hueFor({ slug: c.slug, color: c.color === null ? null : String(c.color) }) : 220;
   }
   function labelFor(item: CalendarItem): string {
     const code = courseFor(item)?.code;
@@ -51,9 +48,17 @@
       {#if cell.date}
         <div class="day-number num">{cell.date.getDate()}</div>
         {#each cell.items as item (item.id)}
-          <div class="chip-evt" style={`--course-h:${hueForItem(item)}`} title={labelFor(item)}>
+          <button
+            type="button"
+            class="chip-evt"
+            class:selected={selectedId === item.id}
+            data-event-id={item.id}
+            style={`--course-h:${hueForItem(item)}`}
+            title={labelFor(item)}
+            onclick={() => onSelect?.(item)}
+          >
             <span class="dot"></span>{labelFor(item)}
-          </div>
+          </button>
         {/each}
       {/if}
     </div>
@@ -107,6 +112,7 @@
     display: flex;
     align-items: center;
     gap: 5px;
+    width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -114,6 +120,11 @@
     padding: 2px 6px;
     background: var(--course-soft);
     color: var(--course-ink);
+    text-align: left;
+  }
+  .chip-evt.selected {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
   }
   .dot {
     width: 6px;

@@ -1,26 +1,23 @@
 <script lang="ts">
+  import type { CalendarItem } from '../../lib/types/calendar';
   import { hueFor } from '../../lib/courseHue';
 
-  interface CalendarItem {
-    id: string;
-    type: 'assessment_due' | 'task_due';
-    title: string;
-    date: string;
-    course_id: string | null;
-    details: Record<string, unknown>;
-  }
   interface CourseInfo {
     code: string;
     slug: string;
-    color: string | null;
+    color: number | null;
   }
 
   let {
     items,
     courseById,
+    selectedId = null,
+    onSelect,
   }: {
     items: CalendarItem[];
     courseById: Map<string, CourseInfo>;
+    selectedId?: string | null;
+    onSelect?: (item: CalendarItem) => void;
   } = $props();
 
   function courseFor(item: CalendarItem): CourseInfo | undefined {
@@ -28,7 +25,11 @@
   }
   function hueForItem(item: CalendarItem): number {
     const c = courseFor(item);
-    return c ? hueFor(c) : 220;
+    return c ? hueFor({ slug: c.slug, color: c.color === null ? null : String(c.color) }) : 220;
+  }
+  function timeLabel(item: CalendarItem): string | null {
+    if (item.all_day) return null;
+    return new Date(item.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
   }
   function daysUntil(iso: string): number {
     const now = new Date();
@@ -54,15 +55,20 @@
     {@const days = daysUntil(item.date)}
     {@const u = urgency(days)}
     {@const code = courseFor(item)?.code}
+    {@const time = timeLabel(item)}
     <li>
-      <span class="dot" style={`--course-h:${hueForItem(item)}`}></span>
-      <span class="agenda-body">
-        <span class="agenda-title">{item.title}</span>
-        <span class="agenda-meta"
-          >{code ? `${code} · ` : ''}{new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span
-        >
-      </span>
-      <span class="pill {u.cls}">{u.label}</span>
+      <button type="button" class="agenda-row" class:selected={selectedId === item.id} data-event-id={item.id} onclick={() => onSelect?.(item)}>
+        <span class="dot" style={`--course-h:${hueForItem(item)}`}></span>
+        <span class="agenda-body">
+          <span class="agenda-title">{item.title}</span>
+          <span class="agenda-meta"
+            >{code ? `${code} · ` : ''}{new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}{time
+              ? ` · ${time}`
+              : ''}</span
+          >
+        </span>
+        <span class="pill {u.cls}">{u.label}</span>
+      </button>
     </li>
   {/each}
 </ul>
@@ -77,17 +83,28 @@
     gap: 8px;
   }
   .agenda-list li {
+    padding: 0;
+  }
+  .agenda-row {
     display: flex;
     align-items: center;
     gap: 12px;
+    width: 100%;
     padding: 10px 12px;
     background: var(--surface-2);
     border: 1px solid var(--hairline);
     border-radius: var(--radius-sm);
+    text-align: left;
+  }
+  .agenda-row.selected {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
   }
   .empty-row {
     color: var(--muted);
     justify-content: center;
+    display: flex;
+    padding: 10px 12px;
   }
   .dot {
     width: 9px;
