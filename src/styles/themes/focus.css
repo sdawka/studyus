@@ -42,18 +42,26 @@
   --sidebar-active-bg:   oklch(25% 0.022 264);
   --sidebar-active-text: oklch(98% 0.004 264);
 
-  --radius-lg: 10px;
-  --radius-md: 7px;
-  --radius-sm: 5px;
+  --radius-lg: 8px;
+  --radius-md: 6px;
+  --radius-sm: 4px;
   --font-display: 'Space Grotesk Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-body: 'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-num: var(--font-display);
+  --font-kicker: var(--font-display);
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
   --font-size-base: 13px;
+  --text-figure: 28px;
   --shadow-card: 0 1px 1px oklch(0% 0 0 / 0.07);
   --shadow-pop: 0 1px 4px oklch(0% 0 0 / 0.14);
+  --accent-glow: none;
+
+  --now-line-color: var(--accent);
+  --now-line-glow: 0 0 0 3px oklch(52% 0.19 267 / 0.18);
+  --nav-active-tick: 2px;
 
   --course-l: 48%;
-  --course-c: 0.07;
+  --course-c: 0.05;
   --course-ink-l: 36%;
   --course-ink-c: 0.06;
   --course-soft-l: 94%;
@@ -112,6 +120,9 @@
 
     --shadow-card: 0 1px 1px oklch(0% 0 0 / 0.4);
     --shadow-pop: 0 1px 5px oklch(0% 0 0 / 0.5);
+    --accent-glow: 0 0 12px oklch(64% 0.155 268 / 0.35);
+
+    --now-line-glow: 0 0 0 3px oklch(64% 0.155 268 / 0.22);
 
     --course-l: 66%;
     --course-ink-l: 74%;
@@ -149,6 +160,9 @@
 
   --shadow-card: 0 1px 1px oklch(0% 0 0 / 0.4);
   --shadow-pop: 0 1px 5px oklch(0% 0 0 / 0.5);
+  --accent-glow: 0 0 12px oklch(64% 0.155 268 / 0.35);
+
+  --now-line-glow: 0 0 0 3px oklch(64% 0.155 268 / 0.22);
 
   --course-l: 66%;
   --course-ink-l: 74%;
