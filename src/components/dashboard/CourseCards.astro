@@ -1,0 +1,166 @@
+---
+import { hueFor } from '../../lib/courseHue';
+import StatusChip from '../course/StatusChip.astro';
+
+interface CourseCardData {
+  id: string;
+  slug: string;
+  code: string;
+  title: string;
+  color: string | null;
+  status: string | null;
+  weightedGrade: number | null;
+  masteredKcs: number;
+  totalKcs: number;
+  stale: boolean;
+  assessmentsCompleted: number;
+  assessmentsTotal: number;
+}
+interface Props {
+  courses: CourseCardData[];
+}
+const { courses } = Astro.props;
+---
+
+<section class="card">
+  <div class="card-head">
+    <h2>Your courses</h2>
+  </div>
+  {courses.length === 0 ? (
+    <p class="empty">No courses yet.</p>
+  ) : (
+    <div class="course-grid">
+      {courses.map((c) => {
+        const hue = hueFor(c);
+        const masteryPct = c.totalKcs > 0 ? Math.round((c.masteredKcs / c.totalKcs) * 100) : 0;
+        return (
+          <a class="course-card" href={`/courses/${c.slug}`} style={`--course-h:${hue}`}>
+            <div class="head">
+              <div class="ident">
+                <span class="code">{c.code}</span>
+                <span class="title">{c.title}</span>
+              </div>
+              <StatusChip status={c.status} />
+            </div>
+
+            <div class="health">
+              <div class="grade">
+                <span class="grade-num num">{c.weightedGrade !== null ? `${c.weightedGrade}%` : '—'}</span>
+                <span class="grade-lbl">weighted grade</span>
+              </div>
+              <div class="mastery">
+                <div class="bar"><span style={`width:${masteryPct}%`}></span></div>
+                <span class="mastery-cap">{c.masteredKcs} of {c.totalKcs} concepts</span>
+                {c.stale && <span class="stale-hint">No study activity in 7+ days</span>}
+              </div>
+            </div>
+
+            {c.assessmentsTotal > 0 && (
+              <div class="progress">
+                <span class="progress-txt">
+                  {c.assessmentsCompleted} of {c.assessmentsTotal} assessment{c.assessmentsTotal === 1 ? '' : 's'} done
+                </span>
+              </div>
+            )}
+          </a>
+        );
+      })}
+    </div>
+  )}
+</section>
+
+<style>
+  .course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--space-3, 12px);
+  }
+  .course-card {
+    border: 1px solid var(--hairline);
+    border-top: 4px solid var(--course);
+    border-radius: var(--radius-md);
+    padding: var(--space-4, 14px);
+    background: var(--surface-2);
+    text-decoration: none;
+    color: var(--text);
+    display: grid;
+    gap: var(--space-3, 12px);
+    transition: box-shadow var(--motion-base, 0.15s) var(--ease), transform var(--motion-base, 0.15s) var(--ease);
+  }
+  .course-card:hover {
+    box-shadow: var(--shadow-pop);
+    transform: translateY(-1px);
+  }
+
+  .head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-2, 8px);
+  }
+  .ident {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .code {
+    font: 650 10.5px/1 var(--font-mono);
+    letter-spacing: 0.05em;
+    color: var(--course-ink);
+  }
+  .title {
+    font-weight: 620;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .health {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4, 14px);
+  }
+  .grade {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .grade-num {
+    font: 700 22px/1.1 var(--font-display);
+    letter-spacing: -0.02em;
+  }
+  .grade-lbl {
+    font-size: 10.5px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+  .mastery {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .mastery .bar > span {
+    background: var(--course);
+  }
+  .mastery-cap {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .stale-hint {
+    font-size: 10.5px;
+    color: var(--warn-ink);
+  }
+
+  .progress {
+    border-top: 1px solid var(--hairline);
+    padding-top: var(--space-2, 8px);
+  }
+  .progress-txt {
+    font-size: 12px;
+    color: var(--muted);
+  }
+</style>
