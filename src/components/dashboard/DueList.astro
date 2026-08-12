@@ -1,0 +1,107 @@
+---
+interface DueItem {
+  id: string;
+  title: string;
+  dueDate: number;
+  courseCode: string | null;
+  courseHue: number | null;
+}
+interface Props {
+  items: DueItem[];
+}
+const { items } = Astro.props;
+const now = Date.now();
+
+function daysUntil(ms: number): number {
+  const a = new Date(now);
+  a.setHours(0, 0, 0, 0);
+  const b = new Date(ms);
+  b.setHours(0, 0, 0, 0);
+  return Math.round((b.getTime() - a.getTime()) / 86400000);
+}
+function fmt(ms: number): string {
+  return new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+function urgency(days: number): { cls: string; label: string } {
+  if (days < 0) return { cls: 'pill-danger', label: 'overdue' };
+  if (days === 0) return { cls: 'pill-danger', label: 'Today' };
+  if (days === 1) return { cls: 'pill-warn', label: 'Tomorrow' };
+  if (days <= 3) return { cls: 'pill-warn', label: `in ${days}d` };
+  return { cls: 'pill-idle', label: `in ${days}d` };
+}
+---
+
+<section class="card">
+  <div class="card-head">
+    <h2>Due soon</h2>
+    <a class="link-more" href="/planner">Plan a session →</a>
+  </div>
+  {items.length === 0 ? (
+    <p class="empty">Nothing due — you're caught up.</p>
+  ) : (
+    <div class="task-list">
+      {items.map((item) => {
+        const days = daysUntil(item.dueDate);
+        const u = urgency(days);
+        return (
+          <div class="task-row">
+            <span class="task-dot" style={`--course-h:${item.courseHue ?? 220}`}></span>
+            <span class="task-body">
+              <span class="task-title">{item.title}</span>
+              <span class="task-meta">{item.courseCode ? `${item.courseCode} · ` : ''}{fmt(item.dueDate)}</span>
+            </span>
+            <span class={`pill ${u.cls}`}>{u.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  )}
+</section>
+
+<style>
+  .link-more {
+    font-size: 12.5px;
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 560;
+    white-space: nowrap;
+  }
+  .link-more:hover {
+    color: var(--accent-ink);
+  }
+  .task-list {
+    display: grid;
+  }
+  .task-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 4px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .task-row:last-child {
+    border-bottom: none;
+  }
+  .task-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--course);
+    flex-shrink: 0;
+  }
+  .task-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .task-title {
+    font-weight: 560;
+    font-size: 14px;
+  }
+  .task-meta {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+</style>

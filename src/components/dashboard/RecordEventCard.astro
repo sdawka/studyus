@@ -1,0 +1,24 @@
+---
+import QuickEventForm from '../admin/QuickEventForm.svelte';
+
+interface Props {
+  courses: { id: string; code: string; title: string }[];
+}
+const { courses } = Astro.props;
+---
+
+<section class="card">
+  <div class="card-head">
+    <h2>Record event</h2>
+  </div>
+  <p class="hint">Log something that happened outside the app — a lecture, a grade, a practice set.</p>
+  <QuickEventForm client:load courses={courses} />
+</section>
+
+<style>
+  .hint {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 0 0 12px;
+  }
+</style>

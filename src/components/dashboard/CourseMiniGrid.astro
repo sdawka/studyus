@@ -1,0 +1,102 @@
+---
+import { hueFor } from './courseHue';
+
+interface Course {
+  id: string;
+  slug: string;
+  code: string;
+  title: string;
+  color: string | null;
+  mastered: number;
+  total: number;
+}
+interface Props {
+  courses: Course[];
+}
+const { courses } = Astro.props;
+---
+
+<section class="card">
+  <div class="card-head">
+    <h2>Your courses</h2>
+  </div>
+  {courses.length === 0 ? (
+    <p class="empty">No courses yet.</p>
+  ) : (
+    <div class="course-mini-grid">
+      {courses.map((c) => {
+        const hue = hueFor(c);
+        const pct = c.total > 0 ? Math.round((c.mastered / c.total) * 100) : 0;
+        return (
+          <a class="course-mini" href={`/courses/${c.slug}`} style={`--course-h:${hue}`}>
+            <div class="code">{c.code}</div>
+            <div class="title">{c.title}</div>
+            <div class="bar"><span style={`width:${pct}%`}></span></div>
+            <div class="frac">{c.mastered} of {c.total} concepts mastered</div>
+          </a>
+        );
+      })}
+    </div>
+  )}
+</section>
+
+<style>
+  .course-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .course-mini {
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    padding: 13px 14px;
+    background: var(--surface-2);
+    text-decoration: none;
+    color: var(--text);
+    display: block;
+    transition: box-shadow 0.15s, transform 0.15s;
+  }
+  .course-mini:hover {
+    box-shadow: var(--shadow-pop);
+    transform: translateY(-1px);
+  }
+  .code {
+    font: 650 10.5px/1 var(--font-mono);
+    letter-spacing: 0.05em;
+    color: var(--course-ink);
+  }
+  .title {
+    font-weight: 620;
+    font-size: 14px;
+    margin-top: 5px;
+  }
+  .bar {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--hairline);
+    margin-top: 10px;
+    overflow: hidden;
+  }
+  .bar span {
+    display: block;
+    height: 100%;
+    background: var(--course);
+    border-radius: 999px;
+  }
+  .frac {
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  @media (max-width: 1060px) {
+    .course-mini-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 720px) {
+    .course-mini-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>

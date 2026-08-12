@@ -1,0 +1,81 @@
+---
+import { hueFor } from './courseHue';
+
+interface CourseGrade {
+  course_id: string;
+  course_title: string;
+  weighted_grade: number | null;
+}
+interface Course {
+  id: string;
+  slug: string;
+  code: string;
+  color: string | null;
+}
+interface Props {
+  byCourse: CourseGrade[];
+  courses: Course[];
+}
+const { byCourse, courses } = Astro.props;
+const courseById = new Map(courses.map((c) => [c.id, c]));
+---
+
+<section class="card">
+  <div class="card-head">
+    <h2>Grade snapshot</h2>
+    <span class="kicker">Weighted standing, current term</span>
+  </div>
+  {byCourse.length === 0 ? (
+    <p class="empty">No courses yet — grades will show up here once you add one.</p>
+  ) : (
+    <div class="grade-grid">
+      {byCourse.map((c) => {
+        const course = courseById.get(c.course_id);
+        const hue = course ? hueFor(course) : 220;
+        return (
+          <div class="grade-card" style={`--course-h:${hue}`}>
+            <div class="code">{course?.code ?? c.course_title}</div>
+            <div class="pct num">{c.weighted_grade !== null ? `${c.weighted_grade}%` : '—/in progress'}</div>
+            <div class="lbl">weighted standing</div>
+          </div>
+        );
+      })}
+    </div>
+  )}
+</section>
+
+<style>
+  .grade-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
+  .grade-card {
+    border: 1px solid var(--hairline);
+    border-top: 4px solid var(--course);
+    border-radius: var(--radius-md);
+    padding: 13px 14px;
+    background: var(--surface-2);
+  }
+  .code {
+    font: 650 11px/1 var(--font-mono);
+    letter-spacing: 0.05em;
+    color: var(--course-ink);
+  }
+  .pct {
+    font: 700 24px/1.2 var(--font-display);
+    margin-top: 6px;
+    letter-spacing: -0.02em;
+  }
+  .lbl {
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  @media (max-width: 720px) {
+    .grade-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>

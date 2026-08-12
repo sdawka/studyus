@@ -1,0 +1,167 @@
+---
+import { hueFor } from './courseHue';
+
+interface Course {
+  id: string;
+  slug: string;
+  code: string;
+  title: string;
+  color: string | null;
+}
+interface CalendarItem {
+  id: string;
+  type: 'assessment_due' | 'task_due';
+  title: string;
+  date: string;
+  course_id: string | null;
+  details: Record<string, unknown>;
+}
+interface Props {
+  items: CalendarItem[];
+  courses: Course[];
+}
+const { items, courses } = Astro.props;
+const courseById = new Map(courses.map((c) => [c.id, c]));
+
+function typeLabel(item: CalendarItem): string {
+  if (item.type === 'assessment_due') {
+    const t = item.details.assessment_type as string | undefined;
+    return t ? t.charAt(0).toUpperCase() + t.slice(1) : 'Assessment';
+  }
+  return 'Task';
+}
+
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+const weekdayFmt = new Intl.DateTimeFormat(undefined, { weekday: 'short' });
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+const days = Array.from({ length: 7 }, (_, i) => {
+  const d = new Date(today);
+  d.setDate(d.getDate() + i);
+  return d;
+});
+const itemsByDay = days.map((d) => items.filter((it) => isSameDay(new Date(it.date), d)));
+---
+
+<section class="card">
+  <div class="card-head">
+    <h2>Next 7 days</h2>
+    <a class="link-more" href="/planner">Open planner →</a>
+  </div>
+  <div class="week">
+    {days.map((d, i) => (
+      <div class:list={['day', { today: isSameDay(d, today) }]}>
+        <div class="dh">
+          <span class="wd">{weekdayFmt.format(d)}</span>
+          <span class="n num">{d.getDate()}</span>
+        </div>
+        {itemsByDay[i].length === 0 ? (
+          <div class="day-empty">—</div>
+        ) : (
+          itemsByDay[i].map((item) => {
+            const course = item.course_id ? courseById.get(item.course_id) : undefined;
+            const hue = course ? hueFor(course) : 220;
+            return (
+              <div class="chip-evt" style={`--course-h:${hue}`}>
+                <span class="k">{typeLabel(item)}{course ? ` · ${course.code}` : ''}</span>
+                <span class="t">{item.title}</span>
+              </div>
+            );
+          })
+        )}
+      </div>
+    ))}
+  </div>
+</section>
+
+<style>
+  .link-more {
+    font-size: 12.5px;
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 560;
+    white-space: nowrap;
+  }
+  .link-more:hover {
+    color: var(--accent-ink);
+  }
+
+  .week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+  }
+  .day {
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    padding: 10px 8px;
+    min-height: 128px;
+    display: grid;
+    gap: 6px;
+    align-content: start;
+    background: var(--surface-2);
+  }
+  .day.today {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .dh {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 2px;
+  }
+  .wd {
+    font-size: 10.5px;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .n {
+    font: 650 15px/1 var(--font-display);
+    color: var(--text);
+  }
+  .day.today .wd,
+  .day.today .n {
+    color: var(--accent-ink);
+  }
+  .chip-evt {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 6px 7px;
+    border-radius: 8px;
+    font-size: 11px;
+    line-height: 1.3;
+    background: var(--course-soft);
+    border: 1px solid var(--course);
+    color: var(--course-ink);
+  }
+  .chip-evt .k {
+    font-weight: 700;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.85;
+  }
+  .chip-evt .t {
+    font-weight: 560;
+  }
+  .day-empty {
+    font-size: 11.5px;
+    color: var(--faint);
+    padding: 4px 2px;
+  }
+
+  @media (max-width: 720px) {
+    .week {
+      grid-template-columns: repeat(7, minmax(118px, 1fr));
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+  }
+</style>

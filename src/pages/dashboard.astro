@@ -1,16 +1,23 @@
 ---
 import AppShell from '../layouts/AppShell.astro';
-import QuickEventForm from '../components/admin/QuickEventForm.svelte';
+import WeekStrip from '../components/dashboard/WeekStrip.astro';
+import GradeSnapshot from '../components/dashboard/GradeSnapshot.astro';
+import CourseMiniGrid from '../components/dashboard/CourseMiniGrid.astro';
+import DueList from '../components/dashboard/DueList.astro';
+import RecordEventCard from '../components/dashboard/RecordEventCard.astro';
+import { hueFor } from '../components/dashboard/courseHue';
 import { env } from 'cloudflare:workers';
+import { inArray } from 'drizzle-orm';
 import { getDb } from '../db/client';
+import { kcs } from '../db/schema';
 import { listCourses } from '../lib/services/courses';
 import { getCalendar } from '../lib/services/calendar';
 import { getGradesSummary } from '../lib/services/grades';
 import { listTasks } from '../lib/services/tasks';
-import { listEvents } from '../lib/services/events';
 
 const db = getDb(env.DB);
-const userId = Astro.locals.user!.id;
+const user = Astro.locals.user!;
+const userId = user.id;
 
 const userCourses = await listCourses(db, userId);
 const courseById = new Map(userCourses.map((c) => [c.id, c]));
@@ -22,164 +29,144 @@ const deadlines = await getCalendar(db, userId, now, weekFromNow);
 const gradesSummary = await getGradesSummary(db, userId);
 
 const allTasks = await listTasks(db, userId);
-const openTasks = allTasks.filter((t) => !t.completed);
-const overdueTasks = openTasks.filter((t) => t.dueDate !== null && t.dueDate < now);
-const upcomingTasks = openTasks.filter((t) => t.dueDate === null || t.dueDate >= now).slice(0, 5);
+const overdueTasks = allTasks.filter((t) => !t.completed && t.dueDate !== null && t.dueDate < now);
 
-const recentEvents = await listEvents(db, userId, { limit: 8 });
-
-function formatDate(iso: string | number | null) {
-  if (iso === null) return 'No due date';
-  const d = typeof iso === 'number' ? new Date(iso) : new Date(iso);
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+// Concepts-mastered counts per course, for the mini grid — listCourses only
+// exposes an averaged mastery %, not the "N of M" breakdown this card wants.
+const courseIds = userCourses.map((c) => c.id);
+const courseKcs = courseIds.length
+  ? await db.select({ courseId: kcs.courseId, status: kcs.status }).from(kcs).where(inArray(kcs.courseId, courseIds))
+  : [];
+const kcCountsByCourse = new Map<string, { total: number; mastered: number }>();
+for (const kc of courseKcs) {
+  const entry = kcCountsByCourse.get(kc.courseId) ?? { total: 0, mastered: 0 };
+  entry.total += 1;
+  if (kc.status === 'mastered') entry.mastered += 1;
+  kcCountsByCourse.set(kc.courseId, entry);
 }
+const miniGridCourses = userCourses.map((c) => {
+  const counts = kcCountsByCourse.get(c.id) ?? { total: 0, mastered: 0 };
+  return { id: c.id, slug: c.slug, code: c.code, title: c.title, color: c.color, mastered: counts.mastered, total: counts.total };
+});
+
+// Unified "due soon" list for the rail: overdue tasks plus this week's
+// assessments/tasks from the calendar, sorted ascending, top few.
+type DueItem = { id: string; title: string; dueDate: number; courseCode: string | null; courseHue: number | null };
+const dueItems: DueItem[] = [];
+
+for (const t of overdueTasks) {
+  const c = t.courses[0] ? courseById.get(t.courses[0].id) : undefined;
+  dueItems.push({ id: t.id, title: t.title, dueDate: t.dueDate!, courseCode: c?.code ?? null, courseHue: c ? hueFor(c) : null });
+}
+for (const item of deadlines) {
+  if (item.type === 'task_due' && item.details.done) continue;
+  const c = item.course_id ? courseById.get(item.course_id) : undefined;
+  dueItems.push({ id: item.id, title: item.title, dueDate: Date.parse(item.date), courseCode: c?.code ?? null, courseHue: c ? hueFor(c) : null });
+}
+dueItems.sort((a, b) => a.dueDate - b.dueDate);
+const dueListItems = dueItems.slice(0, 6);
 
 const quickEventCourses = userCourses.map((c) => ({ id: c.id, code: c.code, title: c.title }));
+
+// Page head: date + term kicker, a headline that names the most urgent
+// item when there is one, quiet otherwise.
+const kicker = `${new Date(now).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} · ${user.currentTerm ?? 'No term set'}`;
+
+const mostUrgent = dueListItems[0];
+let headline: string;
+let sub: string;
+if (userCourses.length === 0) {
+  headline = "Let's get your first course set up.";
+  sub = 'Add a course to start tracking grades, concepts, and what\'s due.';
+} else if (mostUrgent) {
+  const days = Math.round((mostUrgent.dueDate - now) / 86400000);
+  const weekday = new Date(mostUrgent.dueDate).toLocaleDateString(undefined, { weekday: 'long' });
+  const courseLabel = mostUrgent.courseCode ? ` — ${mostUrgent.courseCode} first` : '';
+  headline = days < 0 ? `${mostUrgent.title} is overdue${courseLabel}.` : `${mostUrgent.title} ${weekday}${courseLabel}.`;
+  sub = `${userCourses.length} course${userCourses.length === 1 ? '' : 's'} in progress this term.`;
+} else {
+  headline = "Here's your week at a glance.";
+  sub = `${userCourses.length} course${userCourses.length === 1 ? '' : 's'} in progress this term — nothing urgent due.`;
+}
 ---
+
 <AppShell title="Dashboard">
-  <h1>Dashboard</h1>
+  <div class="page-head">
+    <p class="kicker">{kicker}</p>
+    <h1>{headline}</h1>
+    <p class="sub">{sub}</p>
+  </div>
 
-  <section class="grid">
-    <div class="panel">
-      <h2>Next 7 days</h2>
-      {deadlines.length === 0 ? (
-        <p class="muted">Nothing due this week.</p>
-      ) : (
-        <ul class="deadline-list">
-          {deadlines.map((item) => (
-            <li>
-              <span class="deadline-date">{formatDate(item.date)}</span>
-              <span class="deadline-title">{item.title}</span>
-              <span class="deadline-course">{item.course_id ? courseById.get(item.course_id)?.code ?? '' : ''}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+  <div class="grid">
+    {userCourses.length === 0 ? (
+      <div class="main">
+        <div class="card setup-card">
+          <h2>Add your first course</h2>
+          <p>Once you add a course, your week at a glance, grade snapshot, and concept mastery will show up here.</p>
+          <button type="button" class="btn btn-primary" id="setup-add-course">Add your first course</button>
+        </div>
+      </div>
+    ) : (
+      <div class="main">
+        <WeekStrip items={deadlines} courses={userCourses} />
+        <GradeSnapshot byCourse={gradesSummary.by_course} courses={userCourses} />
+        <CourseMiniGrid courses={miniGridCourses} />
+      </div>
+    )}
 
-    <div class="panel">
-      <h2>Grade snapshot</h2>
-      <p class="overall-grade">
-        {gradesSummary.overall_weighted_grade !== null ? `${gradesSummary.overall_weighted_grade}%` : '—'}
-        <span class="muted"> overall</span>
-      </p>
-      <ul class="grade-cards">
-        {gradesSummary.by_course.map((c) => (
-          <li>
-            <span>{c.course_title}</span>
-            <span class="grade-value">{c.weighted_grade !== null ? `${c.weighted_grade}%` : 'no grades yet'}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  </section>
-
-  <section class="grid">
-    <div class="panel">
-      <h2>Tasks</h2>
-      {overdueTasks.length > 0 && (
-        <>
-          <h3 class="subhead overdue">Overdue</h3>
-          <ul class="task-list">
-            {overdueTasks.map((t) => (
-              <li>
-                <span>{t.title}</span>
-                <span class="task-due overdue">{formatDate(t.dueDate)}</span>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-      <h3 class="subhead">Upcoming</h3>
-      {upcomingTasks.length === 0 ? (
-        <p class="muted">No open tasks.</p>
-      ) : (
-        <ul class="task-list">
-          {upcomingTasks.map((t) => (
-            <li>
-              <span>{t.title}</span>
-              <span class="task-due">{formatDate(t.dueDate)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-      <a class="link" href="/tasks">View all tasks →</a>
-    </div>
-
-    <div class="panel">
-      <h2>Recent events</h2>
-      {recentEvents.length === 0 ? (
-        <p class="muted">No events logged yet.</p>
-      ) : (
-        <ul class="event-list">
-          {recentEvents.map((e) => (
-            <li>
-              <span class="event-type">{e.type.replace(/_/g, ' ')}</span>
-              <span class="muted">{formatDate(e.ts)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  </section>
-
-  <section class="panel">
-    <h2>Record an event</h2>
-    <p class="muted">Log something that happened outside the app — attended a lecture, did some reading, ran a practice set.</p>
-    <QuickEventForm client:load courses={quickEventCourses} />
-  </section>
+    <aside class="rail">
+      <RecordEventCard courses={quickEventCourses} />
+      <DueList items={dueListItems} />
+    </aside>
+  </div>
 </AppShell>
 
+<script>
+  document.getElementById('setup-add-course')?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('open-add-course'));
+  });
+</script>
+
 <style>
+  .page-head {
+    margin-bottom: 26px;
+  }
+  .page-head h1 {
+    font-size: 26px;
+    letter-spacing: -0.015em;
+    margin: 0;
+  }
+  .page-head .sub {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 14.5px;
+  }
+
   .grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
-    margin-bottom: 1.25rem;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 22px;
+    align-items: start;
   }
-  .panel {
-    background: #ffffff;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.25rem 1.5rem;
+  .main {
+    display: grid;
+    gap: 22px;
+    min-width: 0;
   }
-  .panel h2 {
-    margin: 0 0 0.75rem 0;
-    font-size: 1rem;
+  .rail {
+    display: grid;
+    gap: 22px;
   }
-  .subhead {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+
+  .setup-card p {
     color: var(--muted);
-    margin: 0.75rem 0 0.35rem 0;
+    font-size: 14px;
+    margin: 8px 0 16px;
   }
-  .subhead.overdue { color: #b91c1c; }
-  .muted { color: var(--muted); font-size: 0.9rem; }
-  .deadline-list, .task-list, .event-list, .grade-cards {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+
+  @media (max-width: 1060px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
   }
-  .deadline-list li, .task-list li, .event-list li, .grade-cards li {
-    display: flex;
-    justify-content: space-between;
-    gap: 0.75rem;
-    font-size: 0.9rem;
-    padding-bottom: 0.4rem;
-    border-bottom: 1px solid var(--hover-bg);
-  }
-  .deadline-date { color: var(--accent); font-weight: 600; min-width: 3.5rem; }
-  .deadline-title { flex: 1; }
-  .deadline-course { color: var(--muted); }
-  .task-due { color: var(--muted); }
-  .task-due.overdue { color: #b91c1c; font-weight: 600; }
-  .event-type { text-transform: capitalize; }
-  .overall-grade { font-size: 1.75rem; font-weight: 700; margin: 0 0 0.75rem 0; }
-  .overall-grade .muted { font-size: 1rem; font-weight: 400; }
-  .grade-value { font-weight: 600; }
-  .link { font-size: 0.85rem; color: var(--accent); text-decoration: none; display: inline-block; margin-top: 0.5rem; }
 </style>

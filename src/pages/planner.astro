@@ -1,0 +1,97 @@
+---
+import AppShell from '../layouts/AppShell.astro';
+import PlannerView from '../components/planner/PlannerView.svelte';
+import { env } from 'cloudflare:workers';
+import { getDb } from '../db/client';
+import { listCourses } from '../lib/services/courses';
+import { getCalendar } from '../lib/services/calendar';
+
+const db = getDb(env.DB);
+const userId = Astro.locals.user!.id;
+const currentTerm = Astro.locals.user!.currentTerm;
+
+const userCourses = await listCourses(db, userId);
+
+const now = new Date();
+const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime();
+const initialItems = await getCalendar(db, userId, monthStart, monthEnd);
+
+const courseOptions = userCourses.map((c) => ({ id: c.id, slug: c.slug, code: c.code, title: c.title, term: c.term, color: c.color }));
+---
+
+<AppShell title="Planner">
+  <div class="planner-layer" id="planner-layer">
+    <div class="scrim" id="planner-scrim"></div>
+    <div class="panel" role="dialog" aria-modal="true" aria-label="Planner">
+      <div class="panel-head">
+        <h1>Planner</h1>
+        <button type="button" class="close-btn" id="planner-close" aria-label="Close planner">
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      <PlannerView client:load courses={courseOptions} currentTerm={currentTerm} initialItems={initialItems} />
+    </div>
+  </div>
+</AppShell>
+
+<script>
+  function closePlanner() {
+    if (history.length > 1) history.back();
+    else window.location.assign('/dashboard');
+  }
+  document.getElementById('planner-close')?.addEventListener('click', closePlanner);
+  document.getElementById('planner-scrim')?.addEventListener('click', closePlanner);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closePlanner();
+  });
+</script>
+
+<style>
+  .planner-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: stretch;
+  }
+  .scrim {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in oklch, var(--text) 20%, transparent);
+  }
+  .panel {
+    position: relative;
+    margin: 20px;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-pop);
+    overflow: auto;
+    padding: 24px 28px 32px;
+    z-index: 1;
+  }
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .panel-head h1 {
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .close-btn {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    color: var(--muted);
+    font-size: 20px;
+    line-height: 1;
+  }
+  .close-btn:hover {
+    background: var(--hover);
+  }
+</style>
