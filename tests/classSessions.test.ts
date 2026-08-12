@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
 import { classSessions, courses, users } from '../src/db/schema';
 import { updateCourseSchema } from '../src/lib/schemas/courses';
+import { toApi } from '../src/lib/serialize';
 import { createEvent } from '../src/lib/services/events';
 import { updateCourse } from '../src/lib/services/courses';
 import { NotFoundError, ConflictError } from '../src/lib/services/util';
@@ -150,6 +151,20 @@ describe('createManualClassSession (POST)', () => {
     await expect(
       createManualClassSession(db, otherUserId, courseId, { date: new Date().toISOString() }),
     ).rejects.toThrow(NotFoundError);
+  });
+});
+
+describe('wire shape (toApi)', () => {
+  it('serializes date and created_at as ISO strings, not raw epoch-ms, matching the documented contract', async () => {
+    const rows = await createManualClassSession(db, userId, courseId, { date: new Date().toISOString() }).then((r) => [r]);
+    const wire = toApi(rows)[0] as Record<string, unknown>;
+
+    expect(typeof wire.date).toBe('string');
+    expect(() => new Date(wire.date as string).toISOString()).not.toThrow();
+    expect(wire.date).toBe(new Date(rows[0].date).toISOString());
+
+    expect(typeof wire.created_at).toBe('string');
+    expect(wire.created_at).toBe(new Date(rows[0].createdAt).toISOString());
   });
 });
 

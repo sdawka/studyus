@@ -74,7 +74,7 @@
     <p class="error">{loadError}</p>
   {:else if summary && summary.total_kcs === 0}
     <p class="empty">No concepts to practice yet.</p>
-  {:else if summary && summary.practice_events_30d === 0 && summary.distinct_kcs_practiced === 0}
+  {:else if summary && summary.practice_events_30d === 0 && summary.distinct_kcs_practiced === 0 && summary.practice_assessments_total === 0}
     <p class="empty">No practice yet — start with a quick quiz.</p>
   {:else if summary}
     <p class="stat-line">
