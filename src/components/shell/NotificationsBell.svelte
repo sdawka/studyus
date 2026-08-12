@@ -123,7 +123,7 @@
   </button>
 
   {#if open}
-    <div class="panel" role="menu">
+    <div class="popover panel" role="menu" style="--pop-w: var(--pop-w-lg)">
       <div class="panel-head">
         <span class="kicker">Notifications</span>
         {#if unreadCount > 0}
@@ -161,17 +161,6 @@
 <style>
   .popover-anchor { position: relative; }
 
-  .icon-btn {
-    position: relative;
-    display: grid;
-    place-items: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 999px;
-    color: var(--muted);
-  }
-  .icon-btn:hover { background: var(--hover); }
-
   .badge {
     position: absolute;
     top: 2px;
@@ -190,38 +179,14 @@
   }
 
   .panel {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    width: 340px;
     max-height: 420px;
     overflow-y: auto;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
-    box-shadow: var(--shadow-pop);
-    z-index: 50;
-    padding: 10px;
-  }
-
-  .panel-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 2px 6px 8px;
   }
 
   .link {
     color: var(--accent);
     font-size: 12px;
     font-weight: 550;
-  }
-
-  .empty {
-    padding: 18px 8px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 13px;
   }
 
   .list { display: flex; flex-direction: column; gap: 2px; }

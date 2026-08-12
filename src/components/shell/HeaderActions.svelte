@@ -104,7 +104,7 @@
     padding: 7px 14px;
     border-radius: 999px;
     background: var(--accent);
-    color: var(--accent-ink, white);
+    color: var(--accent-contrast);
     font-size: 13px;
     font-weight: 600;
     white-space: nowrap;
@@ -115,7 +115,7 @@
     font: 650 10px/1 var(--font-body);
     padding: 1px 5px;
     border-radius: 4px;
-    background: color-mix(in oklch, var(--accent-ink, white) 20%, transparent);
+    background: color-mix(in oklch, var(--accent-contrast) 20%, transparent);
     opacity: 0.85;
   }
 </style>

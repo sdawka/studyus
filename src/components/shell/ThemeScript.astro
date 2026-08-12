@@ -16,9 +16,16 @@
         if (theme === 'compass') html.removeAttribute('data-theme');
         else html.setAttribute('data-theme', theme);
       }
-      if (scheme && html.getAttribute('data-scheme') !== scheme) {
-        if (scheme === 'system') html.removeAttribute('data-scheme');
-        else html.setAttribute('data-scheme', scheme);
+      if (scheme) {
+        if (html.getAttribute('data-scheme') !== scheme) {
+          if (scheme === 'system') html.removeAttribute('data-scheme');
+          else html.setAttribute('data-scheme', scheme);
+        }
+      } else if (!html.hasAttribute('data-scheme')) {
+        // No stored override and SSR didn't stamp one (e.g. no user settings
+        // yet) — default to light rather than falling through to the OS
+        // media-query fallback (which would render dark on a dark-mode OS).
+        html.setAttribute('data-scheme', 'light');
       }
       if (sidebar && html.getAttribute('data-sidebar') !== sidebar) {
         if (sidebar === 'expanded') html.removeAttribute('data-sidebar');

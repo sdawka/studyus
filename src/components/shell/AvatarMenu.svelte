@@ -30,7 +30,7 @@
   </button>
 
   {#if open}
-    <div class="panel" role="menu">
+    <div class="popover panel" role="menu" style="--pop-w: var(--pop-w-sm)">
       <a class="row" href="/profile" onclick={onClose}>Profile</a>
       <a class="row" href="/settings" onclick={onClose}>Settings</a>
       <div class="divider"></div>
@@ -55,18 +55,8 @@
   }
 
   .panel {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    width: 180px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
-    box-shadow: var(--shadow-pop);
-    z-index: 50;
     padding: 6px;
-    display: flex;
-    flex-direction: column;
+    gap: 0;
   }
 
   .row {

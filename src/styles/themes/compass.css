@@ -19,6 +19,7 @@
   --accent:      oklch(56% 0.12 170);
   --accent-ink:  oklch(38% 0.1 170);
   --accent-soft: oklch(95.5% 0.025 170);
+  --accent-contrast: oklch(99% 0.005 170);
 
   --good:      oklch(54% 0.13 145);
   --good-ink:  oklch(40% 0.11 145);
@@ -53,6 +54,26 @@
   --course-ink-c: 0.10;
   --course-soft-l: 95%;
   --course-soft-c: 0.03;
+
+  --weight-med: 510;
+  --weight-semi: 550;
+  --weight-bold: 650;
+  --tracking-caps: 0.08em;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 28px;
+
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+
+  --pop-w-sm: 180px;
+  --pop-w-md: 300px;
+  --pop-w-lg: 340px;
 }
 
 /* Dark ramp. KEEP IN SYNC: this media block and the [data-scheme=dark]
@@ -72,6 +93,7 @@
     --accent:      oklch(68% 0.12 170);
     --accent-ink:  oklch(78% 0.09 170);
     --accent-soft: oklch(28% 0.04 170);
+    --accent-contrast: oklch(18% 0.02 170);
 
     --good:      oklch(66% 0.13 145);
     --good-ink:  oklch(78% 0.1 145);
@@ -115,6 +137,7 @@
   --accent:      oklch(68% 0.12 170);
   --accent-ink:  oklch(78% 0.09 170);
   --accent-soft: oklch(28% 0.04 170);
+  --accent-contrast: oklch(18% 0.02 170);
 
   --good:      oklch(66% 0.13 145);
   --good-ink:  oklch(78% 0.1 145);

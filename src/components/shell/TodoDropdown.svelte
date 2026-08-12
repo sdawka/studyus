@@ -104,7 +104,7 @@
   </button>
 
   {#if open}
-    <div class="panel" role="menu">
+    <div class="popover panel" role="menu" style="--pop-w: var(--pop-w-md)">
       <div class="panel-head">
         <span class="kicker">To-do ({openCount})</span>
       </div>
@@ -134,17 +134,6 @@
 <style>
   .popover-anchor { position: relative; }
 
-  .icon-btn {
-    position: relative;
-    display: grid;
-    place-items: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 999px;
-    color: var(--muted);
-  }
-  .icon-btn:hover { background: var(--hover); }
-
   .badge {
     position: absolute;
     top: 2px;
@@ -154,7 +143,7 @@
     padding: 0 3px;
     border-radius: 999px;
     background: var(--accent);
-    color: var(--accent-ink, white);
+    color: var(--accent-contrast);
     font-size: 9.5px;
     font-weight: 700;
     display: grid;
@@ -163,24 +152,9 @@
   }
 
   .panel {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    width: 320px;
     max-height: 460px;
     overflow-y: auto;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
-    box-shadow: var(--shadow-pop);
-    z-index: 50;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
   }
-
-  .panel-head { padding: 2px 6px; }
 
   .quick-add { display: flex; gap: 6px; }
   .quick-add input {
@@ -197,29 +171,11 @@
     width: 30px;
     border-radius: var(--radius-sm, 6px);
     background: var(--accent);
-    color: var(--accent-ink, white);
+    color: var(--accent-contrast);
     font-size: 15px;
     font-weight: 700;
   }
   .quick-add button:disabled { opacity: 0.5; }
 
-  .empty {
-    padding: 16px 8px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 13px;
-  }
-
   .list { display: flex; flex-direction: column; gap: 2px; }
-
-  .footer-link {
-    display: block;
-    text-align: center;
-    padding: 6px;
-    font-size: 12.5px;
-    font-weight: 550;
-    color: var(--accent);
-    border-top: 1px solid var(--hairline);
-    padding-top: 8px;
-  }
 </style>

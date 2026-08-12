@@ -5,7 +5,7 @@ import type { SettingsInput, UpdateUserInput } from '../schemas/user';
 
 export const DEFAULT_SETTINGS: Required<SettingsInput> = {
   theme: 'compass',
-  scheme: 'system',
+  scheme: 'light',
   sidebar_collapsed: false,
 };
 

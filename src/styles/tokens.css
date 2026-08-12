@@ -13,4 +13,7 @@
   --course: oklch(var(--course-l) var(--course-c) var(--course-h));
   --course-ink: oklch(var(--course-ink-l) var(--course-ink-c) var(--course-h));
   --course-soft: oklch(var(--course-soft-l) var(--course-soft-c) var(--course-h));
+
+  /* Structural: main content column width, same across all themes. */
+  --content-max: 1240px;
 }

@@ -74,8 +74,10 @@
   </button>
 
   {#if open}
-    <div class="panel" role="menu">
-      <span class="kicker">Scratchpad</span>
+    <div class="popover panel" role="dialog" aria-label="Scratchpad" style="--pop-w: var(--pop-w-md)">
+      <div class="panel-head">
+        <span class="kicker">Scratchpad</span>
+      </div>
 
       {#if savedNoteId}
         <p class="saved">Saved.</p>
@@ -102,38 +104,14 @@
           {saving ? 'Saving…' : 'Save'}
         </button>
       {/if}
+
+      <a class="footer-link" href="/notes">All notes →</a>
     </div>
   {/if}
 </div>
 
 <style>
   .popover-anchor { position: relative; }
-
-  .icon-btn {
-    display: grid;
-    place-items: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 999px;
-    color: var(--muted);
-  }
-  .icon-btn:hover { background: var(--hover); }
-
-  .panel {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    width: 300px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
-    box-shadow: var(--shadow-pop);
-    z-index: 50;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
 
   textarea {
     width: 100%;
@@ -169,19 +147,11 @@
     padding: 7px;
     border-radius: var(--radius-sm, 6px);
     background: var(--accent);
-    color: var(--accent-ink, white);
+    color: var(--accent-contrast);
     font-size: 13px;
     font-weight: 600;
   }
   .save-btn:disabled { opacity: 0.5; }
 
   .saved { font-size: 13px; color: var(--good-ink, var(--text)); padding: 6px 2px; }
-
-  .footer-link {
-    text-align: center;
-    padding: 6px;
-    font-size: 12.5px;
-    font-weight: 550;
-    color: var(--accent);
-  }
 </style>

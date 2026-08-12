@@ -71,7 +71,7 @@
 </div>
 
 <div class="seg" role="group" aria-label="Color scheme">
-  {#each [['system', 'System'], ['light', 'Light'], ['dark', 'Dark']] as [id, label]}
+  {#each [['light', 'Light'], ['dark', 'Dark'], ['system', 'System']] as [id, label]}
     <button
       type="button"
       aria-selected={scheme === id}
