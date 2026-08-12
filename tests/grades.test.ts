@@ -38,4 +38,28 @@ describe('grades.getGradesSummary', () => {
     const course = summary.by_course.find((c) => c.course_id === courseId)!;
     expect(course.weighted_grade).toBeNull();
   });
+
+  it('a graded practice assessment never moves the weighted grade, even with a weight_pct', async () => {
+    await db.insert(assessments).values([
+      { id: crypto.randomUUID(), courseId, title: 'Midterm', type: 'midterm', weightPct: 50, gradeReceived: 80, gradeMax: 100, kind: 'official' },
+      // Same shape as an official row (weighted, graded) but kind='practice' — must be excluded.
+      { id: crypto.randomUUID(), courseId, title: 'Practice midterm', type: 'midterm', weightPct: 50, gradeReceived: 40, gradeMax: 100, kind: 'practice' },
+    ]);
+
+    const summary = await getGradesSummary(db, userId);
+    const course = summary.by_course.find((c) => c.course_id === courseId)!;
+
+    // If the practice row counted, weight_pct sums to 100 and grade would be
+    // (80*50+40*50)/100 = 60. Official-only: 80.
+    expect(course.weighted_grade).toBe(80);
+    expect(summary.overall_weighted_grade).toBe(80);
+  });
+
+  it('defaults kind to official on assessments created without one', async () => {
+    await db.insert(assessments).values({ id: crypto.randomUUID(), courseId, title: 'Quiz', type: 'quiz', weightPct: 100, gradeReceived: 70, gradeMax: 100 });
+    const summary = await getGradesSummary(db, userId);
+    const course = summary.by_course.find((c) => c.course_id === courseId)!;
+    expect(course.weighted_grade).toBe(70);
+    expect(course.assessments[0].kind).toBe('official');
+  });
 });

@@ -1,0 +1,1 @@
+ALTER TABLE `assessments` ADD `kind` text DEFAULT 'official' NOT NULL;

@@ -4,6 +4,10 @@
 // with `toApi` so this conversion happens in exactly one place.
 const DATE_KEY_PATTERN = /(_at|_date)$/;
 
+// Bare-named epoch-ms fields that don't fit DATE_KEY_PATTERN's `_at`/`_date`
+// suffix (alongside the existing `ts` special-case below): class_sessions'
+// `date` column is a bare epoch-ms noon-of-day value, not `_date`-suffixed.
+
 // Freeform/opaque fields whose *contents* are not part of the frozen
 // contract (client-supplied JSON) — key-cased but never recursed into or
 // date-converted.
@@ -26,7 +30,7 @@ function transform(value: unknown): unknown {
         continue;
       }
 
-      if (typeof v === 'number' && (DATE_KEY_PATTERN.test(snakeKey) || snakeKey === 'ts')) {
+      if (typeof v === 'number' && (DATE_KEY_PATTERN.test(snakeKey) || snakeKey === 'ts' || snakeKey === 'date')) {
         out[snakeKey] = new Date(v).toISOString();
       } else if (v !== null && typeof v === 'object') {
         out[snakeKey] = transform(v);

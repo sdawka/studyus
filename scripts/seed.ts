@@ -215,6 +215,22 @@ async function main() {
        VALUES (${sqlStr(farId)}, ${sqlStr(courseId)}, ${sqlStr(ASSESSMENT_TITLES.far[courseIdx % ASSESSMENT_TITLES.far.length])}, 'lab', ${farDue}, 15, NULL, 100, ${now})
        ON CONFLICT(id) DO UPDATE SET due_date=excluded.due_date;`,
     );
+
+    // Practice assessments (v1.3.1): kind='practice', never counted toward
+    // the weighted grade (getGradesSummary filters to kind='official') even
+    // though one of them below carries a score — that's the point.
+    const practiceMidtermId = deterministicId('assessment', `demo:${slug}:practice-midterm`);
+    const practiceCheckId = deterministicId('assessment', `demo:${slug}:practice-check`);
+    const practiceGrade = 65 + ((courseIdx * 7) % 30); // 65-94%, deterministic
+
+    statements.push(
+      `INSERT INTO assessments (id, course_id, title, type, due_date, weight_pct, grade_received, grade_max, kind, created_at)
+       VALUES (${sqlStr(practiceMidtermId)}, ${sqlStr(courseId)}, 'Practice midterm', 'quiz', ${pastDue}, NULL, ${practiceGrade}, 100, 'practice', ${now})
+       ON CONFLICT(id) DO UPDATE SET grade_received=excluded.grade_received, kind=excluded.kind;`,
+      `INSERT INTO assessments (id, course_id, title, type, due_date, weight_pct, grade_received, grade_max, kind, created_at)
+       VALUES (${sqlStr(practiceCheckId)}, ${sqlStr(courseId)}, 'Problem-set self-check', 'quiz', ${nearDue}, NULL, NULL, 100, 'practice', ${now})
+       ON CONFLICT(id) DO UPDATE SET kind=excluded.kind;`,
+    );
   });
 
   // --- tasks (6 total, spread across current-term courses; 2 linked) ---

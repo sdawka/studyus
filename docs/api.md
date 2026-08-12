@@ -437,3 +437,18 @@ Frozen route shapes:
 - `PATCH /class-sessions/:id` — body `{ status: "attended" | "missed" | null }` → updated row. Ownership enforced in the service (cross-user id → `404 not_found`).
 - `POST /courses/:id/class-sessions` — body `{ date: ISO }` → creates a `source: "manual"` session, `date` normalized to local noon. A collision with an existing session on the same course + date → `409` with error code `invalid_input`.
 - `PATCH /courses/:id` gains optional `meeting_days: number[] | null` — validated to weekday values 1-7, deduped, and sorted before storage. `GET /courses/:slug` and `listCourses` (`GET /courses`) both now include `meeting_days` as the parsed array (or `null`), not the raw JSON string.
+
+**Serializer fix**: `class_sessions.date` was initially skipping the epoch-ms → ISO conversion that every other date-shaped field gets, because `toApi`'s automatic camelCase→snake_case key match only recognized `_at`/`_date` suffixes (plus an explicit `ts` exception) — a bare `date` key didn't match either. `src/lib/serialize.ts` now special-cases `date` the same way as `ts`. `class_sessions.date` in `GET /courses/:id/class-sessions` responses is an ISO string, per the original contract above (not a raw epoch-ms integer).
+
+### Assessments — official vs. practice split (v1.3.1)
+
+Scope addition: separate official assessments (count toward the weighted grade) from practice ones (never do, even when graded) — plus a practice-progress readout for course home.
+
+Migration `0004` adds `assessments.kind` — `text`, enum `official | practice`, `NOT NULL DEFAULT 'official'`. Existing rows are unaffected (all default to `official`).
+
+- `POST /courses/:id/assessments` gains optional `kind: "official" | "practice"` (default `official`).
+- `PATCH /assessments/:id` gains optional `kind`.
+- Every assessment shape returned by the API (`GET /courses/:id/assessments`, `GET /grades/summary`'s `by_course[].assessments`) now includes `kind`.
+- **Weighted standing counts official assessments only**: `getGradesSummary`'s per-course and credit-weighted overall calculation (`weighted_grade`, `overall_weighted_grade`) filters to `kind: 'official'` before doing anything else — a graded `practice` assessment, even one carrying a `weight_pct`, never moves either number. The dashboard's course-card "N of M assessments done" readout (`src/pages/dashboard.astro`) is likewise scoped to `kind: 'official'` — practice assessments have their own progress readout below, not this one.
+- `GET /courses/:id/practice-summary` (new, additive) → `{ data: { practice_events_30d, distinct_kcs_practiced, total_kcs, last_practiced_at, practice_assessments_done, practice_assessments_total } }`. `practice_events_30d` counts events of type `practice_done | retrieval_practice | quiz_taken | tutor_session` for the course in the trailing 30 days; `distinct_kcs_practiced` is the distinct `kc_id` count across the *same* event types but **all-time** (not windowed); `total_kcs` is the course's KC count; `last_practiced_at` is the most recent such event's timestamp (ISO, or `null` if none); `practice_assessments_done`/`practice_assessments_total` count `kind: 'practice'` assessments for the course, "done" meaning `grade_received` is set.
+- Seed: each current-term demo course gains two `kind: 'practice'` assessments ("Practice midterm", graded; "Problem-set self-check", ungraded) alongside its existing three official ones — confirmed the seeded official-only weighted grades are unchanged by their presence.

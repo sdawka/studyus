@@ -1,11 +1,14 @@
-// Grade standing: sum(grade% x weight) / sum(weight) over graded assessments,
-// per course, plus a credit-weighted overall summary.
+// Grade standing: sum(grade% x weight) / sum(weight) over graded *official*
+// assessments, per course, plus a credit-weighted overall summary.
+// 'practice' assessments (v1.3.1) never move the weighted grade, even when
+// graded — they're excluded here before anything else runs.
 import { eq } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { assessments, courses } from '../../db/schema';
 
 function weightedStanding(rows: (typeof assessments.$inferSelect)[]): number | null {
-  const graded = rows.filter((a) => a.gradeReceived !== null && a.weightPct !== null);
+  const official = rows.filter((a) => a.kind === 'official');
+  const graded = official.filter((a) => a.gradeReceived !== null && a.weightPct !== null);
   if (graded.length === 0) return null;
   let weightedSum = 0;
   let weightTotal = 0;
@@ -44,6 +47,7 @@ export async function getGradesSummary(db: Db, userId: string) {
         weight_pct: a.weightPct,
         grade_received: a.gradeReceived,
         grade_max: a.gradeMax,
+        kind: a.kind,
       })),
     });
   }

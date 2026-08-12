@@ -4,12 +4,18 @@ import { idSchema, isoDatetimeSchema } from './common';
 export const ASSESSMENT_TYPES = ['quiz', 'assignment', 'midterm', 'final', 'lab'] as const;
 export type AssessmentType = (typeof ASSESSMENT_TYPES)[number];
 
+// v1.3.1: 'official' (default) counts toward the weighted grade; 'practice'
+// never does, even when graded — see services/grades.ts.
+export const ASSESSMENT_KINDS = ['official', 'practice'] as const;
+export type AssessmentKind = (typeof ASSESSMENT_KINDS)[number];
+
 export const createAssessmentSchema = z.strictObject({
   title: z.string().min(1),
   type: z.enum(ASSESSMENT_TYPES),
   due_date: isoDatetimeSchema.optional(),
   weight_pct: z.number().min(0).max(100).optional(),
   kc_ids: z.array(idSchema).optional(),
+  kind: z.enum(ASSESSMENT_KINDS).optional(),
 });
 export type CreateAssessmentInput = z.infer<typeof createAssessmentSchema>;
 
@@ -22,5 +28,6 @@ export const updateAssessmentSchema = z.strictObject({
   weight_pct: z.number().min(0).max(100).nullable().optional(),
   grade_received: z.number().min(0).nullable().optional(),
   grade_max: z.number().min(0).nullable().optional(),
+  kind: z.enum(ASSESSMENT_KINDS).optional(),
 });
 export type UpdateAssessmentInput = z.infer<typeof updateAssessmentSchema>;

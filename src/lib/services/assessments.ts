@@ -38,6 +38,7 @@ export async function createAssessment(db: Db, userId: string, courseId: string,
     type: input.type,
     dueDate: input.due_date ? toEpochMs(input.due_date) : null,
     weightPct: input.weight_pct ?? null,
+    kind: input.kind ?? 'official',
   });
 
   if (input.kc_ids?.length) {
@@ -70,6 +71,7 @@ export async function updateAssessment(db: Db, userId: string, assessmentId: str
   if (input.weight_pct !== undefined) patch.weightPct = input.weight_pct;
   if (input.grade_received !== undefined) patch.gradeReceived = input.grade_received;
   if (input.grade_max !== undefined) patch.gradeMax = input.grade_max;
+  if (input.kind !== undefined) patch.kind = input.kind;
 
   await db.update(assessments).set(patch).where(eq(assessments.id, assessmentId));
 

@@ -141,6 +141,10 @@ export const assessments = sqliteTable('assessments', {
   weightPct: integer('weight_pct'),
   gradeReceived: integer('grade_received'),
   gradeMax: integer('grade_max'),
+  // v1.3.1: 'official' assessments count toward the weighted grade;
+  // 'practice' ones never do, even when graded — see services/grades.ts and
+  // services/practiceSummary.ts.
+  kind: text('kind', { enum: ['official', 'practice'] }).notNull().default('official'),
   createdAt: createdAt(),
 });
 

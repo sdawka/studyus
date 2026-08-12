@@ -6,7 +6,7 @@ import DueList from '../components/dashboard/DueList.astro';
 import RecordEventCard from '../components/dashboard/RecordEventCard.astro';
 import { hueFor } from '../lib/courseHue';
 import { env } from 'cloudflare:workers';
-import { inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { getDb } from '../db/client';
 import { assessments, kcs } from '../db/schema';
 import { listCourses } from '../lib/services/courses';
@@ -54,12 +54,13 @@ for (const kc of courseKcs) {
 
 // Assessment completion counts per course — completed means a grade is
 // recorded, or the due date has passed (ungraded-but-past-due still counts
-// as "done" for this progress readout).
+// as "done" for this progress readout). Official assessments only (v1.3.1)
+// — practice assessments have their own progress readout, PracticeCard.
 const courseAssessments = courseIds.length
   ? await db
       .select({ courseId: assessments.courseId, dueDate: assessments.dueDate, gradeReceived: assessments.gradeReceived })
       .from(assessments)
-      .where(inArray(assessments.courseId, courseIds))
+      .where(and(inArray(assessments.courseId, courseIds), eq(assessments.kind, 'official')))
   : [];
 const assessmentCountsByCourse = new Map<string, { total: number; completed: number }>();
 for (const a of courseAssessments) {
