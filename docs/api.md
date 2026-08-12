@@ -171,6 +171,7 @@ Matches draft. Response `completed` maps to the internal `done` column name; `co
 
 ### GET|POST /notes
 Matches draft (`content` maps to the internal `body` column name). `POST` body: `{ title, content, links?: [{ course_id?, kc_id? }] }`.
+`GET` (list) items include `links: [{ course_id?, kc_id?, label? }]` — `label` is a display string resolved server-side (KC name if the link targets a KC, else course code). Added post-P3: the list previously omitted `links` entirely, which broke the notes page's SSR.
 
 ### GET|PATCH|DELETE /notes/:id
 `GET`/response shape includes `links: [{ course_id, kc_id }]`. `PATCH` replaces the full link set when `links` is provided.

@@ -194,22 +194,24 @@ docs/
 ## Local Development
 
 ```bash
-# Setup
+# Setup (Node >= 22.12 — see .nvmrc)
 npm install
-cp .dev.vars.example .dev.vars          # Add OPENROUTER_KEY
-wrangler d1 migrations apply studyus --local
-npm run seed                            # Idempotent: courses.json → D1
+cp .dev.vars.example .dev.vars          # Add OPENROUTER_API_KEY
+npm run db:migrate:local
+npm run db:seed                         # Idempotent: courses.json → D1
 
 # Dev server
 npm run dev                             # Astro on workerd, hot-reload
 
 # Tests
-npm run test                            # Vitest with pool-workers
-npm run test:watch
-
-# Deploy
-wrangler deploy                         # Push to Cloudflare
+npm test                                # Vitest with pool-workers
 ```
+
+Deploys are intentionally out of scope for now (local wrangler only — see `docs/todo.md`).
+
+### Visual QA
+
+`scripts/visual-qa.mjs` screenshots the app across all themes/schemes/pages plus interaction states (popovers, modals, collapsed sidebar, narrow viewport) via Playwright, capturing JS errors along the way. The review workflow — parallel reviewer agents, triage discipline, known gotchas (Vite deps-cache corruption, truncated-HTML-as-island-SSR-crash) — is documented in `.claude/skills/visual-qa/SKILL.md`. Run it after any UI change.
 
 ## TODO
 
