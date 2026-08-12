@@ -6,14 +6,22 @@
    ============================================================ */
 
 :root {
-  /* Per-course color: components set style="--course-h: N" (0-360, from
-     courses.color). Theme files own --course-l/-c (+ ink/soft variants) so
-     the same hue reads correctly in every theme × scheme combination. */
+  /* Default course hue; components override per element. */
   --course-h: 220;
-  --course: oklch(var(--course-l) var(--course-c) var(--course-h));
-  --course-ink: oklch(var(--course-ink-l) var(--course-ink-c) var(--course-h));
-  --course-soft: oklch(var(--course-soft-l) var(--course-soft-c) var(--course-h));
 
   /* Structural: main content column width, same across all themes. */
   --content-max: 1240px;
+}
+
+/* Per-course color: components set style="--course-h: N" (0-360, from
+   courses.color). Theme files own --course-l/-c (+ ink/soft variants) so
+   the same hue reads correctly in every theme × scheme combination.
+   Derived on * (not :root) so a per-element --course-h override actually
+   re-evaluates the derived colors — custom properties resolve where they
+   are DEFINED, so a :root-level derivation would pin every element to the
+   default hue. */
+* {
+  --course: oklch(var(--course-l) var(--course-c) var(--course-h));
+  --course-ink: oklch(var(--course-ink-l) var(--course-ink-c) var(--course-h));
+  --course-soft: oklch(var(--course-soft-l) var(--course-soft-c) var(--course-h));
 }
