@@ -19,7 +19,9 @@
 // `npm run check:layout` will fail with "Cannot find module 'playwright'"
 // unless NODE_PATH is set that way first, or Playwright is installed locally.
 //
-// Env vars: LAYOUT_CHECK_EMAIL / LAYOUT_CHECK_PASSWORD (seeded user creds),
+// Env vars: LAYOUT_CHECK_EMAIL / LAYOUT_CHECK_PASSWORD (seeded user creds —
+// the password default below tracks scripts/seed.ts; only set the env
+// override if that default ever drifts from the seeded password),
 // LAYOUT_CHECK_COURSE (course slug to use for course-page checks).
 
 const fs = require('node:fs');
@@ -36,7 +38,7 @@ const { chromium } = require20('playwright');
 const CONFIG = {
   baseUrl: process.argv[2] || process.env.LAYOUT_CHECK_BASE_URL || 'http://localhost:4321',
   email: process.env.LAYOUT_CHECK_EMAIL || 'student@example.com',
-  password: process.env.LAYOUT_CHECK_PASSWORD || 'studybuddy',
+  password: process.env.LAYOUT_CHECK_PASSWORD || 'studyus',
   course: process.env.LAYOUT_CHECK_COURSE || 'chee-314-fluid-mechanics',
 
   // src/styles/tokens.css --content-max

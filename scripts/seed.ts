@@ -9,7 +9,6 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
 import { EVENT_ROLE_FLAGS } from '../src/lib/schemas/events';
 
 const DAY_MS = 24 * 60 * 60 * 1000;

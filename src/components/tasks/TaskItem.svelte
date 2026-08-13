@@ -1,11 +1,11 @@
 <script lang="ts">
-  // Single task row, extracted so TaskList's 4 sections and TodoDropdown's
-  // compact panel share one implementation. Store-backed: the checkbox and
-  // delete button delegate to the tasks store's toggleTask/deleteTask
-  // (optimistic, store-owned rollback + tasksError on failure), then still
-  // bubble via ontoggle/ondelete — the public contract is frozen so callers
-  // with their own non-store list state (or a side-effect hook to run) keep
-  // working unchanged.
+  // Single task row, shared by TodayTasks, TasksView (per-course cards +
+  // subtasks), the course TasksCard, and TodoDropdown's compact panel.
+  // Store-backed: the checkbox and delete button delegate to the tasks
+  // store's toggleTask/deleteTask (optimistic, store-owned rollback +
+  // tasksError on failure), then still bubble via ontoggle/ondelete — the
+  // public contract is frozen so callers with their own non-store list state
+  // (or a side-effect hook to run) keep working unchanged.
   import TaskTypeIcon from './TaskTypeIcon.svelte';
   import { deleteTask, tasksById, toggleTask, type ApiTask } from '../../lib/stores/tasks';
   import type { TaskType } from '../../lib/taskTypeMeta';

@@ -71,6 +71,10 @@ function urgency(days: number): { cls: string; label: string } {
   }
   .task-list {
     display: grid;
+    /* Same invariant as TodayTasks' .rows: without minmax(0,1fr) the implicit
+       auto track grows to the widest row's max-content and overflows the rail
+       instead of ellipsizing titles. */
+    grid-template-columns: minmax(0, 1fr);
   }
   .task-row {
     display: flex;

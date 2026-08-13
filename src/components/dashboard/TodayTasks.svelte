@@ -170,6 +170,10 @@
   }
   .rows {
     display: grid;
+    /* minmax(0,1fr), not the implicit `auto` track: auto sizes to the widest
+       row's max-content, so a long practice_kc title makes the track (and the
+       page) wider than the card instead of letting .task-title ellipsize. */
+    grid-template-columns: minmax(0, 1fr);
     gap: 6px;
   }
   .more-link {
