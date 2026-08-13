@@ -1,14 +1,14 @@
 ---
 import AppShell from '../layouts/AppShell.astro';
 import WeekView from '../components/dashboard/WeekView.svelte';
+import TodayTasks from '../components/dashboard/TodayTasks.svelte';
 import CourseCards from '../components/dashboard/CourseCards.astro';
-import DueList from '../components/dashboard/DueList.astro';
+import DeadlinesList from '../components/dashboard/DeadlinesList.astro';
 import RecordEventCard from '../components/dashboard/RecordEventCard.astro';
 import { hueFor } from '../lib/courseHue';
+import { toApi } from '../lib/serialize';
 import { env } from 'cloudflare:workers';
-import { and, eq, inArray } from 'drizzle-orm';
 import { getDb } from '../db/client';
-import { assessments, kcs } from '../db/schema';
 import { listCourses } from '../lib/services/courses';
 import { getCalendar } from '../lib/services/calendar';
 import { getGradesSummary } from '../lib/services/grades';
@@ -18,7 +18,7 @@ const db = getDb(env.DB);
 const user = Astro.locals.user!;
 const userId = user.id;
 
-const userCourses = await listCourses(db, userId, { includeMastery: true });
+const userCourses = await listCourses(db, userId);
 const courseById = new Map(userCourses.map((c) => [c.id, c]));
 
 const now = Date.now();
@@ -29,64 +29,32 @@ const gradesSummary = await getGradesSummary(db, userId);
 const weightedGradeByCourse = new Map(gradesSummary.by_course.map((c) => [c.course_id, c.weighted_grade]));
 
 const allTasks = await listTasks(db, userId);
-const overdueTasks = allTasks.filter((t) => !t.completed && t.dueDate !== null && t.dueDate < now);
 
-// Concepts-mastered counts + last-activity timestamp per course, for the
-// course cards — listCourses only exposes an averaged mastery %, not the
-// "N of M" breakdown or staleness this card wants.
-const courseIds = userCourses.map((c) => c.id);
-const courseKcs = courseIds.length
-  ? await db
-      .select({ courseId: kcs.courseId, status: kcs.status, lastEventAt: kcs.lastEventAt })
-      .from(kcs)
-      .where(inArray(kcs.courseId, courseIds))
-  : [];
-const kcCountsByCourse = new Map<string, { total: number; mastered: number; lastEventAt: number | null }>();
-for (const kc of courseKcs) {
-  const entry = kcCountsByCourse.get(kc.courseId) ?? { total: 0, mastered: 0, lastEventAt: null };
-  entry.total += 1;
-  if (kc.status === 'mastered') entry.mastered += 1;
-  if (kc.lastEventAt !== null && (entry.lastEventAt === null || kc.lastEventAt > entry.lastEventAt)) {
-    entry.lastEventAt = kc.lastEventAt;
+// Per-course open-task count + earliest due date, for CourseCards' slim
+// meta line — replaces the old KC/assessment progress queries now that
+// task-open-count is the headline signal for a course, not mastery %.
+const taskStatsByCourse = new Map<string, { count: number; nextDue: number | null }>();
+for (const t of allTasks) {
+  if (t.completed) continue;
+  for (const c of t.courses) {
+    const entry = taskStatsByCourse.get(c.id) ?? { count: 0, nextDue: null };
+    entry.count += 1;
+    if (t.dueDate !== null && (entry.nextDue === null || t.dueDate < entry.nextDue)) entry.nextDue = t.dueDate;
+    taskStatsByCourse.set(c.id, entry);
   }
-  kcCountsByCourse.set(kc.courseId, entry);
 }
 
-// Assessment completion counts per course — completed means a grade is
-// recorded, or the due date has passed (ungraded-but-past-due still counts
-// as "done" for this progress readout). Official assessments only (v1.3.1)
-// — practice assessments have their own progress readout, PracticeCard.
-const courseAssessments = courseIds.length
-  ? await db
-      .select({ courseId: assessments.courseId, dueDate: assessments.dueDate, gradeReceived: assessments.gradeReceived })
-      .from(assessments)
-      .where(and(inArray(assessments.courseId, courseIds), eq(assessments.kind, 'official')))
-  : [];
-const assessmentCountsByCourse = new Map<string, { total: number; completed: number }>();
-for (const a of courseAssessments) {
-  const entry = assessmentCountsByCourse.get(a.courseId) ?? { total: 0, completed: 0 };
-  entry.total += 1;
-  if (a.gradeReceived !== null || (a.dueDate !== null && a.dueDate < now)) entry.completed += 1;
-  assessmentCountsByCourse.set(a.courseId, entry);
-}
-
-const STALE_MS = 7 * 24 * 60 * 60 * 1000;
 const courseCards = userCourses.map((c) => {
-  const kcCounts = kcCountsByCourse.get(c.id) ?? { total: 0, mastered: 0, lastEventAt: null };
-  const assessmentCounts = assessmentCountsByCourse.get(c.id) ?? { total: 0, completed: 0 };
+  const stats = taskStatsByCourse.get(c.id) ?? { count: 0, nextDue: null };
   return {
     id: c.id,
     slug: c.slug,
     code: c.code,
     title: c.title,
     color: c.color,
-    status: c.status,
     weightedGrade: weightedGradeByCourse.get(c.id) ?? null,
-    masteredKcs: kcCounts.mastered,
-    totalKcs: kcCounts.total,
-    stale: kcCounts.lastEventAt !== null && now - kcCounts.lastEventAt >= STALE_MS,
-    assessmentsCompleted: assessmentCounts.completed,
-    assessmentsTotal: assessmentCounts.total,
+    openTasks: stats.count,
+    nextDueLabel: stats.nextDue !== null ? new Date(stats.nextDue).toLocaleDateString(undefined, { weekday: 'long' }) : null,
   };
 });
 
@@ -98,40 +66,60 @@ const weekViewCourses = userCourses.map((c) => ({
   color: c.color !== null ? Number(c.color) : null,
 }));
 
-// Unified "due soon" list for the rail: overdue tasks plus this week's
-// assessments/tasks from the calendar, sorted ascending, top few.
-type DueItem = { id: string; title: string; dueDate: number; courseCode: string | null; courseHue: number | null };
-const dueItems: DueItem[] = [];
+const todayTasksCourses = userCourses.map((c) => ({ id: c.id, code: c.code, hue: hueFor(c) }));
 
-for (const t of overdueTasks) {
-  const c = t.courses[0] ? courseById.get(t.courses[0].id) : undefined;
-  dueItems.push({ id: t.id, title: t.title, dueDate: t.dueDate!, courseCode: c?.code ?? null, courseHue: c ? hueFor(c) : null });
-}
-for (const item of deadlines) {
-  if (item.type === 'task_due' && item.details.done) continue;
-  const c = item.course_id ? courseById.get(item.course_id) : undefined;
-  dueItems.push({ id: item.id, title: item.title, dueDate: Date.parse(item.date), courseCode: c?.code ?? null, courseHue: c ? hueFor(c) : null });
-}
-dueItems.sort((a, b) => a.dueDate - b.dueDate);
-const dueListItems = dueItems.slice(0, 6);
+// Deadlines rail is assessments-only now (overdue-task nagging moved into
+// TodayTasks/grade_entry tasks) — same DueItem row shape as before, just a
+// narrower source feed.
+type DueItem = { id: string; title: string; dueDate: number; courseCode: string | null; courseHue: number | null };
+const deadlineItems: DueItem[] = deadlines
+  .filter((item) => item.type === 'assessment_due')
+  .map((item) => {
+    const c = item.course_id ? courseById.get(item.course_id) : undefined;
+    return { id: item.id, title: item.title, dueDate: Date.parse(item.date), courseCode: c?.code ?? null, courseHue: c ? hueFor(c) : null };
+  })
+  .sort((a, b) => a.dueDate - b.dueDate)
+  .slice(0, 6);
 
 const quickEventCourses = userCourses.map((c) => ({ id: c.id, code: c.code, title: c.title }));
 
 // Page head: date + term kicker, a headline that names the most urgent
-// item when there is one, quiet otherwise.
+// item when there is one, quiet otherwise. Tasks-first: an overdue open
+// task (never a past attend_class — missing a class isn't a broken
+// commitment) beats a task due today, which beats the nearest assessment
+// deadline.
 const kicker = `${new Date(now).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} · ${user.currentTerm ?? 'No term set'}`;
 
-const mostUrgent = dueListItems[0];
+const startOfToday = new Date(now);
+startOfToday.setHours(0, 0, 0, 0);
+const startOfTomorrowMs = startOfToday.getTime() + 24 * 60 * 60 * 1000;
+
+const overdueNonAttendTasks = allTasks
+  .filter((t) => !t.completed && t.dueDate !== null && t.dueDate < now && t.type !== 'attend_class')
+  .sort((a, b) => a.dueDate! - b.dueDate!);
+const todaysOpenTasks = allTasks
+  .filter((t) => !t.completed && t.dueDate !== null && t.dueDate >= startOfToday.getTime() && t.dueDate < startOfTomorrowMs)
+  .sort((a, b) => a.dueDate! - b.dueDate!);
+const mostUrgentTask = overdueNonAttendTasks[0] ?? todaysOpenTasks[0] ?? null;
+const mostUrgentDeadline = deadlineItems[0];
+
 let headline: string;
 let sub: string;
 if (userCourses.length === 0) {
   headline = "Let's get your first course set up.";
   sub = 'Add a course to start tracking grades, concepts, and what\'s due.';
-} else if (mostUrgent) {
-  const days = Math.round((mostUrgent.dueDate - now) / 86400000);
-  const weekday = new Date(mostUrgent.dueDate).toLocaleDateString(undefined, { weekday: 'long' });
-  const courseLabel = mostUrgent.courseCode ? ` — ${mostUrgent.courseCode} first` : '';
-  headline = days < 0 ? `${mostUrgent.title} is overdue${courseLabel}.` : `${mostUrgent.title} ${weekday}${courseLabel}.`;
+} else if (mostUrgentTask) {
+  const days = Math.round((mostUrgentTask.dueDate! - now) / 86400000);
+  const weekday = new Date(mostUrgentTask.dueDate!).toLocaleDateString(undefined, { weekday: 'long' });
+  const taskCourse = mostUrgentTask.courses[0] ? courseById.get(mostUrgentTask.courses[0].id) : undefined;
+  const courseLabel = taskCourse ? ` — ${taskCourse.code} first` : '';
+  headline = days < 0 ? `${mostUrgentTask.title} is overdue${courseLabel}.` : `${mostUrgentTask.title} ${weekday}${courseLabel}.`;
+  sub = `${userCourses.length} course${userCourses.length === 1 ? '' : 's'} in progress.`;
+} else if (mostUrgentDeadline) {
+  const days = Math.round((mostUrgentDeadline.dueDate - now) / 86400000);
+  const weekday = new Date(mostUrgentDeadline.dueDate).toLocaleDateString(undefined, { weekday: 'long' });
+  const courseLabel = mostUrgentDeadline.courseCode ? ` — ${mostUrgentDeadline.courseCode} first` : '';
+  headline = days < 0 ? `${mostUrgentDeadline.title} is overdue${courseLabel}.` : `${mostUrgentDeadline.title} ${weekday}${courseLabel}.`;
   sub = `${userCourses.length} course${userCourses.length === 1 ? '' : 's'} in progress.`;
 } else {
   headline = "Here's your week at a glance.";
@@ -158,13 +146,14 @@ if (userCourses.length === 0) {
     ) : (
       <div class="main">
         <WeekView client:load initialItems={deadlines} courses={weekViewCourses} />
+        <TodayTasks client:load initialTasks={toApi(allTasks)} courses={todayTasksCourses} />
         <CourseCards courses={courseCards} />
       </div>
     )}
 
     <aside class="rail">
       <RecordEventCard courses={quickEventCourses} />
-      <DueList items={dueListItems} />
+      <DeadlinesList items={deadlineItems} />
     </aside>
   </div>
 </AppShell>
@@ -210,7 +199,7 @@ if (userCourses.length === 0) {
     min-width: 0;
   }
   /* Same default-min-width:auto issue one level down: RecordEventCard and
-     DueList's root .card sections are themselves grid items of .rail's
+     DeadlinesList's root .card sections are themselves grid items of .rail's
      implicit grid, so they need the same override. */
   .rail > :global(.card) {
     min-width: 0;

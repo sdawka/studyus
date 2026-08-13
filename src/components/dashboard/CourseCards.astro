@@ -1,6 +1,5 @@
 ---
 import { hueFor } from '../../lib/courseHue';
-import StatusChip from '../course/StatusChip.astro';
 
 interface CourseCardData {
   id: string;
@@ -8,13 +7,9 @@ interface CourseCardData {
   code: string;
   title: string;
   color: string | null;
-  status: string | null;
   weightedGrade: number | null;
-  masteredKcs: number;
-  totalKcs: number;
-  stale: boolean;
-  assessmentsCompleted: number;
-  assessmentsTotal: number;
+  openTasks: number;
+  nextDueLabel: string | null;
 }
 interface Props {
   courses: CourseCardData[];
@@ -32,7 +27,6 @@ const { courses } = Astro.props;
     <div class="course-grid">
       {courses.map((c) => {
         const hue = hueFor(c);
-        const masteryPct = c.totalKcs > 0 ? Math.round((c.masteredKcs / c.totalKcs) * 100) : 0;
         return (
           <a class="course-card" href={`/courses/${c.slug}`} style={`--course-h:${hue}`}>
             <div class="head">
@@ -40,32 +34,13 @@ const { courses } = Astro.props;
                 <span class="code">{c.code}</span>
                 <span class="title card-title">{c.title}</span>
               </div>
-              <StatusChip status={c.status} />
+              {c.weightedGrade !== null && <span class="pill pill-idle grade-pill num">{c.weightedGrade}%</span>}
             </div>
 
-            <div class="health">
-              <div class="grade">
-                {c.weightedGrade !== null ? (
-                  <span class="grade-num figure">{c.weightedGrade}%</span>
-                ) : (
-                  <span class="grade-num grade-empty">—</span>
-                )}
-                <span class="grade-lbl">{c.weightedGrade !== null ? 'weighted grade' : 'no grades yet'}</span>
-              </div>
-              <div class="mastery">
-                <div class="bar"><span style={`width:${masteryPct}%`}></span></div>
-                <span class="mastery-cap num">{c.masteredKcs} of {c.totalKcs} concepts</span>
-                {c.stale && <span class="stale-hint">No study activity in 7+ days</span>}
-              </div>
-            </div>
-
-            {c.assessmentsTotal > 0 && (
-              <div class="progress">
-                <span class="progress-txt num">
-                  {c.assessmentsCompleted} of {c.assessmentsTotal} assessment{c.assessmentsTotal === 1 ? '' : 's'} done
-                </span>
-              </div>
-            )}
+            <p class="meta">
+              {c.openTasks} task{c.openTasks === 1 ? '' : 's'} open
+              {c.nextDueLabel ? ` · next due ${c.nextDueLabel}` : ''}
+            </p>
           </a>
         );
       })}
@@ -106,10 +81,10 @@ const { courses } = Astro.props;
        the row past the card's actual (fixed) track width. */
     min-width: 0;
   }
-  /* StatusChip is a fixed-content pill — it must never shrink to make
-     room; all shrink pressure in .head goes to .ident so the title
-     truncates instead of squeezing or clipping the status pill. */
-  .head :global(.status-chip) {
+  /* The grade pill is fixed-content — it must never shrink to make room;
+     all shrink pressure in .head goes to .ident so the title truncates
+     instead of squeezing or clipping the pill. */
+  .grade-pill {
     flex-shrink: 0;
   }
   .ident {
@@ -129,54 +104,7 @@ const { courses } = Astro.props;
     white-space: nowrap;
   }
 
-  .health {
-    display: flex;
-    align-items: center;
-    gap: var(--space-4, 14px);
-  }
-  .grade {
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-  }
-  .grade-num {
-    letter-spacing: -0.02em;
-  }
-  .grade-empty {
-    font-size: 15px;
-    font-weight: var(--weight-med, 500);
-    line-height: 1.1;
-    color: var(--muted);
-  }
-  .grade-lbl {
-    font-size: 10.5px;
-    color: var(--muted);
-    margin-top: 1px;
-  }
-  .mastery {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .mastery .bar > span {
-    background: var(--accent);
-  }
-  .mastery-cap {
-    font-size: 11px;
-    color: var(--muted);
-  }
-  .stale-hint {
-    font-size: 10.5px;
-    color: var(--warn-ink);
-  }
-
-  .progress {
-    border-top: 1px solid var(--hairline);
-    padding-top: var(--space-2, 8px);
-  }
-  .progress-txt {
+  .meta {
     font-size: 12px;
     color: var(--muted);
   }

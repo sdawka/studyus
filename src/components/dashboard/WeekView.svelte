@@ -1,19 +1,8 @@
 <script lang="ts">
   import { hueFor } from '../../lib/courseHue';
   import WeekGrid from '../planner/WeekGrid.svelte';
+  import type { CalendarItem } from '../../lib/types/calendar';
 
-  type CalendarItemType = 'assessment_due' | 'task_due' | 'study_session' | 'event_logged';
-  interface CalendarItem {
-    id: string;
-    type: CalendarItemType;
-    title: string;
-    date: string;
-    end_date: string | null;
-    all_day: boolean;
-    course_id: string | null;
-    href: string | null;
-    details: Record<string, unknown>;
-  }
   interface CourseInfo {
     id: string;
     slug: string;
@@ -69,6 +58,19 @@
   function shortTitle(item: CalendarItem): string {
     const c = courseFor(item);
     return c ? `${c.code} · ${item.title}` : item.title;
+  }
+
+  // The generated attend_class task_due IS the class's calendar presence
+  // (class sessions themselves stay out of the feed) — its chip renders
+  // class-styled and flips its glyph on `details.done`, independent of
+  // every other task/assessment/session chip here.
+  function isAttendClassItem(item: CalendarItem): boolean {
+    return item.type === 'task_due' && item.details.task_type === 'attend_class';
+  }
+  function chipLabel(item: CalendarItem): string {
+    const base = shortTitle(item);
+    if (!isAttendClassItem(item)) return base;
+    return `${item.details.done ? '●' : '○'} ${base}`;
   }
 
   const itemsByDay = $derived(collapsedDays.map((d) => items.filter((it) => isSameDay(new Date(it.date), d))));
@@ -146,8 +148,13 @@
               <div class="day-empty">—</div>
             {:else}
               {#each itemsByDay[i].slice(0, MAX_CHIPS) as item (item.id)}
-                <div class="chip-evt" style={`--course-h:${hueForItem(item)}`} title={shortTitle(item)}>
-                  <span class="t">{shortTitle(item)}</span>
+                <div
+                  class="chip-evt"
+                  class:attend-chip={isAttendClassItem(item)}
+                  style={`--course-h:${hueForItem(item)}`}
+                  title={shortTitle(item)}
+                >
+                  <span class="t">{chipLabel(item)}</span>
                   {#if !item.all_day}<span class="time">{timeFmt.format(new Date(item.date))}</span>{/if}
                 </div>
               {/each}
@@ -306,6 +313,14 @@
     opacity: 0.75;
     white-space: nowrap;
     flex-shrink: 0;
+  }
+  /* attend_class's chip is the class period itself, not just a reminder —
+     a touch bolder/more saturated than the standard soft task/assessment
+     chip. Mixes two existing course tokens rather than adding a new one. */
+  .chip-evt.attend-chip {
+    background: color-mix(in oklch, var(--course) 22%, var(--course-soft));
+    border-width: 1.5px;
+    font-weight: 650;
   }
   .overflow {
     font-size: 10.5px;

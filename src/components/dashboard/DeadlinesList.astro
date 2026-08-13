@@ -33,11 +33,11 @@ function urgency(days: number): { cls: string; label: string } {
 
 <section class="card">
   <div class="card-head">
-    <h2>Due soon</h2>
+    <h2>Deadlines</h2>
     <a class="link-more" href="/planner">Plan a session →</a>
   </div>
   {items.length === 0 ? (
-    <p class="empty">Nothing due — you're caught up.</p>
+    <p class="empty">No deadlines coming up.</p>
   ) : (
     <div class="task-list">
       {items.map((item) => {
