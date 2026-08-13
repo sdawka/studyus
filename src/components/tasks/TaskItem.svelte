@@ -1,13 +1,23 @@
 <script lang="ts">
   // Single task row, extracted so TaskList's 4 sections and TodoDropdown's
-  // compact panel share one implementation. Self-contained: the checkbox and
-  // delete button each do their own PATCH/DELETE, then notify the parent via
-  // ontoggle/ondelete so it can keep its own list in sync (no refetch needed).
+  // compact panel share one implementation. Store-backed: the checkbox and
+  // delete button delegate to the tasks store's toggleTask/deleteTask
+  // (optimistic, store-owned rollback + tasksError on failure), then still
+  // bubble via ontoggle/ondelete — the public contract is frozen so callers
+  // with their own non-store list state (or a side-effect hook to run) keep
+  // working unchanged.
+  import TaskTypeIcon from './TaskTypeIcon.svelte';
+  import { deleteTask, tasksById, toggleTask, type ApiTask } from '../../lib/stores/tasks';
+  import type { TaskType } from '../../lib/taskTypeMeta';
+
   export interface TaskItemTask {
     id: string;
     title: string;
     completed: boolean;
     due_date?: string | null;
+    type?: TaskType;
+    parent_task_id?: string | null;
+    completed_at?: string | null;
     courses: Array<{ id: string; code: string }>;
   }
 
@@ -22,33 +32,32 @@
   let { task, compact = false, courseHues = {}, ontoggle, ondelete }: Props = $props();
   let busy = $state(false);
 
-  function dueMeta(dueDate?: string | null) {
-    if (!dueDate) return null;
-    const due = new Date(dueDate);
+  function dueMeta(t: TaskItemTask) {
+    if (!t.due_date) return null;
+    const due = new Date(t.due_date);
     due.setHours(0, 0, 0, 0);
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const days = Math.round((due.getTime() - now.getTime()) / 86_400_000);
-    if (days < 0) return { label: 'overdue', danger: true };
+    if (days < 0) {
+      // A past-due attend_class task means a class was missed — that's
+      // catch-up work, not a broken commitment. Never the red overdue pill.
+      if (t.type === 'attend_class') return { label: 'catch up', danger: false };
+      return { label: 'overdue', danger: true };
+    }
     if (days === 0) return { label: 'Today', danger: false };
     if (days === 1) return { label: 'Tomorrow', danger: false };
     return { label: `in ${days}d`, danger: false };
   }
 
-  let due = $derived(dueMeta(task.due_date));
+  let due = $derived(dueMeta(task));
 
   async function toggle() {
     busy = true;
     try {
-      const res = await fetch(`/api/v1/tasks/${task.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed: !task.completed }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        ontoggle?.(json.data);
-      }
+      await toggleTask(task.id);
+      const current = tasksById.get()[task.id];
+      if (current) ontoggle?.(current as ApiTask);
     } finally {
       busy = false;
     }
@@ -58,8 +67,8 @@
     if (!confirm('Delete this task?')) return;
     busy = true;
     try {
-      const res = await fetch(`/api/v1/tasks/${task.id}`, { method: 'DELETE' });
-      if (res.ok) ondelete?.(task.id);
+      await deleteTask(task.id);
+      if (!(task.id in tasksById.get())) ondelete?.(task.id);
     } finally {
       busy = false;
     }
@@ -76,6 +85,9 @@
     aria-label={task.completed ? 'Mark incomplete' : 'Mark complete'}
   />
   <div class="task-info">
+    {#if task.type && task.type !== 'todo'}
+      <span class="task-type-icon" title={task.type}><TaskTypeIcon type={task.type} /></span>
+    {/if}
     <span class="task-title">{task.title}</span>
     {#if task.courses.length > 0}
       <span class="course-dots">
@@ -141,6 +153,12 @@
     gap: 0.5rem;
     flex: 1;
     min-width: 0;
+  }
+
+  .task-type-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    color: var(--muted);
   }
 
   .task-title {

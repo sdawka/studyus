@@ -1,8 +1,8 @@
 <script lang="ts">
   import TaskItem from '../tasks/TaskItem.svelte';
-  import type { TaskItemTask } from '../tasks/TaskItem.svelte';
   import { bindPopoverDismiss } from './popover.svelte.ts';
   import { courseContext } from '../../lib/stores/courseContext';
+  import { addTask, ensureLoaded, selectOpen, tasksList, tasksStatus } from '../../lib/stores/tasks';
 
   interface Course {
     id: string;
@@ -21,8 +21,6 @@
   let { open, onToggle, onClose, courses = [] }: Props = $props();
 
   let anchorEl: HTMLElement | null = null;
-  let tasks = $state<TaskItemTask[]>([]);
-  let loaded = $state(false);
   let newTitle = $state('');
   let adding = $state(false);
   // Quick-add defaults new tasks to the course we're viewing — visible as a
@@ -42,6 +40,10 @@
     if (open) {
       quickAddCourseId = null;
       quickAddCourseCleared = false;
+      // Idle/errored → fetch; already ready or loading → no-op/piggyback.
+      // The badge on the closed trigger relies on some other on-page
+      // island (or a prior open) having populated the store already.
+      void ensureLoaded();
     }
   });
 
@@ -54,7 +56,7 @@
     return map;
   });
 
-  let openTasks = $derived(tasks.filter((t) => !t.completed));
+  let openTasks = $derived(selectOpen($tasksList));
   let openCount = $derived(openTasks.length);
   let topSeven = $derived(
     [...openTasks]
@@ -67,48 +69,16 @@
       .slice(0, 7),
   );
 
-  async function loadTasks() {
-    try {
-      const res = await fetch('/api/v1/tasks');
-      if (res.ok) {
-        const json = await res.json();
-        tasks = json.data;
-      }
-    } finally {
-      loaded = true;
-    }
-  }
-
-  $effect(() => {
-    void loadTasks();
-  });
-
   bindPopoverDismiss({ isOpen: () => open, close: () => onClose(), anchorEl: () => anchorEl });
-
-  function handleToggle(updated: TaskItemTask) {
-    tasks = tasks.map((t) => (t.id === updated.id ? updated : t));
-  }
-
-  function handleDelete(id: string) {
-    tasks = tasks.filter((t) => t.id !== id);
-  }
 
   async function quickAdd() {
     if (!newTitle.trim()) return;
     adding = true;
     try {
-      const body: Record<string, unknown> = { title: newTitle.trim() };
-      if (quickAddCourse) body.course_ids = [quickAddCourse];
-      const res = await fetch('/api/v1/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        tasks = [json.data, ...tasks];
-        newTitle = '';
-      }
+      const input: { title: string; course_ids?: string[] } = { title: newTitle.trim() };
+      if (quickAddCourse) input.course_ids = [quickAddCourse];
+      await addTask(input);
+      newTitle = '';
     } finally {
       adding = false;
     }
@@ -145,14 +115,14 @@
         {/if}
       </form>
 
-      {#if !loaded}
+      {#if $tasksStatus === 'loading' && topSeven.length === 0}
         <p class="empty">Loading…</p>
       {:else if topSeven.length === 0}
         <p class="empty">No open tasks. Nicely done.</p>
       {:else}
         <div class="list">
           {#each topSeven as task (task.id)}
-            <TaskItem {task} compact {courseHues} ontoggle={handleToggle} ondelete={handleDelete} />
+            <TaskItem {task} compact {courseHues} />
           {/each}
         </div>
       {/if}
