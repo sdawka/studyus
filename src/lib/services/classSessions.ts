@@ -11,7 +11,7 @@
 // changed via PATCH, never by the sweep re-running.
 import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { classSessions, events } from '../../db/schema';
+import { classSessions, events, tasks } from '../../db/schema';
 import type { CreateClassSessionInput, ListClassSessionsQuery, UpdateClassSessionInput } from '../schemas/classSessions';
 import { toEpochMs } from '../schemas/common';
 import { ConflictError, NotFoundError, requireOwnedCourse } from './util';
@@ -152,6 +152,24 @@ async function requireOwnedClassSession(db: Db, userId: string, id: string) {
 export async function updateClassSessionStatus(db: Db, userId: string, id: string, input: UpdateClassSessionInput) {
   await requireOwnedClassSession(db, userId, id);
   await db.update(classSessions).set({ status: input.status }).where(eq(classSessions.id, id));
+
+  // Two-way sync (v1.4) with the linked attend_class task, if one exists —
+  // raw db.update, never the tasks service, so this can't loop with
+  // updateTask's own class_sessions sync (services/tasks.ts). Syncing a
+  // dismissed task row is harmless: dismissal only hides it from list/
+  // calendar output, it doesn't stop it existing.
+  if (input.status === 'attended') {
+    await db
+      .update(tasks)
+      .set({ done: true, completedAt: Date.now() })
+      .where(and(eq(tasks.classSessionId, id), eq(tasks.type, 'attend_class'), eq(tasks.done, false)));
+  } else {
+    await db
+      .update(tasks)
+      .set({ done: false, completedAt: null })
+      .where(and(eq(tasks.classSessionId, id), eq(tasks.type, 'attend_class')));
+  }
+
   const rows = await db.select().from(classSessions).where(eq(classSessions.id, id)).limit(1);
   return rows[0];
 }

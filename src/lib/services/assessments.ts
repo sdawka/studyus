@@ -2,9 +2,9 @@
 // assessment auto-appends one assessment-role event per linked
 // assessment_kcs row via the events service, so the linked KCs' mastery
 // caches move in the same request.
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { assessmentKcs, assessments, courses } from '../../db/schema';
+import { assessmentKcs, assessments, courses, kcs, tasks } from '../../db/schema';
 import type { CreateAssessmentInput, UpdateAssessmentInput, AssessmentType } from '../schemas/assessments';
 import { toEpochMs } from '../schemas/common';
 import { createEvent } from './events';
@@ -22,9 +22,36 @@ const ASSESSMENT_EVENT_TYPE: Record<AssessmentType, EventType> = {
   final: 'exam_graded',
 };
 
+// Grouped inArray attach (mirrors calendar.ts:56-62's task_courses pattern)
+// — one query for however many assessments, not one per assessment.
+async function attachKcIds<T extends { id: string }>(db: Db, rows: T[]): Promise<(T & { kcIds: string[] })[]> {
+  const ids = rows.map((r) => r.id);
+  const links = ids.length ? await db.select().from(assessmentKcs).where(inArray(assessmentKcs.assessmentId, ids)) : [];
+  const kcIdsByAssessment = new Map<string, string[]>();
+  for (const link of links) {
+    const list = kcIdsByAssessment.get(link.assessmentId) ?? [];
+    list.push(link.kcId);
+    kcIdsByAssessment.set(link.assessmentId, list);
+  }
+  return rows.map((row) => ({ ...row, kcIds: kcIdsByAssessment.get(row.id) ?? [] }));
+}
+
+// Cross-course KC injection guard: every id in `kcIds` must be a KC of
+// `courseId`, or the whole request 404s. Shared by createAssessment's
+// kc_ids and updateAssessment's kc_ids replace below.
+async function requireKcsInCourse(db: Db, courseId: string, kcIds: string[]): Promise<void> {
+  if (kcIds.length === 0) return;
+  const owned = await db
+    .select({ id: kcs.id })
+    .from(kcs)
+    .where(and(inArray(kcs.id, kcIds), eq(kcs.courseId, courseId)));
+  if (owned.length !== kcIds.length) throw new NotFoundError('KC');
+}
+
 export async function listAssessments(db: Db, userId: string, courseId: string) {
   await requireOwnedCourse(db, userId, courseId);
-  return db.select().from(assessments).where(eq(assessments.courseId, courseId));
+  const rows = await db.select().from(assessments).where(eq(assessments.courseId, courseId));
+  return attachKcIds(db, rows);
 }
 
 export async function createAssessment(db: Db, userId: string, courseId: string, input: CreateAssessmentInput) {
@@ -42,11 +69,39 @@ export async function createAssessment(db: Db, userId: string, courseId: string,
   });
 
   if (input.kc_ids?.length) {
-    await db.insert(assessmentKcs).values(input.kc_ids.map((kcId) => ({ id: crypto.randomUUID(), assessmentId: id, kcId })));
+    const dedupedIds = [...new Set(input.kc_ids)];
+    await requireKcsInCourse(db, courseId, dedupedIds);
+    await db.insert(assessmentKcs).values(dedupedIds.map((kcId) => ({ id: crypto.randomUUID(), assessmentId: id, kcId })));
   }
 
   const rows = await db.select().from(assessments).where(eq(assessments.id, id)).limit(1);
-  return rows[0];
+  const [created] = await attachKcIds(db, rows);
+  return created;
+}
+
+// kc_ids replace-links (not additive — see updateAssessmentSchema's doc
+// comment): a no-op if the requested set already matches (keeps qmatrix
+// version from churning on a PATCH that didn't actually change links),
+// otherwise deletes and reinserts the full set at the next qmatrix version.
+async function replaceAssessmentKcLinks(db: Db, assessmentId: string, courseId: string, kcIds: string[]): Promise<void> {
+  const dedupedIds = [...new Set(kcIds)];
+  const existingLinks = await db.select().from(assessmentKcs).where(eq(assessmentKcs.assessmentId, assessmentId));
+
+  const currentIds = new Set(existingLinks.map((l) => l.kcId));
+  const nextIds = new Set(dedupedIds);
+  const unchanged = currentIds.size === nextIds.size && [...currentIds].every((kcId) => nextIds.has(kcId));
+  if (unchanged) return;
+
+  await requireKcsInCourse(db, courseId, dedupedIds);
+
+  const nextVersion = existingLinks.length > 0 ? Math.max(...existingLinks.map((l) => l.qmatrixVersion)) + 1 : 1;
+
+  await db.delete(assessmentKcs).where(eq(assessmentKcs.assessmentId, assessmentId));
+  if (dedupedIds.length > 0) {
+    await db
+      .insert(assessmentKcs)
+      .values(dedupedIds.map((kcId) => ({ id: crypto.randomUUID(), assessmentId, kcId, qmatrixVersion: nextVersion })));
+  }
 }
 
 async function requireOwnedAssessment(db: Db, userId: string, assessmentId: string) {
@@ -73,10 +128,22 @@ export async function updateAssessment(db: Db, userId: string, assessmentId: str
   if (input.grade_max !== undefined) patch.gradeMax = input.grade_max;
   if (input.kind !== undefined) patch.kind = input.kind;
 
-  await db.update(assessments).set(patch).where(eq(assessments.id, assessmentId));
+  // A kc_ids-only PATCH (no other fields) leaves `patch` empty — Drizzle's
+  // .set({}) throws "No values to set" on SQLite, so skip the no-op update.
+  if (Object.keys(patch).length > 0) {
+    await db.update(assessments).set(patch).where(eq(assessments.id, assessmentId));
+  }
 
   const rows = await db.select().from(assessments).where(eq(assessments.id, assessmentId)).limit(1);
   const updated = rows[0];
+
+  // kc_ids handling goes here — after the field patch above, before the
+  // gradeJustEntered fan-out below — so a single PATCH that links KCs and
+  // enters a grade fans mastery events out over the NEW links, not the
+  // stale ones.
+  if (input.kc_ids !== undefined) {
+    await replaceAssessmentKcLinks(db, assessmentId, existing.courseId, input.kc_ids);
+  }
 
   const masteryDeltas: Array<{ kc_id: string; old_mastery: number; new_mastery: number }> = [];
   const gradeJustEntered =
@@ -107,9 +174,18 @@ export async function updateAssessment(db: Db, userId: string, assessmentId: str
       href: `/courses/${(await requireOwnedCourse(db, userId, updated.courseId)).slug}`,
       dedupeKey: `grade_recorded:${assessmentId}`,
     });
+
+    // v1.4: entering a grade auto-completes the linked grade_entry task (if
+    // any, and not already done). Raw update, never the tasks service — same
+    // loop-safety rationale as the classSessions sync in classSessions.ts.
+    await db
+      .update(tasks)
+      .set({ done: true, completedAt: Date.now() })
+      .where(and(eq(tasks.assessmentId, assessmentId), eq(tasks.type, 'grade_entry'), eq(tasks.done, false)));
   }
 
-  return { assessment: updated, masteryDeltas };
+  const [updatedWithKcIds] = await attachKcIds(db, updated ? [updated] : []);
+  return { assessment: updatedWithKcIds ?? updated, masteryDeltas };
 }
 
 export async function deleteAssessment(db: Db, userId: string, assessmentId: string) {

@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
-import { classSessions, courses, users } from '../src/db/schema';
+import { classSessions, courses, tasks, users } from '../src/db/schema';
 import { updateCourseSchema } from '../src/lib/schemas/courses';
 import { toApi } from '../src/lib/serialize';
 import { createEvent } from '../src/lib/services/events';
@@ -130,6 +130,76 @@ describe('updateClassSessionStatus (PATCH)', () => {
     });
 
     await expect(updateClassSessionStatus(db, otherUserId, sessionId, { status: 'attended' })).rejects.toThrow(NotFoundError);
+  });
+});
+
+describe('updateClassSessionStatus two-way sync with the linked attend_class task (v1.4)', () => {
+  async function insertSessionAndTask() {
+    const sessionId = crypto.randomUUID();
+    await db.insert(classSessions).values({
+      id: sessionId,
+      userId,
+      courseId,
+      date: toLocalNoon(new Date().toISOString()),
+      status: null,
+      source: 'schedule',
+    });
+    const taskId = crypto.randomUUID();
+    await db.insert(tasks).values({
+      id: taskId,
+      userId,
+      title: 'Attend TEST 101',
+      type: 'attend_class',
+      classSessionId: sessionId,
+      courseId,
+      source: 'system',
+      dedupeKey: `attend_class:${sessionId}`,
+      done: false,
+    });
+    return { sessionId, taskId };
+  }
+
+  it('marks the linked task done + stamps completed_at when status becomes attended', async () => {
+    const { sessionId, taskId } = await insertSessionAndTask();
+
+    await updateClassSessionStatus(db, userId, sessionId, { status: 'attended' });
+
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId));
+    expect(task!.done).toBe(true);
+    expect(task!.completedAt).not.toBeNull();
+  });
+
+  it('un-completes the linked task (done=false, completed_at=null) when status is cleared back to null', async () => {
+    const { sessionId, taskId } = await insertSessionAndTask();
+    await updateClassSessionStatus(db, userId, sessionId, { status: 'attended' });
+
+    await updateClassSessionStatus(db, userId, sessionId, { status: null });
+
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId));
+    expect(task!.done).toBe(false);
+    expect(task!.completedAt).toBeNull();
+  });
+
+  it('un-completes the linked task when status becomes missed', async () => {
+    const { sessionId, taskId } = await insertSessionAndTask();
+    await updateClassSessionStatus(db, userId, sessionId, { status: 'attended' });
+
+    await updateClassSessionStatus(db, userId, sessionId, { status: 'missed' });
+
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId));
+    expect(task!.done).toBe(false);
+    expect(task!.completedAt).toBeNull();
+  });
+
+  it('does not touch tasks of other types or other sessions', async () => {
+    const { sessionId } = await insertSessionAndTask();
+    const otherTaskId = crypto.randomUUID();
+    await db.insert(tasks).values({ id: otherTaskId, userId, title: 'Unrelated todo', type: 'todo', done: false });
+
+    await updateClassSessionStatus(db, userId, sessionId, { status: 'attended' });
+
+    const [otherTask] = await db.select().from(tasks).where(eq(tasks.id, otherTaskId));
+    expect(otherTask!.done).toBe(false);
   });
 });
 
