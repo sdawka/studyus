@@ -18,7 +18,7 @@ How this repo runs multi-agent implementation waves (used for v1 M0–M5 and v1.
 - Task-board id to mark in_progress/completed (TaskUpdate).
 - `export PATH="$HOME/.nvm/versions/node/v24.16.0/bin:$PATH"` prefix for node/npm/npx/wrangler (system node is v20; app needs ≥22).
 - A **unique dev-server port** (4340+ range; `astro dev --port N`); kill it when done. Note: parallel dev servers occasionally corrupt the Vite deps cache — fix is `astro dev stop`, clear `node_modules/.vite`, restart with `--force`.
-- Login: `student@example.com` / `studybuddy` (seed hash predates the studyus rename). Curl calls with unsafe methods need `Origin: http://localhost:<port>` (Astro CSRF).
+- Login: `student@example.com` / `studyus` (seed default; the pre-rename `studybuddy` hash died with the 2026-08-13 DB wipe + reseed — any future wipe+reseed keeps `studyus`). Curl calls with unsafe methods need `Origin: http://localhost:<port>` (Astro CSRF).
 - **No commits, no pushes** — the orchestrator commits each track by explicit path list when the agent's report is accepted (prevents `git add -A` sweeping other agents' WIP). Exception: single-agent phases may commit with an exact message, never push.
 - NO deploys — local wrangler only.
 - Verification expectations: `npm run build` clean, `npm test` green, live dev-server walk of the built feature, then a written report (files, verification output, deviations, contracts downstream agents need).
