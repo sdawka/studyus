@@ -1,6 +1,7 @@
 ---
 import AppShell from '../layouts/AppShell.astro';
 import AppearanceSettings from '../components/settings/AppearanceSettings.svelte';
+import TaskGeneratorSettings from '../components/settings/TaskGeneratorSettings.svelte';
 import { resolveSettings } from '../lib/services/user';
 
 const user = Astro.locals.user!;
@@ -12,6 +13,12 @@ const settings = resolveSettings(user.settings);
   <section class="card settings-section">
     <div class="card-head"><h2>Appearance</h2></div>
     <AppearanceSettings client:load settings={settings} />
+  </section>
+
+  <section class="card settings-section">
+    <div class="card-head"><h2>Automatic tasks</h2></div>
+    <p class="section-hint">Choose which of these StudyBuddy generates for you automatically.</p>
+    <TaskGeneratorSettings client:load generators={settings.task_generators} />
   </section>
 
   <section class="card settings-section">
@@ -82,4 +89,5 @@ const settings = resolveSettings(user.settings);
   }
   .saved-msg { font-size: 12.5px; color: var(--good-ink); }
   .account-email { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+  .section-hint { color: var(--muted); font-size: 12.5px; margin: 0 0 var(--space-4); }
 </style>
