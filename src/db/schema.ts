@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
-import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, index, uniqueIndex, type AnySQLiteColumn } from 'drizzle-orm/sqlite-core';
+import { TASK_TYPES } from '../lib/schemas/tasks';
 
 // Convention: text ids via crypto.randomUUID(); integer timestamps in epoch ms.
 const id = () =>
@@ -205,29 +206,64 @@ export const attachments = sqliteTable('attachments', {
 // Tasks
 // ---------------------------------------------------------------------------
 
-export const tasks = sqliteTable('tasks', {
-  id: id(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  title: text('title').notNull(),
-  dueDate: integer('due_date'),
-  done: integer('done', { mode: 'boolean' }).notNull().default(false),
-  // 'system' is reserved for future system-generated tasks (e.g. from the
-  // notifications sweep); nothing produces those yet in v1.1.
-  source: text('source', { enum: ['user', 'system'] }).notNull().default('user'),
-  createdAt: createdAt(),
-});
+export const tasks = sqliteTable(
+  'tasks',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    description: text('description'),
+    dueDate: integer('due_date'),
+    done: integer('done', { mode: 'boolean' }).notNull().default(false),
+    // v1.4: 'todo' is the only type a user can mint directly (createTaskSchema
+    // has no `type` field); the rest are sweep-generated only — see
+    // services/taskSweep.ts and the TASK_TYPES doc comment.
+    type: text('type', { enum: TASK_TYPES }).notNull().default('todo'),
+    // One level of subtasks: a parent must not itself have a parent
+    // (enforced in services/tasks.ts). Cascade so deleting a parent deletes
+    // its children.
+    parentTaskId: text('parent_task_id').references((): AnySQLiteColumn => tasks.id, { onDelete: 'cascade' }),
+    completedAt: integer('completed_at'),
+    // System-task soft delete (user dismissal). NEVER serialized — a
+    // dismissed row stays in the table (with its dedupe key) purely so the
+    // sweep can't resurrect it. Retention-purged after 120d, see taskSweep.ts.
+    dismissedAt: integer('dismissed_at'),
+    // Origin FKs for sweep-generated tasks — null for user-minted todos.
+    courseId: text('course_id').references(() => courses.id, { onDelete: 'cascade' }),
+    classSessionId: text('class_session_id').references(() => classSessions.id, { onDelete: 'cascade' }),
+    assessmentId: text('assessment_id').references(() => assessments.id, { onDelete: 'cascade' }),
+    kcId: text('kc_id').references(() => kcs.id, { onDelete: 'cascade' }),
+    // Idempotency key for sweep-generated rows, e.g. `attend_class:<id>`.
+    // Unique-indexed below; NULL (all user tasks) is unconstrained under
+    // SQLite's multi-NULL unique semantics. Never serialized.
+    dedupeKey: text('dedupe_key'),
+    // 'system' is reserved for future system-generated tasks (e.g. from the
+    // notifications sweep); nothing produces those yet in v1.1.
+    source: text('source', { enum: ['user', 'system'] }).notNull().default('user'),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex('tasks_dedupe_key_unique').on(table.dedupeKey),
+    index('tasks_user_done_due_idx').on(table.userId, table.done, table.dueDate),
+    index('tasks_parent_idx').on(table.parentTaskId),
+  ],
+);
 
-export const taskCourses = sqliteTable('task_courses', {
-  id: id(),
-  taskId: text('task_id')
-    .notNull()
-    .references(() => tasks.id, { onDelete: 'cascade' }),
-  courseId: text('course_id')
-    .notNull()
-    .references(() => courses.id, { onDelete: 'cascade' }),
-});
+export const taskCourses = sqliteTable(
+  'task_courses',
+  {
+    id: id(),
+    taskId: text('task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    courseId: text('course_id')
+      .notNull()
+      .references(() => courses.id, { onDelete: 'cascade' }),
+  },
+  (table) => [uniqueIndex('task_courses_task_course_unique').on(table.taskId, table.courseId)],
+);
 
 // ---------------------------------------------------------------------------
 // Resources (feed)

@@ -1,5 +1,19 @@
 import { z } from 'zod';
 
+// v1.4 addition: per-family opt in/out for the task sweep generators
+// (services/taskSweep.ts). All optional — PATCH merges onto whatever's
+// already stored (key-wise, not shallow — see services/user.ts), and reads
+// resolve missing keys to DEFAULT_SETTINGS.task_generators.
+export const taskGeneratorsSchema = z.strictObject({
+  attend_class: z.boolean().optional(),
+  prep_before_class: z.boolean().optional(),
+  review_after_class: z.boolean().optional(),
+  practice_kc: z.boolean().optional(),
+  stale_kc: z.boolean().optional(),
+  grade_entry: z.boolean().optional(),
+});
+export type TaskGeneratorsInput = z.infer<typeof taskGeneratorsSchema>;
+
 // v1.1 addition: appearance + shell prefs, stored as JSON on users.settings.
 // All fields optional — PATCH merges onto whatever's already stored, and
 // reads resolve missing fields to DEFAULT_SETTINGS (see services/user.ts).
@@ -7,6 +21,7 @@ export const settingsSchema = z.strictObject({
   theme: z.enum(['compass', 'focus', 'campus']).optional(),
   scheme: z.enum(['light', 'dark', 'system']).optional(),
   sidebar_collapsed: z.boolean().optional(),
+  task_generators: taskGeneratorsSchema.optional(),
 });
 export type SettingsInput = z.infer<typeof settingsSchema>;
 

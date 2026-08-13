@@ -452,3 +452,73 @@ Migration `0004` adds `assessments.kind` — `text`, enum `official | practice`,
 - **Weighted standing counts official assessments only**: `getGradesSummary`'s per-course and credit-weighted overall calculation (`weighted_grade`, `overall_weighted_grade`) filters to `kind: 'official'` before doing anything else — a graded `practice` assessment, even one carrying a `weight_pct`, never moves either number. The dashboard's course-card "N of M assessments done" readout (`src/pages/dashboard.astro`) is likewise scoped to `kind: 'official'` — practice assessments have their own progress readout below, not this one.
 - `GET /courses/:id/practice-summary` (new, additive) → `{ data: { practice_events_30d, distinct_kcs_practiced, total_kcs, last_practiced_at, practice_assessments_done, practice_assessments_total } }`. `practice_events_30d` counts events of type `practice_done | retrieval_practice | quiz_taken | tutor_session` for the course in the trailing 30 days; `distinct_kcs_practiced` is the distinct `kc_id` count across the *same* event types but **all-time** (not windowed); `total_kcs` is the course's KC count; `last_practiced_at` is the most recent such event's timestamp (ISO, or `null` if none); `practice_assessments_done`/`practice_assessments_total` count `kind: 'practice'` assessments for the course, "done" meaning `grade_received` is set.
 - Seed: each current-term demo course gains two `kind: 'practice'` assessments ("Practice midterm", graded; "Problem-set self-check", ungraded) alongside its existing three official ones — confirmed the seeded official-only weighted grades are unchanged by their presence.
+
+---
+
+## v1.4 Additions — Task-centric platform (contract freeze)
+
+**Status**: wire shapes only, frozen ahead of the rest of the build so parallel tracks can develop against them. Generator policies (which family produces what, on what schedule, keyed how) and other behavior notes are completed in the docs pass — see the note at the end of this section.
+
+Migration `0005` adds to `tasks`: `description` (text, nullable), `type` (text enum — see below — `NOT NULL DEFAULT 'todo'`), `parent_task_id` (self-FK, cascade delete), `completed_at` (integer epoch ms, nullable), `dismissed_at` (integer epoch ms, nullable — system-task soft delete), `course_id` / `class_session_id` / `assessment_id` / `kc_id` (nullable FKs, cascade delete — origin of a sweep-generated task), `dedupe_key` (text, nullable, unique-indexed). It also adds a `UNIQUE(task_id, course_id)` index to `task_courses` (backs the idempotent origin-course link backfill the sweep performs). `dismissed_at` and `dedupe_key` are internal-only and **never appear in any serialized task response.**
+
+### Task object — extended shape
+
+Every task returned by the API (`GET /tasks`, `POST /tasks`, `PATCH /tasks/:id`) now includes:
+
+```json
+{
+  "id": "uuid",
+  "title": "string",
+  "description": "string|null",
+  "type": "todo|attend_class|prep_before_class|review_after_class|practice_kc|stale_kc|grade_entry",
+  "due_date": "iso|null",
+  "completed": true,
+  "completed_at": "iso|null",
+  "parent_task_id": "uuid|null",
+  "course_id": "uuid|null",
+  "class_session_id": "uuid|null",
+  "assessment_id": "uuid|null",
+  "kc_id": "uuid|null",
+  "source": "user|system",
+  "courses": [{ "id": "uuid", "code": "string" }]
+}
+```
+
+`completed` remains the API's completion field (still maps to the `done` column) — unchanged. `type` is server-derived, not client-settable: `POST /tasks` and `PATCH /tasks/:id` accept no `type` field, so every task a user creates directly is `'todo'`; the other six values are only ever written by the sweep (`services/taskSweep.ts`).
+
+### `POST /tasks` — subtasks
+
+`POST /tasks` accepts an optional `parent_task_id` (must reference a task owned by the caller). Nesting is capped at one level: if the referenced parent itself has a non-null `parent_task_id`, the request fails with `409 Conflict` (`error.code: "conflict"`, message "Subtasks cannot be nested"). `parent_task_id` is create-only — there is no re-parenting via `PATCH`.
+
+### `DELETE /tasks/:id` — dismissal semantics for system tasks
+
+Deleting a task with `source: "user"` is a hard delete, cascading to its children. Deleting a task with `source: "system"` instead stamps `dismissed_at` (soft delete) and hard-deletes its children; the row — and its `dedupe_key` — survives so the generating sweep can never resurrect it. Dismissed tasks are excluded from every list and calendar response.
+
+### Settings — `task_generators`
+
+`settings` (read via `GET /api/v1/user`, written via `PATCH /api/v1/user`) gains a nested `task_generators` object, one boolean per generator family:
+
+```json
+{
+  "task_generators": {
+    "attend_class": true,
+    "prep_before_class": false,
+    "review_after_class": true,
+    "practice_kc": true,
+    "stale_kc": false,
+    "grade_entry": true
+  }
+}
+```
+
+All six keys are optional on input and always present on read (a missing key resolves to the default shown above). A `PATCH` touching one key merges onto the stored object key-wise — it does not clobber sibling toggles.
+
+### Assessments — `kc_ids`
+
+`POST /courses/:id/assessments`, `PATCH /assessments/:id`, and every assessment list/summary shape (`GET /courses/:id/assessments`, `GET /grades/summary`'s `by_course[].assessments`) gain `kc_ids: string[]` — the KC ids linked via `assessment_kcs`. On `PATCH`, `kc_ids` **replaces** the full link set (not additive); an empty array clears all links. An id that doesn't belong to the assessment's course fails the request with `404 Not Found`.
+
+### Calendar — `task_due` details additions
+
+`task_due` calendar items' `details` (opaque per the frozen `CalendarItem` shape) gain `task_type`, `parent_task_id`, `class_session_id`, and `completed_at` — additive, backward compatible for any client ignoring unknown keys.
+
+**Note**: Generator policies and behavior notes completed in the docs pass.

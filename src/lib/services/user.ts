@@ -1,20 +1,43 @@
 import { eq } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { users } from '../../db/schema';
-import type { SettingsInput, UpdateUserInput } from '../schemas/user';
+import type { SettingsInput, TaskGeneratorsInput, UpdateUserInput } from '../schemas/user';
 
-export const DEFAULT_SETTINGS: Required<SettingsInput> = {
+// `task_generators` is nested — Required<SettingsInput> alone would only
+// require the object to be present, not require every key inside it. This
+// is the shape resolveSettings actually guarantees callers.
+export type ResolvedSettings = Required<Omit<SettingsInput, 'task_generators'>> & {
+  task_generators: Required<TaskGeneratorsInput>;
+};
+
+export const DEFAULT_SETTINGS: ResolvedSettings = {
   theme: 'compass',
   scheme: 'light',
   sidebar_collapsed: false,
+  // Spam-prone families (stale_kc, prep_before_class) ship opt-in; the rest
+  // default on.
+  task_generators: {
+    attend_class: true,
+    prep_before_class: false,
+    review_after_class: true,
+    practice_kc: true,
+    stale_kc: false,
+    grade_entry: true,
+  },
 };
 
 // users.settings is stored as a JSON blob that may be partial (or, pre-P1,
 // `{}`) — every read resolves it against DEFAULT_SETTINGS so callers never
-// see undefined fields.
-export function resolveSettings(raw: unknown): Required<SettingsInput> {
+// see undefined fields. `task_generators` is merged key-wise (not
+// shallow-replaced) so a partially-stored settings blob doesn't drop
+// sibling generator toggles back to their defaults.
+export function resolveSettings(raw: unknown): ResolvedSettings {
   const parsed = (raw && typeof raw === 'object' ? (raw as SettingsInput) : {}) as SettingsInput;
-  return { ...DEFAULT_SETTINGS, ...parsed };
+  return {
+    ...DEFAULT_SETTINGS,
+    ...parsed,
+    task_generators: { ...DEFAULT_SETTINGS.task_generators, ...parsed.task_generators },
+  };
 }
 
 export async function updateUser(db: Db, userId: string, input: UpdateUserInput) {
@@ -26,7 +49,15 @@ export async function updateUser(db: Db, userId: string, input: UpdateUserInput)
   if (input.settings !== undefined) {
     const rows = await db.select({ settings: users.settings }).from(users).where(eq(users.id, userId)).limit(1);
     const current = (rows[0]?.settings ?? {}) as SettingsInput;
-    patch.settings = { ...current, ...input.settings };
+    const merged: SettingsInput = { ...current, ...input.settings };
+    // Shallow `{...current, ...input.settings}` would let a PATCH touching
+    // any one generator toggle clobber every sibling toggle wholesale —
+    // merge task_generators key-wise instead, same rationale as
+    // resolveSettings above.
+    if (current.task_generators || input.settings.task_generators) {
+      merged.task_generators = { ...current.task_generators, ...input.settings.task_generators };
+    }
+    patch.settings = merged;
   }
 
   if (Object.keys(patch).length > 0) {

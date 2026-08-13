@@ -17,6 +17,7 @@ CREATE TABLE `assessments` (
 	`weight_pct` integer,
 	`grade_received` integer,
 	`grade_max` integer,
+	`kind` text DEFAULT 'official' NOT NULL,
 	`created_at` integer NOT NULL,
 	FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE cascade
 );
@@ -45,6 +46,20 @@ CREATE TABLE `branches` (
 	FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE TABLE `class_sessions` (
+	`id` text PRIMARY KEY NOT NULL,
+	`user_id` text NOT NULL,
+	`course_id` text NOT NULL,
+	`date` integer NOT NULL,
+	`status` text,
+	`note` text,
+	`source` text DEFAULT 'schedule' NOT NULL,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `class_sessions_course_date_unique` ON `class_sessions` (`course_id`,`date`);--> statement-breakpoint
 CREATE TABLE `courses` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,
@@ -58,6 +73,7 @@ CREATE TABLE `courses` (
 	`overview` text,
 	`source_url` text,
 	`color` text,
+	`meeting_days` text,
 	`archived` integer DEFAULT false NOT NULL,
 	`created_at` integer NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
@@ -120,6 +136,23 @@ CREATE TABLE `notes` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE TABLE `notifications` (
+	`id` text PRIMARY KEY NOT NULL,
+	`user_id` text NOT NULL,
+	`type` text NOT NULL,
+	`title` text NOT NULL,
+	`body` text,
+	`course_id` text,
+	`href` text NOT NULL,
+	`dedupe_key` text NOT NULL,
+	`read_at` integer,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE set null
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `notifications_dedupe_key_unique` ON `notifications` (`dedupe_key`);--> statement-breakpoint
+CREATE INDEX `notifications_user_read_created_idx` ON `notifications` (`user_id`,`read_at`,`created_at`);--> statement-breakpoint
 CREATE TABLE `resources` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,
@@ -160,6 +193,7 @@ CREATE TABLE `study_sessions` (
 	`planned_minutes` integer,
 	`started_at` integer NOT NULL,
 	`ended_at` integer,
+	`scheduled_at` integer,
 	`reflection` text,
 	`created_at` integer NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade,
@@ -174,16 +208,36 @@ CREATE TABLE `task_courses` (
 	FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE UNIQUE INDEX `task_courses_task_course_unique` ON `task_courses` (`task_id`,`course_id`);--> statement-breakpoint
 CREATE TABLE `tasks` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,
 	`title` text NOT NULL,
+	`description` text,
 	`due_date` integer,
 	`done` integer DEFAULT false NOT NULL,
+	`type` text DEFAULT 'todo' NOT NULL,
+	`parent_task_id` text,
+	`completed_at` integer,
+	`dismissed_at` integer,
+	`course_id` text,
+	`class_session_id` text,
+	`assessment_id` text,
+	`kc_id` text,
+	`dedupe_key` text,
+	`source` text DEFAULT 'user' NOT NULL,
 	`created_at` integer NOT NULL,
-	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`parent_task_id`) REFERENCES `tasks`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`class_session_id`) REFERENCES `class_sessions`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`assessment_id`) REFERENCES `assessments`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`kc_id`) REFERENCES `kcs`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE UNIQUE INDEX `tasks_dedupe_key_unique` ON `tasks` (`dedupe_key`);--> statement-breakpoint
+CREATE INDEX `tasks_user_done_due_idx` ON `tasks` (`user_id`,`done`,`due_date`);--> statement-breakpoint
+CREATE INDEX `tasks_parent_idx` ON `tasks` (`parent_task_id`);--> statement-breakpoint
 CREATE TABLE `tutor_conversations` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,

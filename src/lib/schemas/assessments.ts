@@ -29,5 +29,9 @@ export const updateAssessmentSchema = z.strictObject({
   grade_received: z.number().min(0).nullable().optional(),
   grade_max: z.number().min(0).nullable().optional(),
   kind: z.enum(ASSESSMENT_KINDS).optional(),
+  // Task-centric platform (v1.4): replace-links (not additive) — an empty
+  // array clears all KC links. Ids are validated against the assessment's
+  // course in services/assessments.ts (a DB lookup, not expressible here).
+  kc_ids: z.array(idSchema).optional(),
 });
 export type UpdateAssessmentInput = z.infer<typeof updateAssessmentSchema>;

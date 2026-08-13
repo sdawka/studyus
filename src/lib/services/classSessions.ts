@@ -32,7 +32,7 @@ const LECTURE_EVENT_TYPES = ['lecture_attended', 'lecture_missed'] as const;
 // schedule-sourced one, so the UNIQUE(course_id, date) index never caught
 // the collision). Being explicit here — and in seed.ts's equivalent helper
 // — removes the ambiguity for both callers.
-function localNoon(ms: number): number {
+export function localNoon(ms: number): number {
   const d = new Date(ms);
   d.setUTCHours(12, 0, 0, 0);
   return d.getTime();
@@ -44,12 +44,12 @@ export function toLocalNoon(iso: string): number {
 }
 
 // ISO weekday: Mon=1..Sun=7 (JS Date#getUTCDay is Sun=0..Sat=6).
-function isoWeekday(noonMs: number): number {
+export function isoWeekday(noonMs: number): number {
   const dow = new Date(noonMs).getUTCDay();
   return dow === 0 ? 7 : dow;
 }
 
-function parseMeetingDays(raw: string | null): number[] {
+export function parseMeetingDays(raw: string | null): number[] {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);

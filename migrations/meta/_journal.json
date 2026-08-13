@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1786486314214,
-      "tag": "0000_lazy_thena",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1786520082820,
-      "tag": "0001_tidy_newton_destine",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1786545255212,
-      "tag": "0002_clean_sandman",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1786558563402,
-      "tag": "0003_amazing_silverclaw",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1786559477959,
-      "tag": "0004_harsh_morlun",
+      "when": 1786635530062,
+      "tag": "0000_outgoing_bishop",
       "breakpoints": true
     }
   ]
