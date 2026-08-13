@@ -363,7 +363,7 @@ Frozen route shapes (P2A owns the implementation):
 
 ### tasks.source
 
-Additive column, `text` enum `user | system`, default `'user'`. Existing inserts are unaffected. `system` is reserved for future system-generated tasks (e.g. from the notifications sweep) — no generator exists yet.
+Additive column, `text` enum `user | system`, default `'user'`. Existing inserts are unaffected. At the time of this note, `system` was reserved for future system-generated tasks (e.g. from the notifications sweep) with no generator yet. **Superseded by v1.4 (below)**: `services/taskSweep.ts` now implements that generator (six independently-toggleable families) and populates this column.
 
 ### Shell contract (for P2 agents, not an HTTP shape but frozen here since other agents build against it)
 
@@ -457,7 +457,7 @@ Migration `0004` adds `assessments.kind` — `text`, enum `official | practice`,
 
 ## v1.4 Additions — Task-centric platform (contract freeze)
 
-**Status**: wire shapes only, frozen ahead of the rest of the build so parallel tracks can develop against them. Generator policies (which family produces what, on what schedule, keyed how) and other behavior notes are completed in the docs pass — see the note at the end of this section.
+**Status**: COMPLETE. Wire shapes (frozen ahead of the rest of the build so parallel tracks could develop against them) plus every generator policy and behavior note, filled in below once the corresponding service code landed.
 
 Migration `0005` adds to `tasks`: `description` (text, nullable), `type` (text enum — see below — `NOT NULL DEFAULT 'todo'`), `parent_task_id` (self-FK, cascade delete), `completed_at` (integer epoch ms, nullable), `dismissed_at` (integer epoch ms, nullable — system-task soft delete), `course_id` / `class_session_id` / `assessment_id` / `kc_id` (nullable FKs, cascade delete — origin of a sweep-generated task), `dedupe_key` (text, nullable, unique-indexed). It also adds a `UNIQUE(task_id, course_id)` index to `task_courses` (backs the idempotent origin-course link backfill the sweep performs). `dismissed_at` and `dedupe_key` are internal-only and **never appear in any serialized task response.**
 
@@ -488,7 +488,7 @@ Every task returned by the API (`GET /tasks`, `POST /tasks`, `PATCH /tasks/:id`)
 
 ### `POST /tasks` — subtasks
 
-`POST /tasks` accepts an optional `parent_task_id` (must reference a task owned by the caller). Nesting is capped at one level: if the referenced parent itself has a non-null `parent_task_id`, the request fails with `409 Conflict` (`error.code: "conflict"`, message "Subtasks cannot be nested"). `parent_task_id` is create-only — there is no re-parenting via `PATCH`.
+`POST /tasks` accepts an optional `parent_task_id` (must reference a task owned by the caller). Nesting is capped at one level: if the referenced parent itself has a non-null `parent_task_id`, the request fails with `409` and `error.code: "invalid_input"` (the same reused code as the class-sessions date-collision 409 documented above — there is no separate `conflict` code in the "Error codes in use" list at the top of this doc), message "Subtasks cannot be nested". `parent_task_id` is create-only — there is no re-parenting via `PATCH`.
 
 ### `DELETE /tasks/:id` — dismissal semantics for system tasks
 
@@ -515,10 +515,44 @@ All six keys are optional on input and always present on read (a missing key res
 
 ### Assessments — `kc_ids`
 
-`POST /courses/:id/assessments`, `PATCH /assessments/:id`, and every assessment list/summary shape (`GET /courses/:id/assessments`, `GET /grades/summary`'s `by_course[].assessments`) gain `kc_ids: string[]` — the KC ids linked via `assessment_kcs`. On `PATCH`, `kc_ids` **replaces** the full link set (not additive); an empty array clears all links. An id that doesn't belong to the assessment's course fails the request with `404 Not Found`.
+`POST /courses/:id/assessments`, `PATCH /assessments/:id`, and `GET /courses/:id/assessments` gain `kc_ids: string[]` — the KC ids linked via `assessment_kcs`. On `PATCH`, `kc_ids` **replaces** the full link set (not additive); an empty array clears all links. An id that doesn't belong to the assessment's course fails the request with `404 Not Found` — enforced on both `POST` (create-time linking) and the `PATCH` replace path.
+
+**Scope note**: `GET /grades/summary`'s `by_course[].assessments` does **not** gain `kc_ids`. `services/grades.ts` builds that array by hand as a separate, grade-math-focused shape (`assessment_id`, `title`, `type`, `weight_pct`, `grade_received`, `grade_max`, `kind`) and has no consumer that needs the KC links, so it was deliberately left out rather than plumbed through for symmetry with the assessments endpoints above.
 
 ### Calendar — `task_due` details additions
 
-`task_due` calendar items' `details` (opaque per the frozen `CalendarItem` shape) gain `task_type`, `parent_task_id`, `class_session_id`, and `completed_at` — additive, backward compatible for any client ignoring unknown keys.
+`task_due` calendar items' `details` (opaque per the frozen `CalendarItem` shape) gain `task_type`, `parent_task_id`, `class_session_id`, and `completed_at` — additive, backward compatible for any client ignoring unknown keys. `GET /calendar` runs the sweep (below) before querying, same as `GET /tasks` — a calendar window can surface sweep-generated tasks that no prior task list call has triggered yet.
 
-**Note**: Generator policies and behavior notes completed in the docs pass.
+### The sweep — generator families and policy
+
+Idempotent generator (`services/taskSweep.ts`), same idiom as `sweepNotifications`/`sweepClassSessions`: read `settings.task_generators`, short-circuit to a no-op if every family is off, run the enabled families' collectors in parallel, `db.batch` the candidate rows with `INSERT ... ON CONFLICT(dedupe_key) DO NOTHING`, backfill `task_courses` links for any newly-surviving system task that has a `course_id` (a **second pass** — a dedupe conflict on the insert doesn't report which row survived, so the sweep can't know which task to link in the same batch as the insert), then purge tasks dismissed more than 120 days ago. Invoked at the top of `listTasks` and `getCalendar` only — there is no dedicated sweep endpoint.
+
+All six families default from `DEFAULT_SETTINGS.task_generators` (`services/user.ts`) — see the Settings section above for the exact defaults and merge semantics.
+
+| family | trigger / window | caps | `due_date` | dedupe key |
+|---|---|---|---|---|
+| `attend_class` | class sessions within ±7d of today, skipping archived courses; a session already `attended` produces a pre-completed task | — | session date | `attend_class:<class_session_id>` |
+| `prep_before_class` | course's `meeting_days`, the next class day in (today, today+2d] (there's no future `class_sessions` row to read a date off of instead) | — | class day − 1d | `prep_before_class:<course_id>:<yyyymmdd of class day>` |
+| `review_after_class` | class sessions with `status: "attended"` and date ≥ today − 3d | — | session date + 1d | `review_after_class:<class_session_id>` |
+| `practice_kc` | official, ungraded assessments due in (now, now+7d], joined to `assessment_kcs` with `mastery < 80` | 5 KCs per assessment, lowest mastery first | assessment due date − 1d | `practice_kc:<assessment_id>:<kc_id>` |
+| `stale_kc` | KCs with `mastery > 0` and `last_event_at` older than 7d | 3 per sweep, 1 per course, lowest mastery first | `null` — deliberately undated ("anytime"), so this family never joins the overdue treadmill or shows up on the calendar | `stale_kc:<kc_id>:<last_event_at ?? 0>` (re-keys each time the KC goes idle again, same idiom as the `kc_review` notification's dedupe key) |
+| `grade_entry` | official, ungraded assessments due in [now−14d, now) | — | due date + 3d | `grade_entry:<assessment_id>` |
+
+Every collector also skips archived courses. Generated titles: `Attend <course code>`, `Prep for <course code>`, `Review notes: <course code>`, `Practice <kc name> for <assessment title>`, `Revisit <kc name>`, `Enter grade: <assessment title>`.
+
+### Two-way sync
+
+- **`attend_class` ↔ class session**: `PATCH /class-sessions/:id` (`{status}`) syncs the linked `attend_class` task — `attended` → task marked done, `completed_at` stamped; `missed`/`null` → task reopened, `completed_at` cleared. In the other direction, `PATCH /tasks/:id` (`{completed}`) on an `attend_class` task updates the linked `class_sessions.status` directly — `true` → `"attended"`, `false` → `null` (unmarked, not `"missed"` — unchecking the task only retracts the attendance confirmation, it doesn't assert you missed the class). Both directions write via a plain, one-directional update in each origin service, never by calling the other's service function, so neither can recurse into the other.
+- **`grade_entry` auto-complete**: the same `PATCH /assessments/:id` call that first sets `grade_received` (the trigger for `mastery_deltas`, documented above) also marks any linked, not-yet-done `grade_entry` task complete (`completed_at` stamped) within the same request.
+
+### Notifications — `task_overdue` scoping
+
+`collectTaskOverdue` (`services/notifications.ts`) is scoped to `source: "user"` tasks only, and — like every task read — excludes dismissed tasks. A `system`-sourced task never spawns a duplicate `task_overdue` notification for something it's already surfacing as a task in its own right; the task itself is the reminder.
+
+### Seed data
+
+`scripts/seed.ts`'s demo tasks (see the v1.2 "Seed demo data" section above for the original 6) now carry `description`/`type: 'todo'`; a 7th plain todo ("Take a walk", no course link, due today) demos the dashboard's wellness-chip shape; two of "Start final project outline"'s children ("Pick a project topic" done, "Draft outline sections" open) exercise the `/tasks` modal's subtask chevron/progress-pill UI, which otherwise had no seeded coverage. A new `assessment_kcs` block links 2-3 KCs to each current-term course's near-due official assessment, so the `practice_kc` sweep produces visible rows on first dashboard load without requiring a manual KC link first. No `source: "system"` rows are seeded — that namespace belongs entirely to the sweep, and a seeded row colliding with a sweep-generated `dedupe_key` on re-seed would violate the unique index.
+
+### A note on "Migration NNNN" phrasing
+
+This build (v1.4) landed as a regenerated single-baseline migration, not an incrementally-numbered file appended to a growing history — see the "Schema Management" section's "Pre-v0.1 workflow" in `docs/decisions/ADR-003-d1-drizzle.md` for the workflow and why. The "Migration 000N adds..." phrasing used throughout this document (v1.1 onward, including "Migration `0005` adds to `tasks`..." above) narrates *when* a change landed in the project's history, not a literal file you'll find under `migrations/` today — that directory holds one regenerated baseline covering the full current schema.

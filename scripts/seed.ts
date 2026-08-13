@@ -194,7 +194,7 @@ async function main() {
     far: ['Lab report 2', 'Assignment 5', 'Midterm 2'],
   };
 
-  currentTermCourses.forEach(({ id: courseId, slug }, courseIdx) => {
+  currentTermCourses.forEach(({ id: courseId, slug, kcs }, courseIdx) => {
     const pastDue = now - 10 * DAY_MS;
     const nearDue = now + (2 + (courseIdx % 8)) * DAY_MS; // 2-9 days out
     const farDue = now + (15 + (courseIdx % 7)) * DAY_MS; // 15-21 days out
@@ -231,25 +231,46 @@ async function main() {
        VALUES (${sqlStr(practiceCheckId)}, ${sqlStr(courseId)}, 'Problem-set self-check', 'quiz', ${nearDue}, NULL, NULL, 100, 'practice', ${now})
        ON CONFLICT(id) DO UPDATE SET kind=excluded.kind;`,
     );
+
+    // assessment_kcs (v1.4): link a few of this course's KCs to its near-due
+    // *official* assessment (nearId — ungraded, ON CONFLICT DO UPDATE never
+    // touches kind, so it stays the schema default 'official') so the
+    // practice_kc sweep (services/taskSweep.ts) has something to generate on
+    // first dashboard load: it needs an ungraded official assessment due
+    // within 7 days with linked KCs below the mastery threshold, which
+    // nearId + these links now satisfy. (nearDue is 2-9 days out per the
+    // comment above; today's 4 current-term courses top out at 5 days out,
+    // comfortably inside the sweep's 7-day window — revisit if the course
+    // count or nearDue formula changes.)
+    kcs.slice(0, 3).forEach((kc) => {
+      const linkId = deterministicId('assessmentkc', `${nearId}:${kc.id}`);
+      statements.push(
+        `INSERT INTO assessment_kcs (id, assessment_id, kc_id, qmatrix_version, created_at)
+         VALUES (${sqlStr(linkId)}, ${sqlStr(nearId)}, ${sqlStr(kc.id)}, 1, ${now})
+         ON CONFLICT(id) DO NOTHING;`,
+      );
+    });
   });
 
-  // --- tasks (6 total, spread across current-term courses; 2 linked) ---
-  const TASK_SPECS: { title: string; dueOffsetDays: number; done: boolean }[] = [
-    { title: 'Submit lab report', dueOffsetDays: -2, done: false }, // overdue
-    { title: 'Finish problem set', dueOffsetDays: 1, done: false },
-    { title: 'Read chapter 7', dueOffsetDays: 3, done: false },
-    { title: 'Prepare tutorial questions', dueOffsetDays: 6, done: false },
-    { title: 'Start final project outline', dueOffsetDays: 12, done: false },
-    { title: 'Review midterm material', dueOffsetDays: 18, done: false },
+  // --- tasks (v1.4: description + type columns now populated; 6 course-
+  // adjacent demo tasks + 1 wellness todo + 2 subtasks, spread across
+  // current-term courses, first 2 linked) ---
+  const TASK_SPECS: { title: string; description: string; dueOffsetDays: number; done: boolean }[] = [
+    { title: 'Submit lab report', description: 'Upload the writeup and data sheet before the deadline.', dueOffsetDays: -2, done: false }, // overdue
+    { title: 'Finish problem set', description: "Work through this week's assigned problems.", dueOffsetDays: 1, done: false },
+    { title: 'Read chapter 7', description: 'Cover the assigned reading ahead of next class.', dueOffsetDays: 3, done: false },
+    { title: 'Prepare tutorial questions', description: 'Draft a few questions to bring to the tutorial.', dueOffsetDays: 6, done: false },
+    { title: 'Start final project outline', description: 'Sketch the project scope and a rough section list.', dueOffsetDays: 12, done: false },
+    { title: 'Review midterm material', description: 'Skim past notes and flag weak spots before studying.', dueOffsetDays: 18, done: false },
   ];
 
   TASK_SPECS.forEach((spec, i) => {
     const taskId = deterministicId('task', `demo-task-${i + 1}`);
     const dueDate = now + spec.dueOffsetDays * DAY_MS;
     statements.push(
-      `INSERT INTO tasks (id, user_id, title, due_date, done, source, created_at)
-       VALUES (${sqlStr(taskId)}, ${sqlStr(userId)}, ${sqlStr(spec.title)}, ${dueDate}, ${spec.done}, 'user', ${now})
-       ON CONFLICT(id) DO UPDATE SET due_date=excluded.due_date, title=excluded.title, done=excluded.done;`,
+      `INSERT INTO tasks (id, user_id, title, description, due_date, done, type, source, created_at)
+       VALUES (${sqlStr(taskId)}, ${sqlStr(userId)}, ${sqlStr(spec.title)}, ${sqlStr(spec.description)}, ${dueDate}, ${spec.done}, 'todo', 'user', ${now})
+       ON CONFLICT(id) DO UPDATE SET due_date=excluded.due_date, title=excluded.title, description=excluded.description, done=excluded.done;`,
     );
 
     // Link the first two tasks to a current-term course so the calendar's
@@ -263,6 +284,43 @@ async function main() {
          ON CONFLICT(id) DO NOTHING;`,
       );
     }
+  });
+
+  // Wellness demo task (v1.4): a plain todo, no course link, due today — the
+  // dashboard's one-tap wellness chips mint exactly this shape, so seeding
+  // one means TodayTasks always has a "today" row out of the box. UTC-noon
+  // of today, same explicit-UTC discipline as localNoonDaysAgo below (class
+  // sessions) — computed inline here rather than calling that helper early,
+  // since it's a `function` declared further down in this same scope.
+  const wellnessTaskId = deterministicId('task', 'demo-wellness-1');
+  const todayNoonMs = (() => {
+    const d = new Date(now);
+    d.setUTCHours(12, 0, 0, 0);
+    return d.getTime();
+  })();
+  statements.push(
+    `INSERT INTO tasks (id, user_id, title, description, due_date, done, type, source, created_at)
+     VALUES (${sqlStr(wellnessTaskId)}, ${sqlStr(userId)}, 'Take a walk', 'Step away from the desk for a few minutes.', ${todayNoonMs}, 0, 'todo', 'user', ${now})
+     ON CONFLICT(id) DO UPDATE SET due_date=excluded.due_date;`,
+  );
+
+  // Subtasks (v1.4) under "Start final project outline" (demo-task-5) — the
+  // /tasks modal's chevron/cascade UI otherwise has zero seeded coverage.
+  // One done, one open, so both subtask row states render on first load.
+  const finalProjectTaskId = deterministicId('task', 'demo-task-5');
+  const SUBTASK_SPECS: { key: string; title: string; description: string; dueOffsetDays: number; done: boolean }[] = [
+    { key: 'demo-subtask-1', title: 'Pick a project topic', description: 'Narrow down to one topic and confirm scope.', dueOffsetDays: 8, done: true },
+    { key: 'demo-subtask-2', title: 'Draft outline sections', description: 'List the sections the outline needs to cover.', dueOffsetDays: 11, done: false },
+  ];
+  SUBTASK_SPECS.forEach((spec) => {
+    const subtaskId = deterministicId('task', spec.key);
+    const dueDate = now + spec.dueOffsetDays * DAY_MS;
+    const completedAt = spec.done ? now : 'NULL';
+    statements.push(
+      `INSERT INTO tasks (id, user_id, title, description, due_date, done, type, parent_task_id, completed_at, source, created_at)
+       VALUES (${sqlStr(subtaskId)}, ${sqlStr(userId)}, ${sqlStr(spec.title)}, ${sqlStr(spec.description)}, ${dueDate}, ${spec.done}, 'todo', ${sqlStr(finalProjectTaskId)}, ${completedAt}, 'user', ${now})
+       ON CONFLICT(id) DO UPDATE SET due_date=excluded.due_date, title=excluded.title, description=excluded.description, done=excluded.done, completed_at=excluded.completed_at;`,
+    );
   });
 
   // --- logged events (~12 over the past 14 days, across courses/KCs) ---

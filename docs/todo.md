@@ -6,6 +6,8 @@
 
 **v1.2 Status (2026-08-12)**: Unified calendar data plane, design-token/popover foundation, three theme design passes (fonts + colors + spacing + motion, structure unchanged), planner overhaul (week time-grid default, EventPopover, PlannerRail, inline session create, deep links), dashboard recomposition (CourseCards, collapsible WeekView), and a Pinterest-style feed masonry shipped. See "v1.2 Shipped Summary" below. Note: the components named in "v1.1 Shipped Summary" below (WeekStrip, GradeSnapshot, CourseMiniGrid) were deleted as part of v1.2's dashboard recomposition — that section is left as a historical record of what v1.1 shipped, not a description of current code.
 
+**v1.4 Status (2026-08-13)**: Task-centric platform. Real task rows for every checkable thing (`type` enum, `description`, one level of subtasks, origin FKs) replace the old title/due-date/done-only shape; six independently-toggleable sweep generators (`services/taskSweep.ts`) populate `tasks.source = 'system'` — the exact gap this doc flagged as deferred under "v1.1-Specific Deferrals" below, now resolved; two-way sync between `attend_class` tasks and class-session attendance, and between `grade_entry` tasks and grade entry; KC↔assessment linking gets a UI (`assessment_kcs`, via AssessmentsCard's "Concepts covered" picker); dashboard leads with `TodayTasks` (checkable hero) ahead of slimmed `CourseCards`; `/tasks` rebuilt as a full-page route-modal with per-course cards and subtasks; a new course-home `TasksCard` and a `/settings` "Automatic tasks" panel. Full contract in `docs/api.md`'s "v1.4 Additions" section.
+
 Each deferred feature is prioritized and scoped to avoid scope creep during post-v1 development.
 
 ---
@@ -73,7 +75,7 @@ Called out separately because they were identified but explicitly not built duri
 
 Called out separately because they were explicitly scoped out during v1.1 planning (`docs/api.md`'s `tasks.source` and courses sections note the seams left for these):
 
-- **System-generated tasks**: the `tasks.source` column (`user | system`) is additive and ready, but nothing produces `system`-sourced tasks yet — e.g. auto-creating a task from an overdue assessment or a notification. Natural pairing with the notifications sweep once it exists.
+- **System-generated tasks** — shipped in v1.4 (see the status line above): `services/taskSweep.ts` now generates six families of `system`-sourced tasks (`attend_class`, `prep_before_class`, `review_after_class`, `practice_kc`, `stale_kc`, `grade_entry`), each independently toggleable via `settings.task_generators`, run as an idempotent sweep at the top of `listTasks`/`getCalendar` — the "natural pairing with the notifications sweep" anticipated here turned out to be its own sweep of the same idempotent-generator idiom, not a literal extension of `sweepNotifications`.
 - **Branch/KC CRUD**: `POST /courses` auto-creates one "General" branch; there's still no way to add/edit/delete branches or KCs after course creation outside the seed script. Needed before "add a course" is a complete self-serve flow.
 - **Deploy pipeline**: v1.1 was explicitly local-only per its build plan (no deploys during P0-P3); there's still no CI/CD or `wrangler deploy` step wired to this rename/shell — see "CI/CD pipeline definition" under Operational TODOs below, now also blocking a production rollout of the new shell.
 

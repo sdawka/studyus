@@ -34,7 +34,9 @@ Mastery is **never stored directly** — it's computed on-demand from an append-
 - API contract is frozen at end of M1; iPad and web apps build against the same specification.
 
 ### Client State (nanostores)
-Cross-island state that used to be prop-threaded or duplicated per-component now lives in `nanostores` atoms under `src/lib/stores/`. Svelte 5 subscribes directly via the `$storeName` auto-subscription (nanostores atoms implement `.subscribe`) — no `@nanostores/svelte` adapter needed. Two atoms so far: `ui.ts`'s `activePopover` (which of the header's popovers — scratchpad/todo/bell/avatar — is open; previously local `$state` in `HeaderActions.svelte`) and `courseContext.ts`'s `courseContext` (the course the user is currently viewing, `{id, slug, code, title} | null`, SSR-safe default `null`). `CourseLayout.astro` mounts a tiny invisible `CourseContextSetter.svelte` island (`client:load`) on every course subpage to publish it; `ScratchpadPopup`, `TodoDropdown`, and `LogEventModal` read it to default a course selection — always just a default, never enforced.
+Cross-island state that used to be prop-threaded or duplicated per-component now lives in `nanostores` atoms under `src/lib/stores/`. Svelte 5 subscribes directly via the `$storeName` auto-subscription (nanostores atoms implement `.subscribe`) — no `@nanostores/svelte` adapter needed. `ui.ts`'s `activePopover` (which of the header's popovers — scratchpad/todo/bell/avatar — is open; previously local `$state` in `HeaderActions.svelte`) and `courseContext.ts`'s `courseContext` (the course the user is currently viewing, `{id, slug, code, title} | null`, SSR-safe default `null`) were the first two. `CourseLayout.astro` mounts a tiny invisible `CourseContextSetter.svelte` island (`client:load`) on every course subpage to publish it; `ScratchpadPopup`, `TodoDropdown`, and `LogEventModal` read it to default a course selection — always just a default, never enforced.
+
+`stores/tasks.ts` (v1.4) is the larger third: a `map` of tasks by id, a `TasksStatus` atom (`idle|loading|ready|error`), and plain-function selectors (`selectOpen`/`selectForCourse`/`selectChildren`/`bucketByDue`) rather than a `computed` list, since consumers need to filter/group differently (TodayTasks buckets by due date, TasksView groups by course, TasksCard/PlannerRail want a plain open-tasks slice). `ensureLoaded()` dedupes concurrent first-load fetches across islands on the same page via a module-level promise; `addTask`/`toggleTask`/`deleteTask` mutate optimistically (except `addTask`, which awaits the `POST` and inserts the real row — no temp-id reconciliation) with rollback on a failed request; `refetchTasks()` does a full replace, used after attendance mutations elsewhere on the page so a backend-side `attend_class` sync is picked up without mirroring the sync rule client-side. Every task-consuming island (`TodoDropdown`, `TodayTasks`, `TasksView`, `TasksCard`, `EventPopover`, `AttendanceCard`) reads and writes through this one store instead of doing its own fetch — `PlannerRail` is the one exception, still server-fetched via props (it only gained a `TaskTypeIcon` on its rows, no structural change).
 
 ### Design Tokens — 3 Themes × 2 Schemes
 The whole app shares one token vocabulary, split across files under `src/styles/`:
@@ -62,7 +64,7 @@ courses/                                  # Seed data + old prototype (frozen)
   [course-readmes]
   [old prototype files]
 
-migrations/                               # D1 migration SQL files
+migrations/                               # D1 migration SQL (single regenerated baseline, pre-v0.1 — see ADR-003)
 scripts/
   seed.ts                                 # Idempotent course+KC seed
 
@@ -116,9 +118,10 @@ src/
     admin/                                # GradeTable.svelte, QuickEventForm.svelte
     course/                               # AttachmentsPanel, MasteryBar, PlayPanel, PracticePanel, ...
     dashboard/
-      CourseCards.astro                   # Merged grade + mastery + assessment-progress cards
+      CourseCards.astro                   # Slim course cards (v1.4): hue/code/title/grade pill/one meta line — mastery + assessment-progress moved off the card face onto tasks
       WeekView.svelte                     # Collapsed/expanded week island (sb:weekview)
-      DueList.astro
+      TodayTasks.svelte                   # v1.4 — checkable hero: overdue/today/next buckets + wellness chips
+      DeadlinesList.astro                 # v1.4 rename of DueList.astro — assessment_due items only now (task nagging moved into TodayTasks/grade_entry tasks)
       RecordEventCard.astro
     events/                               # EventTimeline.svelte, LogEventModal.svelte
     feed/                                 # ResourceCard (favicon tiles), ShareResourceForm, StudySessionStub
@@ -132,15 +135,15 @@ src/
       EventPopover.svelte
       CreateSessionPopover.svelte         # inline scheduled-session create
       PlannerRail.svelte                  # unscheduled tasks/assessments due-soon rail
-    settings/                             # AppearanceSettings.svelte
+    settings/                             # AppearanceSettings.svelte, TaskGeneratorSettings.svelte (v1.4 — per-family sweep toggle)
     shell/
       AppShell-adjacent: Sidebar.astro, Header.astro, HeaderActions.svelte,
       ThemeScript.astro, AddCourseModal.svelte, AvatarMenu.svelte,
       NotificationsBell.svelte, ScratchpadPopup.svelte, TodoDropdown.svelte,
       popover.svelte.ts (shared popover open/close state), Icon.astro
-    standing/                             # StandingTab.svelte
+    standing/                             # StandingTab.svelte + rail cards (AssessmentsCard, DeadlinesCard, MasteryCard, TasksCard, AttendanceCard, PracticeCard, RecentActivityCard)
     study/                                # StudyFlow.svelte
-    tasks/                                # TaskList, TaskItem
+    tasks/                                # TaskItem.svelte, TaskTypeIcon.svelte, TasksView.svelte (v1.4 rebuild — the old plain-list TaskList.svelte was deleted)
     tutor/                                # ScaffoldChat, InteractiveModel, QuickQuiz
   pages/
     /login.astro

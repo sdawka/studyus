@@ -186,19 +186,35 @@ Closing a conversation appends a `tutor_session` event.
 
 ### Tasks & Planning
 
-**tasks**
+**tasks** (v1.4: task-centric platform — real rows for every checkable thing, user todos and sweep-generated system tasks alike, not virtual projections)
 - `id` (text, pk) — UUID
 - `user_id` (text, fk → users)
 - `title` (text)
-- `description` (text)
-- `due_date` (datetime)
-- `completed` (boolean)
+- `description` (text, nullable)
+- `due_date` (datetime, nullable)
+- `done` (boolean) — the `completed` field at the API boundary
+- `type` (enum: `todo | attend_class | prep_before_class | review_after_class | practice_kc | stale_kc | grade_entry`, default `todo`) — only `todo` is user-mintable (`createTaskSchema`/`updateTaskSchema` have no `type` field); the other six are written only by the sweep, below
+- `parent_task_id` (text, fk → tasks, self-referential, cascade delete) — one level of subtasks; a parent must not itself have a `parent_task_id` (enforced in `services/tasks.ts`, a DB lookup, not expressible as a column constraint); create-only, no re-parenting via `PATCH`
+- `completed_at` (datetime, nullable) — stamped/cleared only on an actual `done` transition, not a redundant same-value `PATCH`
+- `dismissed_at` (datetime, nullable) — system-task soft delete (see Dedupe & dismissal below); **never serialized**
+- `course_id` / `class_session_id` / `assessment_id` / `kc_id` (fks, all nullable, all cascade delete) — origin of a sweep-generated task; all `null` for a user-minted todo
+- `dedupe_key` (text, nullable, unique-indexed — SQLite's multi-NULL unique semantics mean every user todo's `NULL` is unconstrained) — sweep idempotency key, e.g. `attend_class:<class_session_id>`; **never serialized**
+- `source` (enum: `user | system`, default `user`)
 - `created_at` (datetime)
+
+Indexed on `(user_id, done, due_date)` and `(parent_task_id)`, in addition to the `dedupe_key` unique index above.
 
 **task_courses**
 - `id` (text, pk) — UUID
-- `task_id` (text, fk → tasks)
-- `course_id` (text, fk → courses)
+- `task_id` (text, fk → tasks, cascade delete)
+- `course_id` (text, fk → courses, cascade delete)
+- Unique on `(task_id, course_id)` — backs the sweep's idempotent origin-course link backfill, below
+
+**Generation**: six independently-toggleable generator families (`settings.task_generators`; policy table and defaults in `docs/api.md`'s "v1.4 Additions" section) run as an idempotent sweep (`services/taskSweep.ts`) — the same idiom as the notifications and class-sessions sweeps: collect candidate rows per family, `INSERT ... ON CONFLICT(dedupe_key) DO NOTHING`, invoked at the top of both `listTasks` and `getCalendar` (never behind a dedicated endpoint). A system task's `course_id`/`class_session_id`/`assessment_id`/`kc_id` records what generated it. `task_courses` link rows for those origin courses are backfilled in a **second pass** after the insert batch — `ON CONFLICT DO NOTHING` doesn't report which row survived a dedupe collision, so the sweep can't know which task id to link in the same batch as the insert; the second pass instead re-reads system tasks with a `course_id` missing their `task_courses` row and backfills them, itself idempotent via the unique index above.
+
+**Dedupe & dismissal**: a sweep-generated row is uniquely keyed by `dedupe_key`, so re-running the sweep never creates a duplicate. Deleting a `source: "user"` task hard-deletes it (cascading to children); deleting a `source: "system"` task instead stamps `dismissed_at` (soft delete) and hard-deletes its children — the row, and its `dedupe_key`, survive so the generating sweep can never resurrect it. Dismissed rows are excluded from every list/calendar read and purged once `dismissed_at` is more than 120 days old.
+
+**Two-way sync**: an `attend_class` task's completion mirrors its linked `class_sessions.status` in both directions (checking the task marks the session attended; marking a session attended completes the task, and vice versa for unmarking), and entering an assessment's grade auto-completes its linked `grade_entry` task — each direction writes via a plain, one-directional `db.update` in its own origin service, never by calling back into the other's service function, so neither direction can recurse into the other.
 
 ## LearnerProfile (Aggregation Service, Not a Table)
 

@@ -159,6 +159,8 @@ wrangler d1 migrations apply studyus --remote
 
 Migrations are tracked in the `_cf_migrations` table and are idempotent (Drizzle generates safe migrations).
 
+**Pre-v0.1**: studyus hasn't shipped v0.1 yet, so `migrations/` isn't an append-only incremental history today — a schema change regenerates a single baseline file from scratch instead of adding a new numbered one, and local D1 state (`.wrangler/state/v3/d1/`) gets wiped and reseeded alongside it. Full procedure and rationale: `docs/decisions/ADR-003-d1-drizzle.md`'s "Schema Management" section. This flips to real incremental migrations once there's user data worth preserving continuity for.
+
 ### Environment Variables
 
 Create a `.dev.vars` file in the root:
@@ -220,9 +222,9 @@ You're trying to access `env.DB` outside of a Worker context (e.g., in a build s
 If you pipe a ReadableStream into a Response, make sure you're in a Worker context (not a Node.js build). SSE endpoints must run on Workers, not Node.
 
 ### ✅ How to test D1 locally
-The `.wrangler/state/d1/` directory contains local SQLite databases. You can inspect them with `sqlite3`:
+The `.wrangler/state/v3/d1/` directory contains local SQLite databases (nested under a `miniflare-D1DatabaseObject/` subfolder — the path above was written against an older wrangler layout). You can inspect them with `sqlite3`:
 ```bash
-sqlite3 .wrangler/state/d1/your_db.sqlite3
+sqlite3 .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite
 sqlite> SELECT * FROM events;
 ```
 

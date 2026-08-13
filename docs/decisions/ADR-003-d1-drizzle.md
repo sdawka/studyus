@@ -41,9 +41,21 @@ Alternatives:
 
 ## Schema Management
 
+**Pre-v0.1 workflow (user-directed 2026-08-13, current)**: studyus has no shipped release yet, so there's no user data whose continuity a schema change needs to preserve — incremental `ALTER TABLE` migrations buy safety this project doesn't need yet, at the cost of a `migrations/` directory that grows one file per change. Until v0.1 ships, a schema change instead regenerates a **single baseline migration** from scratch:
+
+1. Edit `src/db/schema.ts`.
+2. Delete everything under `migrations/` (including `migrations/meta/`).
+3. `npm run db:generate` (`drizzle-kit generate`) regenerates one fresh baseline file from the full current schema (as of this writing, `migrations/0000_outgoing_bishop.sql`) — review the SQL by hand: it must be pure `CREATE TABLE`/`CREATE INDEX`. If a future edit makes drizzle-kit emit a table-recreate for an existing column change, D1 rejects the `PRAGMA foreign_keys=OFF` it wraps that in; hand-fix to `PRAGMA defer_foreign_keys = true`.
+4. Wipe local D1 state — delete `.wrangler/state/v3/d1/` (no local data is worth preserving either).
+5. `npm run db:migrate:local` re-applies the fresh baseline, then `npm run db:seed` reseeds demo data.
+
+One consequence: "Migration 000N adds X" phrasing elsewhere in the docs (`docs/api.md`'s versioned "Additions" sections) narrates *when* a feature landed in the project's history, not a literal file you'll find in `migrations/` today — the whole history is folded into the current single baseline.
+
+**Post-v0.1 workflow (once there's real user data to preserve)**: flip to incremental, additive-only migrations —
+
 1. Update `src/db/schema.ts`.
-2. Run `drizzle-kit generate` → generates SQL in `migrations/`.
-3. Commit migration files.
+2. Run `drizzle-kit generate` → generates one new numbered SQL file in `migrations/`, on top of the existing history (never edits or deletes a past file).
+3. Commit the new migration file.
 4. On deploy: `wrangler d1 migrations apply studyus --remote`.
 5. On local dev: `wrangler d1 migrations apply studyus --local`.
 
