@@ -412,7 +412,11 @@
      (PlannerView.svelte's .planner-body follows the same rule). */
   .card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    /* 380px min, not 320: a non-compact TaskItem row carries ~250px of fixed
+       chrome (checkbox, type icon, hue dot, due pill, Delete, gaps, padding),
+       so a 320px track leaves titles ~70px before ellipsis. 380 keeps three
+       columns at 1440 with ~180px of readable title. */
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
     gap: 18px;
     align-items: start;
   }
