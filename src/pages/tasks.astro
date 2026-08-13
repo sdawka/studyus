@@ -1,23 +1,116 @@
 ---
-import { env } from 'cloudflare:workers';
 import AppShell from '../layouts/AppShell.astro';
+import TasksView from '../components/tasks/TasksView.svelte';
+import { env } from 'cloudflare:workers';
 import { getDb } from '../db/client';
 import { listTasks } from '../lib/services/tasks';
 import { listCourses } from '../lib/services/courses';
 import { toApi } from '../lib/serialize';
-import TaskList from '../components/tasks/TaskList.svelte';
-
-if (!Astro.locals.user) return Astro.redirect('/login');
+import { hueFor } from '../lib/courseHue';
 
 const db = getDb(env.DB);
-const tasks = await listTasks(db, Astro.locals.user.id);
-const courses = await listCourses(db, Astro.locals.user.id);
+const userId = Astro.locals.user!.id;
 
-const apiTasks = toApi(tasks);
-const apiCourses = toApi(courses);
+// listTasks sweeps (generates due system tasks) before returning, same as
+// planner's getCalendar call.
+const userTasks = await listTasks(db, userId);
+const userCourses = await listCourses(db, userId);
+
+// Deep-link support: /tasks?course=<slug> narrows the card grid to one
+// course (or 'other'); TasksView validates the slug and falls back to "All".
+const courseParam = Astro.url.searchParams.get('course');
+
+const courseOptions = userCourses.map((c) => ({
+  id: c.id,
+  slug: c.slug,
+  code: c.code,
+  title: c.title,
+  hue: hueFor(c),
+}));
+
+const initialTasks = toApi(userTasks);
 ---
 
 <AppShell title="Tasks">
-  <h1>Tasks</h1>
-  <TaskList client:load initialTasks={apiTasks} courses={apiCourses} />
+  <div class="tasks-layer" id="tasks-layer">
+    <div class="scrim" id="tasks-scrim"></div>
+    <div class="panel" role="dialog" aria-modal="true" aria-label="Tasks">
+      <div class="panel-head">
+        <h1>Tasks</h1>
+        <button type="button" class="close-btn" id="tasks-close" aria-label="Close tasks">
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      <TasksView client:load initialTasks={initialTasks} courses={courseOptions} initialCourseFilter={courseParam} />
+    </div>
+  </div>
 </AppShell>
+
+<script>
+  declare global {
+    interface Window {
+      __tasksBlockEscape?: boolean;
+    }
+  }
+
+  function closeTasks() {
+    if (history.length > 1) history.back();
+    else window.location.assign('/dashboard');
+  }
+  document.getElementById('tasks-close')?.addEventListener('click', closeTasks);
+  document.getElementById('tasks-scrim')?.addEventListener('click', closeTasks);
+  document.addEventListener('keydown', (e) => {
+    // TasksView sets this while an inline add form or subtask editor is
+    // open, so a first Escape closes that instead of the whole modal.
+    if (e.key === 'Escape' && !window.__tasksBlockEscape) closeTasks();
+  });
+</script>
+
+<style>
+  .tasks-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: stretch;
+  }
+  .scrim {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in oklch, var(--text) 20%, transparent);
+  }
+  .panel {
+    position: relative;
+    margin: 20px;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-pop);
+    overflow: auto;
+    padding: 24px 28px 32px;
+    z-index: 1;
+  }
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .panel-head h1 {
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .close-btn {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    color: var(--muted);
+    font-size: 20px;
+    line-height: 1;
+  }
+  .close-btn:hover {
+    background: var(--hover);
+  }
+</style>
