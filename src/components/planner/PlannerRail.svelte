@@ -2,6 +2,8 @@
   import type { CalendarItem } from '../../lib/types/calendar';
   import { hueFor } from '../../lib/courseHue';
   import { addDays, localDateKey, mondayOf, startOfDay } from '../../lib/plannerDates';
+  import TaskTypeIcon from '../tasks/TaskTypeIcon.svelte';
+  import type { TaskType } from '../../lib/taskTypeMeta';
 
   interface CourseOption {
     id: string;
@@ -64,6 +66,15 @@
     }
   }
 
+  // task_due items carry their generator type in details.task_type
+  // (calendar.ts); TaskTypeIcon already renders nothing for 'todo', so no
+  // extra filtering needed here.
+  function taskTypeFor(item: CalendarItem): TaskType | undefined {
+    if (item.type !== 'task_due') return undefined;
+    const t = item.details?.task_type;
+    return typeof t === 'string' ? (t as TaskType) : undefined;
+  }
+
   function dueLabel(item: CalendarItem): string {
     const days = daysUntil(item);
     if (days < 0) return `${Math.abs(days)}d overdue`;
@@ -82,6 +93,7 @@
           <li>
             <button type="button" class="rail-item overdue" class:selected={selectedId === item.id} style={`--course-h:${hueForItem(item)}`} onclick={() => handleClick(item)}>
               {#if courseFor(item)}<span class="chip rail-chip">{courseFor(item)?.code}</span>{/if}
+              {#if taskTypeFor(item)}<span class="rail-icon"><TaskTypeIcon type={taskTypeFor(item)} /></span>{/if}
               <span class="rail-title">{item.title}</span>
               <span class="rail-due">{dueLabel(item)}</span>
             </button>
@@ -99,6 +111,7 @@
           <li>
             <button type="button" class="rail-item" class:selected={selectedId === item.id} style={`--course-h:${hueForItem(item)}`} onclick={() => handleClick(item)}>
               {#if courseFor(item)}<span class="chip rail-chip">{courseFor(item)?.code}</span>{/if}
+              {#if taskTypeFor(item)}<span class="rail-icon"><TaskTypeIcon type={taskTypeFor(item)} /></span>{/if}
               <span class="rail-title">{item.title}</span>
               <span class="rail-due">{dueLabel(item)}</span>
             </button>
@@ -116,6 +129,7 @@
           <li>
             <button type="button" class="rail-item" class:selected={selectedId === item.id} style={`--course-h:${hueForItem(item)}`} onclick={() => handleClick(item)}>
               {#if courseFor(item)}<span class="chip rail-chip">{courseFor(item)?.code}</span>{/if}
+              {#if taskTypeFor(item)}<span class="rail-icon"><TaskTypeIcon type={taskTypeFor(item)} /></span>{/if}
               <span class="rail-title">{item.title}</span>
               <span class="rail-due">{dueLabel(item)}</span>
             </button>
@@ -179,6 +193,11 @@
     background: var(--course-soft);
     color: var(--course-ink);
     border: none;
+  }
+  .rail-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    color: var(--muted);
   }
   .rail-title {
     flex: 1;

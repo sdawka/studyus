@@ -12,6 +12,7 @@
   import AssessmentsCard from './AssessmentsCard.svelte';
   import MasteryCard from './MasteryCard.svelte';
   import DeadlinesCard from './DeadlinesCard.svelte';
+  import TasksCard from './TasksCard.svelte';
   import AttendanceCard from './AttendanceCard.svelte';
   import PracticeCard from './PracticeCard.svelte';
   import RecentActivityCard from './RecentActivityCard.svelte';
@@ -137,6 +138,7 @@
     </div>
 
     <aside class="rail">
+      <TasksCard {courseId} {courseSlug} />
       <AttendanceCard {courseId} meetingDaysInitial={meetingDays} />
       <PracticeCard {courseId} {courseSlug} refreshToken={practiceRefreshToken} />
       <RecentActivityCard {events} />

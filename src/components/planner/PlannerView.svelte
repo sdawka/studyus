@@ -251,6 +251,22 @@
     pendingSelectItem = item;
   }
 
+  // EventPopover's checkbox already flips its own `item` copy optimistically,
+  // but `items` (WeekGrid) and `railItems` (PlannerRail) came from two
+  // separate /calendar fetches — distinct object instances for the same
+  // task — so the popover's local mutation doesn't reach either array on
+  // its own. Update both explicitly (new array + object identities) so
+  // PlannerRail's `details.done` filter and WeekGrid's fill state re-derive.
+  function handleTaskToggled(itemId: string, done: boolean) {
+    const patch = (list: CalendarItem[]) =>
+      list.map((i) => (i.id === itemId ? { ...i, details: { ...i.details, done } } : i));
+    items = patch(items);
+    railItems = patch(railItems);
+    if (selectedItem?.id === itemId) {
+      selectedItem = { ...selectedItem, details: { ...selectedItem.details, done } };
+    }
+  }
+
   function onFilterChange() {
     void loadRail();
   }
@@ -380,6 +396,7 @@
     anchorRect={popoverAnchor}
     onClose={closePopover}
     onDeleted={() => (view === 'week' ? loadWeek() : loadMonth())}
+    onTaskToggled={handleTaskToggled}
   />
 {/if}
 

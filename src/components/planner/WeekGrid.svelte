@@ -218,6 +218,19 @@
     return endMs < now.getTime();
   }
 
+  // attend_class task_due pills ARE the class's calendar presence (class
+  // sessions themselves stay out of the calendar feed — see calendar.ts) —
+  // they must never be suppressed or faded on completion, just filled in.
+  // Every other task pill dims + fills on completion like a normal
+  // checked-off item. No per-type glyphs either way — the grid stays calm.
+  function isAttendClassPill(item: CalendarItem): boolean {
+    return item.type === 'task_due' && item.details?.task_type === 'attend_class';
+  }
+  function pillGlyph(item: CalendarItem): string {
+    if (item.type === 'assessment_due') return '◆';
+    return item.details?.done === true ? '●' : '○';
+  }
+
   function typeLabel(type: CalendarItem['type']): string {
     switch (type) {
       case 'assessment_due':
@@ -296,13 +309,14 @@
             type="button"
             class="all-day-pill"
             class:selected={selectedId === item.id}
+            class:pill-done={item.type === 'task_due' && !isAttendClassPill(item) && item.details?.done === true}
             data-event-id={item.id}
             style={`--course-h:${hueForItem(item)}`}
             onclick={() => onSelect?.(item)}
             onmouseenter={(e) => onBlockEnter(e, item)}
             onmouseleave={onBlockLeave}
           >
-            {item.type === 'assessment_due' ? '◆' : '○'} {item.title}
+            {pillGlyph(item)} {item.title}
           </button>
         {/each}
       </div>
@@ -484,6 +498,13 @@
     outline: 2px solid var(--accent);
     outline-offset: 1px;
     box-shadow: var(--shadow-pop);
+  }
+  /* Completed regular tasks fade like a checked-off item; attend_class
+     pills never get this class (see isAttendClassPill) — they're the
+     class's calendar presence, not a to-do, so they stay at full opacity
+     when done instead of fading out. */
+  .all-day-pill.pill-done {
+    opacity: 0.6;
   }
   .empty-hint {
     text-align: center;

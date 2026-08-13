@@ -3,6 +3,7 @@
   import { hueFor } from '../../lib/courseHue';
   import { timeRangeLabel } from '../../lib/plannerDates';
   import { bindPopoverDismiss } from '../shell/popover.svelte.ts';
+  import { tasksById, toggleTask } from '../../lib/stores/tasks';
 
   interface CourseOption {
     id: string;
@@ -18,17 +19,24 @@
     anchorRect,
     onClose,
     onDeleted,
+    onTaskToggled,
   }: {
     item: CalendarItem;
     course: CourseOption | undefined;
     anchorRect: { x: number; y: number; width: number; height: number };
     onClose: () => void;
     onDeleted?: () => void;
+    // task_due only: fired after a toggle settles (optimistic flip included)
+    // with the id/done pair actually applied, so the parent's items array
+    // (WeekGrid/PlannerRail read from it) can be kept in sync — this popover
+    // may be showing an item copied out of that array, not the live object.
+    onTaskToggled?: (itemId: string, done: boolean) => void;
   } = $props();
 
   let panelEl = $state<HTMLElement | null>(null);
   let deleting = $state(false);
   let deleteError = $state<string | null>(null);
+  let taskToggling = $state(false);
 
   const hue = $derived(course ? hueFor({ slug: course.slug, color: course.color === null ? null : String(course.color) }) : 220);
 
@@ -55,8 +63,6 @@
     if (item.type === 'assessment_due') {
       if (typeof d.assessment_type === 'string') lines.push(`Type: ${d.assessment_type}`);
       if (typeof d.weight_pct === 'number') lines.push(`Worth ${d.weight_pct}% of final grade`);
-    } else if (item.type === 'task_due') {
-      lines.push(d.done ? 'Completed' : 'Not completed');
     } else if (item.type === 'study_session') {
       if (typeof d.planned_minutes === 'number') lines.push(`${d.planned_minutes} min planned`);
       lines.push(d.completed ? 'Completed' : 'Scheduled');
@@ -107,6 +113,51 @@
       deleting = false;
     }
   }
+
+  // task_due items carry the raw task id (see getCalendar in
+  // src/lib/services/calendar.ts — no prefix). If the tasks store already
+  // has this task hydrated, go through it so every other store-backed
+  // surface (TasksCard, TaskItem, TodoDropdown) sees the flip too; planner
+  // pages don't hydrate the full store, so fall back to a direct PATCH.
+  // Either way, flip item.details.done optimistically and re-derive it from
+  // whatever actually lands (toggleTask swallows its own failures and rolls
+  // its snapshot back rather than throwing), then bubble onTaskToggled so
+  // the parent's items array — WeekGrid/PlannerRail read from that, not
+  // from this popover's copy — stays in sync.
+  async function handleTaskToggle() {
+    if (item.type !== 'task_due') return;
+    const id = item.id;
+    const nextDone = !(item.details?.done === true);
+    taskToggling = true;
+    item.details = { ...item.details, done: nextDone };
+    onTaskToggled?.(id, nextDone);
+    try {
+      if (tasksById.get()[id]) {
+        await toggleTask(id);
+        const settled = tasksById.get()[id];
+        const finalDone = settled ? settled.completed : nextDone;
+        if (finalDone !== nextDone) {
+          item.details = { ...item.details, done: finalDone };
+          onTaskToggled?.(id, finalDone);
+        }
+      } else {
+        const res = await fetch(`/api/v1/tasks/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ completed: nextDone }),
+        });
+        if (!res.ok) {
+          item.details = { ...item.details, done: !nextDone };
+          onTaskToggled?.(id, !nextDone);
+        }
+      }
+    } catch {
+      item.details = { ...item.details, done: !nextDone };
+      onTaskToggled?.(id, !nextDone);
+    } finally {
+      taskToggling = false;
+    }
+  }
 </script>
 
 <div class="event-popover popover" bind:this={panelEl} style={`${style} --course-h:${hue}; --pop-w: 288px`} role="dialog" aria-label={item.title}>
@@ -121,6 +172,17 @@
     {/if}
     <span class="pill pill-idle">{typeLabel}</span>
   </div>
+  {#if item.type === 'task_due'}
+    <label class="task-toggle">
+      <input
+        type="checkbox"
+        checked={item.details?.done === true}
+        disabled={taskToggling}
+        onchange={handleTaskToggle}
+      />
+      <span>{item.details?.done === true ? 'Completed' : 'Mark complete'}</span>
+    </label>
+  {/if}
   {#if detailLines.length}
     <ul class="pop-details">
       {#each detailLines as line}
@@ -171,6 +233,17 @@
   .pop-time {
     font-size: 12.5px;
     color: var(--muted);
+  }
+  .task-toggle {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .task-toggle input {
+    cursor: pointer;
   }
   .pop-meta {
     display: flex;

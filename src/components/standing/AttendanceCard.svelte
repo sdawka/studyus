@@ -2,6 +2,8 @@
   // Attendance lives as pre-generated class_sessions rows (one per meeting
   // day) whose status gets updated in place — not events appended by a
   // button click. See docs/api.md "Class sessions" for the contract.
+  import { refetchTasks } from '../../lib/stores/tasks';
+
   interface Props {
     courseId: string;
     meetingDaysInitial: number[] | null;
@@ -106,6 +108,10 @@
       });
       if (!res.ok) {
         sessions = sessions.map((s) => (s.id === session.id ? { ...s, status: prev } : s));
+      } else {
+        // Backend two-way syncs this session's linked attend_class task
+        // (see classSessions.ts) — refetch so TasksCard picks up the flip.
+        await refetchTasks();
       }
     } catch {
       sessions = sessions.map((s) => (s.id === session.id ? { ...s, status: prev } : s));
