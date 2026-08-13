@@ -1,6 +1,7 @@
-import { and, eq, gte, inArray, isNotNull, lte, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { assessments, courses, events, kcs, studySessions, taskCourses, tasks } from '../../db/schema';
+import { sweepTasks } from './taskSweep';
 import type { CalendarItem } from '../types/calendar';
 
 export type { CalendarItem };
@@ -13,6 +14,8 @@ function humanizeEventType(type: string): string {
 }
 
 export async function getCalendar(db: Db, userId: string, fromMs: number, toMs: number, courseId?: string) {
+  await sweepTasks(db, userId);
+
   const items: CalendarItem[] = [];
 
   // --- assessment_due -------------------------------------------------
@@ -48,7 +51,15 @@ export async function getCalendar(db: Db, userId: string, fromMs: number, toMs: 
   const dueTasks = await db
     .select()
     .from(tasks)
-    .where(and(eq(tasks.userId, userId), isNotNull(tasks.dueDate), gte(tasks.dueDate, fromMs), lte(tasks.dueDate, toMs)));
+    .where(
+      and(
+        eq(tasks.userId, userId),
+        isNull(tasks.dismissedAt),
+        isNotNull(tasks.dueDate),
+        gte(tasks.dueDate, fromMs),
+        lte(tasks.dueDate, toMs),
+      ),
+    );
 
   // One grouped select over task_courses for every matched task, instead of
   // one query per task.
@@ -73,7 +84,14 @@ export async function getCalendar(db: Db, userId: string, fromMs: number, toMs: 
       all_day: true,
       course_id: linkedCourseIds[0] ?? null,
       href: '/tasks',
-      details: { done: task.done, course_ids: linkedCourseIds },
+      details: {
+        done: task.done,
+        course_ids: linkedCourseIds,
+        task_type: task.type,
+        parent_task_id: task.parentTaskId,
+        class_session_id: task.classSessionId,
+        completed_at: task.completedAt ? new Date(task.completedAt).toISOString() : null,
+      },
     });
   }
 

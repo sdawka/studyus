@@ -89,6 +89,44 @@ describe('sweepNotifications', () => {
   });
 });
 
+describe('collectTaskOverdue scoping', () => {
+  it('skips a system task and a dismissed user task, but still notifies for a plain overdue user task', async () => {
+    const now = Date.now();
+    const day = 24 * 60 * 60 * 1000;
+
+    const systemTaskId = crypto.randomUUID();
+    await db.insert(tasks).values({
+      id: systemTaskId,
+      userId,
+      title: 'Attend TEST 101',
+      type: 'attend_class',
+      dueDate: now - day,
+      done: false,
+      source: 'system',
+      dedupeKey: `attend_class:${systemTaskId}`,
+    });
+
+    const dismissedTaskId = crypto.randomUUID();
+    await db.insert(tasks).values({
+      id: dismissedTaskId,
+      userId,
+      title: 'Dismissed task',
+      dueDate: now - day,
+      done: false,
+      dismissedAt: now,
+    });
+
+    const userTaskId = crypto.randomUUID();
+    await db.insert(tasks).values({ id: userTaskId, userId, title: 'Plain overdue task', dueDate: now - day, done: false });
+
+    await sweepNotifications(db, userId, now);
+    const rows = await db.select().from(notifications).where(eq(notifications.userId, userId));
+    const overdueRows = rows.filter((r) => r.type === 'task_overdue');
+    expect(overdueRows).toHaveLength(1);
+    expect(overdueRows[0].dedupeKey).toBe(`task_overdue:${userTaskId}:${now - day}`);
+  });
+});
+
 describe('grade_recorded producer (assessments service)', () => {
   it('fires once on the null→value grade transition and is dedupe-guarded against re-creation', async () => {
     const assessmentId = crypto.randomUUID();

@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
-import { assessments, branches, courses, kcs, studySessions, taskCourses, tasks, users } from '../src/db/schema';
+import { assessments, branches, classSessions, courses, kcs, studySessions, taskCourses, tasks, users } from '../src/db/schema';
 import { getCalendar } from '../src/lib/services/calendar';
 import { createEvent } from '../src/lib/services/events';
 
@@ -64,6 +64,47 @@ describe('getCalendar', () => {
     expect(item!.all_day).toBe(true);
     expect(item!.href).toBe('/tasks');
     expect(item!.details.course_ids).toEqual(expect.arrayContaining([courseId, otherCourseId]));
+  });
+
+  it('excludes dismissed tasks from task_due items', async () => {
+    const dueDate = Date.now() + DAY_MS;
+    const taskId = crypto.randomUUID();
+    await db.insert(tasks).values({ id: taskId, userId, title: 'Dismissed task', dueDate, dismissedAt: Date.now() });
+
+    const items = await getCalendar(db, userId, Date.now(), Date.now() + 7 * DAY_MS);
+    expect(items.map((i) => i.id)).not.toContain(taskId);
+  });
+
+  it('shapes task_due details with task_type/parent_task_id/class_session_id/completed_at for a system (attend_class) task', async () => {
+    const sessionDate = Date.now() + DAY_MS;
+    const classSessionId = crypto.randomUUID();
+    await db.insert(classSessions).values({ id: classSessionId, userId, courseId, date: sessionDate, status: 'attended' });
+
+    const completedAt = Date.now();
+    const taskId = crypto.randomUUID();
+    await db.insert(tasks).values({
+      id: taskId,
+      userId,
+      title: 'Attend TEST 101',
+      type: 'attend_class',
+      dueDate: sessionDate,
+      done: true,
+      completedAt,
+      classSessionId,
+      source: 'system',
+      dedupeKey: `attend_class:${classSessionId}`,
+    });
+
+    const items = await getCalendar(db, userId, Date.now(), Date.now() + 7 * DAY_MS);
+    const item = items.find((i) => i.id === taskId);
+    expect(item).toBeDefined();
+    expect(item!.type).toBe('task_due');
+    expect(item!.details).toMatchObject({
+      task_type: 'attend_class',
+      parent_task_id: null,
+      class_session_id: classSessionId,
+      completed_at: new Date(completedAt).toISOString(),
+    });
   });
 
   it('returns a completed study_session item with end_date from ended_at', async () => {

@@ -48,11 +48,23 @@ async function collectAssessmentDue(db: Db, userId: string, now: number): Promis
     }));
 }
 
+// System tasks are self-advertising (they're the reminder) — scoped to
+// source: 'user' so the sweep never double-notifies a generated task that's
+// already showing up in Today's task list. Dismissed tasks are gone from
+// that list entirely, so they're excluded too.
 async function collectTaskOverdue(db: Db, userId: string, now: number): Promise<NewNotification[]> {
   const rows = await db
     .select({ id: tasks.id, title: tasks.title, dueDate: tasks.dueDate })
     .from(tasks)
-    .where(and(eq(tasks.userId, userId), eq(tasks.done, false), lt(tasks.dueDate, now)));
+    .where(
+      and(
+        eq(tasks.userId, userId),
+        eq(tasks.done, false),
+        lt(tasks.dueDate, now),
+        isNull(tasks.dismissedAt),
+        eq(tasks.source, 'user'),
+      ),
+    );
 
   return rows
     .filter((r) => r.dueDate !== null)
