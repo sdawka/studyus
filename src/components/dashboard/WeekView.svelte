@@ -344,6 +344,12 @@
       grid-template-columns: repeat(7, minmax(118px, 1fr));
       overflow-x: auto;
       padding-bottom: 4px;
+      scroll-snap-type: x proximity;
+      -webkit-overflow-scrolling: touch;
+    }
+    .day {
+      scroll-snap-align: start;
+      min-height: 112px;
     }
   }
 </style>

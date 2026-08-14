@@ -108,4 +108,22 @@ const { courses } = Astro.props;
     font-size: 12px;
     color: var(--muted);
   }
+
+  /* PHONE — main content-box ≤ 480px. Swaps the grid for a horizontal
+     snap row: grid-auto-columns min(260px, 82%) leaves an intentional
+     next-card peek as the scroll affordance instead of a hard-cropped
+     edge. */
+  @container (max-width: 480px) {
+    .course-grid {
+      grid-template-columns: none;
+      grid-auto-flow: column;
+      grid-auto-columns: min(260px, 82%);
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding-bottom: 4px;
+    }
+    .course-card {
+      scroll-snap-align: start;
+    }
+  }
 </style>

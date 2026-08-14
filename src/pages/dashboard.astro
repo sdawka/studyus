@@ -145,15 +145,25 @@ if (userCourses.length === 0) {
       </div>
     ) : (
       <div class="main">
-        <WeekView client:load initialItems={deadlines} courses={weekViewCourses} />
-        <TodayTasks client:load initialTasks={toApi(allTasks)} courses={todayTasksCourses} />
-        <CourseCards courses={courseCards} />
+        <div class="slot-week">
+          <WeekView client:load initialItems={deadlines} courses={weekViewCourses} />
+        </div>
+        <div class="slot-today">
+          <TodayTasks client:load initialTasks={toApi(allTasks)} courses={todayTasksCourses} />
+        </div>
+        <div class="slot-courses">
+          <CourseCards courses={courseCards} />
+        </div>
       </div>
     )}
 
     <aside class="rail">
-      <RecordEventCard courses={quickEventCourses} />
-      <DeadlinesList items={deadlineItems} />
+      <div class="slot-record">
+        <RecordEventCard courses={quickEventCourses} />
+      </div>
+      <div class="slot-deadlines">
+        <DeadlinesList items={deadlineItems} />
+      </div>
     </aside>
   </div>
 </AppShell>
@@ -198,10 +208,11 @@ if (userCourses.length === 0) {
        <select>) grow it past that column and off the page. */
     min-width: 0;
   }
-  /* Same default-min-width:auto issue one level down: RecordEventCard and
-     DeadlinesList's root .card sections are themselves grid items of .rail's
-     implicit grid, so they need the same override. */
-  .rail > :global(.card) {
+  /* Same default-min-width:auto issue one level down: the .slot-record/
+     .slot-deadlines wrapper divs (not RecordEventCard/DeadlinesList's
+     .card sections directly — the slot wrapper is what's actually the
+     grid item now) need the same override. */
+  .rail > div {
     min-width: 0;
   }
   /* One level deeper still: QuickEventForm's <form> lays its two
@@ -234,6 +245,65 @@ if (userCourses.length === 0) {
   @container (max-width: 936px) {
     .grid {
       grid-template-columns: 1fr;
+    }
+  }
+
+  /* STACK — main content-box ≤ 720px. Reflows reading order for mobile:
+     TodayTasks (hallway job — check things off) first, then the week
+     strip, deadlines, course cards, and the record-event form last.
+     .main/.rail already stack to one column above this (the 936 rule),
+     so grid-template-columns is redeclared here to keep the block
+     self-contained. display:contents on both promotes every .slot-*
+     wrapper to a direct child of .grid so `order` can reflow them
+     purely visually; DOM/reader order is untouched (today→week→courses
+     in .main, record→deadlines in .rail per the JSX above), so screen
+     readers and Tab order still see the original document structure. */
+  @container (max-width: 720px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+    .main,
+    .rail {
+      display: contents;
+    }
+    /* Same default-min-width:auto issue as .main/.rail above, one level
+       down: once display:contents promotes the slot-* divs to direct
+       items of .grid's single shared column, any one of them with
+       unshrinkable content (e.g. CourseCards' snap row) would blow up
+       that column's width for every row — including WeekView's, whose
+       compact WeekGrid measures its own rendered width via bind:clientWidth
+       and would misread the inflated width as room for more days. */
+    .slot-week,
+    .slot-today,
+    .slot-courses,
+    .slot-record,
+    .slot-deadlines {
+      min-width: 0;
+    }
+    .slot-today {
+      order: 1;
+    }
+    .slot-week {
+      order: 2;
+    }
+    .slot-deadlines {
+      order: 3;
+    }
+    .slot-courses {
+      order: 4;
+    }
+    .slot-record {
+      order: 5;
+    }
+
+    .page-head {
+      margin-bottom: 16px;
+    }
+    .page-head h1 {
+      font-size: 21px;
+    }
+    .page-head .sub {
+      font-size: 13.5px;
     }
   }
 </style>

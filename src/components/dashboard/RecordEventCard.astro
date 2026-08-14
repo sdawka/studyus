@@ -12,7 +12,7 @@ const { courses } = Astro.props;
     <h2>Record event</h2>
   </div>
   <p class="hint">Log something that happened outside the app — a lecture, a grade, a practice set.</p>
-  <QuickEventForm client:load courses={courses} />
+  <QuickEventForm client:visible courses={courses} />
 </section>
 
 <style>
