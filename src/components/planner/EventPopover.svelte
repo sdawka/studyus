@@ -4,6 +4,8 @@
   import { timeRangeLabel } from '../../lib/plannerDates';
   import { bindPopoverDismiss } from '../shell/popover.svelte.ts';
   import { tasksById, toggleTask } from '../../lib/stores/tasks';
+  import { isMobile } from '../../lib/stores/viewport';
+  import Sheet from '../shell/Sheet.svelte';
 
   interface CourseOption {
     id: string;
@@ -160,11 +162,7 @@
   }
 </script>
 
-<div class="event-popover popover" bind:this={panelEl} style={`${style} --course-h:${hue}; --pop-w: 288px`} role="dialog" aria-label={item.title}>
-  <div class="pop-head">
-    <p class="pop-title">{item.title}</p>
-    <button type="button" class="close-btn" aria-label="Close" onclick={onClose}>×</button>
-  </div>
+{#snippet body()}
   <p class="pop-time num">{timeRangeLabel(new Date(item.date), item.end_date ? new Date(item.end_date) : null)}</p>
   <div class="pop-meta">
     {#if course}
@@ -201,7 +199,23 @@
       </button>
     {/if}
   </div>
-</div>
+{/snippet}
+
+{#if $isMobile}
+  <Sheet open={true} onClose={onClose} title={item.title}>
+    <div class="event-popover-body" style={`--course-h:${hue}`}>
+      {@render body()}
+    </div>
+  </Sheet>
+{:else}
+  <div class="event-popover popover" bind:this={panelEl} style={`${style} --course-h:${hue}; --pop-w: 288px`} role="dialog" aria-label={item.title}>
+    <div class="pop-head">
+      <p class="pop-title">{item.title}</p>
+      <button type="button" class="close-btn" aria-label="Close" onclick={onClose}>×</button>
+    </div>
+    {@render body()}
+  </div>
+{/if}
 
 <style>
   .event-popover {
@@ -279,5 +293,13 @@
     background: var(--danger-soft);
     color: var(--danger-ink);
     border: 1px solid transparent;
+  }
+  /* Sheet.svelte's .sheet-body already provides the panel chrome (padding,
+     scroll); this just reproduces the desktop .popover recipe's internal
+     flex/gap so the same content reads the same in both presentations. */
+  .event-popover-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
 </style>

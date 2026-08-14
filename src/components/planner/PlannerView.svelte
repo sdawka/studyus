@@ -7,7 +7,8 @@
   import EventPopover from './EventPopover.svelte';
   import CreateSessionPopover from './CreateSessionPopover.svelte';
   import type { CalendarItem } from '../../lib/types/calendar';
-  import { addDays, addMonths, firstOfMonth, localDateKey, mondayOf, weekRangeLabel } from '../../lib/plannerDates';
+  import { addDays, addMonths, firstOfMonth, localDateKey, mondayOf, startOfDay, weekRangeLabel } from '../../lib/plannerDates';
+  import { isMobile } from '../../lib/stores/viewport';
 
   interface CourseOption {
     id: string;
@@ -39,11 +40,31 @@
   type View = 'week' | 'month' | 'agenda';
 
   let filter = $state<FilterMode>(currentTerm ? 'current_term' : 'all');
-  let view = $state<View>('week');
+  // Mobile default view = Agenda (a flat/grid week doesn't fit a phone the
+  // way a scrollable list does); reads the shared isMobile atom rather than
+  // a fresh matchMedia call, per docs/design/mobile-shell.md. SSR renders
+  // 'week' (isMobile defaults false server-side); the client's initial atom
+  // value is already correct by the time this island hydrates, so mobile
+  // gets one intentional swap on load rather than a wrong-then-right flash.
+  let view = $state<View>(isMobile.get() ? 'agenda' : 'week');
 
   const seedAnchor = initialAnchor && !Number.isNaN(Date.parse(initialAnchor)) ? new Date(initialAnchor) : new Date();
   let weekStart = $state(mondayOf(new Date()));
   let monthAnchor = $state(firstOfMonth(seedAnchor));
+
+  // Leftmost visible day in WeekGrid's 1/3-day modes (default today; ignored
+  // entirely in 7-day mode, where `weekStart` alone drives the display).
+  let dayAnchor = $state(startOfDay(new Date()));
+  const dayAnchorKey = $derived(localDateKey(dayAnchor));
+  // Live readback of WeekGrid's own container-measured day count, so the
+  // chevrons/arrow keys know whether to page by a week or by the visible
+  // window — see WeekGrid's `dayCount` prop doc for why this is bindable
+  // instead of PlannerView re-deriving the same width thresholds.
+  let weekGridDayCount = $state(7);
+
+  // Month → Agenda handoff (mobile CalendarGrid day-tap): which date's group
+  // header AgendaList should scroll to.
+  let agendaScrollTarget = $state<string | null>(null);
 
   let items = $state<CalendarItem[]>(initialItems);
   let railItems = $state<CalendarItem[]>([]);
@@ -151,22 +172,59 @@
 
   function shiftWeek(delta: number) {
     weekStart = addDays(weekStart, delta * 7);
+    dayAnchor = weekStart;
+  }
+  // 1/3-day WeekGrid paging: chevrons/arrow keys move by the visible window
+  // (`weekGridDayCount`), not a full 7 — paging a 1-day view by a week would
+  // skip 6 days the user never saw. The fetch window (`weekStart`) only
+  // moves when the anchor crosses into a different calendar week, so a
+  // 3-day page that stays within the same week doesn't re-fetch.
+  function shiftDays(delta: number) {
+    dayAnchor = addDays(dayAnchor, delta * weekGridDayCount);
+    const monday = mondayOf(dayAnchor);
+    if (localDateKey(monday) !== weekStartKey) weekStart = monday;
   }
   function shiftMonth(delta: number) {
     monthAnchor = addMonths(monthAnchor, delta);
   }
+  function shiftWeekView(delta: number) {
+    if (weekGridDayCount >= 7) shiftWeek(delta);
+    else shiftDays(delta);
+  }
   function goToday() {
-    if (view === 'week') weekStart = mondayOf(new Date());
-    else monthAnchor = firstOfMonth(new Date());
+    if (view === 'week') {
+      weekStart = mondayOf(new Date());
+      dayAnchor = startOfDay(new Date());
+    } else monthAnchor = firstOfMonth(new Date());
   }
   const isTodayInView = $derived.by(() => {
-    if (view === 'week') return weekStartKey === localDateKey(mondayOf(new Date()));
+    if (view === 'week') {
+      if (weekGridDayCount >= 7) return weekStartKey === localDateKey(mondayOf(new Date()));
+      const todayKey = localDateKey(startOfDay(new Date()));
+      const lastVisibleKey = localDateKey(addDays(dayAnchor, weekGridDayCount - 1));
+      return dayAnchorKey <= todayKey && todayKey <= lastVisibleKey;
+    }
     const now = new Date();
     return monthAnchor.getFullYear() === now.getFullYear() && monthAnchor.getMonth() === now.getMonth();
   });
 
+  // 1/3-day mode shows a narrower window than the fetch week, so the label
+  // should describe what's actually on screen, not the underlying week.
+  function dayRangeLabel(start: Date, count: number): string {
+    if (count === 1) return start.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    const end = addDays(start, count - 1);
+    const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+    const optsStart: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+    const optsEnd: Intl.DateTimeFormatOptions = sameMonth ? { day: 'numeric' } : { month: 'short', day: 'numeric' };
+    return `${start.toLocaleDateString(undefined, optsStart)} – ${end.toLocaleDateString(undefined, optsEnd)}, ${end.getFullYear()}`;
+  }
+
   const rangeLabel = $derived(
-    view === 'week' ? weekRangeLabel(weekStart) : monthAnchor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
+    view === 'week'
+      ? weekGridDayCount >= 7
+        ? weekRangeLabel(weekStart)
+        : dayRangeLabel(dayAnchor, weekGridDayCount)
+      : monthAnchor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
   );
 
   function dayKey(iso: string): string {
@@ -248,6 +306,11 @@
   function handleRailJump(date: Date, item: CalendarItem) {
     view = 'week';
     weekStart = mondayOf(date);
+    // In 1/3-day mode the grid only renders `dayCount` days starting at
+    // `dayAnchor` — without this, a jump into a week where the anchor is
+    // stale would fetch the right week but still not draw a column for the
+    // target day.
+    dayAnchor = startOfDay(date);
     pendingSelectItem = item;
   }
 
@@ -288,6 +351,7 @@
     if (!found) return;
     view = 'week';
     weekStart = mondayOf(new Date(found.date));
+    dayAnchor = startOfDay(new Date(found.date)); // see handleRailJump's comment
     pendingSelectItem = found;
   }
 
@@ -314,12 +378,21 @@
     if (e.key === 't' || e.key === 'T') {
       goToday();
     } else if (e.key === 'ArrowLeft') {
-      if (view === 'week') shiftWeek(-1);
+      if (view === 'week') shiftWeekView(-1);
       else shiftMonth(-1);
     } else if (e.key === 'ArrowRight') {
-      if (view === 'week') shiftWeek(1);
+      if (view === 'week') shiftWeekView(1);
       else shiftMonth(1);
     }
+  }
+
+  // CalendarGrid day-tap (mobile only — PlannerView wires this prop up only
+  // when $isMobile): Month is treated as an overview/jump surface there,
+  // so a day tap hands off to Agenda scrolled to that date instead of
+  // trying to show event detail in a ~3rem cell.
+  function handleDayTap(date: Date) {
+    agendaScrollTarget = localDateKey(date);
+    view = 'agenda';
   }
 
   $effect(() => {
@@ -340,9 +413,9 @@
   <div class="toolbar">
     <div class="nav-group">
       <button type="button" class="btn btn-secondary today-btn" disabled={isTodayInView} onclick={goToday}>Today</button>
-      <button type="button" class="chevron" onclick={() => (view === 'week' ? shiftWeek(-1) : shiftMonth(-1))} aria-label="Previous">‹</button>
+      <button type="button" class="chevron" onclick={() => (view === 'week' ? shiftWeekView(-1) : shiftMonth(-1))} aria-label="Previous">‹</button>
       <span class="range-label">{rangeLabel}</span>
-      <button type="button" class="chevron" onclick={() => (view === 'week' ? shiftWeek(1) : shiftMonth(1))} aria-label="Next">›</button>
+      <button type="button" class="chevron" onclick={() => (view === 'week' ? shiftWeekView(1) : shiftMonth(1))} aria-label="Next">›</button>
     </div>
     <div class="controls">
       <select bind:value={filter} onchange={onFilterChange}>
@@ -373,13 +446,15 @@
           weekStart={weekStartKey}
           {courses}
           selectedId={selectedId}
+          anchorDate={dayAnchorKey}
+          bind:dayCount={weekGridDayCount}
           onSelect={selectItem}
           onSlotClick={handleSlotClick}
         />
       {:else if view === 'month'}
-        <CalendarGrid cells={monthCells} {courseById} {selectedId} onSelect={selectItem} />
+        <CalendarGrid cells={monthCells} {courseById} {selectedId} onSelect={selectItem} onDayTap={$isMobile ? handleDayTap : undefined} />
       {:else}
-        <AgendaList items={agendaItems} {courseById} {selectedId} onSelect={selectItem} />
+        <AgendaList items={agendaItems} {courseById} {selectedId} onSelect={selectItem} scrollToDate={agendaScrollTarget} />
       {/if}
     </div>
     <div class="planner-side">
@@ -407,6 +482,16 @@
 <style>
   .planner-view {
     display: grid;
+    /* Without an explicit column, this grid's single implicit column sizes
+       to its widest child's content (min-content), not the container's
+       available width — invisible on desktop (there's always more than
+       enough room) but a real bug at phone widths, where PlannerRail's
+       un-shrinkable row content was pinning the whole page ~50px wider
+       than the viewport (silently absorbed by an internal scrollbar, not
+       a visible page-level overflow — hence easy to miss without directly
+       measuring a child's clientWidth, which is how this surfaced: WeekGrid's
+       container-measured day-count needs this column to be honest). */
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
     min-width: 0;
   }
@@ -489,6 +574,40 @@
   @media (max-width: 1100px) {
     .planner-body {
       grid-template-columns: 1fr;
+    }
+  }
+
+  /* @media, not @container: PlannerView mounts inside the planner's fixed
+     overlay layer (planner.astro's slot="overlay"), a body-level sibling of
+     `main` — @container thresholds measured against main's content-box
+     can't see it, so the shell breakpoint is the only signal available
+     here (documented fixed-layer exception, mirrored by AgendaList). */
+  @media (max-width: 767px) {
+    .toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .nav-group {
+      justify-content: space-between;
+    }
+    .range-label {
+      min-width: 0;
+      flex: 1;
+      font-size: 14px;
+    }
+    .controls {
+      flex-wrap: wrap;
+    }
+    .controls select {
+      flex: 1;
+      min-width: 0;
+    }
+    .view-toggle {
+      flex: 1;
+    }
+    .view-toggle .chip {
+      flex: 1;
+      min-height: 44px;
     }
   }
 </style>

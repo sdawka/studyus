@@ -13,11 +13,17 @@
     courseById,
     selectedId = null,
     onSelect,
+    onDayTap,
   }: {
     cells: { date: Date | null; items: CalendarItem[] }[];
     courseById: Map<string, CourseInfo>;
     selectedId?: string | null;
     onSelect?: (item: CalendarItem) => void;
+    // Month is an overview/jump surface on mobile: tapping a day (not one of
+    // its event chips) jumps to Agenda scrolled to that date, rather than
+    // trying to cram event detail into a ~4-row cell. PlannerView only wires
+    // this up when $isMobile — desktop keeps today's "chips only" behavior.
+    onDayTap?: (date: Date) => void;
   } = $props();
 
   const today = new Date();
@@ -37,6 +43,12 @@
     const code = courseFor(item)?.code;
     return code ? `${code} ${item.title}` : item.title;
   }
+
+  function handleCellClick(e: MouseEvent, date: Date | null) {
+    if (!date || !onDayTap) return;
+    if ((e.target as HTMLElement).closest('.chip-evt')) return;
+    onDayTap(date);
+  }
 </script>
 
 <div class="month-grid">
@@ -44,7 +56,13 @@
     <div class="weekday">{wd}</div>
   {/each}
   {#each cells as cell}
-    <div class="day-cell" class:empty={!cell.date} class:today={isToday(cell.date)}>
+    <div
+      class="day-cell"
+      class:empty={!cell.date}
+      class:today={isToday(cell.date)}
+      class:tappable={cell.date && onDayTap}
+      onclick={(e) => handleCellClick(e, cell.date)}
+    >
       {#if cell.date}
         <div class="day-number num">{cell.date.getDate()}</div>
         {#each cell.items as item (item.id)}
@@ -100,6 +118,9 @@
   .day-cell.today {
     background: var(--accent-soft);
   }
+  .day-cell.tappable {
+    cursor: pointer;
+  }
   .day-number {
     font-weight: 650;
     color: var(--text);
@@ -139,7 +160,17 @@
       font-size: 0.7rem;
     }
     .day-cell {
-      min-height: 4.5rem;
+      min-height: 3.2rem;
+    }
+    /* Chips degrade to plain dots: font-size:0 collapses the label text to
+       nothing (the dot span keeps its explicit px size, so it stays
+       visible) without touching markup — a cell just reads as "N dots" at
+       a glance instead of trying to fit N truncated labels in ~3rem. */
+    .chip-evt {
+      font-size: 0;
+      gap: 0;
+      padding: 2px;
+      width: auto;
     }
   }
 </style>

@@ -1,5 +1,7 @@
 <script lang="ts">
   import { bindPopoverDismiss } from '../shell/popover.svelte.ts';
+  import { isMobile } from '../../lib/stores/viewport';
+  import Sheet from '../shell/Sheet.svelte';
 
   interface CourseOption {
     id: string;
@@ -80,11 +82,7 @@
   const timeLabel = start.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 </script>
 
-<form class="create-popover popover" bind:this={panelEl} style={`${style} --pop-w: 240px`} onsubmit={handleSubmit}>
-  <div class="pop-head">
-    <p class="pop-title">New study block · {timeLabel}</p>
-    <button type="button" class="close-btn" aria-label="Close" onclick={onClose}>×</button>
-  </div>
+{#snippet body()}
   <label class="field">
     <span class="field-label">Course</span>
     <select bind:value={courseId}>
@@ -106,7 +104,24 @@
   </label>
   {#if error}<p class="pop-error">{error}</p>{/if}
   <button type="submit" class="btn btn-primary" disabled={submitting}>{submitting ? 'Adding…' : 'Add study block'}</button>
-</form>
+{/snippet}
+
+{#if $isMobile}
+  <Sheet open={true} onClose={onClose} title="Plan session">
+    <form class="create-popover-body" onsubmit={handleSubmit}>
+      <p class="pop-time num">{timeLabel}</p>
+      {@render body()}
+    </form>
+  </Sheet>
+{:else}
+  <form class="create-popover popover" bind:this={panelEl} style={`${style} --pop-w: 240px`} onsubmit={handleSubmit}>
+    <div class="pop-head">
+      <p class="pop-title">New study block · {timeLabel}</p>
+      <button type="button" class="close-btn" aria-label="Close" onclick={onClose}>×</button>
+    </div>
+    {@render body()}
+  </form>
+{/if}
 
 <style>
   .create-popover {
@@ -154,5 +169,17 @@
   .pop-error {
     color: var(--danger);
     font-size: 12px;
+  }
+  .pop-time {
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  /* Sheet.svelte's .sheet-body already provides the panel chrome (padding,
+     scroll); this just reproduces the desktop .popover recipe's internal
+     flex/gap so the same fields read the same in both presentations. */
+  .create-popover-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
 </style>

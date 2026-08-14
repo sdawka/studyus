@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CalendarItem } from '../../lib/types/calendar';
   import { hueFor } from '../../lib/courseHue';
-  import { addDays, isSameLocalDay, localDateKey, localDateKeyFromIso, timeRangeLabel } from '../../lib/plannerDates';
+  import { addDays, isSameLocalDay, localDateKey, localDateKeyFromIso, startOfDay, timeRangeLabel } from '../../lib/plannerDates';
 
   interface CourseOption {
     id: string;
@@ -17,6 +17,8 @@
     courses,
     compact = false,
     selectedId = null,
+    anchorDate,
+    dayCount = $bindable(7),
     onSelect,
     onSlotClick,
   }: {
@@ -25,9 +27,34 @@
     courses: CourseOption[];
     compact?: boolean;
     selectedId?: string | null;
+    // Local ISO day (yyyy-mm-dd); non-7-day modes show `dayCount` days
+    // starting here (today-pinned-leftmost per docs/design/planner-ux.md:11-12),
+    // instead of Monday-of-week. Ignored entirely in 7-day mode.
+    anchorDate?: string;
+    // Bindable, not just readable: this component owns the computation
+    // (container-measured off its own rendered width, below), but callers
+    // like PlannerView need the live value to size their own chevron/arrow
+    // paging step — `bind:dayCount` is how they read it without duplicating
+    // the width thresholds.
+    dayCount?: number;
     onSelect?: (item: CalendarItem) => void;
     onSlotClick?: (start: Date) => void;
   } = $props();
+
+  // Container-measured, not @media/@container: this component renders both
+  // inside the planner's fixed overlay layer AND inside `main` on the
+  // dashboard (WeekView's compact instance) — two different containing
+  // blocks, so neither a viewport query nor a @container-against-main query
+  // gives a single correct answer. Measuring the component's own rendered
+  // width sidesteps that entirely. Width 0 (pre-measurement, first paint)
+  // defaults to 7 to avoid a 1-day flash before the ResizeObserver reports.
+  let gridWidth = $state(0);
+  $effect(() => {
+    dayCount = gridWidth === 0 ? 7 : gridWidth < 480 ? 1 : gridWidth < 760 ? 3 : 7;
+  });
+  // 1-day mode gets a narrower hour gutter (56 is generous when there's only
+  // one day column competing for width); 3/7-day keep the original 56.
+  const gutterPx = $derived(dayCount === 1 ? 44 : 56);
 
   const courseById = new Map(courses.map((c) => [c.id, c]));
   function courseFor(item: CalendarItem) {
@@ -50,11 +77,21 @@
   const MIN_BLOCK_HEIGHT = $derived(compact ? 27 : 24);
 
   const weekStartDate = $derived(new Date(`${weekStart}T00:00:00`));
-  const days = $derived(Array.from({ length: 7 }, (_, i) => addDays(weekStartDate, i)));
+  // 7-day mode always shows the calendar week (Monday-anchored, matching the
+  // `weekStart` fetch window). 1/3-day modes ignore `weekStart` for display
+  // purposes and instead show `dayCount` consecutive days starting at
+  // `anchorDate` (default today) — a rolling window, not locked to Sun–Sat,
+  // so whatever day the caller is paging toward stays pinned leftmost.
+  const days = $derived.by(() => {
+    if (dayCount >= 7) return Array.from({ length: 7 }, (_, i) => addDays(weekStartDate, i));
+    const anchor = anchorDate ? new Date(`${anchorDate}T00:00:00`) : startOfDay(new Date());
+    return Array.from({ length: dayCount }, (_, i) => addDays(anchor, i));
+  });
   const dayKeys = $derived(days.map((d) => localDateKey(d)));
 
-  // Defensive filter: items belonging to this week, matched by local day key
-  // against the visible 7 days (handles items that arrive pre-filtered too).
+  // Defensive filter: items belonging to the visible days, matched by local
+  // day key (handles items that arrive pre-filtered too). Also the mechanism
+  // that keeps 1/3-day modes showing only their narrower window's items.
   const weekItems = $derived.by(() => {
     const keySet = new Set(dayKeys);
     return items.filter((i) => keySet.has(localDateKeyFromIso(i.date)));
@@ -289,8 +326,8 @@
   const weekHasItems = $derived(weekItems.length > 0);
 </script>
 
-<div class="week-grid" class:compact>
-  <div class="header-row" style={`--gutter: 56px`}>
+<div class="week-grid" class:compact bind:clientWidth={gridWidth} style={`--day-count:${dayCount}`}>
+  <div class="header-row" style={`--gutter: ${gutterPx}px`}>
     <div class="gutter-cell"></div>
     {#each days as day, i}
       <div class="day-header" class:weekend={isWeekend(day)} class:today={isToday(day)}>
@@ -300,7 +337,7 @@
     {/each}
   </div>
 
-  <div class="all-day-row">
+  <div class="all-day-row" style={`--gutter: ${gutterPx}px`}>
     <div class="gutter-cell all-day-label">All-day</div>
     {#each dayKeys as dayKey, i}
       <div class="all-day-cell" class:weekend={isWeekend(days[i])}>
@@ -327,7 +364,7 @@
     <p class="empty-hint">Nothing scheduled — click any time slot to add a study block.</p>
   {/if}
 
-  <div class="time-body" style={`height:${gridHeight}px`}>
+  <div class="time-body" style={`height:${gridHeight}px; --gutter: ${gutterPx}px`}>
     <div class="hour-gutter">
       {#each labelTicks as h}
         <div class="hour-tick" style={`top:${(h - bounds.start) * PX_PER_HOUR}px`}>
@@ -413,7 +450,7 @@
        grid-template-columns declaration drops to `none`, and every
        all-day item collapses into one full-width column instead of
        its actual day. */
-    grid-template-columns: var(--gutter, 56px) repeat(7, 1fr);
+    grid-template-columns: var(--gutter, 56px) repeat(var(--day-count, 7), 1fr);
   }
   .gutter-cell {
     width: var(--gutter, 56px);
@@ -546,7 +583,7 @@
   .day-columns {
     position: relative;
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(var(--day-count, 7), 1fr);
   }
   .day-column {
     position: relative;
@@ -633,6 +670,16 @@
     flex-direction: column;
     gap: 4px;
     pointer-events: none;
+  }
+  /* Touch-affordance suppression, not layout: a hover card has no meaning
+     without a hover-capable pointer, and leaving it reachable on touch would
+     mean a stray long-press-adjacent event leaves a card stuck on screen
+     with no hover-leave to dismiss it (see docs/design/mobile-shell.md's
+     hover-vs-viewport-query rule). */
+  @media (hover: none) {
+    .hover-card {
+      display: none;
+    }
   }
   .hc-title {
     font-size: 13px;
