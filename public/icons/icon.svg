@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Rounded-square lettermark matching Sidebar.astro's .brand-mark language:
+       accent teal fill, light glyph, ~29% corner radius (Sidebar's 7px/24px ratio). -->
+  <rect width="100" height="100" rx="29" fill="#008a6a" />
+  <text
+    x="50"
+    y="53"
+    text-anchor="middle"
+    dominant-baseline="central"
+    font-family="'Avenir Next', -apple-system, BlinkMacSystemFont, system-ui, sans-serif"
+    font-weight="700"
+    font-size="46"
+    letter-spacing="-1.5"
+    fill="#ffffff"
+  >su</text>
+</svg>

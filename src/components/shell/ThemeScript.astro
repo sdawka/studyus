@@ -4,6 +4,15 @@
 // for a localStorage override made client-side (e.g. right after a settings
 // change, before the next SSR round-trip) so a reload never flashes the
 // wrong theme. Must run before first paint — kept dependency-free and tiny.
+//
+// It also keeps the two media-keyed #theme-color-light/#theme-color-dark
+// metas (AppShell.astro head) in sync: those metas track the OS scheme via
+// their `media` attribute alone, which is correct when the resolved scheme
+// IS the system default, but wrong once data-scheme is explicitly set to
+// something other than system — a light-scheme override on a dark-mode OS
+// must still report a light theme-color to the browser chrome/status bar.
+// When that happens, both metas get the resolved scheme's hex (whichever
+// media query matches at the time is irrelevant once content is forced).
 ---
 <script is:inline>
   (function () {
@@ -30,6 +39,17 @@
       if (sidebar && html.getAttribute('data-sidebar') !== sidebar) {
         if (sidebar === 'expanded') html.removeAttribute('data-sidebar');
         else html.setAttribute('data-sidebar', sidebar);
+      }
+      // theme-color sync: compass --bg hexes (light #f6f9fb / dark #0b0e10).
+      // Only fires when data-scheme is explicitly resolved (not 'system') —
+      // the media-keyed metas already handle the system-default case.
+      var resolvedScheme = html.getAttribute('data-scheme');
+      if (resolvedScheme === 'light' || resolvedScheme === 'dark') {
+        var hex = resolvedScheme === 'dark' ? '#0b0e10' : '#f6f9fb';
+        var light = document.getElementById('theme-color-light');
+        var dark = document.getElementById('theme-color-dark');
+        if (light) light.setAttribute('content', hex);
+        if (dark) dark.setAttribute('content', hex);
       }
     } catch (e) {}
   })();

@@ -28,8 +28,20 @@ const sidebarAttr = settings.sidebar_collapsed ? 'collapsed' : undefined;
 <html lang="en" data-theme={themeAttr} data-scheme={schemeAttr} data-sidebar={sidebarAttr}>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{title} · studyus</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Media-keyed pair covers the OS-default (system scheme) case; when the
+         user has an explicit data-scheme override, ThemeScript.astro (which
+         runs before first paint) overwrites both metas' content with the
+         resolved scheme's hex so status bar / task-switcher chrome matches
+         the override rather than the OS setting. -->
+    <meta name="theme-color" content="#f6f9fb" media="(prefers-color-scheme: light)" id="theme-color-light" />
+    <meta name="theme-color" content="#0b0e10" media="(prefers-color-scheme: dark)" id="theme-color-dark" />
     <ThemeScript />
   </head>
   <body>
