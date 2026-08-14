@@ -10,7 +10,14 @@ and Todoist/Things. Opinionated, implementable, student-focused.
 - **Day columns**: 7 equal-width columns on desktop (≥1024px); collapse to a 3-day rolling
   window on tablet, 1-day on mobile. Do NOT lock to Sun–Sat — always show the current day in
   a fixed visual slot (leftmost on mobile/3-day, natural position on 7-day) so "today" never
-  jumps around.
+  jumps around. **Implemented** (mobile-shell wave, 2026-08-14): `WeekGrid.svelte` measures its
+  own rendered width via `bind:clientWidth` — container-measured, not viewport-media-queried,
+  since it renders inside both the fixed planner/tasks overlay layer and the dashboard's
+  compact inline instance — and sets `dayCount = width < 480 ? 1 : width < 760 ? 3 : 7`.
+  `PlannerView.svelte` owns a `dayAnchor` state (default: today) passed down as `anchorDate`;
+  below 7-day mode, `WeekGrid` renders `dayCount` consecutive days starting at that anchor (a
+  rolling window, never locked to Sun–Sat) so the anchor day is always the leftmost column, per
+  this spec.
 - **All-day row**: pinned strip above the hour grid for all-day items and **deadlines**
   (assignment due dates render here, not as zero-duration timed blocks — students scan this
   row first).
@@ -71,7 +78,13 @@ and Todoist/Things. Opinionated, implementable, student-focused.
 - Persistent right rail (desktop) / collapsible drawer (mobile) listing **unscheduled tasks**
   and **upcoming deadlines within 7 days**, grouped by "Overdue," "Due today/tomorrow," "This
   week" — mirrors Todoist's Plan sidebar pattern, which is the right model for students juggling
-  assignments across courses.
+  assignments across courses. **Mobile note** (mobile-shell wave, 2026-08-14): the rail
+  (`PlannerRail.svelte`, under a "Plan ahead" heading) isn't a collapsible drawer below 767px —
+  it stacks below the main grid/agenda/month view via the pre-existing `@media (max-width:
+  1100px)` single-column rule (`PlannerView.svelte`'s `.planner-body`), same as the tablet band.
+  The mobile-shell wave's actual scope for Planner was WeekGrid's day-count, the Agenda default,
+  and sheet-based popovers (see plan Part 2) — it didn't build the drawer this spec originally
+  called for; revisit if the always-stacked rail proves too far down the scroll on phones.
 - Each rail item shows course chip + title + due date; overdue items get a red left-border.
 - **Drag-to-schedule from rail onto the grid is in scope but can ship in a follow-up phase** —
   the v1 cut is: click a rail item → opens the same create/edit panel used for grid clicks,

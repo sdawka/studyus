@@ -10,7 +10,9 @@ const { chromium } = require('playwright');
 const BASE = process.argv[2] ?? 'http://localhost:4350';
 const OUT = process.argv[3] ?? 'vqa-shots';
 const EMAIL = process.env.VQA_EMAIL ?? 'student@example.com';
-const PASSWORD = process.env.VQA_PASSWORD ?? 'studybuddy';
+// Tracks scripts/seed.ts's default — the pre-rename `studybuddy` hash died
+// with the 2026-08-13 DB wipe + reseed (see .claude/skills/agent-wave/SKILL.md).
+const PASSWORD = process.env.VQA_PASSWORD ?? 'studyus';
 const COURSE = process.env.VQA_COURSE ?? 'chee-314-fluid-mechanics';
 
 mkdirSync(OUT, { recursive: true });
@@ -165,11 +167,36 @@ await page.goto(BASE + '/dashboard', { waitUntil: 'networkidle' });
 await page.screenshot({ path: `${OUT}/dashboard-narrow-820.png`, fullPage: true });
 console.log('shot dashboard-narrow-820');
 
-// Known overflow issue at 400px — evidence shot
-await page.setViewportSize({ width: 400, height: 900 });
-await page.goto(BASE + '/dashboard', { waitUntil: 'networkidle' });
-await page.screenshot({ path: `${OUT}/dashboard-narrow-400.png`, fullPage: true });
-console.log('shot dashboard-narrow-400');
+// Mobile pass — 390×844 (the mobile-shell breakpoint is ≤767px; 390 is the
+// narrower of layout-check.cjs's two mobile widths), compass/light (already
+// the active settings above). Replaces the old ~400px "known overflow
+// evidence" shot now that docs/todo.md's app-wide overflow bug is fixed and
+// ≤767px is a first-class bespoke layout (bottom nav + sheets + full-page
+// planner/tasks), not just a narrower desktop — see docs/design/mobile-shell.md.
+// Shoots every matrix + single page (all already reset to compass/light by
+// the point this runs), plus the two header sheets that only exist at this
+// breakpoint (bell/avatar have no bottom-nav tab; todo/scratchpad are
+// display:none here and covered by the avatar sheet instead, so they're not
+// shot).
+await page.setViewportSize({ width: 390, height: 844 });
+const MOBILE_PAGES = { ...MATRIX_PAGES, ...SINGLE_PAGES };
+for (const [name, path] of Object.entries(MOBILE_PAGES)) {
+  await shot(`mobile-390--${name}`, path);
+}
+async function mobileSheetShot(name, triggerSelector) {
+  await page.goto(BASE + '/dashboard', { waitUntil: 'networkidle' });
+  const el = page.locator(triggerSelector).first();
+  if ((await el.count()) === 0 || !(await el.isVisible())) {
+    console.log(`MISSING selector for ${name}: ${triggerSelector}`);
+    return;
+  }
+  await el.click();
+  await page.waitForTimeout(400); // sheet entrance animation (var(--motion-base))
+  await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: false });
+  console.log(`shot ${name}`);
+}
+await mobileSheetShot('mobile-390--dashboard-bell-sheet', 'button[title="Notifications"]');
+await mobileSheetShot('mobile-390--dashboard-avatar-sheet', 'button.avatar');
 await page.setViewportSize({ width: 1440, height: 900 });
 
 // Restore defaults (light is now the default scheme, not system)

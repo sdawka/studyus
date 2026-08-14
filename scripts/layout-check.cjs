@@ -8,6 +8,15 @@
 // non-zero with a readable failure list, so it's meant to be run before/after
 // layout-affecting changes, not just eyeballed.
 //
+// A second pass runs the same page matrix once more at CONFIG.mobileViewportWidths
+// (390/430), OUTSIDE the sidebarStates loop — the sidebar is display:none at
+// that breakpoint (docs/design/mobile-shell.md), so there's no expanded/
+// collapsed axis on mobile. It reuses no-overflow/no-right-edge-overflow/
+// rail-layout/centered-gutters and adds mobile-only checks (bottom nav,
+// sidebar actually hidden, header doesn't overflow, header popovers as
+// sheets, planner/tasks as full tab pages instead of modals). The desktop
+// matrix above is untouched by this addition.
+//
 // Usage:
 //   npm run check:layout
 //   node scripts/layout-check.cjs [baseUrl]
@@ -43,9 +52,14 @@ const CONFIG = {
 
   // src/styles/tokens.css --content-max
   contentMaxPx: 1320,
-  // src/layouts/AppShell.astro `main { padding: 28px 32px 56px; }` — the
-  // left/right value, i.e. the gutter when content is narrower than its
-  // container.
+  // src/layouts/AppShell.astro `main`'s padding is token-driven now
+  // (--content-pad-top/-x/-bottom, src/styles/tokens.css :root) rather than
+  // a literal `28px 32px 56px` — this is the left/right token's desktop
+  // value (--content-pad-x), i.e. the gutter when content is narrower than
+  // its container. The mobile-shell token migration kept the desktop
+  // numbers byte-identical (only the ≤767px override differs, at 16px,
+  // which the desktop-only matrix below never exercises) — re-check this
+  // if the token value itself ever drifts.
   mainInlinePaddingPx: 32,
   // src/layouts/AppShell.astro var(--sidebar-w, 240px) / collapsed 60px.
   sidebarWidthPx: { expanded: 240, collapsed: 60 },
@@ -53,6 +67,10 @@ const CONFIG = {
   viewportWidths: [1440, 1280, 1024, 820],
   sidebarStates: ['expanded', 'collapsed'],
   viewportHeight: 900,
+  // Mobile pass (plan Part 3, docs/design/mobile-shell.md) — see the header
+  // comment above. Runs once per width, after the desktop matrix, with no
+  // sidebar-state axis.
+  mobileViewportWidths: [390, 430],
 
   // Tolerance for "no horizontal overflow" / "no element past the right
   // edge" — sub-pixel layout rounding shows up as <1px slop across browsers.
@@ -96,6 +114,20 @@ const CONFIG = {
     { name: 'avatar', trigger: 'button.avatar' },
   ],
   popoverSelector: '.popover.panel',
+  // Mobile replacement for the popover check above — same trigger list.
+  // bell/avatar render a portaled Sheet at this breakpoint and are real
+  // assertions; todo/scratchpad are display:none (HeaderActions.svelte's
+  // `.mobile-hide` wrapper) and fall through checkSheet's hidden-trigger
+  // skip path, same as a trigger that doesn't exist.
+  sheetPanelSelector: '.sheet-panel',
+  // Route pages that become full-page tab destinations instead of
+  // centered modals at ≤767px (docs/design/mobile-shell.md "Route modals
+  // → tab destinations"). layerId matches each .astro file's root overlay
+  // div id.
+  routePagesMobile: [
+    { name: 'planner', path: '/planner', layerId: 'planner-layer' },
+    { name: 'tasks', path: '/tasks', layerId: 'tasks-layer' },
+  ],
 };
 
 // ---------------------------------------------------------------------------
@@ -266,6 +298,143 @@ async function checkPopover(page, trigger, popoverSelector) {
   return { ok, box, viewport };
 }
 
+// ---------------------------------------------------------------------------
+// Mobile pass checks (plan Part 3, docs/design/mobile-shell.md). Only run at
+// CONFIG.mobileViewportWidths — never part of the desktop matrix above.
+// ---------------------------------------------------------------------------
+
+async function checkBottomNav(page) {
+  return page.evaluate((tolerance) => {
+    const nav = document.querySelector('nav.bottom-nav');
+    if (!nav) return { ok: false, reason: 'nav.bottom-nav not found' };
+    if (getComputedStyle(nav).display === 'none') {
+      return { ok: false, reason: 'nav.bottom-nav is display:none at a mobile viewport width' };
+    }
+    const rect = nav.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const inViewport =
+      rect.left >= -tolerance && rect.right <= vw + tolerance && rect.top >= -tolerance && rect.bottom <= vh + tolerance;
+    const bottomAnchored = Math.abs(rect.bottom - vh) <= tolerance;
+    const tallEnough = rect.height >= 48 - tolerance;
+    return {
+      ok: inViewport && bottomAnchored && tallEnough,
+      reason: `inViewport=${inViewport} bottomAnchored=${bottomAnchored} (bottom=${rect.bottom.toFixed(1)} vh=${vh}) tallEnough=${tallEnough} (height=${rect.height.toFixed(1)})`,
+    };
+  }, CONFIG.overflowTolerancePx);
+}
+
+async function checkSidebarHidden(page) {
+  return page.evaluate(() => {
+    const sidebar = document.querySelector('nav.sidebar');
+    if (!sidebar) return { ok: true, skipped: true, reason: 'no nav.sidebar in DOM' };
+    // display:none (Sidebar.astro's ≤767px rule) makes offsetParent null —
+    // the test the plan specifies. A hidden ancestor would also null this
+    // out, which is fine: any reason the sidebar isn't rendered satisfies
+    // "sidebar-hidden".
+    const hidden = sidebar.offsetParent === null;
+    return { ok: hidden, reason: hidden ? '' : 'nav.sidebar still has a non-null offsetParent' };
+  });
+}
+
+async function checkHeaderFits(page) {
+  return page.evaluate((tolerance) => {
+    const header = document.querySelector('header.app-header');
+    if (!header) return { ok: true, skipped: true, reason: 'no header.app-header in DOM' };
+    const ok = header.scrollWidth <= header.clientWidth + tolerance;
+    return { ok, reason: ok ? '' : `scrollWidth=${header.scrollWidth} > clientWidth=${header.clientWidth}` };
+  }, CONFIG.overflowTolerancePx);
+}
+
+// Mobile replacement for checkPopover: same trigger, but the panel is a
+// portaled Sheet (`.sheet-panel`) and dismissal is a scrim tap (Sheet's
+// actual contract, docs/design/mobile-shell.md "Sheet contract") rather
+// than re-clicking the trigger.
+async function checkSheet(page, trigger, panelSelector) {
+  const triggerEl = page.locator(trigger).first();
+  if ((await triggerEl.count()) === 0) {
+    return { ok: true, skipped: true, reason: `trigger not found: ${trigger}` };
+  }
+  if (!(await triggerEl.isVisible())) {
+    // todo/scratchpad: display:none at this breakpoint — same skip path as
+    // a missing trigger, per plan Part 3.
+    return { ok: true, skipped: true, reason: `trigger hidden at this breakpoint: ${trigger}` };
+  }
+  await triggerEl.click();
+  await page.waitForTimeout(250); // Sheet's entrance animation (var(--motion-base))
+  const panel = page.locator(panelSelector).first();
+  if ((await panel.count()) === 0) {
+    return { ok: false, reason: `no ${panelSelector} appeared after clicking ${trigger}` };
+  }
+  const box = await panel.boundingBox();
+  const viewport = page.viewportSize();
+  if (!box || !viewport) return { ok: false, reason: 'could not measure sheet panel bounding box' };
+  const inViewport =
+    box.x >= -CONFIG.overflowTolerancePx &&
+    box.y >= -CONFIG.overflowTolerancePx &&
+    box.x + box.width <= viewport.width + CONFIG.overflowTolerancePx &&
+    box.y + box.height <= viewport.height + CONFIG.overflowTolerancePx;
+  const scrim = page.locator('.sheet-scrim').first();
+  let dismissedOk = false;
+  if ((await scrim.count()) > 0) {
+    await scrim.click({ position: { x: 5, y: 5 } });
+    await page.waitForTimeout(200);
+    dismissedOk = (await page.locator(panelSelector).count()) === 0;
+  }
+  return {
+    ok: inViewport && dismissedOk,
+    reason: inViewport && dismissedOk ? '' : `inViewport=${inViewport} box=${JSON.stringify(box)} vs viewport=${JSON.stringify(viewport)}; dismissedOk=${dismissedOk}`,
+  };
+}
+
+// Verifies the planner/tasks route layer's mobile presentation: a full tab
+// page between the header and tab bar, not a centered modal-with-scrim (see
+// docs/design/mobile-shell.md "Route modals → tab destinations").
+async function checkRoutePageMobile(page, layerId) {
+  return page.evaluate((id) => {
+    const layer = document.getElementById(id);
+    if (!layer) return { ok: false, reason: `#${id} not found` };
+    const scrim = layer.querySelector('.scrim');
+    const scrimVisible = !!scrim && getComputedStyle(scrim).display !== 'none';
+    const panel = layer.querySelector('.panel');
+    if (!panel) return { ok: false, reason: `.panel not found inside #${id}` };
+    const panelRect = panel.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const panelWidthOk = Math.abs(panelRect.width - vw) <= 2;
+    const closeBtn = layer.querySelector('.close-btn');
+    const closeBtnHidden = !closeBtn || getComputedStyle(closeBtn).display === 'none';
+
+    // elementsFromPoint (not elementFromPoint) so a fixed overlay stacked
+    // on top of the tab bar can't win by z-order alone — walk the full
+    // stack for the first hit that isn't Astro's dev toolbar (same overlay
+    // the desktop overflowWhitelistSelector excludes) or a document root.
+    const nav = document.querySelector('nav.bottom-nav');
+    let hitOk = false;
+    let hitTag = null;
+    if (nav) {
+      const navRect = nav.getBoundingClientRect();
+      const cx = navRect.left + navRect.width / 2;
+      const cy = navRect.top + navRect.height / 2;
+      const stack = document.elementsFromPoint(cx, cy);
+      const hit = stack.find(
+        (el) => !el.closest('astro-dev-toolbar') && el !== document.documentElement && el !== document.body,
+      );
+      hitTag = hit
+        ? `${hit.tagName.toLowerCase()}${hit.className ? '.' + hit.className.toString().split(' ').filter(Boolean).join('.') : ''}`
+        : null;
+      hitOk = !!(hit && hit.closest('nav.bottom-nav'));
+    }
+
+    const ok = !scrimVisible && panelWidthOk && closeBtnHidden && hitOk;
+    return {
+      ok,
+      reason: ok
+        ? ''
+        : `scrimVisible=${scrimVisible} panelWidth=${panelRect.width.toFixed(1)} vw=${vw} closeBtnHidden=${closeBtnHidden} hitOk=${hitOk} hitTag=${hitTag}`,
+    };
+  }, layerId);
+}
+
 async function main() {
   const dashboardStackBreakpoint = readDashboardStackBreakpoint();
   console.log(`layout-check: base=${CONFIG.baseUrl} dashboard rail breakpoint=${dashboardStackBreakpoint}px\n`);
@@ -373,6 +542,103 @@ async function main() {
     );
   }
 
+  // ---- Mobile pass ---------------------------------------------------------
+  // Runs once per width, after the desktop matrix above, with no
+  // sidebar-state axis (the sidebar is display:none at this breakpoint —
+  // see docs/design/mobile-shell.md). Desktop matrix is untouched.
+  for (const width of CONFIG.mobileViewportWidths) {
+    await page.setViewportSize({ width, height: CONFIG.viewportHeight });
+    for (const [pageName, pagePath] of resolvedPages) {
+      await page.goto(CONFIG.baseUrl + pagePath, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(150);
+
+      const overflow = await checkNoOverflow(page);
+      record(
+        pageName,
+        width,
+        'mobile',
+        'no-overflow',
+        overflow.ok,
+        overflow.ok ? '' : `scrollWidth=${overflow.scrollWidth} > clientWidth=${overflow.clientWidth}`,
+      );
+
+      const gutters = await checkCenteredGutters(page);
+      if (!gutters.skipped) {
+        record(
+          pageName,
+          width,
+          'mobile',
+          'centered-gutters',
+          gutters.ok,
+          gutters.ok
+            ? ''
+            : `left=${gutters.leftGutter.toFixed(1)} right=${gutters.rightGutter.toFixed(1)} diff=${gutters.diff.toFixed(1)} mainWidth=${gutters.mainWidth.toFixed(1)}`,
+        );
+      }
+
+      const rightEdge = await checkNoRightEdgeOverflow(page);
+      record(
+        pageName,
+        width,
+        'mobile',
+        'no-right-edge-overflow',
+        rightEdge.ok,
+        rightEdge.ok ? '' : rightEdge.violations.join('; '),
+      );
+
+      if (pageName === 'dashboard') {
+        const rail = await checkDashboardRail(page, dashboardStackBreakpoint);
+        if (!rail.skipped) {
+          record(
+            pageName,
+            width,
+            'mobile',
+            'rail-layout',
+            rail.ok,
+            rail.ok
+              ? ''
+              : `mainWidth=${rail.mainWidth.toFixed(1)} breakpoint=${rail.breakpoint} expectSideBySide=${rail.expectSideBySide} actualSideBySide=${rail.actualSideBySide}`,
+          );
+        }
+      }
+
+      const bottomNav = await checkBottomNav(page);
+      record(pageName, width, 'mobile', 'bottom-nav', bottomNav.ok, bottomNav.reason);
+
+      const sidebarHidden = await checkSidebarHidden(page);
+      if (!sidebarHidden.skipped) {
+        record(pageName, width, 'mobile', 'sidebar-hidden', sidebarHidden.ok, sidebarHidden.reason);
+      }
+
+      const headerFits = await checkHeaderFits(page);
+      if (!headerFits.skipped) {
+        record(pageName, width, 'mobile', 'header-fits', headerFits.ok, headerFits.reason);
+      }
+    }
+
+    // Sheets: one representative page (dashboard), same as the desktop
+    // popover pass above — reuses CONFIG.popovers (bell/avatar are real
+    // assertions; todo/scratchpad skip via checkSheet's hidden-trigger path).
+    await page.goto(CONFIG.baseUrl + CONFIG.pages.dashboard, { waitUntil: 'networkidle' });
+    for (const { name, trigger } of CONFIG.popovers) {
+      const res = await checkSheet(page, trigger, CONFIG.sheetPanelSelector);
+      if (res.skipped) {
+        console.log(`  (skipped sheet "${name}" @${width}: ${res.reason})`);
+        continue;
+      }
+      record(`dashboard-${name}`, width, 'mobile', 'sheet-in-viewport', res.ok, res.reason);
+    }
+
+    // Route pages: planner/tasks become full tab pages, not modals, at this
+    // breakpoint.
+    for (const { name, path, layerId } of CONFIG.routePagesMobile) {
+      await page.goto(CONFIG.baseUrl + path, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(150);
+      const res = await checkRoutePageMobile(page, layerId);
+      record(name, width, 'mobile', 'route-page-mobile', res.ok, res.reason);
+    }
+  }
+
   await browser.close();
 
   // ---- Report -------------------------------------------------------------
@@ -381,6 +647,31 @@ async function main() {
   const passes = results.filter((r) => r.status === 'pass');
 
   console.log(`\n${passes.length} passed, ${fails.length} failed, ${pending.length} pending re-baseline\n`);
+
+  // Mobile check breakdown (check x viewport tally) — the mobile pass has
+  // no sidebar axis to eyeball counts by, so spell out pass/total per check
+  // per width here instead of leaving it to be reconstructed from the flat
+  // results array.
+  const mobileResults = results.filter((r) => r.sidebar === 'mobile');
+  if (mobileResults.length) {
+    console.log('MOBILE CHECK BREAKDOWN (check × viewport):');
+    const byCheck = new Map();
+    for (const r of mobileResults) {
+      if (!byCheck.has(r.check)) byCheck.set(r.check, new Map());
+      const byWidth = byCheck.get(r.check);
+      const tally = byWidth.get(r.viewport) ?? { pass: 0, fail: 0, pending: 0 };
+      tally[r.status] += 1;
+      byWidth.set(r.viewport, tally);
+    }
+    for (const [check, byWidth] of byCheck) {
+      const parts = [...byWidth.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([w, t]) => `@${w}: ${t.pass}/${t.pass + t.fail + t.pending} pass`)
+        .join(', ');
+      console.log(`  ${check} — ${parts}`);
+    }
+    console.log('');
+  }
 
   if (pending.length) {
     console.log('PENDING (known flaky during layout rework — not failing the build):');

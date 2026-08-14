@@ -1,6 +1,17 @@
 # studyus Screen Inventory (v1.4)
 
-Every page renders inside `AppShell.astro` — a two-column grid: a collapsible **Sidebar** (Home, current-term courses with hue tints, "+ Add course", past-terms `<details>`, footer Feed/Settings/collapse toggle) and a sticky **Header** (56px; a center slot for course tabs/breadcrumbs, and a right-hand cluster: Record Event pill, scratchpad popup, todo dropdown, notifications bell, avatar menu). `ThemeScript.astro` stamps `data-theme`/`data-scheme`/`data-sidebar` on `<html>` pre-paint from `localStorage`, mirrored server-side from `users.settings`. `*` marks Svelte islands.
+Every page renders inside `AppShell.astro` — on desktop (>767px), a two-column grid: a collapsible **Sidebar** (Home, current-term courses with hue tints, "+ Add course", past-terms `<details>`, footer Feed/Settings/collapse toggle) and a sticky **Header** (56px; a center slot for course tabs/breadcrumbs, and a right-hand cluster: Record Event pill, scratchpad popup, todo dropdown, notifications bell, avatar menu). Below 767px the shell swaps to a different paradigm entirely — see "Mobile (≤767px)" below and `docs/design/mobile-shell.md` for the full contract. `ThemeScript.astro` stamps `data-theme`/`data-scheme`/`data-sidebar` on `<html>` pre-paint from `localStorage`, mirrored server-side from `users.settings`. `*` marks Svelte islands.
+
+## Mobile (≤767px)
+
+Below the mobile-shell breakpoint (`@media (max-width: 767px)`), every page keeps its content but the shell around it changes: the Sidebar is gone, replaced by a fixed **bottom tab bar** (Home · Tasks · [Record FAB] · Planner · Courses — `BottomNav.astro`); the header slims to a "su" mark + course tab strip + bell/avatar (Record-event pill, todo, and scratchpad have no tab of their own — they move into the avatar's bottom sheet, which also gains Feed). Per-page notes:
+
+- **`/dashboard`**: mobile reorder leads with **TodayTasks** (the hallway job — check things off), then the week strip, deadlines, course cards, record-event form last (desktop keeps its two-column grid).
+- **`/planner`**: stops being a centered modal and becomes a full page between the header and tab bar (no scrim, no close button — dismissed by tapping another tab). Defaults to **Agenda** view instead of the week grid; when a day/week view is shown, `WeekGrid` collapses to a container-measured 1-day (<480px) or 3-day (<760px) rolling window anchored on today. `EventPopover`/`CreateSessionPopover` render inside a bottom sheet instead of an anchored popover.
+- **`/tasks`**: same full-page treatment as `/planner` (clone of its modal-to-page pattern). Filter chips and inline-add wrap for touch; checkboxes and delete buttons grow to ≥44px hit targets.
+- **`/courses/[slug]*`**: course tab strip becomes a horizontally-snapping, edge-faded row in the mobile header; `StandingTab` reorders to hero → Tasks → Attendance → Deadlines → Assessments → Mastery → Practice → RecentActivity (hallway jobs first). `AssessmentsCard`'s table remaps to a card grid at the narrowest widths (thead hidden, CSS grid `<tr>` areas).
+- **Everywhere else** (feed, notes, profile, settings, onboarding, etc.): grid/table guards so nothing overflows; no bespoke reorder beyond that. See the plan's Part 2 for full per-page detail.
+- **Header popovers → sheets**: the bell and avatar open as bottom sheets (`Sheet.svelte`, portaled, scrim + bottom-anchored panel) instead of anchored popovers; todo/scratchpad triggers are hidden (no tab or sheet of their own — Tasks tab and the avatar sheet cover them).
 
 | Route | Purpose | Key Components |
 |---|---|---|

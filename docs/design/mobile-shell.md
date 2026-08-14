@@ -1,10 +1,12 @@
 # Mobile Shell Conventions
 
-Architecture reference for the mobile layout system landed in the M0 foundation track (see
-`/Users/sdawka/.claude/plans/we-want-to-have-cheeky-fog.md` for the full plan this implements).
-Anything a later track touches that isn't in this file — bespoke per-page mobile compositions,
-the Sheet primitive's actual behavior, PWA head tags — is covered in that plan or will get its
-own doc; this file is only the shell-level contract everything else builds on.
+Architecture reference for the mobile layout system, seeded by the M0 foundation track and filled
+in as later tracks landed (see `/Users/sdawka/.claude/plans/we-want-to-have-cheeky-fog.md` for the
+full plan this implements — now shipped end to end). This file covers the shell-level contract:
+the breakpoint, the three query mechanisms, tokens, the containing-block fix, bottom nav, route
+modals becoming tab pages, the Sheet primitive, and PWA head tags. Bespoke **per-page** mobile
+compositions (dashboard reorder, WeekGrid day-count, StandingTab reorder, etc.) are covered in the
+plan's Part 2 and summarized per-page in `docs/product/screens.md`'s "Mobile" section, not here.
 
 ## Breakpoint
 
@@ -139,10 +141,10 @@ Active state is computed server-side from `Astro.url.pathname` (same pattern as
 `Sidebar.astro`'s `isActive`); Courses is active for any `/courses*` path, not just the index.
 
 The center **FAB** (48px circle, `var(--accent)`, raised `-10px`, `var(--shadow-pop)`) dispatches
-a `window` `CustomEvent('open-record-event')` on click. **Nothing listens to this event yet** —
-`HeaderActions.svelte` adds the listener in the S1 track (wiring it to `LogEventModal`'s existing
-`bind:open`, alongside the pre-existing `e` keyboard shortcut). The FAB dispatching into the void
-is expected for this phase, not a bug.
+a `window` `CustomEvent('open-record-event')` on click. `HeaderActions.svelte` listens for it
+(landed in the S1 track — `onOpenRecordEvent`, wired to `LogEventModal`'s existing `bind:open`,
+alongside the pre-existing `e` keyboard shortcut), so the FAB opens the record-event modal exactly
+like the header's Record-event pill does on desktop.
 
 Feed, Settings, Scratchpad, past-terms, and Add-course don't get their own tab — they move to the
 avatar sheet (S2) or live on `/courses` (Add-course via the existing `open-add-course` window
@@ -179,10 +181,11 @@ Both pages' `keydown` Escape handlers are guarded: `if (matchMedia('(max-width: 
 return;` before the existing `__plannerBlockEscape`/`__tasksBlockEscape` check, since there's no
 scrim to dismiss at this breakpoint.
 
-## Sheet contract (stub — S2 defines the primitive)
+## Sheet contract
 
-`Sheet.svelte` doesn't exist yet; this is the frozen surface later tracks build against so nobody
-has to coordinate a rename later.
+`Sheet.svelte` (landed in the S2 track) implements the frozen surface below — the four header
+popover islands (NotificationsBell, TodoDropdown, ScratchpadPopup, AvatarMenu) and
+EventPopover/CreateSessionPopover (P2) all render their content through it at `$isMobile`.
 
 - **Class names**: `.sheet-layer` (fixed, `inset: 0`, `z-index: var(--z-sheet)`, portaled to
   `<body>` via `portalToBody`) contains `.sheet-scrim` (reuses the route-modal scrim recipe) and
@@ -201,7 +204,28 @@ has to coordinate a rename later.
 
 ## PWA head tags
 
-Owned by the S3 track (`public/**`, `scripts/gen-icons.mjs`, `login.astro`, `ThemeScript.astro`,
-and `AppShell`'s `<head>`) — intentionally not touched here. M0 only guarantees `AppShell`'s
-`<body>` structure (`.shell` → `BottomNav` → `<slot name="overlay" />`) is stable for S3 to add
-head-only markup on top of.
+Landed in the S3 track (`public/**`, `scripts/gen-icons.mjs`, `login.astro`, `ThemeScript.astro`,
+and `AppShell`'s `<head>`) — M0 only guaranteed `AppShell`'s `<body>` structure (`.shell` →
+`BottomNav` → `<slot name="overlay" />`) was stable for S3 to add head-only markup on top of,
+which it did without needing to touch `<body>` again: `manifest.webmanifest` (name/short_name
+`studyus`, `start_url: /dashboard`, `display: standalone`, compass-light bg/theme, `public/icons/`
+192/512/512-maskable PNGs + `icon.svg`), a viewport `viewport-fit=cover`, manifest/icon/
+apple-touch-icon `<link>`s, `mobile-web-app-capable`, and two media-keyed `theme-color` `<meta>`s
+(`#theme-color-light` / `#theme-color-dark`, compass bg hexes) that `ThemeScript.astro` overwrites
+when an explicit `data-scheme` overrides the OS default.
+
+**Nuance — fresh-default scheme forces the light `theme-color` even without an explicit user
+override.** `ThemeScript.astro` predates this track; it already had a fallback for when neither
+SSR nor `localStorage` resolved a scheme (`!html.hasAttribute('data-scheme')`): default to
+`data-scheme="light"` rather than falling through to the OS media-query default (dark-mode OS
+users would otherwise get an unrequested dark flash). That fallback effectively only fires when a
+user has explicitly chosen **"system"** as their scheme (`resolveSettings`'s own default is
+`light`, not `system`, so SSR stamps `data-scheme` for everyone else). S3's new theme-color-sync
+block reads `data-scheme` *after* that fallback runs and, seeing `"light"`, treats it as a real
+resolved scheme — forcing both `#theme-color-light`/`#theme-color-dark` metas to the light hex.
+Net effect: a user who explicitly picked "system" as their scheme gets a light PWA status-bar/
+task-switcher color even on a dark-mode OS, rather than the media-keyed metas' dark hex the
+"system" choice implies. Pre-existing quirk, not introduced by this wave — noted here because it's
+specifically a mobile PWA-chrome-visible symptom (status bar / task switcher color), and S3's
+addition is what makes it visible; not fixed as part of M3 (`ThemeScript.astro` isn't an M3-owned
+file).
