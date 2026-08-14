@@ -6,6 +6,8 @@
 // here — this just wires the DOM listeners for whichever one is open.
 // Lives in a `.svelte.ts` file so `$effect` can run outside a .svelte
 // component's own <script> block.
+import { isMobile } from '../../lib/stores/viewport';
+
 export function bindPopoverDismiss(opts: {
   isOpen: () => boolean;
   close: () => void;
@@ -18,6 +20,12 @@ export function bindPopoverDismiss(opts: {
       if (e.key === 'Escape') opts.close();
     }
     function onPointerdown(e: PointerEvent) {
+      // Gate on mobile: at ≤767px the panel renders as a Sheet portaled to
+      // <body>, which is always "outside" the anchor from this listener's
+      // point of view — without this gate the sheet would dismiss itself
+      // the instant it opens. Sheet.svelte owns its own scrim-tap/Escape
+      // dismissal at that breakpoint instead.
+      if (isMobile.get()) return;
       const el = opts.anchorEl();
       if (el && !el.contains(e.target as Node)) opts.close();
     }

@@ -1,6 +1,8 @@
 <script lang="ts">
   import { bindPopoverDismiss } from './popover.svelte.ts';
   import { courseContext } from '../../lib/stores/courseContext';
+  import { isMobile } from '../../lib/stores/viewport';
+  import Sheet from './Sheet.svelte';
 
   interface Course {
     id: string;
@@ -79,40 +81,50 @@
     <span class="pill-label">Scratchpad</span>
   </button>
 
-  {#if open}
-    <div class="popover panel" role="dialog" aria-label="Scratchpad" style="--pop-w: var(--pop-w-md)">
-      <div class="panel-head">
-        <span class="kicker">Scratchpad</span>
-      </div>
-
-      {#if savedNoteId}
-        <p class="saved">Saved.</p>
-        <a class="footer-link" href={`/notes/${savedNoteId}`}>Open in editor →</a>
-      {:else}
-        <textarea
-          bind:this={textareaEl}
-          bind:value={draft}
-          placeholder="Jot something down…"
-          rows="6"
-        ></textarea>
-
-        <label class="course-select">
-          <span>Save to</span>
-          <select bind:value={selectedCourseId}>
-            <option value="">General</option>
-            {#each courses as c (c.id)}
-              <option value={c.id}>{c.code} — {c.title}</option>
-            {/each}
-          </select>
-        </label>
-
-        <button type="button" class="save-btn" onclick={save} disabled={saving || !draft.trim()}>
-          {saving ? 'Saving…' : 'Save'}
-        </button>
-      {/if}
-
-      <a class="footer-link" href="/notes">All notes →</a>
+  {#snippet panelContent()}
+    <div class="panel-head">
+      <span class="kicker">Scratchpad</span>
     </div>
+
+    {#if savedNoteId}
+      <p class="saved">Saved.</p>
+      <a class="footer-link" href={`/notes/${savedNoteId}`}>Open in editor →</a>
+    {:else}
+      <textarea
+        bind:this={textareaEl}
+        bind:value={draft}
+        placeholder="Jot something down…"
+        rows="6"
+      ></textarea>
+
+      <label class="course-select">
+        <span>Save to</span>
+        <select bind:value={selectedCourseId}>
+          <option value="">General</option>
+          {#each courses as c (c.id)}
+            <option value={c.id}>{c.code} — {c.title}</option>
+          {/each}
+        </select>
+      </label>
+
+      <button type="button" class="save-btn" onclick={save} disabled={saving || !draft.trim()}>
+        {saving ? 'Saving…' : 'Save'}
+      </button>
+    {/if}
+
+    <a class="footer-link" href="/notes">All notes →</a>
+  {/snippet}
+
+  {#if open}
+    {#if $isMobile}
+      <Sheet {open} onClose={onClose} title="Scratchpad">
+        {@render panelContent()}
+      </Sheet>
+    {:else}
+      <div class="popover panel" role="dialog" aria-label="Scratchpad" style="--pop-w: var(--pop-w-md)">
+        {@render panelContent()}
+      </div>
+    {/if}
   {/if}
 </div>
 

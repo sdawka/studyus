@@ -50,6 +50,18 @@
     resetForm();
   }
 
+  // Escape-to-close — same latent gap as LogEventModal (identical
+  // full-viewport `.overlay` pattern, click-outside-only dismissal), fixed
+  // for consistency once the FAB→sheet composite flow surfaced it there.
+  $effect(() => {
+    if (!open) return;
+    function onKeydown(e: KeyboardEvent) {
+      if (e.key === 'Escape') closeModal();
+    }
+    window.addEventListener('keydown', onKeydown);
+    return () => window.removeEventListener('keydown', onKeydown);
+  });
+
   function resetForm() {
     code = '';
     title = '';
@@ -255,4 +267,19 @@
   }
   .primary:disabled { opacity: 0.6; cursor: default; }
   .error { color: var(--danger); font-size: 0.85rem; margin: 0; }
+
+  /* Mobile restyle (CSS only): bottom-anchored full-width sheet-like modal
+     instead of a centered card — matches Sheet.svelte's visual language
+     without depending on the component (this stays a plain modal). */
+  @media (max-width: 767px) {
+    .overlay { align-items: flex-end; }
+    .modal {
+      width: 100%;
+      max-width: 100%;
+      max-height: 90vh;
+      max-height: 90dvh;
+      border-radius: var(--radius-lg, 12px) var(--radius-lg, 12px) 0 0;
+      padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
+    }
+  }
 </style>

@@ -136,6 +136,22 @@
     resetForm();
   }
 
+  // Escape-to-close (bug found in the mobile composite flow: FAB → open →
+  // Escape → click bell — with no Escape handler here, the modal stayed
+  // open and its full-viewport `.overlay` [z-index:100, above the header's
+  // z-index:30] silently ate the next click meant for the header). This
+  // modal isn't a Sheet, so it doesn't join the __plannerBlockEscape/
+  // __tasksBlockEscape protocol — nothing nests inside it that needs to
+  // claim Escape first.
+  $effect(() => {
+    if (!open) return;
+    function onKeydown(e: KeyboardEvent) {
+      if (e.key === 'Escape') closeModal();
+    }
+    window.addEventListener('keydown', onKeydown);
+    return () => window.removeEventListener('keydown', onKeydown);
+  });
+
   function resetForm() {
     selectedType = null;
     selectedCourseId = $courseContext?.id ?? '';
@@ -365,4 +381,19 @@
     font-size: 0.9rem;
   }
   .error { color: var(--danger); font-size: 0.85rem; margin: 0; }
+
+  /* Mobile restyle (CSS only): bottom-anchored full-width sheet-like modal
+     instead of a centered card — matches Sheet.svelte's visual language
+     without depending on the component (this stays a plain modal). */
+  @media (max-width: 767px) {
+    .overlay { align-items: flex-end; }
+    .modal {
+      width: 100%;
+      max-width: 100%;
+      max-height: 90vh;
+      max-height: 90dvh;
+      border-radius: 12px 12px 0 0;
+      padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
+    }
+  }
 </style>

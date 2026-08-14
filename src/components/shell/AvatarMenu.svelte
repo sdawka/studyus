@@ -1,5 +1,8 @@
 <script lang="ts">
   import { bindPopoverDismiss } from './popover.svelte.ts';
+  import { isMobile } from '../../lib/stores/viewport';
+  import { togglePopover } from '../../lib/stores/ui';
+  import Sheet from './Sheet.svelte';
 
   interface Props {
     open: boolean;
@@ -29,13 +32,30 @@
     {initials}
   </button>
 
+  {#snippet menuRows()}
+    <a class="row" href="/profile" onclick={onClose}>Profile</a>
+    <a class="row" href="/settings" onclick={onClose}>Settings</a>
+    <div class="divider"></div>
+    <button type="button" class="row danger" onclick={logout}>Logout</button>
+  {/snippet}
+
   {#if open}
-    <div class="popover panel" role="menu" style="--pop-w: var(--pop-w-sm)">
-      <a class="row" href="/profile" onclick={onClose}>Profile</a>
-      <a class="row" href="/settings" onclick={onClose}>Settings</a>
-      <div class="divider"></div>
-      <button type="button" class="row danger" onclick={logout}>Logout</button>
-    </div>
+    {#if $isMobile}
+      <Sheet {open} onClose={onClose} title="Menu">
+        <!-- Mobile-only rows: Scratchpad + Feed have no bottom-nav tab of
+             their own (BottomNav is Home/Tasks/Record/Planner/Courses), so
+             the avatar sheet covers them, per plan Part 1. Desktop's popover
+             is intentionally unchanged — these rows don't exist there. -->
+        <button type="button" class="row" onclick={() => togglePopover('scratchpad')}>Scratchpad</button>
+        <a class="row" href="/feed" onclick={onClose}>Feed</a>
+        <div class="divider"></div>
+        {@render menuRows()}
+      </Sheet>
+    {:else}
+      <div class="popover panel" role="menu" style="--pop-w: var(--pop-w-sm)">
+        {@render menuRows()}
+      </div>
+    {/if}
   {/if}
 </div>
 

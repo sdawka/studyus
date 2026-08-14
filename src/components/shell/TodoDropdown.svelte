@@ -3,6 +3,8 @@
   import { bindPopoverDismiss } from './popover.svelte.ts';
   import { courseContext } from '../../lib/stores/courseContext';
   import { addTask, ensureLoaded, selectOpen, tasksList, tasksStatus } from '../../lib/stores/tasks';
+  import { isMobile } from '../../lib/stores/viewport';
+  import Sheet from './Sheet.svelte';
 
   interface Course {
     id: string;
@@ -96,39 +98,49 @@
     {/if}
   </button>
 
-  {#if open}
-    <div class="popover panel" role="menu" style="--pop-w: var(--pop-w-md)">
-      <div class="panel-head">
-        <span class="kicker">To-do ({openCount})</span>
-      </div>
-
-      <form class="quick-add" onsubmit={(e) => { e.preventDefault(); quickAdd(); }}>
-        <div class="quick-add-row">
-          <input type="text" placeholder="Quick add a task…" bind:value={newTitle} disabled={adding} />
-          <button type="submit" disabled={adding || !newTitle.trim()} aria-label="Add task">+</button>
-        </div>
-        {#if quickAddCourseLabel}
-          <span class="course-chip-inline">
-            {quickAddCourseLabel}
-            <button type="button" class="chip-clear" onclick={() => (quickAddCourseCleared = true)} aria-label="Don't link to course">×</button>
-          </span>
-        {/if}
-      </form>
-
-      {#if $tasksStatus === 'loading' && topSeven.length === 0}
-        <p class="empty">Loading…</p>
-      {:else if topSeven.length === 0}
-        <p class="empty">No open tasks. Nicely done.</p>
-      {:else}
-        <div class="list">
-          {#each topSeven as task (task.id)}
-            <TaskItem {task} compact {courseHues} />
-          {/each}
-        </div>
-      {/if}
-
-      <a class="footer-link" href="/tasks">All tasks →</a>
+  {#snippet panelContent()}
+    <div class="panel-head">
+      <span class="kicker">To-do ({openCount})</span>
     </div>
+
+    <form class="quick-add" onsubmit={(e) => { e.preventDefault(); quickAdd(); }}>
+      <div class="quick-add-row">
+        <input type="text" placeholder="Quick add a task…" bind:value={newTitle} disabled={adding} />
+        <button type="submit" disabled={adding || !newTitle.trim()} aria-label="Add task">+</button>
+      </div>
+      {#if quickAddCourseLabel}
+        <span class="course-chip-inline">
+          {quickAddCourseLabel}
+          <button type="button" class="chip-clear" onclick={() => (quickAddCourseCleared = true)} aria-label="Don't link to course">×</button>
+        </span>
+      {/if}
+    </form>
+
+    {#if $tasksStatus === 'loading' && topSeven.length === 0}
+      <p class="empty">Loading…</p>
+    {:else if topSeven.length === 0}
+      <p class="empty">No open tasks. Nicely done.</p>
+    {:else}
+      <div class="list">
+        {#each topSeven as task (task.id)}
+          <TaskItem {task} compact {courseHues} />
+        {/each}
+      </div>
+    {/if}
+
+    <a class="footer-link" href="/tasks">All tasks →</a>
+  {/snippet}
+
+  {#if open}
+    {#if $isMobile}
+      <Sheet {open} onClose={onClose} title="To-do">
+        {@render panelContent()}
+      </Sheet>
+    {:else}
+      <div class="popover panel" role="menu" style="--pop-w: var(--pop-w-md)">
+        {@render panelContent()}
+      </div>
+    {/if}
   {/if}
 </div>
 

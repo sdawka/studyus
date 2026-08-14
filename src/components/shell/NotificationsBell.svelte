@@ -1,5 +1,7 @@
 <script lang="ts">
   import { bindPopoverDismiss } from './popover.svelte.ts';
+  import { isMobile } from '../../lib/stores/viewport';
+  import Sheet from './Sheet.svelte';
 
   interface Notification {
     id: string;
@@ -126,39 +128,49 @@
     <span class="pill-label">Notifications</span>
   </button>
 
-  {#if open}
-    <div class="popover panel" role="menu" style="--pop-w: var(--pop-w-lg)">
-      <div class="panel-head">
-        <span class="kicker">Notifications</span>
-        {#if unreadCount > 0}
-          <button type="button" class="link" onclick={markAllRead}>Mark all read</button>
-        {/if}
-      </div>
-      {#if loading && !listLoaded}
-        <p class="empty">Loading…</p>
-      {:else if notifications.length === 0}
-        <p class="empty">You're all caught up.</p>
-      {:else}
-        <ul class="list">
-          {#each notifications as n (n.id)}
-            <li>
-              <button type="button" class="row" class:unread={!n.read_at} onclick={() => selectNotification(n)}>
-                <span class="type-icon">{TYPE_ICON[n.type]}</span>
-                <span class="row-body">
-                  <span class="row-title">{n.title}</span>
-                  <span class="row-meta">
-                    {relativeTime(n.created_at)}
-                    {#if n.course_id && courseCode(n.course_id)}
-                      <span class="course-chip">{courseCode(n.course_id)}</span>
-                    {/if}
-                  </span>
-                </span>
-              </button>
-            </li>
-          {/each}
-        </ul>
+  {#snippet panelContent()}
+    <div class="panel-head">
+      <span class="kicker">Notifications</span>
+      {#if unreadCount > 0}
+        <button type="button" class="link" onclick={markAllRead}>Mark all read</button>
       {/if}
     </div>
+    {#if loading && !listLoaded}
+      <p class="empty">Loading…</p>
+    {:else if notifications.length === 0}
+      <p class="empty">You're all caught up.</p>
+    {:else}
+      <ul class="list">
+        {#each notifications as n (n.id)}
+          <li>
+            <button type="button" class="row" class:unread={!n.read_at} onclick={() => selectNotification(n)}>
+              <span class="type-icon">{TYPE_ICON[n.type]}</span>
+              <span class="row-body">
+                <span class="row-title">{n.title}</span>
+                <span class="row-meta">
+                  {relativeTime(n.created_at)}
+                  {#if n.course_id && courseCode(n.course_id)}
+                    <span class="course-chip">{courseCode(n.course_id)}</span>
+                  {/if}
+                </span>
+              </span>
+            </button>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+  {/snippet}
+
+  {#if open}
+    {#if $isMobile}
+      <Sheet {open} onClose={onClose} title="Notifications">
+        {@render panelContent()}
+      </Sheet>
+    {:else}
+      <div class="popover panel" role="menu" style="--pop-w: var(--pop-w-lg)">
+        {@render panelContent()}
+      </div>
+    {/if}
   {/if}
 </div>
 
