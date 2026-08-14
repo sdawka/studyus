@@ -33,6 +33,9 @@ const apiCourses = toApi(courses).map((c: Record<string, unknown>) => ({
 }));
 ---
 <header class="app-header">
+  <a class="brand-mini" href="/dashboard" title="Home" aria-label="studyus home">
+    <span class="brand-mark">su</span>
+  </a>
   <div class="center">
     <slot name="center" />
   </div>
@@ -46,7 +49,7 @@ const apiCourses = toApi(courses).map((c: Record<string, unknown>) => ({
     position: sticky;
     top: 0;
     z-index: 30;
-    height: 56px;
+    height: var(--header-h);
     display: flex;
     align-items: center;
     gap: 16px;
@@ -58,4 +61,28 @@ const apiCourses = toApi(courses).map((c: Record<string, unknown>) => ({
   }
   .center { flex: 1; min-width: 0; display: flex; align-items: center; height: 100%; }
   .actions { display: flex; align-items: center; gap: 8px; flex: none; }
+
+  /* Desktop: the sidebar already carries the "su" brand mark, so the
+     header doesn't need its own. Mobile hides the sidebar entirely
+     (docs/design/mobile-shell.md), so this is the only brand mark
+     on-screen there — same visual language as Sidebar.astro's .brand-mark. */
+  .brand-mini { display: none; }
+  .brand-mark {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    background: var(--accent);
+    color: var(--surface);
+    font: 700 11px/1 var(--font-display);
+  }
+
+  @media (max-width: 767px) {
+    .app-header {
+      height: calc(var(--header-h) + env(safe-area-inset-top));
+      padding-top: env(safe-area-inset-top);
+    }
+    .brand-mini { display: grid; flex: none; }
+  }
 </style>

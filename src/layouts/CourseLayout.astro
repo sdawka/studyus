@@ -41,6 +41,17 @@ const courseH = hueFor(course);
     ))}
   </nav>
 
+  <script>
+    // Mobile only (docs/design/mobile-shell.md's plain-<script> convention —
+    // literal query, not the isMobile store): keep the active course tab
+    // visible when the strip doesn't fit the viewport.
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      document
+        .querySelector('.tab-bar a[aria-current="page"]')
+        ?.scrollIntoView({ inline: 'center', block: 'nearest' });
+    }
+  </script>
+
   <div class="course-head" style={`--course-h: ${courseH}`}>
     <span class="code-badge">{course.code}</span>
     <h1>{course.title}</h1>
@@ -93,4 +104,44 @@ const courseH = hueFor(course);
   }
   .course-head h1 { font-size: 24px; letter-spacing: -0.015em; margin: 2px 0 4px; }
   .course-head .meta { color: var(--muted); font-size: 13.5px; }
+
+  /* main content-box ≤ 720px (docs/design/mobile-shell.md's @container
+     convention — measured on main's content-box, padding-independent). */
+  @container (max-width: 720px) {
+    .course-head h1 { font-size: 20px; }
+  }
+
+  /* Shell chrome, not page content → @media, not @container (mobile-shell.md).
+     Snap scrolling + edge-fade signal the strip scrolls; tap targets grow to
+     the 44px minimum within the header's existing height (align-items:center
+     on .tab-bar centers the taller link inside the unchanged 56px row). */
+  @media (max-width: 767px) {
+    .tab-bar {
+      scroll-snap-type: x proximity;
+      -webkit-overflow-scrolling: touch;
+      mask-image: linear-gradient(
+        to right,
+        transparent 0,
+        black 20px,
+        black calc(100% - 20px),
+        transparent 100%
+      );
+      -webkit-mask-image: linear-gradient(
+        to right,
+        transparent 0,
+        black 20px,
+        black calc(100% - 20px),
+        transparent 100%
+      );
+    }
+    .tab-bar a {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      /* center, not start — matches the active-tab script's
+         scrollIntoView({inline:'center'}); start fights proximity snapping
+         into pulling the resting scroll position off-center. */
+      scroll-snap-align: center;
+    }
+  }
 </style>

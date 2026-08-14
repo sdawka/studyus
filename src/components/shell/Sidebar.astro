@@ -143,6 +143,7 @@ function monogram(code: string): string {
     color: var(--sidebar-text);
     border-right: 1px solid var(--sidebar-border);
     height: 100vh;
+    height: 100dvh;
     position: sticky;
     top: 0;
     display: flex;
@@ -282,4 +283,12 @@ function monogram(code: string): string {
   :global(html[data-sidebar='collapsed']) .course-item .monogram { display: flex; }
   :global(html[data-sidebar='collapsed']) .course-item { justify-content: center; padding-left: 8px; }
   :global(html[data-sidebar='collapsed']) .collapse-toggle svg { transform: rotate(180deg); }
+
+  /* Mobile shell (docs/design/mobile-shell.md): no drawer — bottom nav +
+     /courses + the avatar sheet replace the sidebar's job entirely below
+     the breakpoint. The `data-sidebar` collapse machinery above is left
+     inert (harmless — its rules only ever apply to a hidden element). */
+  @media (max-width: 767px) {
+    .sidebar { display: none; }
+  }
 </style>
