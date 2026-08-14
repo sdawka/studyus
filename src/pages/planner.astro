@@ -34,7 +34,7 @@ const courseOptions = userCourses.map((c) => ({
 ---
 
 <AppShell title="Planner">
-  <div class="planner-layer" id="planner-layer">
+  <div class="planner-layer" id="planner-layer" slot="overlay">
     <div class="scrim" id="planner-scrim"></div>
     <div class="panel" role="dialog" aria-modal="true" aria-label="Planner">
       <div class="panel-head">
@@ -69,9 +69,14 @@ const courseOptions = userCourses.map((c) => ({
   document.getElementById('planner-close')?.addEventListener('click', closePlanner);
   document.getElementById('planner-scrim')?.addEventListener('click', closePlanner);
   document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    // On mobile this "modal" is a full page between the header and tab bar,
+    // not an overlay (see the @media 767 block below) — there's no scrim
+    // to dismiss, so Escape is a no-op there.
+    if (matchMedia('(max-width: 767px)').matches) return;
     // PlannerView sets this while its own popover/create-form is open, so a
     // first Escape closes that instead of the whole modal.
-    if (e.key === 'Escape' && !window.__plannerBlockEscape) closePlanner();
+    if (!window.__plannerBlockEscape) closePlanner();
   });
 </script>
 
@@ -121,5 +126,30 @@ const courseOptions = userCourses.map((c) => ({
   }
   .close-btn:hover {
     background: var(--hover);
+  }
+
+  /* Mobile: the route "modal" becomes a full page between the header and
+     tab bar (a tab destination, not an overlay) — see
+     docs/design/mobile-shell.md's "route modals → tab destinations"
+     section. Desktop rules above are untouched. */
+  @media (max-width: 767px) {
+    .planner-layer {
+      top: calc(var(--header-h) + env(safe-area-inset-top));
+      bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+      z-index: 10;
+    }
+    .scrim {
+      display: none;
+    }
+    .panel {
+      margin: 0;
+      border-radius: 0;
+      box-shadow: none;
+      padding: 16px 16px 24px;
+      overscroll-behavior: contain;
+    }
+    .close-btn {
+      display: none;
+    }
   }
 </style>

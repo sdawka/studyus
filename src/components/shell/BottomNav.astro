@@ -1,0 +1,135 @@
+---
+// Mobile-only bottom tab bar (display:none above the 767px mobile-shell
+// breakpoint — see docs/design/mobile-shell.md). Five slots: Home · Tasks ·
+// [Record FAB] · Planner · Courses. SSR active state mirrors Sidebar.astro's
+// pattern (Astro.url.pathname match); Courses is active for any /courses*
+// route, not just the index. Feed/Settings/Scratchpad/Past-terms/Add-course
+// live in the avatar sheet or on /courses instead of getting their own tab
+// (S1/S2 own those surfaces).
+//
+// The center FAB dispatches a window `open-record-event` CustomEvent rather
+// than owning a modal itself — nothing listens yet (HeaderActions.svelte
+// adds the listener in the S1 track), so it dispatches into the void until
+// then. That's expected for this phase.
+//
+// "Courses" has no matching glyph in Icon.astro's set (house, plus, gear,
+// bell, check-square, calendar, x, chevron-left, chevron-down, pencil,
+// user); Icon.astro isn't owned by this track, so its stroke path is
+// inlined here instead of adding a name to that component.
+import Icon from './Icon.astro';
+
+const currentPath = Astro.url.pathname;
+
+function isActive(path: string, matchPrefix = false): boolean {
+  return matchPrefix
+    ? currentPath === path || currentPath.startsWith(`${path}/`)
+    : currentPath === path;
+}
+---
+<nav class="bottom-nav" aria-label="Primary">
+  <a class="tab" href="/dashboard" class:list={{ active: isActive('/dashboard') }} title="Home" aria-label="Home">
+    <Icon name="house" size={22} />
+    <span class="label">Home</span>
+  </a>
+
+  <a class="tab" href="/tasks" class:list={{ active: isActive('/tasks') }} title="Tasks" aria-label="Tasks">
+    <Icon name="check-square" size={22} />
+    <span class="label">Tasks</span>
+  </a>
+
+  <button type="button" class="tab fab-slot" id="bottom-nav-record" title="Record event" aria-label="Record event">
+    <span class="fab" aria-hidden="true">
+      <Icon name="plus" size={22} />
+    </span>
+  </button>
+
+  <a class="tab" href="/planner" class:list={{ active: isActive('/planner') }} title="Planner" aria-label="Planner">
+    <Icon name="calendar" size={22} />
+    <span class="label">Planner</span>
+  </a>
+
+  <a class="tab" href="/courses" class:list={{ active: isActive('/courses', true) }} title="Courses" aria-label="Courses">
+    <svg
+      class="inline-icon"
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.7"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H12v16H5.5A1.5 1.5 0 0 1 4 18.5v-13Z M12 4h6.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H12" />
+    </svg>
+    <span class="label">Courses</span>
+  </a>
+</nav>
+
+<script>
+  document.getElementById('bottom-nav-record')?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('open-record-event'));
+  });
+</script>
+
+<style>
+  .bottom-nav {
+    display: none;
+  }
+
+  @media (max-width: 767px) {
+    .bottom-nav {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      min-height: var(--tabbar-h);
+      padding-bottom: env(safe-area-inset-bottom);
+      background: var(--surface);
+      border-top: 1px solid var(--hairline);
+      z-index: var(--z-tabbar);
+    }
+
+    .tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 6px 2px;
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .tab.active {
+      color: var(--accent-ink);
+    }
+
+    .label {
+      font-size: 10.5px;
+      font-weight: 550;
+      line-height: 1;
+    }
+
+    .inline-icon {
+      display: block;
+    }
+
+    .fab-slot {
+      position: relative;
+      transform: translateY(-10px);
+    }
+    .fab {
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: var(--accent-contrast);
+      box-shadow: var(--shadow-pop);
+    }
+  }
+</style>

@@ -5,6 +5,7 @@
   // keyboard shortcut), so it can be one island among several popovers
   // instead of mounting its own always-present button.
   import { courseContext } from '../../lib/stores/courseContext';
+  import { portalToBody } from '../../lib/actions/portal';
 
   interface Props {
     open?: boolean;
@@ -202,11 +203,6 @@
     } finally {
       submitting = false;
     }
-  }
-
-  function portalToBody(node: HTMLElement) {
-    document.body.appendChild(node);
-    return { destroy: () => node.remove() };
   }
 </script>
 

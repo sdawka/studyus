@@ -11,6 +11,7 @@ import ThemeScript from '../components/shell/ThemeScript.astro';
 import Sidebar from '../components/shell/Sidebar.astro';
 import Header from '../components/shell/Header.astro';
 import AddCourseModal from '../components/shell/AddCourseModal.svelte';
+import BottomNav from '../components/shell/BottomNav.astro';
 import { resolveSettings } from '../lib/services/user';
 
 interface Props {
@@ -44,6 +45,16 @@ const sidebarAttr = settings.sidebar_collapsed ? 'collapsed' : undefined;
         </main>
       </div>
     </div>
+    <BottomNav />
+    <!-- Direct body child, after .shell. Route-modal layers (planner.astro,
+         tasks.astro) and any future overlay render here instead of inside
+         main's default slot — main has `container-type: inline-size`, which
+         implies `contain: layout` and makes main the containing block (and
+         stacking context) for every `position: fixed` descendant, so a
+         fixed layer rendered inside main only covers main's box and paints
+         under the sticky header instead of covering the viewport. See
+         docs/design/mobile-shell.md for the full writeup. -->
+    <slot name="overlay" />
   </body>
 </html>
 
@@ -52,6 +63,7 @@ const sidebarAttr = settings.sidebar_collapsed ? 'collapsed' : undefined;
     display: grid;
     grid-template-columns: var(--sidebar-w, 240px) 1fr;
     min-height: 100vh;
+    min-height: 100dvh;
   }
   :global(html[data-sidebar='collapsed']) .shell {
     grid-template-columns: 60px 1fr;
@@ -63,14 +75,28 @@ const sidebarAttr = settings.sidebar_collapsed ? 'collapsed' : undefined;
   }
   main {
     flex: 1;
-    padding: 28px 32px 56px;
+    padding: var(--content-pad-top) var(--content-pad-x) var(--content-pad-bottom);
     max-width: var(--content-max);
     width: 100%;
     margin-inline: auto;
     /* Query container for page layout breakpoints (dashboard rail,
-       week-strip columns, feed masonry). Pages query the actual
-       content width here, not the viewport, so breakpoints fire
-       correctly in both sidebar states. */
+       week-strip columns, feed masonry). Pages query the actual content
+       width here (content-box, padding-independent), not the viewport, so
+       breakpoints fire correctly in both sidebar states — page-level rules
+       comment their threshold as "main content-box ≤ Xpx".
+       Rule of thumb (docs/design/mobile-shell.md has the full writeup):
+       @container (vs this element) = page-content layout, unrelated to
+       viewport size; @media (max-width: 767px) = shell chrome +
+       viewport-fixed overlays only (bottom nav, sheets, route-layer mobile
+       restyle) — it never reflows a page's internal grids, which stay on
+       @container thresholds; @media (hover: none) / (pointer: fine) =
+       touch affordances only, never layout. */
     container-type: inline-size;
+  }
+
+  @media (max-width: 767px) {
+    .shell {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

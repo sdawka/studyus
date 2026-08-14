@@ -32,7 +32,7 @@ const initialTasks = toApi(userTasks);
 ---
 
 <AppShell title="Tasks">
-  <div class="tasks-layer" id="tasks-layer">
+  <div class="tasks-layer" id="tasks-layer" slot="overlay">
     <div class="scrim" id="tasks-scrim"></div>
     <div class="panel" role="dialog" aria-modal="true" aria-label="Tasks">
       <div class="panel-head">
@@ -60,9 +60,14 @@ const initialTasks = toApi(userTasks);
   document.getElementById('tasks-close')?.addEventListener('click', closeTasks);
   document.getElementById('tasks-scrim')?.addEventListener('click', closeTasks);
   document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    // On mobile this "modal" is a full page between the header and tab bar,
+    // not an overlay (see the @media 767 block below) — there's no scrim
+    // to dismiss, so Escape is a no-op there.
+    if (matchMedia('(max-width: 767px)').matches) return;
     // TasksView sets this while an inline add form or subtask editor is
     // open, so a first Escape closes that instead of the whole modal.
-    if (e.key === 'Escape' && !window.__tasksBlockEscape) closeTasks();
+    if (!window.__tasksBlockEscape) closeTasks();
   });
 </script>
 
@@ -112,5 +117,30 @@ const initialTasks = toApi(userTasks);
   }
   .close-btn:hover {
     background: var(--hover);
+  }
+
+  /* Mobile: the route "modal" becomes a full page between the header and
+     tab bar (a tab destination, not an overlay) — see
+     docs/design/mobile-shell.md's "route modals → tab destinations"
+     section. Desktop rules above are untouched. */
+  @media (max-width: 767px) {
+    .tasks-layer {
+      top: calc(var(--header-h) + env(safe-area-inset-top));
+      bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+      z-index: 10;
+    }
+    .scrim {
+      display: none;
+    }
+    .panel {
+      margin: 0;
+      border-radius: 0;
+      box-shadow: none;
+      padding: 16px 16px 24px;
+      overscroll-behavior: contain;
+    }
+    .close-btn {
+      display: none;
+    }
   }
 </style>
