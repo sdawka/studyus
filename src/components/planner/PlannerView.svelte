@@ -585,6 +585,12 @@
   @media (max-width: 767px) {
     .toolbar {
       flex-direction: column;
+      /* nowrap is load-bearing with align-items:stretch: the base .toolbar
+         is flex-wrap:wrap, and in a MULTI-line container stretch sizes items
+         to the line's cross size (computed from the select's ~407px
+         fit-content), not the container's 358px — single-line makes stretch
+         use the container box. */
+      flex-wrap: nowrap;
       align-items: stretch;
     }
     .nav-group {
@@ -597,13 +603,22 @@
     }
     .controls {
       flex-wrap: wrap;
+      /* min-width:0 is load-bearing: the course <select>'s intrinsic width
+         is its longest option (~407px) and .controls' default min-width:auto
+         floors the whole line at that, overflowing the 358px toolbar. */
+      min-width: 0;
     }
+    /* flex-basis 100% forces each control onto its own line — with basis 0
+       the wrap never triggers and .view-toggle's ~221px min-content holds
+       the single row open past the viewport (clips the Agenda chip; the
+       route panel's own scroller absorbs it, so layout-check can't see it). */
     .controls select {
-      flex: 1;
+      flex: 1 1 100%;
       min-width: 0;
     }
     .view-toggle {
-      flex: 1;
+      flex: 1 1 100%;
+      min-width: 0;
     }
     .view-toggle .chip {
       flex: 1;
