@@ -603,4 +603,66 @@
   .inline-add.subtask-add {
     margin-top: 4px;
   }
+
+  /* Touch ergonomics on the fixed /tasks layer — @media (not @container)
+     per the same fixed-overlay exception as .card-grid's comment above.
+     Placed last in this file (not grouped with .card-grid's own 767 rule
+     above) so every property here wins its cascade tie against the
+     later-equal-specificity base rules it targets (.chevron-btn,
+     .task-checkbox, .children, .inline-add) — an @media block earlier in
+     source order does NOT automatically beat an unwrapped rule of the same
+     specificity that appears after it. */
+  @media (max-width: 767px) {
+    .chip-row {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scroll-snap-type: x proximity;
+      scroll-padding-inline: var(--content-pad-x);
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .chip-row::-webkit-scrollbar {
+      display: none;
+    }
+    .chip-row .chip {
+      flex-shrink: 0;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      scroll-snap-align: start;
+    }
+
+    /* Defensive wrap: covers both the per-card add form (title + date +
+       Add) and the subtask add form (title + Add) — the 100% basis on the
+       text input forces it onto its own line either way. */
+    .inline-add {
+      flex-wrap: wrap;
+    }
+    .inline-add input[type='text'] {
+      flex: 1 1 100%;
+    }
+
+    /* Bigger tap target, same 18px glyph: box-sizing switches to
+       content-box just for this rule so padding grows the hit area
+       instead of eating into it, then the negative margin gives the
+       surrounding layout its space back. */
+    .chevron-btn {
+      box-sizing: content-box;
+      padding: 13px;
+      margin: -11px -13px -13px;
+    }
+
+    .task-checkbox {
+      transform: scale(1.25);
+    }
+
+    .children {
+      margin-left: 14px;
+    }
+
+    .card-grid {
+      gap: 12px;
+    }
+  }
 </style>

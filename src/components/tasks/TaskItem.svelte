@@ -203,4 +203,24 @@
   .btn-delete:hover {
     color: var(--danger-ink, var(--danger));
   }
+
+  /* Dual-context component: TaskItem renders both inside main (TodayTasks,
+     TasksCard, TodoDropdown) and inside the fixed /tasks overlay layer
+     (TasksView) — @media (not @container) is deliberate here, since this
+     is a viewport-keyed touch-ergonomics bump (bigger tap targets), not a
+     layout reflow. Public contract (props, classes, markup) is untouched. */
+  @media (max-width: 767px) {
+    .task-item:not(.compact) {
+      padding: 0.85rem 0.75rem;
+    }
+    .task-checkbox {
+      transform: scale(1.25);
+    }
+    .btn-delete {
+      min-height: 44px;
+      padding: 0.65rem 0.5rem;
+      display: inline-flex;
+      align-items: center;
+    }
+  }
 </style>
