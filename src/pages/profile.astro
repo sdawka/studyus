@@ -138,6 +138,11 @@ const STATUS_LABELS: Record<string, string> = {
   .status-dist li { display: flex; align-items: center; gap: 0.7rem; font-size: 0.85rem; }
   .status-label { width: 6rem; flex-shrink: 0; color: var(--muted); }
   .status-bar-wrap { flex: 1; }
+
+  /* main content-box ≤ 720px (STACK) */
+  @container (max-width: 720px) {
+    .status-label { width: auto; flex: 0 1 90px; min-width: 0; }
+  }
   .status-bar { display: block; height: 6px; border-radius: 4px; background: var(--hairline); overflow: hidden; }
   .fill { display: block; height: 100%; }
   .fill-not-started { background: var(--hairline); }

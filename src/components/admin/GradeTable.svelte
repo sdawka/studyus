@@ -80,45 +80,47 @@
   {#if assessments.length === 0}
     <p class="muted">No assessments yet for this course.</p>
   {:else}
-    <table>
-      <thead>
-        <tr>
-          <th>Title</th>
-          <th>Type</th>
-          <th>Due</th>
-          <th>Weight</th>
-          <th>Grade</th>
-          <th>Out of</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each assessments as a}
+    <div class="table-wrap">
+      <table>
+        <thead>
           <tr>
-            <td>{a.title}</td>
-            <td class="capitalize">{a.type}</td>
-            <td>{formatDue(a.dueDate)}</td>
-            <td>{a.weightPct !== null ? `${a.weightPct}%` : '—'}</td>
-            <td>
-              <input type="number" min="0" bind:value={drafts[a.id].received} class="grade-input" />
-            </td>
-            <td>
-              <input type="number" min="0" bind:value={drafts[a.id].max} class="grade-input" />
-            </td>
-            <td>
-              <button type="button" onclick={() => saveGrade(a.id)} disabled={savingId === a.id}>
-                {savingId === a.id ? 'Saving…' : 'Save'}
-              </button>
-            </td>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Due</th>
+            <th>Weight</th>
+            <th>Grade</th>
+            <th>Out of</th>
+            <th></th>
           </tr>
-          {#if feedback[a.id]}
-            <tr class="feedback-row">
-              <td colspan="7">{feedback[a.id]}</td>
+        </thead>
+        <tbody>
+          {#each assessments as a}
+            <tr>
+              <td>{a.title}</td>
+              <td class="capitalize">{a.type}</td>
+              <td>{formatDue(a.dueDate)}</td>
+              <td>{a.weightPct !== null ? `${a.weightPct}%` : '—'}</td>
+              <td>
+                <input type="number" min="0" bind:value={drafts[a.id].received} class="grade-input" />
+              </td>
+              <td>
+                <input type="number" min="0" bind:value={drafts[a.id].max} class="grade-input" />
+              </td>
+              <td>
+                <button type="button" onclick={() => saveGrade(a.id)} disabled={savingId === a.id}>
+                  {savingId === a.id ? 'Saving…' : 'Save'}
+                </button>
+              </td>
             </tr>
-          {/if}
-        {/each}
-      </tbody>
-    </table>
+            {#if feedback[a.id]}
+              <tr class="feedback-row">
+                <td colspan="7">{feedback[a.id]}</td>
+              </tr>
+            {/if}
+          {/each}
+        </tbody>
+      </table>
+    </div>
   {/if}
 </div>
 
@@ -140,6 +142,7 @@
   .standing { font-weight: 700; }
   .reminder { color: var(--muted); font-size: 0.82rem; margin: 0 0 1rem 0; }
   .muted { color: var(--muted); font-size: 0.9rem; }
+  .table-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
   th { text-align: left; padding: 0.4rem 0.5rem; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid var(--border); }
   td { padding: 0.5rem; border-bottom: 1px solid var(--hover); }

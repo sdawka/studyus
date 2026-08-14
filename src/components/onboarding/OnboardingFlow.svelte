@@ -181,12 +181,20 @@
   }
   .skip:disabled { opacity: 0.5; cursor: default; }
 
+  /* main content-box ≤ 720px (STACK): the 4-label step strip has no room
+     beside Skip once the sidebar collapses, so it claims its own line. */
+  @container (max-width: 720px) {
+    .top-row { flex-wrap: wrap; }
+    .steps { flex: 1 1 100%; }
+    .step { min-width: 0; }
+  }
+
   .panel { min-height: 300px; }
   h2 { font-size: 1.15rem; margin: 0 0 0.3rem; }
   .num { color: var(--muted); font-weight: 400; font-size: 0.8rem; margin-left: 0.4rem; }
   .stepdesc { color: var(--muted); font-size: 0.9rem; margin: 0 0 1.25rem; }
 
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 1.5rem; }
   .side h3 { margin: 0 0 0.3rem; font-size: 0.98rem; }
   .side p { margin: 0; font-size: 0.9rem; color: var(--text); }
 

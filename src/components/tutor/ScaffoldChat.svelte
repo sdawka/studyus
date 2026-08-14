@@ -150,4 +150,14 @@
   .end-btn { background: var(--border); color: var(--text); }
   .error { color: var(--danger); font-size: 0.85rem; }
   .ended { color: var(--good); font-size: 0.9rem; }
+
+  /* main content-box ≤ 480px (PHONE): input claims its own full-width row;
+     Send/End drop to a second row at a 44px touch target. Bubbles widen
+     since 85% leaves an unhelpfully narrow column at this width. */
+  @container (max-width: 480px) {
+    .bubble { max-width: 92%; }
+    form { flex-wrap: wrap; }
+    input { flex: 1 1 100%; }
+    form button { min-height: 44px; }
+  }
 </style>
