@@ -221,4 +221,13 @@
     flex-wrap: wrap;
     gap: 8px;
   }
+
+  /* main content-box ≤ 480px (phone): the Delete affordance costs ~55px of a
+     ~310px row and starves task titles down to ~10 characters; deletion keeps
+     its home on /tasks, where rows are the page's full width. */
+  @container (max-width: 480px) {
+    .rows :global(.btn-delete) {
+      display: none;
+    }
+  }
 </style>
