@@ -439,7 +439,7 @@
   .primary:disabled { opacity: 0.6; cursor: default; }
   .ghost { background: none; }
   .link { background: none; border: none; color: var(--accent); cursor: pointer; padding: 0; text-align: left; font-size: 0.88rem; }
-  .course-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.7rem; }
+  .course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 0.7rem; }
   .course-card {
     text-align: left;
     border: 1px solid var(--border);

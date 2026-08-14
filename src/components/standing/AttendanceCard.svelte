@@ -429,4 +429,14 @@
     background: var(--surface);
     color: var(--text);
   }
+
+  /* PHONE — main content-box ≤ 480px: bigger touch targets for the day
+     chips and the per-session tri-state buttons. 7 chips × 40px + 6 × 6px
+     gaps = 316px, well inside a ~358px phone content-box. */
+  @container (max-width: 480px) {
+    .day-chip { width: 40px; padding: 9px 0; font-size: 13px; }
+    .tri-btn { width: 40px; height: 40px; font-size: 14px; }
+    .session-list li,
+    .session-list li.nudge { padding: 10px 4px; }
+  }
 </style>

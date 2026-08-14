@@ -69,7 +69,7 @@
   .section h2 { font-size: 1rem; margin: 0 0 0.8rem 0; }
   .placeholder { color: var(--muted); font-size: 0.9rem; }
 
-  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.8rem; }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 0.8rem; }
   .model-card {
     display: flex;
     flex-direction: column;

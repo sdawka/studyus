@@ -132,16 +132,18 @@
 
   <div class="grid">
     <div class="main">
-      <AssessmentsCard {courseId} {assessments} onGraded={refetchGrade} onPracticeChange={bumpPracticeRefresh} />
-      <DeadlinesCard {deadlines} />
-      <MasteryCard {branches} />
+      <div class="slot slot-assessments">
+        <AssessmentsCard {courseId} {assessments} onGraded={refetchGrade} onPracticeChange={bumpPracticeRefresh} />
+      </div>
+      <div class="slot slot-deadlines"><DeadlinesCard {deadlines} /></div>
+      <div class="slot slot-mastery"><MasteryCard {branches} /></div>
     </div>
 
     <aside class="rail">
-      <TasksCard {courseId} {courseSlug} />
-      <AttendanceCard {courseId} meetingDaysInitial={meetingDays} />
-      <PracticeCard {courseId} {courseSlug} refreshToken={practiceRefreshToken} />
-      <RecentActivityCard {events} />
+      <div class="slot slot-tasks"><TasksCard {courseId} {courseSlug} /></div>
+      <div class="slot slot-attendance"><AttendanceCard {courseId} meetingDaysInitial={meetingDays} /></div>
+      <div class="slot slot-practice"><PracticeCard {courseId} {courseSlug} refreshToken={practiceRefreshToken} /></div>
+      <div class="slot slot-activity"><RecentActivityCard {events} /></div>
     </aside>
   </div>
 {/if}
@@ -169,7 +171,11 @@
     gap: var(--space-5);
     min-width: 0;
   }
-  .rail > :global(.card) {
+  /* Each card is wrapped in a .slot div (needed for the mobile reorder
+     below) — .slot carries the min-width:0 that a direct grid-item child
+     needs to shrink below its content's intrinsic width instead of
+     overflowing .main/.rail's tracks. */
+  .slot {
     min-width: 0;
   }
 
@@ -183,5 +189,22 @@
     .grid {
       grid-template-columns: 1fr;
     }
+    /* Mobile order: hallway jobs first (check off a task, mark attendance,
+       glance deadlines) before the deeper-engagement cards. Promoting
+       .main/.rail to display:contents lets their .slot children become
+       direct items of .grid, so `order` can interleave cards across the
+       former column boundary — DOM/reader order (main's cards, then rail's)
+       is unchanged; only the visual order differs, which is intentional. */
+    .main,
+    .rail {
+      display: contents;
+    }
+    .slot-tasks { order: 1; }
+    .slot-attendance { order: 2; }
+    .slot-deadlines { order: 3; }
+    .slot-assessments { order: 4; }
+    .slot-mastery { order: 5; }
+    .slot-practice { order: 6; }
+    .slot-activity { order: 7; }
   }
 </style>

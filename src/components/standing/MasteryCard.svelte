@@ -38,4 +38,26 @@
   .branch-name { min-width: 9.5rem; flex-shrink: 0; }
   .branch-list li .bar { flex: 1; }
   .branch-pct { min-width: 2.5rem; text-align: right; color: var(--muted); }
+
+  /* PHONE — main content-box ≤ 480px: label-over-bar so the branch name
+     never competes with the bar for width. */
+  @container (max-width: 480px) {
+    .branch-list li {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-areas: "name pct" "bar bar";
+      column-gap: var(--space-2);
+      row-gap: 4px;
+    }
+    .branch-name {
+      grid-area: name;
+      min-width: 0;
+      flex-shrink: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .branch-pct { grid-area: pct; }
+    .branch-list li .bar { grid-area: bar; flex: unset; }
+  }
 </style>

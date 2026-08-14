@@ -78,4 +78,27 @@
   .track { flex: 1; height: 6px; border-radius: 4px; background: var(--border); overflow: hidden; }
   .fill { height: 100%; border-radius: 4px; background: var(--accent); }
   .pct { font-size: 0.75rem; color: var(--muted); min-width: 2.5em; text-align: right; }
+
+  /* PHONE — main content-box ≤ 480px: same two-line treatment as
+     concepts.astro's kc-row — name/type on line 1, bar full-width on
+     line 2 — since there's no separate status chip here. */
+  @container (max-width: 480px) {
+    .kc-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-areas: "name type" "bar bar";
+      column-gap: 0.6rem;
+      row-gap: 0.4rem;
+      align-items: center;
+    }
+    .kc-name {
+      grid-area: name;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .kc-type { grid-area: type; }
+    .mastery-bar { grid-area: bar; width: auto; }
+  }
 </style>

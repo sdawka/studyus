@@ -574,4 +574,54 @@
   }
   .kind-toggle button:last-child { border-right: none; }
   .kind-toggle button.active { background: var(--accent); color: var(--accent-contrast); }
+
+  /* PHONE — main content-box ≤ 480px: remap each official-assessment row
+     from a table row into a 2-row card grid so it reads without horizontal
+     scrolling. Title gets its own full-width row; the other six <td>s
+     (type, due, weight, grade-received, grade-max, actions) auto-place
+     left-to-right into a 6-column second row — no named grid areas needed
+     since that's exactly their DOM order already. Feedback/edit rows are a
+     single colspan="7" <td>, so they just span the full row grid.
+     .table-wrap's overflow-x:auto (above) stays as a mid-width fallback. */
+  @container (max-width: 480px) {
+    thead { display: none; }
+
+    tbody tr {
+      display: grid;
+      grid-template-columns: auto auto auto 3.5rem 3.5rem 1fr;
+      column-gap: 6px;
+      row-gap: 6px;
+      align-items: center;
+      padding: 10px 2px;
+    }
+    tbody tr td {
+      padding: 2px 0;
+      border-bottom: none;
+    }
+
+    tbody tr:not(.feedback-row):not(.edit-row) td:first-child {
+      grid-column: 1 / -1;
+      font-weight: 550;
+    }
+    tbody tr:not(.feedback-row):not(.edit-row) td:nth-child(2),
+    tbody tr:not(.feedback-row):not(.edit-row) td:nth-child(3),
+    tbody tr:not(.feedback-row):not(.edit-row) td:nth-child(4) {
+      font-size: 11.5px;
+      color: var(--muted);
+    }
+    tbody tr.feedback-row td,
+    tbody tr.edit-row td {
+      grid-column: 1 / -1;
+    }
+
+    .grade-input { width: 3.5rem; height: 44px; box-sizing: border-box; padding: 0 7px; }
+    .row-actions { justify-self: end; }
+
+    /* Add/edit forms share `.add-row` — the title input takes its own
+       full line, letting type/date/weight wrap to the next. */
+    .add-row input[type='text'] {
+      flex: 1 1 100%;
+      min-width: 0;
+    }
+  }
 </style>
