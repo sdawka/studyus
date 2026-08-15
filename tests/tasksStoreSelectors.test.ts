@@ -2,9 +2,9 @@
 // (bucketByDue, selectChildren, selectOpen, selectForCourse) and
 // hydrateTasks' first-hydrator-wins map semantics. No fetch/DOM involved —
 // importing the store module only creates atoms (addTask/toggleTask/
-// deleteTask/refetchTasks are exercised via a real dev-server smoke
-// instead, not here), so this runs fine in the workers test pool alongside
-// the DB-backed suites.
+// deleteTask are covered separately in tests/stores-tasks.test.ts, not
+// here), so this runs fine in the workers test pool alongside the
+// DB-backed suites.
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   bucketByDue,

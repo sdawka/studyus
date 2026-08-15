@@ -55,12 +55,19 @@ function makeNext() {
   return vi.fn(async () => new Response('downstream', { status: 200 }));
 }
 
+// onRequest's real signature (astro's MiddlewareHandler) allows a void return for
+// pass-through cases; every path this suite exercises returns a Response, so assert
+// that once here instead of casting at each call site.
+async function callMiddleware(context: unknown, next: ReturnType<typeof makeNext>): Promise<Response> {
+  return (await onRequest(context as any, next)) as Response;
+}
+
 describe('middleware: no session cookie', () => {
   it('returns a 401 apiError envelope for a protected /api/v1/* path, never calling next', async () => {
     const { context } = makeContext('/api/v1/tasks');
     const next = makeNext();
 
-    const res = await onRequest(context as any, next);
+    const res = await callMiddleware(context, next);
     expect(res.status).toBe(401);
     const body = (await res.json()) as any;
     expect(body.error).toEqual({ code: 'unauthorized', message: 'Authentication required' });
@@ -72,7 +79,7 @@ describe('middleware: no session cookie', () => {
     const { context } = makeContext('/dashboard');
     const next = makeNext();
 
-    const res = await onRequest(context as any, next);
+    const res = await callMiddleware(context, next);
     expect(res.status).toBe(302);
     expect(res.headers.get('Location')).toBe('/login');
     expect(next).not.toHaveBeenCalled();
@@ -101,7 +108,7 @@ describe('middleware: invalid/expired session cookie', () => {
     const { context, deleted } = makeContext('/api/v1/tasks', generateSessionToken());
     const next = makeNext();
 
-    const res = await onRequest(context as any, next);
+    const res = await callMiddleware(context, next);
     expect(res.status).toBe(401);
     expect(deleted).toEqual([SESSION_COOKIE_NAME]);
     expect(next).not.toHaveBeenCalled();
@@ -112,7 +119,7 @@ describe('middleware: invalid/expired session cookie', () => {
     const { context, deleted } = makeContext('/dashboard', generateSessionToken());
     const next = makeNext();
 
-    const res = await onRequest(context as any, next);
+    const res = await callMiddleware(context, next);
     expect(res.status).toBe(302);
     expect(res.headers.get('Location')).toBe('/login');
     expect(deleted).toEqual([SESSION_COOKIE_NAME]);
@@ -125,7 +132,7 @@ describe('middleware: valid session cookie', () => {
     const { context, deleted } = makeContext('/api/v1/tasks', token);
     const next = makeNext();
 
-    const res = await onRequest(context as any, next);
+    const res = await callMiddleware(context, next);
     expect(next).toHaveBeenCalledTimes(1);
     expect(deleted).toEqual([]);
     expect((context.locals.user as any).id).toBe(userId);

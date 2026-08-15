@@ -9,7 +9,7 @@
   // (attendance, recent activity). Attendance is no longer logged via
   // events; it's class_sessions rows whose status gets updated in place —
   // see AttendanceCard.
-  import { apiFetch } from '../../lib/apiClient';
+  import { apiFetch, NETWORK_ERROR_MESSAGE } from '../../lib/apiClient';
   import AssessmentsCard from './AssessmentsCard.svelte';
   import MasteryCard from './MasteryCard.svelte';
   import DeadlinesCard from './DeadlinesCard.svelte';
@@ -95,7 +95,7 @@
       // Guards the extremely rare case of a 2xx response with an unparseable
       // body (apiFetch already returns `ok:true` there; accessing `.data`'s
       // shape below is what would throw) — same fallback as before.
-      loadError = 'Network error, please try again.';
+      loadError = NETWORK_ERROR_MESSAGE;
     } finally {
       loading = false;
     }
