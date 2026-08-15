@@ -267,17 +267,24 @@
           <span class="task-type-icon" title={TASK_TYPE_META[task.type]?.label ?? task.type}><TaskTypeIcon type={task.type} /></span>
         {/if}
         <span class="task-title">{task.title}</span>
-        {#if task.source === 'system'}
-          <span class="pill pill-idle auto-chip" title="Generated automatically">auto</span>
-        {/if}
       </div>
       {#if task.description}
         <span class="task-desc">{task.description}</span>
       {/if}
+      <!-- Badges/pills on their own wrapping line, never the title's row —
+           same reasoning as TaskItem.svelte's task-meta-row: this row
+           already carries a chevron + checkbox + (up to) two action
+           buttons, so the title can't afford to also share its line with
+           an auto chip and the n/m subtask-progress pill. -->
+      <div class="task-meta-row">
+        {#if task.source === 'system'}
+          <span class="pill pill-idle auto-chip" title="Generated automatically">auto</span>
+        {/if}
+        <span class="pill" class:pill-ok={allDone && !task.completed} class:pill-idle={!(allDone && !task.completed)}>
+          {doneCount}/{children.length}
+        </span>
+      </div>
     </div>
-    <span class="pill" class:pill-ok={allDone && !task.completed} class:pill-idle={!(allDone && !task.completed)}>
-      {doneCount}/{children.length}
-    </span>
     <div class="task-actions">
       {#if task.source === 'system' && task.due_date && !task.completed}
         <button type="button" class="btn-snooze" onclick={() => snoozeParent(task)} title="Push due date to tomorrow">Not today</button>
@@ -526,6 +533,12 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .task-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
   .auto-chip {
     flex-shrink: 0;
   }
@@ -699,6 +712,28 @@
 
     .task-checkbox {
       transform: scale(1.25);
+    }
+
+    /* Same title-crush defense as TaskItem.svelte's mobile block: drop
+       actions to their own full-width row (flex-basis:100% forces it
+       unconditionally) rather than fighting the title for the row's width
+       — phone card widths are the narrow end this row has to hold up at,
+       and the touch-target bump just below makes Delete/Not-today wider
+       here than on desktop, not narrower. */
+    .task-row {
+      flex-wrap: wrap;
+    }
+    .task-actions {
+      flex: 0 0 100%;
+      justify-content: flex-end;
+      margin-top: 4px;
+    }
+    .btn-delete,
+    .btn-snooze {
+      min-height: 44px;
+      padding: 0.65rem 0.5rem;
+      display: inline-flex;
+      align-items: center;
     }
 
     .children {

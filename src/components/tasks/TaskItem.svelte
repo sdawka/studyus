@@ -91,29 +91,37 @@
         <span class="task-type-icon" title={TASK_TYPE_META[task.type]?.label ?? task.type}><TaskTypeIcon type={task.type} /></span>
       {/if}
       <span class="task-title">{task.title}</span>
-      {#if task.source === 'system'}
-        <span class="pill pill-idle auto-chip" title="Generated automatically">auto</span>
-      {/if}
-      {#if task.courses.length > 0}
-        <span class="course-dots">
-          {#each task.courses as c (c.id)}
-            <span
-              class="dot"
-              class:neutral={courseHues[c.id] === undefined}
-              style={courseHues[c.id] !== undefined ? `--course-h:${courseHues[c.id]}` : ''}
-              title={c.code}
-            ></span>
-          {/each}
-        </span>
-      {/if}
     </div>
     {#if task.description}
       <span class="task-desc">{task.description}</span>
     {/if}
+    <!-- Badges/pills live on their own wrapping line, never the title's —
+         the title row (above) is icon+title only so nothing here can ever
+         crush it down to a sliver, regardless of how many badges a system
+         task accumulates or how narrow the card column is. -->
+    {#if task.source === 'system' || task.courses.length > 0 || due}
+      <div class="task-meta-row">
+        {#if task.source === 'system'}
+          <span class="pill pill-idle auto-chip" title="Generated automatically">auto</span>
+        {/if}
+        {#if task.courses.length > 0}
+          <span class="course-dots">
+            {#each task.courses as c (c.id)}
+              <span
+                class="dot"
+                class:neutral={courseHues[c.id] === undefined}
+                style={courseHues[c.id] !== undefined ? `--course-h:${courseHues[c.id]}` : ''}
+                title={c.code}
+              ></span>
+            {/each}
+          </span>
+        {/if}
+        {#if due}
+          <span class="pill" class:pill-danger={due.danger} class:pill-idle={!due.danger}>{due.label}</span>
+        {/if}
+      </div>
+    {/if}
   </div>
-  {#if due}
-    <span class="pill" class:pill-danger={due.danger} class:pill-idle={!due.danger}>{due.label}</span>
-  {/if}
   {#if !compact}
     <div class="task-actions">
       {#if canSnooze}
@@ -190,6 +198,16 @@
     white-space: nowrap;
   }
 
+  /* Wraps freely (never truncates) — these are small discrete badges, not
+     prose, so letting them spill onto another line costs a bit of row
+     height instead of costing the title its readability. */
+  .task-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
   .auto-chip {
     flex-shrink: 0;
   }
@@ -257,9 +275,21 @@
   @media (max-width: 767px) {
     .task-item:not(.compact) {
       padding: 0.85rem 0.75rem;
+      /* Actions drop to their own line below (flex-basis:100% on
+         .task-actions forces it, regardless of how much space is left) —
+         the 44px touch targets just below make Not-today/Delete wider
+         than they are on desktop, and phone card widths are exactly the
+         narrow end this component has to hold up at, so keeping them on
+         the title's row here would reopen the same crush. */
+      flex-wrap: wrap;
     }
     .task-checkbox {
       transform: scale(1.25);
+    }
+    .task-actions {
+      flex: 0 0 100%;
+      justify-content: flex-end;
+      margin-top: 4px;
     }
     .btn-delete,
     .btn-snooze {
