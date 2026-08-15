@@ -8,6 +8,7 @@ This directory holds product and architecture documentation for studyus, a KLI-g
 - **vision.md** — Target user (McGill ChemEng student), the two halves (admin: calendar/deadlines/grades; learning: feed/courses/tutor), design vibe, webapp first / iPad via frozen API.
 - **user-journeys.md** — Onboarding flow, three returning-user entry points (dashboard, browse feed, study), recording outside-app events, future channels.
 - **screens.md** — Full screen inventory from the build plan with purpose and key components per route.
+- **student-lifecycle.md** — Mermaid diagrams of the student's full lifecycle in studyus: onboarding, the daily before/in/after-class rhythm, weekly planning, pre-exam practice, post-grade reflection, and the long-run mastery loop, each annotated with the studyus surface that serves it.
 
 ### Architecture (`/architecture/`)
 - **overview.md** — Stack (Astro 7.2 + Svelte 5, @astrojs/cloudflare 14 on Workers, D1 + Drizzle, R2, OpenRouter), headless service principle, repo layout.
@@ -15,6 +16,7 @@ This directory holds product and architecture documentation for studyus, a KLI-g
 - **events-and-mastery.md** — **THE KLI DOC.** Ontology (KCs cause performance; Instructional/Learning/Assessment Events; dual-role flags), KC taxonomy (fact/association/concept/rule/principle), learning processes, instruction matching (asymmetry hypothesis), CMU DataShop convention as conceptual background, and the shipped mastery fold (`src/lib/services/mastery.ts`) as actually implemented.
 - **tutor.md** — AI tutor architecture: mode selection by KC type, OpenRouter SSE proxy, interactive-model spec, context assembly, session event hookup.
 - **cloudflare.md** — Adapter v14 specifics (Workers not Pages, wrangler.jsonc, workerd dev, D1 batch atomicity, local .wrangler/state).
+- **observability.md** — Local-only Cloudflare native tracing (`wrangler.jsonc`'s `observability.traces` flag, the `cdn-cgi/explorer` UI, the `withSpan` helper) — dev-loop diagnostic only, no persistence or export path.
 - **agentic-channels.md** — Flue pattern (separate Worker + Durable Objects, service binding, tools wrapping services, quick_quiz as v1 pattern-setter, channels→agent→tools→services→events), explicitly post-v1 experimental.
 
 ### Design (`/design/`)

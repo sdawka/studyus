@@ -2,6 +2,8 @@
 
 **Re-derived 2026-08-15 against `docs/product/screens.md` and the current routes/components** — the sections below on sign-in, the sidebar's entry points, and `/calendar`/`/grades`/`/study` all describe a shape that predates several rewrites; corrected to match what's actually shipped.
 
+> For the full term-long lifecycle as diagrams — before/in/after class, weekly planning, pre-exam practice, post-grade reflection, and the mastery loop — see `docs/product/student-lifecycle.md`.
+
 ## Onboarding (First-Time User)
 
 1. **Sign in** with email/password (`POST /auth/login`; there is no `username` field anywhere in the schema or auth flow — see `docs/architecture/data-model.md`'s `users` entry). Redirect to onboarding if new.
