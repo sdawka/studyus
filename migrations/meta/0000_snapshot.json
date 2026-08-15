@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "09ddee34-c08e-4ab8-90b2-6b90812ab80e",
+  "id": "789f615d-fd1f-4908-9bd6-9eed1401989a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "assessment_kcs": {
@@ -152,7 +152,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "assessments_course_id_idx": {
+          "name": "assessments_course_id_idx",
+          "columns": [
+            "course_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "assessments_course_id_courses_id_fk": {
           "name": "assessments_course_id_courses_id_fk",
@@ -677,7 +685,23 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "events_kc_id_idx": {
+          "name": "events_kc_id_idx",
+          "columns": [
+            "kc_id"
+          ],
+          "isUnique": false
+        },
+        "events_user_ts_idx": {
+          "name": "events_user_ts_idx",
+          "columns": [
+            "user_id",
+            "ts"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "events_user_id_users_id_fk": {
           "name": "events_user_id_users_id_fk",
@@ -815,7 +839,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "kcs_course_id_idx": {
+          "name": "kcs_course_id_idx",
+          "columns": [
+            "course_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "kcs_branch_id_branches_id_fk": {
           "name": "kcs_branch_id_branches_id_fk",
@@ -1429,7 +1461,24 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "study_sessions_user_scheduled_idx": {
+          "name": "study_sessions_user_scheduled_idx",
+          "columns": [
+            "user_id",
+            "scheduled_at"
+          ],
+          "isUnique": false
+        },
+        "study_sessions_user_started_idx": {
+          "name": "study_sessions_user_started_idx",
+          "columns": [
+            "user_id",
+            "started_at"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "study_sessions_user_id_users_id_fk": {
           "name": "study_sessions_user_id_users_id_fk",
@@ -1663,11 +1712,11 @@
           ],
           "isUnique": true
         },
-        "tasks_user_done_due_idx": {
-          "name": "tasks_user_done_due_idx",
+        "tasks_user_dismissed_due_idx": {
+          "name": "tasks_user_dismissed_due_idx",
           "columns": [
             "user_id",
-            "done",
+            "dismissed_at",
             "due_date"
           ],
           "isUnique": false

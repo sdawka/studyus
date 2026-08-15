@@ -22,6 +22,7 @@ CREATE TABLE `assessments` (
 	FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE INDEX `assessments_course_id_idx` ON `assessments` (`course_id`);--> statement-breakpoint
 CREATE TABLE `attachments` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,
@@ -98,6 +99,8 @@ CREATE TABLE `events` (
 	FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
+CREATE INDEX `events_kc_id_idx` ON `events` (`kc_id`);--> statement-breakpoint
+CREATE INDEX `events_user_ts_idx` ON `events` (`user_id`,`ts`);--> statement-breakpoint
 CREATE TABLE `kcs` (
 	`id` text PRIMARY KEY NOT NULL,
 	`branch_id` text NOT NULL,
@@ -115,6 +118,7 @@ CREATE TABLE `kcs` (
 	FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE INDEX `kcs_course_id_idx` ON `kcs` (`course_id`);--> statement-breakpoint
 CREATE TABLE `note_links` (
 	`id` text PRIMARY KEY NOT NULL,
 	`note_id` text NOT NULL,
@@ -200,6 +204,8 @@ CREATE TABLE `study_sessions` (
 	FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
+CREATE INDEX `study_sessions_user_scheduled_idx` ON `study_sessions` (`user_id`,`scheduled_at`);--> statement-breakpoint
+CREATE INDEX `study_sessions_user_started_idx` ON `study_sessions` (`user_id`,`started_at`);--> statement-breakpoint
 CREATE TABLE `task_courses` (
 	`id` text PRIMARY KEY NOT NULL,
 	`task_id` text NOT NULL,
@@ -236,7 +242,7 @@ CREATE TABLE `tasks` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `tasks_dedupe_key_unique` ON `tasks` (`dedupe_key`);--> statement-breakpoint
-CREATE INDEX `tasks_user_done_due_idx` ON `tasks` (`user_id`,`done`,`due_date`);--> statement-breakpoint
+CREATE INDEX `tasks_user_dismissed_due_idx` ON `tasks` (`user_id`,`dismissed_at`,`due_date`);--> statement-breakpoint
 CREATE INDEX `tasks_parent_idx` ON `tasks` (`parent_task_id`);--> statement-breakpoint
 CREATE TABLE `tutor_conversations` (
 	`id` text PRIMARY KEY NOT NULL,

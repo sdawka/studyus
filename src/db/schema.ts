@@ -78,76 +78,91 @@ export const branches = sqliteTable('branches', {
 });
 
 // KLI taxonomy: fact | association | concept | rule | principle
-export const kcs = sqliteTable('kcs', {
-  id: id(),
-  branchId: text('branch_id')
-    .notNull()
-    .references(() => branches.id, { onDelete: 'cascade' }),
-  courseId: text('course_id')
-    .notNull()
-    .references(() => courses.id, { onDelete: 'cascade' }),
-  name: text('name').notNull(),
-  kcType: text('kc_type', {
-    enum: ['fact', 'association', 'concept', 'rule', 'principle'],
-  })
-    .notNull()
-    .default('concept'),
-  description: text('description'),
-  practiceNotes: text('practice_notes'),
-  sortOrder: integer('sort_order').notNull().default(0),
-  // Derived caches, recomputed on every event write.
-  mastery: integer('mastery').notNull().default(0), // 0-100
-  status: text('status').notNull().default('not-started'),
-  lastEventAt: integer('last_event_at'),
-  createdAt: createdAt(),
-});
+export const kcs = sqliteTable(
+  'kcs',
+  {
+    id: id(),
+    branchId: text('branch_id')
+      .notNull()
+      .references(() => branches.id, { onDelete: 'cascade' }),
+    courseId: text('course_id')
+      .notNull()
+      .references(() => courses.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    kcType: text('kc_type', {
+      enum: ['fact', 'association', 'concept', 'rule', 'principle'],
+    })
+      .notNull()
+      .default('concept'),
+    description: text('description'),
+    practiceNotes: text('practice_notes'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    // Derived caches, recomputed on every event write.
+    mastery: integer('mastery').notNull().default(0), // 0-100
+    status: text('status').notNull().default('not-started'),
+    lastEventAt: integer('last_event_at'),
+    createdAt: createdAt(),
+  },
+  (table) => [index('kcs_course_id_idx').on(table.courseId)],
+);
 
 // ---------------------------------------------------------------------------
 // Events — the source of truth for mastery
 // ---------------------------------------------------------------------------
 
-export const events = sqliteTable('events', {
-  id: id(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  ts: integer('ts').notNull(),
-  type: text('type').notNull(),
-  isInstructional: integer('is_instructional', { mode: 'boolean' }).notNull().default(false),
-  isAssessment: integer('is_assessment', { mode: 'boolean' }).notNull().default(false),
-  kcId: text('kc_id').references(() => kcs.id, { onDelete: 'set null' }),
-  courseId: text('course_id').references(() => courses.id, { onDelete: 'set null' }),
-  sessionId: text('session_id'),
-  payload: text('payload', { mode: 'json' })
-    .notNull()
-    .default(sql`'{}'`),
-  source: text('source', { enum: ['manual', 'session', 'tutor', 'seed'] }).notNull(),
-  createdAt: createdAt(),
-});
+export const events = sqliteTable(
+  'events',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    ts: integer('ts').notNull(),
+    type: text('type').notNull(),
+    isInstructional: integer('is_instructional', { mode: 'boolean' }).notNull().default(false),
+    isAssessment: integer('is_assessment', { mode: 'boolean' }).notNull().default(false),
+    kcId: text('kc_id').references(() => kcs.id, { onDelete: 'set null' }),
+    courseId: text('course_id').references(() => courses.id, { onDelete: 'set null' }),
+    sessionId: text('session_id'),
+    payload: text('payload', { mode: 'json' })
+      .notNull()
+      .default(sql`'{}'`),
+    source: text('source', { enum: ['manual', 'session', 'tutor', 'seed'] }).notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    index('events_kc_id_idx').on(table.kcId),
+    index('events_user_ts_idx').on(table.userId, table.ts),
+  ],
+);
 
 // ---------------------------------------------------------------------------
 // Assessments & grades
 // ---------------------------------------------------------------------------
 
-export const assessments = sqliteTable('assessments', {
-  id: id(),
-  courseId: text('course_id')
-    .notNull()
-    .references(() => courses.id, { onDelete: 'cascade' }),
-  title: text('title').notNull(),
-  type: text('type', {
-    enum: ['quiz', 'assignment', 'midterm', 'final', 'lab'],
-  }).notNull(),
-  dueDate: integer('due_date'),
-  weightPct: integer('weight_pct'),
-  gradeReceived: integer('grade_received'),
-  gradeMax: integer('grade_max'),
-  // v1.3.1: 'official' assessments count toward the weighted grade;
-  // 'practice' ones never do, even when graded — see services/grades.ts and
-  // services/practiceSummary.ts.
-  kind: text('kind', { enum: ['official', 'practice'] }).notNull().default('official'),
-  createdAt: createdAt(),
-});
+export const assessments = sqliteTable(
+  'assessments',
+  {
+    id: id(),
+    courseId: text('course_id')
+      .notNull()
+      .references(() => courses.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    type: text('type', {
+      enum: ['quiz', 'assignment', 'midterm', 'final', 'lab'],
+    }).notNull(),
+    dueDate: integer('due_date'),
+    weightPct: integer('weight_pct'),
+    gradeReceived: integer('grade_received'),
+    gradeMax: integer('grade_max'),
+    // v1.3.1: 'official' assessments count toward the weighted grade;
+    // 'practice' ones never do, even when graded — see services/grades.ts and
+    // services/practiceSummary.ts.
+    kind: text('kind', { enum: ['official', 'practice'] }).notNull().default('official'),
+    createdAt: createdAt(),
+  },
+  (table) => [index('assessments_course_id_idx').on(table.courseId)],
+);
 
 export const assessmentKcs = sqliteTable('assessment_kcs', {
   id: id(),
@@ -246,7 +261,9 @@ export const tasks = sqliteTable(
   },
   (table) => [
     uniqueIndex('tasks_dedupe_key_unique').on(table.dedupeKey),
-    index('tasks_user_done_due_idx').on(table.userId, table.done, table.dueDate),
+    // Real callers filter eq(userId) AND isNull(dismissedAt) then order/range
+    // on dueDate; none constrains `done` — see services/tasks.ts, calendar.ts.
+    index('tasks_user_dismissed_due_idx').on(table.userId, table.dismissedAt, table.dueDate),
     index('tasks_parent_idx').on(table.parentTaskId),
   ],
 );
@@ -288,20 +305,30 @@ export const resources = sqliteTable('resources', {
 // Study sessions
 // ---------------------------------------------------------------------------
 
-export const studySessions = sqliteTable('study_sessions', {
-  id: id(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  courseId: text('course_id').references(() => courses.id, { onDelete: 'set null' }),
-  intendedEventType: text('intended_event_type').notNull(),
-  plannedMinutes: integer('planned_minutes'),
-  startedAt: integer('started_at').notNull(),
-  endedAt: integer('ended_at'),
-  scheduledAt: integer('scheduled_at'),
-  reflection: text('reflection'),
-  createdAt: createdAt(),
-});
+export const studySessions = sqliteTable(
+  'study_sessions',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    courseId: text('course_id').references(() => courses.id, { onDelete: 'set null' }),
+    intendedEventType: text('intended_event_type').notNull(),
+    plannedMinutes: integer('planned_minutes'),
+    startedAt: integer('started_at').notNull(),
+    endedAt: integer('ended_at'),
+    scheduledAt: integer('scheduled_at'),
+    reflection: text('reflection'),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    // calendar.ts assembles date-range views by filtering userId +
+    // coalesce(scheduledAt, startedAt); SQLite can't index the coalesce, so
+    // these two composites let either side of it be served by an index.
+    index('study_sessions_user_scheduled_idx').on(table.userId, table.scheduledAt),
+    index('study_sessions_user_started_idx').on(table.userId, table.startedAt),
+  ],
+);
 
 export const sessionKcs = sqliteTable('session_kcs', {
   id: id(),
