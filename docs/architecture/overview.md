@@ -53,60 +53,65 @@ Token contract (present in every theme file): `--bg --surface --surface-2 --text
 
 ## Repo Structure
 
+**Regenerated 2026-08-15 from the actual filesystem** (`find src/pages tests src/components src/lib -type f`, etc.) — a prior draft of this tree had drifted significantly from reality (missing whole route trees, an invented `tests/unit`/`tests/integration` split that was never built). This tree favors accuracy over exhaustiveness — some leaf directories are summarized by file count rather than listing every file; use `find` yourself for the current exact set if you need it. `dist/`, `.astro/`, `.wrangler/` are gitignored build/state output and omitted below.
+
 ```
 astro.config.mjs                          # Astro + Svelte islands config
-wrangler.jsonc                            # Bindings: D1 (DB), R2 (UPLOADS), vars
+wrangler.jsonc                            # Bindings: D1 (DB), R2 (UPLOADS), vars — real shape, see cloudflare.md
 drizzle.config.ts                         # Migration + schema config
-.dev.vars.example                         # Template for local secrets
+.dev.vars.example                         # Template for local secrets (OPENROUTER_API_KEY)
 
-courses/                                  # Seed data + old prototype (frozen)
-  courses.json
-  [course-readmes]
-  [old prototype files]
+courses/                                  # Seed source data (real, at repo root — not nested under prototype/)
+  courses.json                            # The 9 seeded courses (code/title/term/etc.), read by scripts/seed.ts
+  [course-slug]/README.md                 # One per course — human-readable syllabus notes, not read by code
+prototype/                                # Old static-HTML design prototype (frozen, pre-Astro) — index.html,
+                                           #   dashboard.html, planner.html, course.html + per-variation CSS/JS
+public/                                   # Static assets served as-is: manifest.webmanifest, icons/ (PWA)
 
-migrations/                               # D1 migration SQL (single regenerated baseline, pre-v0.1 — see ADR-003)
+migrations/                               # D1 migration SQL — single regenerated baseline, pre-v0.1 (ADR-003)
+  0000_yielding_nocturne.sql
+  meta/
 scripts/
-  seed.ts                                 # Idempotent course+KC seed
+  seed.ts                                 # Idempotent course+KC+demo-data seed
+  layout-check.cjs                        # Playwright layout-invariant guard (npm run check:layout)
+  visual-qa.mjs                           # Playwright visual-QA driver (screenshots + console errors)
+  gen-icons.mjs                           # PWA icon generation
 
 src/
   middleware.ts                           # Session → locals.user, gates pages + /api/v1
+  env.d.ts                                # Augments Cloudflare.Env/Env with OPENROUTER_API_KEY
   db/
-    schema.ts                             # Drizzle schema (all tables)
+    schema.ts                             # Drizzle schema (all tables — see data-model.md)
     client.ts                             # `db` singleton, db.batch pattern
   styles/
     tokens.css                            # Theme-agnostic derivations (--course/-ink/-soft)
     base.css                              # Reset + primitives (.card/.btn/.pill/.popover/...)
-    themes/
-      compass.css                         # Per-theme OKLCH color/radius/spacing/motion values
-      focus.css
-      campus.css
-    fonts/
-      compass.css                         # Per-theme @fontsource @font-face declarations
-      focus.css
-      campus.css
+    themes/{compass,focus,campus}.css     # Per-theme OKLCH color/radius/spacing/motion values
+    fonts/{compass,focus,campus}.css      # Per-theme @fontsource @font-face declarations
   lib/
-    auth/                                 # Token generation, session mgmt, PBKDF2
-    schemas/                              # Zod validators (users, courses, events, etc.)
+    auth/                                 # password.ts (PBKDF2), session.ts (token/hash/cookie mgmt)
+    actions/                              # focusTrap.ts, portal.ts, scrollLock.ts — Svelte actions for overlays
+    stores/                               # nanostores: ui.ts, courseContext.ts, tasks.ts, toast.ts, viewport.ts
+    schemas/                              # Zod validators — one file per domain (assessments, attachments,
+                                           #   calendar, classSessions, common, courses, events, kcs, notes,
+                                           #   notifications, quickQuiz, resources, sessions, tasks, tutor, user)
     types/
       calendar.ts                         # CalendarItem (FROZEN shape; getCalendar is sole producer)
     plannerDates.ts                       # Week/month date-math helpers shared by planner components
     courseHue.ts                          # Canonical hueFor/hashHue (one definition, no duplicates)
+    taskTypeMeta.ts                       # TaskType → icon/label metadata (TaskTypeIcon, PlannerRail)
+    tracing.ts                            # Cloudflare Workers trace helpers
+    handleNotFound.ts                     # Shared 404 handling
     api.ts                                # Request/response envelope helpers
-    apiErrors.ts                          # withServiceErrors / apiError mapping
+    apiErrors.ts                          # withServiceErrors / apiError mapping (incl. ZodError → 400 invalid_input)
     serialize.ts                          # toApi (db row → API shape)
-    services/                             # Pure service functions
-      courses.ts
-      events.ts (and mastery fold logic)
-      mastery.ts (KC score computation)
-      grades.ts
-      calendar.ts                         # getCalendar — unified CalendarItem across all 4 types
-      notes.ts
-      tasks.ts
-      resources.ts
-      sessions.ts (study session create/complete; scheduled_at for planner-created sessions)
-      profile.ts
-      user.ts                             # resolveSettings (theme/scheme/sidebar defaults)
+    services/                             # Pure (db, userId, input) -> result functions, one file per domain:
+                                           #   assessments, attachments, calendar, classSessions, courses, events,
+                                           #   grades, kcs, mastery (pure fold, no db writes), notes, notifications,
+                                           #   practiceSummary, profile, resources, sessions, tasks, taskSweep, user,
+                                           #   util (ownership/error helpers)
       tutor/
+        conversations.ts
         openrouter.ts
         prompts.ts
         modelSpec.ts
@@ -114,128 +119,93 @@ src/
       quick_quiz.ts                       # Pattern flow: pick KCs, generate, grade, append
   layouts/
     AppShell.astro                        # Sidebar + Header shell; imports tokens/fonts/themes/base.css
-  components/                             # By feature
+    CourseLayout.astro                    # Wraps AppShell; course head + 6-tab bar for /courses/[slug]/*
+  components/                             # By feature — Svelte islands + .astro partials side by side
+    LoginForm.svelte                      # Top-level, not feature-namespaced (used only by login.astro)
     admin/                                # GradeTable.svelte, QuickEventForm.svelte
-    course/                               # AttachmentsPanel, MasteryBar, PlayPanel, PracticePanel, ...
-    dashboard/
-      CourseCards.astro                   # Slim course cards (v1.4): hue/code/title/grade pill/one meta line — mastery + assessment-progress moved off the card face onto tasks
-      WeekView.svelte                     # Collapsed/expanded week island (sb:weekview)
-      TodayTasks.svelte                   # v1.4 — checkable hero: overdue/today/next buckets + wellness chips
-      DeadlinesList.astro                 # v1.4 rename of DueList.astro — assessment_due items only now (task nagging moved into TodayTasks/grade_entry tasks)
-      RecordEventCard.astro
+    course/                               # AttachmentsPanel, KcTypeBadge, MasteryBar, PlayPanel, PracticePanel,
+                                           #   ResourceTile, StatusChip
+    dashboard/                            # CourseCards, DeadlinesList, RecordEventCard, TodayTasks, WeekView
     events/                               # EventTimeline.svelte, LogEventModal.svelte
     feed/                                 # ResourceCard (favicon tiles), ShareResourceForm, StudySessionStub
     notes/                                # NotesList, NoteEditor, LinkPicker
     onboarding/                           # OnboardingFlow.svelte
-    planner/
-      PlannerView.svelte                  # week/month/agenda switch, filter, deep-link resolution
-      WeekGrid.svelte                     # default time-grid view
-      CalendarGrid.svelte                 # month view
-      AgendaList.svelte
-      EventPopover.svelte
-      CreateSessionPopover.svelte         # inline scheduled-session create
-      PlannerRail.svelte                  # unscheduled tasks/assessments due-soon rail
-    settings/                             # AppearanceSettings.svelte, TaskGeneratorSettings.svelte (v1.4 — per-family sweep toggle)
-    shell/
-      AppShell-adjacent: Sidebar.astro, Header.astro, HeaderActions.svelte,
-      ThemeScript.astro, AddCourseModal.svelte, AvatarMenu.svelte,
-      NotificationsBell.svelte, ScratchpadPopup.svelte, TodoDropdown.svelte,
-      popover.svelte.ts (shared popover open/close state), Icon.astro
-    standing/                             # StandingTab.svelte + rail cards (AssessmentsCard, DeadlinesCard, MasteryCard, TasksCard, AttendanceCard, PracticeCard, RecentActivityCard)
+    planner/                              # PlannerView, WeekGrid, CalendarGrid, AgendaList, EventPopover,
+                                           #   CreateSessionPopover, PlannerRail
+    settings/                             # AppearanceSettings.svelte, TaskGeneratorSettings.svelte
+    shell/                                # AddCourseModal, AvatarMenu, BottomNav (mobile tab bar),
+                                           #   CourseContextSetter, Header, HeaderActions, Icon, NotificationsBell,
+                                           #   popover.svelte.ts, ScratchpadPopup, Sheet (mobile bottom-sheet
+                                           #   primitive), Sidebar, ThemeScript, Toast, TodoDropdown
+    standing/                             # StandingTab + rail cards: AssessmentsCard, AttendanceCard,
+                                           #   DeadlinesCard, MasteryCard, PracticeCard, RecentActivityCard, TasksCard
     study/                                # StudyFlow.svelte
-    tasks/                                # TaskItem.svelte, TaskTypeIcon.svelte, TasksView.svelte (v1.4 rebuild — the old plain-list TaskList.svelte was deleted)
+    tasks/                                # TaskItem.svelte, TaskTypeIcon.svelte, TasksView.svelte
     tutor/                                # ScaffoldChat, InteractiveModel, QuickQuiz
   pages/
-    /login.astro
-    /index.astro
-    /onboarding.astro
-    /dashboard.astro
-    /calendar.astro
-    /grades.astro
-    /feed.astro
-    /courses/index.astro
-    /courses/[slug].astro
-    /courses/[slug]/kc/[kcId].astro
-    /study.astro
-    /tutor/[kcId].astro
-    /notes/index.astro
-    /notes/[id].astro
-    /tasks.astro
-    /profile.astro
+    404.astro
+    login.astro, index.astro, onboarding.astro, dashboard.astro
+    calendar.astro                        # 302 redirect → /planner (kept alive for old links/bookmarks)
+    grades.astro, feed.astro, planner.astro, profile.astro, settings.astro, tasks.astro
+    study.astro, study/quiz.astro
+    tutor/[kcId].astro
+    notes/index.astro, notes/[id].astro
+    courses/
+      index.astro
+      [slug]/index.astro, [slug]/concepts.astro, [slug]/notes.astro, [slug]/resources.astro,
+      [slug]/practice.astro, [slug]/play.astro, [slug]/kc/[kcId].astro
     api/v1/
-      auth/
-        login.ts
-        logout.ts
-      user.ts
-      courses/
-        index.ts
-        [id].ts
-        [id]/assessments.ts
-        [id]/attachments.ts
-      kcs/
-        [id].ts
-        [id]/events.ts
-      events/
-        index.ts
-        [id].ts
-      calendar.ts
-      grades/
-        summary.ts
-      tasks/
-        index.ts
-        [id].ts
-      notes/
-        index.ts
-        [id].ts
-      resources/
-        index.ts
-        [id].ts
-      sessions/
-        index.ts
-        [id]/complete.ts
-      tutor/
-        conversations/
-          index.ts
-          [id].ts
-          [id]/messages.ts
-      flows/
-        quick_quiz/
-          index.ts
-          [id]/answers.ts
+      auth/login.ts, auth/logout.ts
+      user/index.ts
+      courses/index.ts, courses/[id]/assessments.ts, courses/[id]/attachments.ts,
+        courses/[id]/class-sessions.ts, courses/[id]/practice-summary.ts, courses/[slug].ts
+      kcs/[id]/index.ts, kcs/[id]/events.ts
+      events/index.ts, events/[id].ts
+      assessments/[id].ts
+      class-sessions/[id].ts
+      calendar/index.ts
+      grades/summary.ts
+      tasks/index.ts, tasks/[id].ts
+      notes/index.ts, notes/[id].ts
+      resources/index.ts, resources/[id].ts
+      attachments/[id].ts
+      sessions/index.ts, sessions/[id]/complete.ts
+      notifications/index.ts, notifications/count.ts, notifications/read-all.ts, notifications/[id]/read.ts
+      profile/index.ts
+      tutor/conversations/index.ts, tutor/conversations/[id]/index.ts,
+        tutor/conversations/[id]/messages.ts, tutor/conversations/[id]/end.ts
+      flows/quick_quiz/index.ts, flows/quick_quiz/[id]/answers.ts
 
-tests/
-  unit/
-    mastery.test.ts (fold determinism, learning curves)
-    grades.test.ts (weighted standing, grade math)
-    auth.test.ts (token/session lifecycle)
-  integration/
-    seed.test.ts (idempotency)
-    api.test.ts (key endpoints with D1/R2 bindings)
+tests/                                    # Flat layout (no unit//integration split — that was never built)
+  audit-grades-perf, audit-lifecycle, audit-notifications, audit-ownership, audit-schema-bounds,
+    audit-sweep, audit-uploads (.test.ts)  # Targeted regression suites from security/perf/lifecycle audits
+  auth, calendar, classSessions, courses-create, events, grades, mastery, middleware, notifications,
+    practiceSummary, quick-quiz, serialize, session, sessions, stores-tasks, tasks, tasksStoreSelectors,
+    taskSweep, tutor-conversations, tutor-list, tutor-modelSpec, tutor-openrouter (.test.ts)
+  env.d.ts
+  routes/
+    assessments.test.ts, assessmentsKcs.test.ts, assessmentsKind.test.ts, events.test.ts, tasks.test.ts
+  setup/
+    apply-migrations.ts
+  smoke/
+    api-contract.test.ts
 
 docs/
   README.md (this map)
   product/
-    vision.md
-    user-journeys.md
-    screens.md
+    vision.md, user-journeys.md, screens.md
   architecture/
-    overview.md (this file)
-    data-model.md
-    events-and-mastery.md (KLI distillation)
-    tutor.md
-    cloudflare.md
+    overview.md (this file), data-model.md, events-and-mastery.md (KLI distillation), tutor.md, cloudflare.md,
     agentic-channels.md
   design/
+    charter.md                           # Binding cross-theme contract (shared structure vs. per-theme tokens)
     compass.md, focus.md, campus.md      # Per-theme voice/type/color/density/motion rationale
-    planner-ux.md                         # Planner spec (week grid default, popovers, deep links) — frozen
-  api.md (FROZEN v1, M1)
+    planner-ux.md                        # Planner spec (week grid default, popovers, deep links)
+    mobile-shell.md                      # Mobile shell contract (bottom nav, sheets, per-page reorders)
+  api.md (FROZEN v1, M1 — additive sections through v1.4)
   decisions/
-    ADR-001-astro-ssr-on-cloudflare.md
-    ADR-002-svelte.md
-    ADR-003-d1-drizzle.md
-    ADR-004-event-sourced-mastery.md
-    ADR-005-hand-rolled-sessions.md
-    ADR-006-r2-uploads.md
+    ADR-001-astro-ssr-on-cloudflare.md, ADR-002-svelte.md, ADR-003-d1-drizzle.md,
+    ADR-004-event-sourced-mastery.md, ADR-005-hand-rolled-sessions.md, ADR-006-r2-uploads.md
   todo.md
 ```
 

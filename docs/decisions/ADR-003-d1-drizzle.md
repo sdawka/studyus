@@ -61,8 +61,10 @@ One consequence: "Migration 000N adds X" phrasing elsewhere in the docs (`docs/a
 
 ## Notes
 
-- **No foreign key constraints** in schema (D1/SQLite enforce at app level).
-- **Indexing strategy** defined post-v1 (analyze query patterns first).
+> **2026-08-15 erratum**: both bullets immediately below are stale.
+> - **FK constraints ARE emitted.** Every `.references()` call in `src/db/schema.ts` compiles to a real SQL `FOREIGN KEY ... ON DELETE ...` clause in `migrations/0000_yielding_nocturne.sql` (cascade/set-null per relation) — D1/SQLite enforces these at the database level, not just "at app level." See `docs/architecture/data-model.md`'s full FK inventory.
+> - **An indexing strategy now exists.** The baseline migration carries 15 indexes (composite + unique) covering the query patterns identified so far (event timelines, mastery rollups, calendar coalesce filters, sweep dedupe keys) — see `docs/architecture/data-model.md`'s Index Inventory section for the full list. "Post-v1, analyze query patterns first" is no longer an accurate description of the current state, though the indexing set may still grow as new query patterns emerge.
+
 - **Mastery fold is pure**: queries are simple reads + single batch write.
 
 See `docs/architecture/data-model.md` for schema.

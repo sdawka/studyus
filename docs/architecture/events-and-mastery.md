@@ -95,9 +95,9 @@ studyus's tutor selects a mode based on `kc_type`:
 | `rule` | `worked_example` | Worked example with step fading → guided practice → independent practice | Phase 1: Show complete solution. Phase 2: Student completes last N steps. Phase 3: Student solves solo. Minimal self-explanation at first; increase as learner improves. |
 | `principle` | `self_explain` + `interactive_model` | Self-explanation dialogue AND/OR parameter adjustment on a live model | Mode A: "Explain why Bernoulli's equation holds when we change velocity." Student writes; tutor probes. Mode B: Model with sliders (velocity, height, pressure); student predicts relation; tutor reveals correct. |
 
-## Mastery Measurement (CMU DataShop Convention)
+## Mastery Measurement (CMU DataShop Convention — conceptual framing, not what shipped)
 
-studyus adopts CMU's DataShop conventions for measuring mastery:
+CMU's DataShop convention for measuring mastery is opportunity-count + first-attempt error rate:
 
 ### Opportunity Count
 For each (learner, KC), count the number of *independent attempts* on tasks involving that KC. This allows comparison across learners and tracking of learning curves.
@@ -111,39 +111,26 @@ On the *first attempt* of a task involving a KC:
 ### Learning Curves
 Plot error rate vs. opportunity count. Typical pattern: exponential decay (fewer errors as practice accumulates).
 
-### studyus v1 Fold (Mastery Score Derivation)
+**This is background/inspiration, not an implementation description.** The shipped fold (below) has no opportunity-count bookkeeping, no first-attempt/hint distinction, and no learning-curve computation — it folds every assessment-role event's payload success value into one recency-weighted average, uniformly regardless of attempt order. Read the next section for what `mastery.ts` actually computes.
 
-**The fold is a pure function**: given a list of events for a (user, KC), compute a mastery score 0–100.
+### The Shipped Fold (Mastery Score Derivation)
 
-1. **Filter to Assessment Events with kc_id**: Collect all events where `is_assessment=true` and `kc_id` matches.
-2. **Group by session/attempt**: Order chronologically.
-3. **First-attempt success**: For each independent problem/quiz/task, was the first attempt correct?
-   - From `quiz_taken`: score ≥ 80% → success. (TODO: configurable threshold)
-   - From `assignment_graded`: success if student's submission earned ≥ 80% of max grade.
-   - From `tutor_session`: success if `payload.final_rating >= 3` (3–5 scale) OR `payload.mode="recall"` and student responded correctly.
-   - Self-reported `self_assessment`: confidence ≥ 70% → success.
-4. **Recency weighting** (exponential decay):
-   - Recent successes matter more. Apply exponential weight: `w(t) = exp(-(now - t_event) / tau)` where `tau = 30 days`.
-   - Weighted success rate: `sum(successes * w(t)) / sum(w(t))`.
-5. **Exposure prior from Instructional Events**:
-   - Count IE-role events (lecture_attended, reading_done, etc.) with this KC.
-   - Each adds a small prior boost: +5% per IE (capped; doesn't exceed 30% boost).
-   - Rationale: exposure without assessment is weak but non-zero signal.
-6. **Idle drift**:
-   - If no events (AE or IE) in the last 45 days, apply exponential decay to the score.
-   - `decayed_score = current_score * exp(-(days_idle - 45) / 30)`.
-   - Rationale: KCs fade from disuse.
-7. **Clamp to 0–100**, determine `status`:
-   - `mastery ≥ 85%`: `status = "mastered"`.
-   - `mastery ≥ 50%`: `status = "in_progress"`.
-   - `mastery >= 20%`: `status = "in_progress"`.
-   - `mastery < 20%`: `status = "not_started"`.
+**Re-derived 2026-08-15 directly from `src/lib/services/mastery.ts::foldMastery`** — the prior "studyus v1 Fold" sketch below this heading (first-attempt success, 45-day idle threshold, 85/50/20 status bands) was never implemented; this section now describes the code that actually shipped. All constants live in one place, `MASTERY_CONSTANTS` in that file — this doc intentionally doesn't restate the numbers as prose that could drift from them again; read the file for the current values, or `docs/api.md`'s "Mastery fold (reference)" section for the same summary kept in sync with it.
 
-**Recomputation**: The fold is cached on the `kcs.mastery` column. Every event write (create, edit, delete) triggers a recompute for affected KCs in the same `db.batch` transaction — ensuring atomicity.
+**The fold is a pure function**: `foldMastery(events, now) -> { mastery, status, lastEventAt }`, re-run in full on every event create/update/delete — no incremental state, no first-attempt/opportunity-count bookkeeping.
+
+1. **AE component**: every event with `is_assessment=true` contributes a `[0,1]` success value read from its payload — `payload.correct` (boolean), else `payload.correctness` (number, clamped), else `payload.score / 100`, else `payload.self_rating / 5`, else a neutral default (`DEFAULT_AE_SUCCESS`) when none of those are present. Each contribution is weighted by recency (`recencyWeight`, half-life `RECENCY_HALF_LIFE_MS`) — an exponential `0.5 ** (age / halfLife)`, not the exponential-decay-to-a-`tau` formula a prior draft described. The AE component is the recency-weighted average of these values, scaled to 0–100.
+2. **IE bump**: every event with `is_instructional=true` adds `IE_BUMP_POINTS` (recency-weighted the same way), summed and capped at `IE_BUMP_CAP` total — exposure alone can raise mastery but never past that cap.
+3. **Idle decay**: the combined raw score (`AE component + IE bump`, itself capped at 100) is pulled toward `IDLE_DECAY_FLOOR_RATIO` of itself with half-life `IDLE_DECAY_HALF_LIFE_MS` since the single most recent event of any kind (`lastEventAt`) — a continuous exponential blend (`raw * decayFactor + raw * floorRatio * (1 - decayFactor)`), not a "no events in N days, then decay" step function. There is no separate 45-day idle *threshold* — decay is continuous from the moment of the last event.
+4. **Status**: a plain threshold read of the final decayed number — `not-started` (zero events at all), `learning` (< `REVIEW_THRESHOLD`), `review` (`REVIEW_THRESHOLD` to `MASTERED_THRESHOLD - 1`), `mastered` (≥ `MASTERED_THRESHOLD`). As of this writing that's learning < 40, review 40–79, mastered ≥ 80 — read `MASTERY_CONSTANTS` for the authoritative values rather than trusting this restatement if it's been edited since.
+
+There is no first-attempt/opportunity-count logic, no per-type success-threshold table (quiz ≥80%, tutor `final_rating >= 3`, etc.) — every AE event's success value comes from whatever the payload actually carries, uniformly, regardless of event `type`.
+
+**Recomputation**: the fold is cached on the `kcs.mastery`/`kcs.status`/`kcs.last_event_at` columns. Every event write (create, edit, delete) re-queries the full event list for the affected KC and re-folds it in the same `db.batch` as the write — atomic, and correct for edits/deletes because the fold is pure and takes the complete list each time (`recomputeKcMastery` in `mastery.ts`; the events service inlines the same pure `foldMastery` call inside its own batch instead of calling that wrapper, since it needs the recompute atomic with the event mutation).
 
 ### assessment_kcs.qmatrix_version
 
-The KC-to-assessment mapping (`assessment_kcs`) includes a `qmatrix_version` column. If the mapping evolves (a new KC is added to an assessment, or an old one removed), increment the version. This allows the fold to handle historical consistency: events from before the mapping change are not re-interpreted.
+The KC-to-assessment mapping (`assessment_kcs`) includes a `qmatrix_version` column, auto-incremented (`services/assessments.ts`) every time an assessment's `kc_ids` are replaced via `PATCH /assessments/:id`. **This is write-only today** — nothing consumes `qmatrix_version` anywhere in the codebase (verified 2026-08-15; it's stored on insert and read back only to compute its own increment on update — no other reader exists). The mastery fold itself doesn't consult it at all: `foldMastery` operates purely on an individual KC's own `events` rows (via `events.kc_id`, not through `assessment_kcs`), so an assessment's KC-mapping history has no bearing on how that KC's events are folded. The "handles historical consistency" behavior this column was intended to enable is aspirational, not implemented — treat this as a versioned-but-unconsumed audit trail unless/until something reads it.
 
 ## TODO
 

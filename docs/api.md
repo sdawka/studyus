@@ -162,8 +162,10 @@ Allowed for **any** source (system-generated events are delete-only, per the pla
 ### GET|POST /tasks
 Matches draft. Response `completed` maps to the internal `done` column name; `courses` is `[{ id, code }]`.
 
+`POST` body's optional `course_ids` (and `PATCH`'s replace-set, below) are ownership-checked before any write happens: every id must belong to the caller, or the whole request fails with `404 Not Found` — a request naming another user's course id can't link a task to it (`requireOwnedCourses` in `services/tasks.ts`).
+
 ### PATCH|DELETE /tasks/:id
-`PATCH` body accepts `title?`, `description?`, `due_date?`, `completed?`, `course_ids?` (replaces the full set of linked courses when provided).
+`PATCH` body accepts `title?`, `description?`, `due_date?`, `completed?`, `course_ids?` (replaces the full set of linked courses when provided — ownership-checked the same way as `POST`, and verified *before* the existing link set is torn down, so a foreign id 404s without leaving the task's links half-updated).
 
 ---
 
@@ -172,6 +174,8 @@ Matches draft. Response `completed` maps to the internal `done` column name; `co
 ### GET|POST /notes
 Matches draft (`content` maps to the internal `body` column name). `POST` body: `{ title, content, links?: [{ course_id?, kc_id? }] }`.
 `GET` (list) items include `links: [{ course_id?, kc_id?, label? }]` — `label` is a display string resolved server-side (KC name if the link targets a KC, else course code). Added post-P3: the list previously omitted `links` entirely, which broke the notes page's SSR.
+
+Every `course_id`/`kc_id` in `links` is ownership-checked before the note (or its link set) is written: a foreign id fails the whole request with `404 Not Found`, both on create and on `PATCH`'s link replacement (`requireLinksOwned` in `services/notes.ts`) — validated before any mutation, so a rejected request never leaves an orphaned note or a wiped link set behind.
 
 ### GET|PATCH|DELETE /notes/:id
 `GET`/response shape includes `links: [{ course_id, kc_id }]`. `PATCH` replaces the full link set when `links` is provided.
@@ -195,6 +199,8 @@ Matches draft.
 
 ### POST /courses/:id/attachments
 Matches draft (`multipart/form-data`, field `file`). R2 key convention: `{userId}/{courseId}/{uuid}-{sanitized-filename}`.
+
+**Size cap** (landed 2026-08-15): files over `MAX_ATTACHMENT_BYTES` (10 MB, `src/lib/schemas/attachments.ts`) are rejected with `400 invalid_input` — checked against `file.size` before the upload is ever buffered into memory, so an oversized file never reaches R2. There is no MIME allow/deny list; any content type is accepted.
 
 ### GET|DELETE /attachments/:id
 Matches draft. `GET` streams the object body with the stored `Content-Type` and a `Content-Disposition: inline` header.
@@ -349,6 +355,7 @@ Frozen route shapes (P2A owns the implementation):
 - `GET /notifications?unread=&limit=` → `{ data: { notifications: [...], unread_count: n } }` — runs the idempotent sweep first.
 - `PATCH /notifications/:id/read` → marks one notification read.
 - `POST /notifications/read-all` → marks all of the caller's unread notifications read.
+- `GET /notifications/count` (additive, post-v1.4) → `{ data: { unread: <int> } }` — a single `count(*)` aggregate for a header badge. **Deliberately does not run the sweep** (unlike the three routes above) — it's side-effect-free by design, so polling it on an interval never mints new notification rows as a side effect. See `src/pages/api/v1/notifications/count.ts`.
 
 ### Courses — create/update
 
@@ -539,6 +546,8 @@ All six families default from `DEFAULT_SETTINGS.task_generators` (`services/user
 | `grade_entry` | official, ungraded assessments due in [now−14d, now) | — | due date + 3d | `grade_entry:<assessment_id>` |
 
 Every collector also skips archived courses. Generated titles: `Attend <course code>`, `Prep for <course code>`, `Review notes: <course code>`, `Practice <kc name> for <assessment title>`, `Revisit <kc name>`, `Enter grade: <assessment title>`.
+
+Every sweep-generated task also carries a non-null, human-readable `description` (the `description` field is never left `null` for a `system`-sourced row) — one per family: `attend_class` → `"Class session — <course code>"`, `prep_before_class` → `"Get ready for <course code>'s upcoming class"`, `review_after_class` → `"Review your notes from <course code>'s class"`, `practice_kc` → `"<kc name> is linked to <assessment title>"`, `stale_kc` → `"<kc name> hasn't been practiced recently"`, `grade_entry` → `"Enter your grade for <assessment title>"`.
 
 ### Two-way sync
 

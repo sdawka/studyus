@@ -273,15 +273,11 @@ Found during the mobile-shell verification pass (M3), not fixed there because th
 
 ### Database Optimization
 
-**Current**: No indexing beyond basic lookups.
+**Resolved 2026-08-15 (F0 track)**: "No indexing beyond basic lookups" is no longer true — the baseline migration now carries 15 indexes (composite + unique) covering event timelines, mastery rollups, calendar coalesce filters, and every sweep's dedupe keys. See `docs/architecture/data-model.md`'s Index Inventory section for the full, current list, and ADR-003's erratum for why the old "indexing strategy defined post-v1" note there was also stale. The two specific indexes originally called for below **did** land, in slightly different shape than proposed (`events_user_ts_idx` on `(user_id, ts)` rather than `(user_id, course_id, ts)` — `course_id` wasn't needed for the query patterns that actually showed up; `kcs_course_id_idx` on `(course_id)` covers mastery rollups via the `course_id` join rather than a direct `(user_id, kc_id)` index, since `kcs` has no `user_id` column).
 
-**Post-v1**:
-- Index on (user_id, course_id, ts) for event timeline.
-- Index on (user_id, kc_id) for mastery rollups.
+**Still open, unchanged**:
 - Partitioning if events table grows (post-large-scale).
-- Query plan analysis (EXPLAIN).
-
-**Scope**: Profiling, slow-query logging.
+- Query plan analysis (EXPLAIN) / profiling / slow-query logging — no query-level performance work has been done beyond adding the indexes above.
 
 ### Backup & Disaster Recovery
 

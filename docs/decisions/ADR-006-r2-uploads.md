@@ -2,6 +2,8 @@
 
 **Status**: Accepted
 
+> **2026-08-15 erratum**: the real R2 key convention is `${userId}/${courseId}/${id}-${safeName}` (`src/lib/services/attachments.ts:20`, matches `docs/api.md`) — not `attachments/{userId}/{courseSlug}/{filename}` as the "Decision"/"Upload Flow" sections below describe (no `attachments/` prefix, keyed by course **id** not slug, and the filename is sanitized + UUID-prefixed rather than used verbatim). The "File Type Filtering"/MIME validation and "Size limit: 10 MB per file, 100 MB per course" claims below did **not** ship as described either: there is no MIME allow/deny list anywhere in the code, and only the per-file 10 MB cap is real — enforced via `MAX_ATTACHMENT_BYTES` in `src/lib/schemas/attachments.ts` (landed 2026-08-15), checked against `file.size` before the file is buffered, failing with `400 invalid_input` over the limit. There is no per-course 100 MB aggregate cap.
+
 **Decision**: Use Cloudflare R2 for storing course attachments (PDFs, images, notes).
 
 ## Context

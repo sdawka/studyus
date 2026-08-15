@@ -66,9 +66,13 @@ and Todoist/Things. Opinionated, implementable, student-focused.
   `Esc` = close any open popover/detail panel and return focus to the grid. Keep shortcuts
   active by default (unlike Google Calendar's opt-in toggle) but show a one-time `?` hint
   affordance in the header the first session.
-- **Mini-month jump**: small month calendar in the sidebar/header dropdown; clicking a date
-  jumps the week view to contain that date, highlights it. This is the fastest way to jump
-  >2 weeks away — don't make users click chevrons repeatedly.
+- **Mini-month jump** *(spec'd, not built — deferred, confirmed 2026-08-15)*: small month calendar
+  in the sidebar/header dropdown; clicking a date jumps the week view to contain that date,
+  highlights it. This is the fastest way to jump >2 weeks away — don't make users click
+  chevrons repeatedly. `PlannerView.svelte` has no such dropdown today — only `goToday`/
+  `shiftWeek`/`shiftMonth` chevron navigation and the `t` keyboard shortcut exist; jumping
+  further than a page requires repeated chevron clicks or paging to month view. Listed under
+  `docs/todo.md`'s "v1.2-Specific Deferrals".
 - **Date header**: each day column header shows weekday abbreviation (top, small, muted) +
   day number (large, bold). Today's number gets a filled circular badge in the accent color.
   Weekend headers get no special treatment beyond normal styling (see §6 — don't gray them out).
@@ -86,11 +90,17 @@ and Todoist/Things. Opinionated, implementable, student-focused.
   and sheet-based popovers (see plan Part 2) — it didn't build the drawer this spec originally
   called for; revisit if the always-stacked rail proves too far down the scroll on phones.
 - Each rail item shows course chip + title + due date; overdue items get a red left-border.
-- **Drag-to-schedule from rail onto the grid is in scope but can ship in a follow-up phase** —
-  the v1 cut is: click a rail item → opens the same create/edit panel used for grid clicks,
-  pre-filled with the task's title/course, user picks a time. Full drag-and-drop (auto-fills
-  date+time+duration on drop, like Todoist) is the natural v2 once the click-to-schedule flow
-  is validated. Don't block v1 on building DnD.
+- **Click-to-schedule and drag-to-schedule from the rail are both spec'd, neither is built**
+  *(confirmed 2026-08-15 against `PlannerRail.svelte`)*: this bullet originally called for a v1
+  cut of "click a rail item → opens the same create/edit panel used for grid clicks, pre-filled
+  with the task's title/course, user picks a time," with full drag-and-drop deferred to v2. What
+  actually shipped is narrower than even that v1 cut — `PlannerRail`'s `handleClick` only ever
+  does one of two things: if the clicked item's week is already on screen, it calls `onSelect`
+  (opens the item's own view/edit popover, same as clicking it in the grid); otherwise it calls
+  `onJumpToWeek` (pages the grid to that item's week and then selects it there). Neither path
+  schedules anything or opens a create panel — a rail item can only be *viewed*, never
+  scheduled, from the rail itself. Both click-to-schedule and drag-to-schedule remain fully
+  deferred; see `docs/todo.md`'s "v1.2-Specific Deferrals" ("PlannerRail click-to-schedule").
 
 ## 5. Interaction
 

@@ -2,6 +2,8 @@
 
 **Status**: Accepted
 
+> **2026-08-15 erratum**: the shipped fold (`src/lib/services/mastery.ts::foldMastery`) differs from this ADR's "Fold Algorithm (v1)" sketch below in several material ways — there is no first-attempt-correctness bookkeeping (every AE event's payload success value counts, not just a first attempt), the exposure prior is `+4` points per instructional event capped at `+15` (not "+5% per IE, capped... doesn't exceed 30%"), and idle decay is a continuous exponential blend toward a 50% floor from the moment of the last event (not a 45-day-threshold step function). The "Mastery Deltas" response shape and dual-role-flag design below are accurate and unchanged. For the authoritative algorithm and current constants, see `docs/architecture/events-and-mastery.md`'s "The Shipped Fold" section and `mastery.ts::MASTERY_CONSTANTS` directly — this ADR's Fold Algorithm section is left below as a historical record of the original design intent, not a description of current behavior.
+
 **Decision**: Mastery is never stored as ground truth; it's derived from an append-mostly event log via a pure fold function.
 
 ## Context

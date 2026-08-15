@@ -31,53 +31,42 @@ export default defineConfig({
 
 ### wrangler.jsonc
 
-All bindings, database config, and environment variables go here:
+All bindings, database config, and environment variables go here. This is the **real, current file** (`wrangler.jsonc` at the repo root) — a prior draft of this doc showed a fictional shape (a `main`/`type: "service"` block, `env.production`/`env.staging` route blocks, and an `env_secrets` section) that never matched what's actually checked in:
 
 ```jsonc
 {
+  "$schema": "node_modules/wrangler/config-schema.json",
   "name": "studyus",
-  "main": "dist/server/entry.mjs",
-  "type": "service",
-  "compatibility_date": "2024-10-31",
-
-  "env": {
-    "production": {
-      "name": "studyus-prod",
-      "route": "https://studyus.example.com/*"
-    },
-    "staging": {
-      "name": "studyus-staging",
-      "route": "https://staging.studyus.example.com/*"
-    }
-  },
-
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "studyus",
-      "database_id": "...",
+      "database_id": "local-placeholder",
       "migrations_dir": "migrations"
     }
   ],
-
   "r2_buckets": [
     {
       "binding": "UPLOADS",
       "bucket_name": "studyus-uploads"
     }
   ],
-
   "vars": {
-    "OPENROUTER_MODEL": "openai/gpt-4o-mini"
+    "OPENROUTER_MODEL": "openrouter/auto"
   },
-
-  "env_secrets": {
-    "OPENROUTER_KEY": "sk-or-..."
+  "observability": {
+    "traces": {
+      "enabled": true
+    }
   }
 }
 ```
 
-**Secrets**: Store API keys via `wrangler secret put OPENROUTER_KEY`, which stores them in .wrangler/env.json (local) or Cloudflare (remote). Reference in code via `env.OPENROUTER_KEY`.
+There is **no `env` block** (no `production`/`staging` sub-environments) and **no `env_secrets` key** — that's not a real wrangler config field. `database_id` is a `"local-placeholder"` since this project has never deployed (see "Deployment" below and `docs/todo.md`).
+
+**Secrets**: Store API keys via `wrangler secret put OPENROUTER_API_KEY`, which stores them in `.wrangler/env.json` (local) or Cloudflare (remote). Reference in code via `env.OPENROUTER_API_KEY` (not `OPENROUTER_KEY` — see `src/env.d.ts`, which augments the generated `Cloudflare.Env`/`Env` type with this secret since it's not a `wrangler.jsonc` var wrangler's own type generator knows about).
 
 ## Accessing Bindings in Code
 
@@ -98,7 +87,7 @@ import { env } from 'cloudflare:workers';
 // In a server route or middleware:
 const db = env.DB;
 const uploadsBucket = env.UPLOADS;
-const apiKey = env.OPENROUTER_KEY;
+const apiKey = env.OPENROUTER_API_KEY;
 ```
 
 Or, if you're in a context where `env` is not available (older Astro APIs), use the context object:
@@ -166,7 +155,7 @@ Migrations are tracked in the `_cf_migrations` table and are idempotent (Drizzle
 Create a `.dev.vars` file in the root:
 
 ```
-OPENROUTER_KEY=sk-or-v1-...
+OPENROUTER_API_KEY=sk-or-v1-...
 ```
 
 These are loaded by wrangler during dev and are *not* committed. Use `.dev.vars.example` as a template.

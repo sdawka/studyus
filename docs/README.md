@@ -11,11 +11,17 @@ This directory holds product and architecture documentation for studyus, a KLI-g
 
 ### Architecture (`/architecture/`)
 - **overview.md** — Stack (Astro 7.2 + Svelte 5, @astrojs/cloudflare 14 on Workers, D1 + Drizzle, R2, OpenRouter), headless service principle, repo layout.
-- **data-model.md** — Every table and relationship; LearnerProfile as aggregation service, not table; knowledge map stubbed.
-- **events-and-mastery.md** — **THE KLI DOC.** Ontology (KCs cause performance; Instructional/Learning/Assessment Events; dual-role flags), KC taxonomy (fact/association/concept/rule/principle), learning processes, instruction matching (asymmetry hypothesis), mastery measurement (CMU DataShop convention with recency weighting + exposure prior), v1 fold implementation.
+- **data-model.md** — Every table and relationship (column-by-column, full FK/ON DELETE and index inventory); LearnerProfile as aggregation service, not table; knowledge map stubbed.
+- **events-and-mastery.md** — **THE KLI DOC.** Ontology (KCs cause performance; Instructional/Learning/Assessment Events; dual-role flags), KC taxonomy (fact/association/concept/rule/principle), learning processes, instruction matching (asymmetry hypothesis), CMU DataShop convention as conceptual background, and the shipped mastery fold (`src/lib/services/mastery.ts`) as actually implemented.
 - **tutor.md** — AI tutor architecture: mode selection by KC type, OpenRouter SSE proxy, interactive-model spec, context assembly, session event hookup.
 - **cloudflare.md** — Adapter v14 specifics (Workers not Pages, wrangler.jsonc, workerd dev, D1 batch atomicity, local .wrangler/state).
 - **agentic-channels.md** — Flue pattern (separate Worker + Durable Objects, service binding, tools wrapping services, quick_quiz as v1 pattern-setter, channels→agent→tools→services→events), explicitly post-v1 experimental.
+
+### Design (`/design/`)
+- **charter.md** — Binding theme-design contract from the compass/campus/focus design debate: shared structure is mandatory and theme-neutral, per-theme work is token-values only (fonts/colors/spacing/motion/radius/shadow).
+- **compass.md**, **focus.md**, **campus.md** — Per-theme voice/type/color-story/density/motion rationale and do/don't lists for each of the three shipped themes.
+- **planner-ux.md** — The planner week-grid UX spec (hour gutter, event-block design, navigation, sidebar/agenda pairing, interaction, visual hierarchy) — annotated inline where a spec'd feature (mini-month jump, rail click-to-schedule) hasn't shipped yet.
+- **mobile-shell.md** — The mobile shell contract below the `@media (max-width: 767px)` breakpoint: bottom tab bar, header-popovers-as-sheets, per-page mobile compositions.
 
 ### API & Decisions
 - **api.md** — DRAFT of full `/api/v1` endpoint contract (method, path, purpose, request/response shapes). Frozen at end of M1. Session auth via HttpOnly cookie.
@@ -39,6 +45,8 @@ This directory holds product and architecture documentation for studyus, a KLI-g
 - Building the tutor? Read tutor.
 - Deploying or adding a new binding? Read cloudflare.
 - Planning agentic features? Read agentic-channels.
+
+**For design**: Start with charter (the binding cross-theme contract), then the specific theme doc (compass/focus/campus) you're touching. Building planner UI? Read planner-ux. Touching anything below the mobile breakpoint? Read mobile-shell.
 
 **For API contracts**: api.md is frozen after M1 and drives the iPad client build.
 

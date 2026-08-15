@@ -1,62 +1,60 @@
 # studyus User Journeys
 
+**Re-derived 2026-08-15 against `docs/product/screens.md` and the current routes/components** — the sections below on sign-in, the sidebar's entry points, and `/calendar`/`/grades`/`/study` all describe a shape that predates several rewrites; corrected to match what's actually shipped.
+
 ## Onboarding (First-Time User)
 
-1. **Sign in** with username/password (v1 seeded user). Redirect to onboarding if new.
-2. **Explain KC concept**: what is a knowledge component? Why should you care? (Svelte stepper modal.)
-3. **Set preferences**: your name, current term (defaults to Fall 2024, Winter 2025 from seed).
-4. **Review imported courses**: the 9 seeded courses from `courses.json`, grouped by term. Confirm or archive. (Later: multi-user → email verification, manual signup.)
+1. **Sign in** with email/password (`POST /auth/login`; there is no `username` field anywhere in the schema or auth flow — see `docs/architecture/data-model.md`'s `users` entry). Redirect to onboarding if new.
+2. **Explain KC concept**: what is a knowledge component? Why should you care? (Svelte stepper modal, `OnboardingFlow.svelte`.)
+3. **Set preferences**: your name, current term.
+4. **Review imported courses**: the 9 seeded courses from `courses/courses.json`, grouped by term. Confirm or archive. (Later: multi-user → email verification, manual signup — still deferred, see `docs/todo.md`.)
 5. **Land on dashboard** with an empty calendar (no events yet) and quick tips ("Ready to log your first lecture?").
 
-## Returning User: Three Doors
+## Returning User: Sidebar Entry Points
 
-The sidebar offers three main entry points to Learning, each leading to a different workflow:
+The desktop sidebar (`Sidebar.astro`) offers three persistent entry points above the course list — Home, Tasks, and (in the footer) Feed — each leading to a different workflow. `/study` is **not** one of these: it's kept alive and reachable by direct URL but unlinked from any nav, its functionality absorbed into each course's Practice tab (`/courses/[slug]/practice`) — see `docs/product/screens.md`.
 
 ### Door 1: Dashboard (Status Check)
 - **Route**: `/dashboard`
-- **Flow**: Glance at the week ahead (7-day calendar strip), see due tasks, check grade snapshot, review recent events.
-- **Use case**: "How am I doing this week? Any deadlines lurking?"
+- **Flow**: Task-centric hero (`TodayTasks` — overdue/today/next-7d buckets, checkable inline) leads, followed by the collapsible week strip (`WeekView`), slimmed course cards, and a rail with the record-event form and upcoming deadlines.
+- **Use case**: "What do I need to do today? Any deadlines lurking?"
 
 ### Door 2: Feed (Unintentional Instruction)
 - **Route**: `/feed`
-- **Flow**: Browse curated and user-added resources (canonical links from seed + geek-feed + user shares), filtered by course. Optionally start a study session focused on a resource.
+- **Flow**: Browse curated and user-added resources (canonical/seed links + user shares) in a Pinterest-style masonry grid, filtered by course chip.
 - **Use case**: "I have 20 minutes. What's a good thing to read or watch right now?"
 
-### Door 3: Study (Deliberate Practice)
-- **Route**: `/study`
-- **Flow**: 
-  1. Pick a course.
-  2. Set a timer (minutes).
-  3. Pick an event type (lecture attended, practice, reading, tutoring, self-assessment).
-  4. Timer runs. On completion, reflect (which KCs touched? How confident?).
-  5. Append events to the log.
-- **Use case**: "I studied thermodynamics for 45 minutes. Record it."
+### Door 3: Tasks (Everything Checkable)
+- **Route**: `/tasks`
+- **Flow**: Per-course cards of open tasks (user todos and sweep-generated system tasks alike — attend-class, prep-before-class, practice-KC, etc.), one level of subtasks, inline quick-add. Also reachable without leaving the current page via the header's `TodoDropdown`.
+- **Use case**: "What's actually due, and what has the app already lined up for me?"
+
+**Not a door**: `/study` and `/study/quiz` still work if visited directly (`StudyFlow`/`QuickQuiz`), but nothing in the shell links to them — the same drilling flow (pick course → timer → event type → reflect → append events) now lives inside each course's Practice tab instead, preselected to that course.
 
 ## Recording Outside-App Events
 
-A global "Record event" modal (in the nav) lets you log anything, anywhere:
+A global "Record event" modal (in the header) lets you log anything, anywhere:
 - Attended or missed a lecture (course-scoped, optional KC link).
 - Got a grade on an assessment (appends dual-role assessment+event records).
 - Completed a reading, video, tutoring session (manual event entry).
 
 Use case: "I just took the midterm. Let me enter the grade so the standing updates."
 
-## Admin Workflows (Calendar, Grades, Attendance)
+## Admin Workflows (Planner, Grades, Attendance)
 
-### Calendar (`/calendar`)
-- Month + agenda views.
-- **Course filter dropdown** (scoped to current term by default).
-- Shows assessment deadlines, study-session blocks, other course events.
+### Planner (`/planner`; `/calendar` is now a redirect here)
+`/calendar` is a **302 redirect to `/planner`**, kept alive only for old bookmarks/links — there is no month-or-agenda page living at `/calendar` itself. `/planner` renders as a full-viewport overlay over the shell:
+- Week time-grid view by default (per `docs/design/planner-ux.md`), toggleable to month or agenda via the same view switcher.
+- **Course filter** (current-term / all courses / one course), scoped like the old dropdown.
+- Shows assessment deadlines, scheduled/logged study sessions, and other course events; clicking an item opens its detail popover, clicking empty grid space opens an inline scheduled-session create form.
 
-### Grades (`/grades`)
-- Assessments table: assessment name, type, due date, weight, grade entered (editable inline).
-- Weighted course standing (auto-calculated from entered grades).
-- Visual grade summary per course.
+### Grades (`/grades` is kept alive, unlinked)
+There is no standalone, nav-reachable grades page anymore — `/grades` still renders (`GradeTable`) but nothing links to it. The same information now lives in two places instead:
+- **Dashboard**: course cards show a grade pill per course.
+- **Course Overview** (`/courses/[slug]`): full assessments table with inline grade entry, weighted standing for that course, and a "Concepts covered" KC picker per assessment.
 
 ### Attendance (`/courses/[slug]` Standing tab)
-- Attendance percentage.
-- One-tap "attended" / "missed" logging for each lecture (quick inline buttons).
-- Visual streak display.
+Attendance is **not** an ad hoc event-log button anymore. `class_sessions` rows are pre-generated by an idempotent sweep from each course's `meeting_days` (one row per scheduled meeting day, ±70 days back through today) with `status: null` (unmarked) until the student toggles it — `AttendanceCard` lists these and lets the student mark `attended`/`missed` per session, which updates the row's `status` directly (and, per the task-centric platform, syncs the linked `attend_class` task's completion both ways). Logging a `lecture_attended`/`lecture_missed` event manually (via the Record Event modal) still works for mastery-fold purposes, but is no longer how the Standing tab's attendance list itself gets populated or checked off.
 
 ## Future: Bus-Quiz Channel
 
