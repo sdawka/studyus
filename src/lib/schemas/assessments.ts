@@ -10,7 +10,7 @@ export const ASSESSMENT_KINDS = ['official', 'practice'] as const;
 export type AssessmentKind = (typeof ASSESSMENT_KINDS)[number];
 
 export const createAssessmentSchema = z.strictObject({
-  title: z.string().min(1),
+  title: z.string().min(1).max(300),
   type: z.enum(ASSESSMENT_TYPES),
   due_date: isoDatetimeSchema.optional(),
   weight_pct: z.number().min(0).max(100).optional(),
@@ -22,7 +22,7 @@ export type CreateAssessmentInput = z.infer<typeof createAssessmentSchema>;
 // Setting grade_received (with existing grade_max, or provided here) is the
 // trigger for auto-appending one assessment event per linked assessment_kcs row.
 export const updateAssessmentSchema = z.strictObject({
-  title: z.string().min(1).optional(),
+  title: z.string().min(1).max(300).optional(),
   type: z.enum(ASSESSMENT_TYPES).optional(),
   due_date: isoDatetimeSchema.nullable().optional(),
   weight_pct: z.number().min(0).max(100).nullable().optional(),

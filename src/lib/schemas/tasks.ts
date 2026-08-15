@@ -17,8 +17,8 @@ export const TASK_TYPES = [
 export type TaskType = (typeof TASK_TYPES)[number];
 
 export const createTaskSchema = z.strictObject({
-  title: z.string().min(1),
-  description: z.string().optional(),
+  title: z.string().min(1).max(300),
+  description: z.string().max(2000).optional(),
   due_date: isoDatetimeSchema.optional(),
   course_ids: z.array(idSchema).optional(),
   // Create-only: one level of subtasks (parent must not itself have a
@@ -29,8 +29,8 @@ export const createTaskSchema = z.strictObject({
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 
 export const updateTaskSchema = z.strictObject({
-  title: z.string().min(1).optional(),
-  description: z.string().nullable().optional(),
+  title: z.string().min(1).max(300).optional(),
+  description: z.string().max(2000).nullable().optional(),
   due_date: isoDatetimeSchema.nullable().optional(),
   completed: z.boolean().optional(),
   course_ids: z.array(idSchema).optional(),

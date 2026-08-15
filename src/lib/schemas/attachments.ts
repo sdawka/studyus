@@ -3,6 +3,10 @@
 // but we keep a schema here for the shape returned to clients.
 import { z } from 'zod';
 
+// Enforced in the upload route (checked against `file.size` before the
+// buffer is ever read into memory — see courses/[id]/attachments.ts).
+export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024; // 10 MB
+
 export const attachmentSchema = z.strictObject({
   id: z.uuid(),
   r2_key: z.string(),

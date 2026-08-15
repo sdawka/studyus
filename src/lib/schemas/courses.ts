@@ -10,11 +10,11 @@ export type ListCoursesQuery = z.infer<typeof listCoursesQuerySchema>;
 // convention (persisted in the existing `courses.color` text column).
 export const createCourseSchema = z.strictObject({
   code: z.string().min(1).max(20),
-  title: z.string().min(1),
-  term: z.string().optional(),
+  title: z.string().min(1).max(200),
+  term: z.string().max(50).optional(),
   credits: z.number().int().optional(),
-  instructor: z.string().optional(),
-  overview: z.string().optional(),
+  instructor: z.string().max(200).optional(),
+  overview: z.string().max(5000).optional(),
   color_hue: z.number().int().min(0).max(360).optional(),
 });
 export type CreateCourseInput = z.infer<typeof createCourseSchema>;
@@ -23,11 +23,11 @@ export type CreateCourseInput = z.infer<typeof createCourseSchema>;
 // v1.3: `meeting_days` (ISO weekday numbers, Mon=1..Sun=7) drives the class
 // sessions generation sweep; the service dedupes/sorts before storing.
 export const updateCourseSchema = z.strictObject({
-  title: z.string().min(1).optional(),
-  term: z.string().nullable().optional(),
+  title: z.string().min(1).max(200).optional(),
+  term: z.string().max(50).nullable().optional(),
   credits: z.number().int().nullable().optional(),
-  instructor: z.string().nullable().optional(),
-  overview: z.string().nullable().optional(),
+  instructor: z.string().max(200).nullable().optional(),
+  overview: z.string().max(5000).nullable().optional(),
   archived: z.boolean().optional(),
   color_hue: z.number().int().min(0).max(360).optional(),
   meeting_days: z.array(z.number().int().min(1).max(7)).nullable().optional(),

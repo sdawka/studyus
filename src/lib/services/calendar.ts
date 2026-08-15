@@ -13,8 +13,19 @@ function humanizeEventType(type: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
-export async function getCalendar(db: Db, userId: string, fromMs: number, toMs: number, courseId?: string) {
-  await sweepTasks(db, userId);
+// `sweep: false` lets a caller that already ran sweepTasks itself (e.g.
+// dashboard.astro) skip the redundant re-sweep — see the same param on
+// listTasks (services/tasks.ts). Every other caller keeps the old
+// always-sweep default.
+export async function getCalendar(
+  db: Db,
+  userId: string,
+  fromMs: number,
+  toMs: number,
+  courseId?: string,
+  opts: { sweep?: boolean } = {},
+) {
+  if (opts.sweep ?? true) await sweepTasks(db, userId);
 
   const items: CalendarItem[] = [];
 

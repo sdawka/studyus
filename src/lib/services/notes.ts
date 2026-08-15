@@ -2,7 +2,7 @@ import { and, desc, eq } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { courses, kcs, noteLinks, notes } from '../../db/schema';
 import type { CreateNoteInput, UpdateNoteInput } from '../schemas/notes';
-import { NotFoundError } from './util';
+import { NotFoundError, requireOwnedCourse, requireOwnedKc } from './util';
 
 // The `content` field name in the frozen contract maps to the `body` column
 // (named for its markdown-body role internally); shape the response here so
@@ -42,20 +42,38 @@ export async function listNotes(db: Db, userId: string) {
   return rows.map((row) => ({ ...shapeNote(row), links: byNote.get(row.id) ?? [] }));
 }
 
-async function insertLinks(db: Db, noteId: string, links: CreateNoteInput['links']) {
-  if (!links?.length) return;
+// Ownership guard (mirrors resources.ts's create-time checks): a course_id or
+// kc_id supplied by the client must belong to `userId`, or the whole request
+// 404s — otherwise a note could be linked into another user's course/KC.
+// Split from the actual write (below) so both call sites can validate
+// *before* mutating anything — createNote before the note row even exists,
+// updateNote before its old links are torn down — so a foreign id 404s
+// without leaving an orphaned note or a wiped link set behind.
+async function requireLinksOwned(db: Db, userId: string, links: CreateNoteInput['links']) {
+  const valid = (links ?? []).filter((l) => l.course_id || l.kc_id);
+  await Promise.all(
+    valid.map(async (l) => {
+      if (l.course_id) await requireOwnedCourse(db, userId, l.course_id);
+      if (l.kc_id) await requireOwnedKc(db, userId, l.kc_id);
+    }),
+  );
+  return valid;
+}
+
+async function writeLinks(db: Db, noteId: string, validLinks: { course_id?: string; kc_id?: string }[]) {
+  if (!validLinks.length) return;
   await db.insert(noteLinks).values(
-    links
-      .filter((l) => l.course_id || l.kc_id)
-      .map((l) => ({ id: crypto.randomUUID(), noteId, courseId: l.course_id ?? null, kcId: l.kc_id ?? null })),
+    validLinks.map((l) => ({ id: crypto.randomUUID(), noteId, courseId: l.course_id ?? null, kcId: l.kc_id ?? null })),
   );
 }
 
 export async function createNote(db: Db, userId: string, input: CreateNoteInput) {
+  const validLinks = await requireLinksOwned(db, userId, input.links);
+
   const id = crypto.randomUUID();
   const now = Date.now();
   await db.insert(notes).values({ id, userId, title: input.title, body: input.content ?? '', createdAt: now, updatedAt: now });
-  await insertLinks(db, id, input.links);
+  await writeLinks(db, id, validLinks);
   return getNote(db, userId, id);
 }
 
@@ -75,14 +93,16 @@ export async function getNote(db: Db, userId: string, noteId: string) {
 export async function updateNote(db: Db, userId: string, noteId: string, input: UpdateNoteInput) {
   await requireOwnedNote(db, userId, noteId);
 
+  const validLinks = input.links !== undefined ? await requireLinksOwned(db, userId, input.links) : null;
+
   const patch: Partial<typeof notes.$inferInsert> = { updatedAt: Date.now() };
   if (input.title !== undefined) patch.title = input.title;
   if (input.content !== undefined) patch.body = input.content;
   await db.update(notes).set(patch).where(eq(notes.id, noteId));
 
-  if (input.links !== undefined) {
+  if (validLinks !== null) {
     await db.delete(noteLinks).where(eq(noteLinks.noteId, noteId));
-    await insertLinks(db, noteId, input.links);
+    await writeLinks(db, noteId, validLinks);
   }
 
   return getNote(db, userId, noteId);

@@ -2,7 +2,7 @@
 // assessments, per course, plus a credit-weighted overall summary.
 // 'practice' assessments (v1.3.1) never move the weighted grade, even when
 // graded — they're excluded here before anything else runs.
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { assessments, courses } from '../../db/schema';
 
@@ -22,13 +22,27 @@ function weightedStanding(rows: (typeof assessments.$inferSelect)[]): number | n
 
 export async function getGradesSummary(db: Db, userId: string) {
   const userCourses = await db.select().from(courses).where(eq(courses.userId, userId));
+  const courseIds = userCourses.map((c) => c.id);
+
+  // One query for every course's assessments, grouped in JS — replaces the
+  // former per-course query in this loop (an N+1 that ran once per course
+  // on every dashboard/grades load).
+  const allAssessments = courseIds.length
+    ? await db.select().from(assessments).where(inArray(assessments.courseId, courseIds))
+    : [];
+  const assessmentsByCourse = new Map<string, typeof allAssessments>();
+  for (const a of allAssessments) {
+    const list = assessmentsByCourse.get(a.courseId) ?? [];
+    list.push(a);
+    assessmentsByCourse.set(a.courseId, list);
+  }
 
   const byCourse = [];
   let creditWeightedSum = 0;
   let creditTotal = 0;
 
   for (const course of userCourses) {
-    const courseAssessments = await db.select().from(assessments).where(eq(assessments.courseId, course.id));
+    const courseAssessments = assessmentsByCourse.get(course.id) ?? [];
     const weightedGrade = weightedStanding(courseAssessments);
 
     if (weightedGrade !== null && course.credits) {

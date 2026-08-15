@@ -85,3 +85,13 @@ export const listEventsQuerySchema = z.strictObject({
     .optional(),
 });
 export type ListEventsQuery = z.infer<typeof listEventsQuerySchema>;
+
+// GET /kcs/:id/events — previously raw `Number(searchParams.get(...))`,
+// which let a non-numeric or out-of-range value flow straight into
+// db.select().limit()/.offset() and 500 instead of 400. Same bounds as
+// listEventsQuerySchema.limit above.
+export const kcEventsQuerySchema = z.strictObject({
+  limit: z.coerce.number().int().min(1).max(200).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
+});
+export type KcEventsQuery = z.infer<typeof kcEventsQuerySchema>;

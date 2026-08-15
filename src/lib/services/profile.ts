@@ -50,11 +50,16 @@ export async function getProfile(db: Db, userId: string) {
   if (!userRows[0]) throw new NotFoundError('User');
 
   const userCourses = await db.select().from(courses).where(eq(courses.userId, userId));
-  const allKcs = await db.select().from(kcs);
+  // Scoped via a join on courses rather than an unscoped `select().from(kcs)`
+  // filtered in JS — the old query pulled every user's KCs off the table.
+  const allKcs = await db
+    .select({ courseId: kcs.courseId, mastery: kcs.mastery })
+    .from(kcs)
+    .innerJoin(courses, eq(kcs.courseId, courses.id))
+    .where(eq(courses.userId, userId));
 
   const kcsByCourse = new Map<string, number[]>();
   for (const kc of allKcs) {
-    if (!userCourses.some((c) => c.id === kc.courseId)) continue;
     const list = kcsByCourse.get(kc.courseId) ?? [];
     list.push(kc.mastery);
     kcsByCourse.set(kc.courseId, list);

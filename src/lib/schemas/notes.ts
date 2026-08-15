@@ -8,15 +8,15 @@ export const noteLinkSchema = z.strictObject({
 export type NoteLinkInput = z.infer<typeof noteLinkSchema>;
 
 export const createNoteSchema = z.strictObject({
-  title: z.string().min(1),
-  content: z.string().default(''),
+  title: z.string().min(1).max(300),
+  content: z.string().max(50000).default(''),
   links: z.array(noteLinkSchema).optional(),
 });
 export type CreateNoteInput = z.infer<typeof createNoteSchema>;
 
 export const updateNoteSchema = z.strictObject({
-  title: z.string().min(1).optional(),
-  content: z.string().optional(),
+  title: z.string().min(1).max(300).optional(),
+  content: z.string().max(50000).optional(),
   links: z.array(noteLinkSchema).optional(),
 });
 export type UpdateNoteInput = z.infer<typeof updateNoteSchema>;

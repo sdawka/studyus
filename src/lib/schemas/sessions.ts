@@ -1,9 +1,15 @@
 import { z } from 'zod';
 import { idSchema, isoDatetimeSchema } from './common';
+import { EVENT_TYPES } from './events';
 
 export const createStudySessionSchema = z.strictObject({
   course_id: idSchema.optional(),
-  intended_event_type: z.string().min(1),
+  // Constrained to the real event-type vocabulary — services/sessions.ts's
+  // resolveEventType previously fell back to 'practice_done' silently for
+  // any string that didn't match, so a typo or garbage value never
+  // surfaced as an error; every real caller only ever sends a value that's
+  // already a member of EVENT_TYPES (see StudyFlow.svelte / CreateSessionPopover.svelte).
+  intended_event_type: z.enum(EVENT_TYPES),
   planned_minutes: z.number().int().min(1).optional(),
   kc_ids: z.array(idSchema).optional(),
   // When set, this is a planned/scheduled session — startedAt is stamped

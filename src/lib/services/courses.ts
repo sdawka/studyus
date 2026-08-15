@@ -1,7 +1,8 @@
-import { and, asc, eq, like, sql } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, isNull, like, sql } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { branches, courses, kcs } from '../../db/schema';
+import { branches, classSessions, courses, kcs } from '../../db/schema';
 import type { CreateCourseInput, UpdateCourseInput } from '../schemas/courses';
+import { isoWeekday, localNoon } from './classSessions';
 import { NotFoundError, requireOwnedCourse } from './util';
 
 // Spaced hue list (golden-angle-ish, not literal golden angle) new courses
@@ -74,7 +75,13 @@ export async function listCourses(
   if (!opts.includeMastery)
     return rows.map((c) => ({ ...c, meetingDays: parseMeetingDaysColumn(c.meetingDays), mastery: null, status: null }));
 
-  const allKcs = await db.select({ courseId: kcs.courseId, mastery: kcs.mastery, status: kcs.status }).from(kcs);
+  // Scoped via a join on courses rather than an unscoped `select().from(kcs)`
+  // — the old query pulled every user's KCs before filtering in JS.
+  const allKcs = await db
+    .select({ courseId: kcs.courseId, mastery: kcs.mastery, status: kcs.status })
+    .from(kcs)
+    .innerJoin(courses, eq(kcs.courseId, courses.id))
+    .where(eq(courses.userId, userId));
   const byCourse = new Map<string, { mastery: number; status: string }[]>();
   for (const kc of allKcs) {
     const list = byCourse.get(kc.courseId) ?? [];
@@ -171,7 +178,7 @@ export async function createCourse(db: Db, userId: string, input: CreateCourseIn
 // NotFoundError for a missing or cross-user course id). Never touches
 // code/slug — the slug is immutable once assigned.
 export async function updateCourse(db: Db, userId: string, courseId: string, input: UpdateCourseInput) {
-  await requireOwnedCourse(db, userId, courseId);
+  const existing = await requireOwnedCourse(db, userId, courseId);
 
   const patch: Partial<typeof courses.$inferInsert> = {};
   if (input.title !== undefined) patch.title = input.title;
@@ -181,14 +188,60 @@ export async function updateCourse(db: Db, userId: string, courseId: string, inp
   if (input.overview !== undefined) patch.overview = input.overview;
   if (input.archived !== undefined) patch.archived = input.archived;
   if (input.color_hue !== undefined) patch.color = String(input.color_hue);
+
+  let newMeetingDays: number[] | null | undefined; // undefined = untouched by this PATCH
   if (input.meeting_days !== undefined) {
-    patch.meetingDays = input.meeting_days === null ? null : JSON.stringify(dedupeSortDays(input.meeting_days));
+    newMeetingDays = input.meeting_days === null ? null : dedupeSortDays(input.meeting_days);
+    patch.meetingDays = newMeetingDays === null ? null : JSON.stringify(newMeetingDays);
   }
 
   if (Object.keys(patch).length > 0) {
     await db.update(courses).set(patch).where(eq(courses.id, courseId));
   }
 
+  if (newMeetingDays !== undefined) {
+    await retireDroppedClassSessions(db, userId, courseId, parseMeetingDaysColumn(existing.meetingDays) ?? [], newMeetingDays ?? []);
+  }
+
   const rows = await db.select().from(courses).where(eq(courses.id, courseId)).limit(1);
   return shapeCourse(rows[0]);
+}
+
+// v1.4: dropping a weekday from meetingDays retires any future, still-unmarked
+// schedule-sourced class_sessions rows for days no longer in the new set.
+// sweepClassSessions (classSessions.ts) is insert-only, so without this a
+// session for a retired weekday — and the attend_class/review_after_class
+// tasks it keeps minting — would linger forever. Past sessions and any
+// session the student has already marked (attended/missed) are left alone:
+// a schedule change later shouldn't erase attendance history. Deleting the
+// class_sessions row cascades (tasks.class_session_id, ON DELETE CASCADE —
+// see schema.ts) to any linked task, so there's no separate task cleanup.
+async function retireDroppedClassSessions(
+  db: Db,
+  userId: string,
+  courseId: string,
+  oldDays: number[],
+  newDays: number[],
+): Promise<void> {
+  const droppedDays = oldDays.filter((d) => !newDays.includes(d));
+  if (droppedDays.length === 0) return;
+
+  const todayNoon = localNoon(Date.now());
+  const futureSessions = await db
+    .select({ id: classSessions.id, date: classSessions.date })
+    .from(classSessions)
+    .where(
+      and(
+        eq(classSessions.courseId, courseId),
+        eq(classSessions.userId, userId),
+        eq(classSessions.source, 'schedule'),
+        isNull(classSessions.status),
+        gte(classSessions.date, todayNoon),
+      ),
+    );
+
+  const idsToRemove = futureSessions.filter((s) => droppedDays.includes(isoWeekday(s.date))).map((s) => s.id);
+  if (idsToRemove.length === 0) return;
+
+  await db.delete(classSessions).where(inArray(classSessions.id, idsToRemove));
 }

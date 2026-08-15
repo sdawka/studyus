@@ -148,6 +148,13 @@ export async function updateAssessment(db: Db, userId: string, assessmentId: str
   const masteryDeltas: Array<{ kc_id: string; old_mastery: number; new_mastery: number }> = [];
   const gradeJustEntered =
     input.grade_received !== undefined && input.grade_received !== null && input.grade_received !== existing.gradeReceived;
+  // v1.4: the counterpart transition — clearing a grade back to null. The
+  // grade_entry task's dedupe key is stable (`grade_entry:<id>`), so once
+  // ON CONFLICT DO NOTHING has seen it the sweep can never regenerate a
+  // fresh row; reopening the existing one is the only way back to an open
+  // state.
+  const gradeJustCleared =
+    input.grade_received !== undefined && input.grade_received === null && existing.gradeReceived !== null;
 
   if (gradeJustEntered && updated) {
     const links = await db.select().from(assessmentKcs).where(eq(assessmentKcs.assessmentId, assessmentId));
@@ -155,15 +162,20 @@ export async function updateAssessment(db: Db, userId: string, assessmentId: str
     const score = gradeMax > 0 ? (updated.gradeReceived! / gradeMax) * 100 : undefined;
     const eventType = ASSESSMENT_EVENT_TYPE[updated.type as AssessmentType];
 
-    for (const link of links) {
-      const { masteryDeltas: deltas } = await createEvent(db, userId, {
-        type: eventType,
-        kc_id: link.kcId,
-        course_id: updated.courseId,
-        payload: score !== undefined ? { score, assessment_id: assessmentId } : { assessment_id: assessmentId },
-      });
-      masteryDeltas.push(...deltas);
-    }
+    // Each linked KC's fold is independent (distinct kc_id, no shared
+    // mutable row) — run the fan-out concurrently instead of one round-trip
+    // per link.
+    const eventResults = await Promise.all(
+      links.map((link) =>
+        createEvent(db, userId, {
+          type: eventType,
+          kc_id: link.kcId,
+          course_id: updated.courseId,
+          payload: score !== undefined ? { score, assessment_id: assessmentId } : { assessment_id: assessmentId },
+        }),
+      ),
+    );
+    for (const { masteryDeltas: deltas } of eventResults) masteryDeltas.push(...deltas);
 
     const pct = gradeMax > 0 ? Math.round((updated.gradeReceived! / gradeMax) * 100) : null;
     await createNotification(db, {
@@ -182,6 +194,16 @@ export async function updateAssessment(db: Db, userId: string, assessmentId: str
       .update(tasks)
       .set({ done: true, completedAt: Date.now() })
       .where(and(eq(tasks.assessmentId, assessmentId), eq(tasks.type, 'grade_entry'), eq(tasks.done, false)));
+  }
+
+  if (gradeJustCleared) {
+    // Reopen only — dismissed_at is left untouched, so a task the student
+    // explicitly dismissed doesn't resurface just because the grade was
+    // cleared.
+    await db
+      .update(tasks)
+      .set({ done: false, completedAt: null })
+      .where(and(eq(tasks.assessmentId, assessmentId), eq(tasks.type, 'grade_entry'), eq(tasks.done, true)));
   }
 
   const [updatedWithKcIds] = await attachKcIds(db, updated ? [updated] : []);

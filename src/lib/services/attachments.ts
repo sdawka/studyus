@@ -2,9 +2,18 @@
 // userId/_/uuid-filename when not course-scoped) so objects stay listable
 // per-user without a separate index if R2 is ever browsed directly.
 import { and, eq } from 'drizzle-orm';
+import { z } from 'zod';
 import type { Db } from '../../db/client';
 import { attachments } from '../../db/schema';
+import { MAX_ATTACHMENT_BYTES } from '../schemas/attachments';
 import { NotFoundError, requireOwnedCourse } from './util';
+
+// Reuses the same ZodError -> 400 invalid_input mapping (apiErrors.ts) every
+// other schema violation in this API goes through, rather than introducing a
+// bespoke error type just for this one check.
+const fileSizeSchema = z
+  .number()
+  .max(MAX_ATTACHMENT_BYTES, `File exceeds the ${MAX_ATTACHMENT_BYTES / (1024 * 1024)} MB limit`);
 
 export async function createAttachment(
   db: Db,
@@ -14,6 +23,9 @@ export async function createAttachment(
   file: File,
 ) {
   await requireOwnedCourse(db, userId, courseId);
+  // Checked against file.size (no read yet) before ever buffering the
+  // upload into memory via arrayBuffer() below.
+  fileSizeSchema.parse(file.size);
 
   const id = crypto.randomUUID();
   const safeName = file.name.replace(/[^\w.\-]/g, '_');

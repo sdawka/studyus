@@ -175,6 +175,16 @@ export async function sweepNotifications(db: Db, userId: string, now: number = D
   );
 }
 
+// Single count(*) aggregate — no rows fetched, no sweep run. Used by both
+// listNotifications below and GET /api/v1/notifications/count.
+export async function getUnreadNotificationCount(db: Db, userId: string): Promise<number> {
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(notifications)
+    .where(and(eq(notifications.userId, userId), isNull(notifications.readAt)));
+  return Number(count);
+}
+
 export async function listNotifications(
   db: Db,
   userId: string,
@@ -192,12 +202,9 @@ export async function listNotifications(
     .orderBy(desc(notifications.createdAt))
     .limit(opts.limit ?? 20);
 
-  const unreadRows = await db
-    .select({ id: notifications.id })
-    .from(notifications)
-    .where(and(eq(notifications.userId, userId), isNull(notifications.readAt)));
+  const unread_count = await getUnreadNotificationCount(db, userId);
 
-  return { notifications: rows, unread_count: unreadRows.length };
+  return { notifications: rows, unread_count };
 }
 
 export async function markRead(db: Db, userId: string, id: string) {

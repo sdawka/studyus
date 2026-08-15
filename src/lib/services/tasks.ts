@@ -5,6 +5,19 @@ import type { CreateTaskInput, UpdateTaskInput } from '../schemas/tasks';
 import { ConflictError, NotFoundError } from './util';
 import { sweepTasks } from './taskSweep';
 
+// IDOR guard for task_courses writes: every id in `courseIds` must belong to
+// `userId`, or the whole request 404s (mirrors requireKcsInCourse in
+// services/assessments.ts). Without this, createTask/updateTask would happily
+// link a task to another user's course id supplied by the client.
+async function requireOwnedCourses(db: Db, userId: string, courseIds: string[]): Promise<void> {
+  if (courseIds.length === 0) return;
+  const owned = await db
+    .select({ id: courses.id })
+    .from(courses)
+    .where(and(inArray(courses.id, courseIds), eq(courses.userId, userId)));
+  if (owned.length !== courseIds.length) throw new NotFoundError('Course');
+}
+
 async function attachCourses(db: Db, taskId: string) {
   const links = await db
     .select({ id: courses.id, code: courses.code })
@@ -48,8 +61,12 @@ async function requireOwnedTask(db: Db, userId: string, taskId: string) {
   return task;
 }
 
-export async function listTasks(db: Db, userId: string) {
-  await sweepTasks(db, userId);
+// `sweep: false` lets a caller that already ran sweepTasks itself (e.g.
+// dashboard.astro, which runs one sweep up front and then parallelizes its
+// several list/read calls) skip the redundant re-sweep. Every other caller
+// keeps the old always-sweep default.
+export async function listTasks(db: Db, userId: string, opts: { sweep?: boolean } = {}) {
+  if (opts.sweep ?? true) await sweepTasks(db, userId);
 
   const rows = await db
     .select()
@@ -80,7 +97,9 @@ export async function createTask(db: Db, userId: string, input: CreateTaskInput)
   });
 
   if (input.course_ids?.length) {
-    await db.insert(taskCourses).values(input.course_ids.map((courseId) => ({ id: crypto.randomUUID(), taskId: id, courseId })));
+    const dedupedIds = [...new Set(input.course_ids)];
+    await requireOwnedCourses(db, userId, dedupedIds);
+    await db.insert(taskCourses).values(dedupedIds.map((courseId) => ({ id: crypto.randomUUID(), taskId: id, courseId })));
   }
 
   const rows = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1);
@@ -101,12 +120,21 @@ export async function updateTask(db: Db, userId: string, taskId: string, input: 
     if (input.completed && !existing.done) patch.completedAt = Date.now();
     else if (!input.completed && existing.done) patch.completedAt = null;
   }
-  await db.update(tasks).set(patch).where(eq(tasks.id, taskId));
+  // A course_ids-only PATCH (no other fields) leaves `patch` empty —
+  // Drizzle's .set({}) throws "No values to set" on SQLite, so skip the
+  // no-op update (mirrors the same guard in services/assessments.ts).
+  if (Object.keys(patch).length > 0) {
+    await db.update(tasks).set(patch).where(eq(tasks.id, taskId));
+  }
 
   if (input.course_ids !== undefined) {
+    const dedupedIds = [...new Set(input.course_ids)];
+    // Ownership is verified before anything is deleted, so a request with a
+    // foreign course id 404s without touching the task's existing links.
+    await requireOwnedCourses(db, userId, dedupedIds);
     await db.delete(taskCourses).where(eq(taskCourses.taskId, taskId));
-    if (input.course_ids.length) {
-      await db.insert(taskCourses).values(input.course_ids.map((courseId) => ({ id: crypto.randomUUID(), taskId, courseId })));
+    if (dedupedIds.length) {
+      await db.insert(taskCourses).values(dedupedIds.map((courseId) => ({ id: crypto.randomUUID(), taskId, courseId })));
     }
   }
 

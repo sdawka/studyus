@@ -83,6 +83,7 @@ async function collectAttendClass(db: Db, userId: string, now: number): Promise<
       id: crypto.randomUUID(),
       userId,
       title: `Attend ${r.courseCode}`,
+      description: `Class session — ${r.courseCode}`,
       type: 'attend_class' as const,
       dueDate: r.date,
       courseId: r.courseId,
@@ -120,6 +121,7 @@ async function collectPrepBeforeClass(db: Db, userId: string, now: number): Prom
         id: crypto.randomUUID(),
         userId,
         title: `Prep for ${course.code}`,
+        description: `Get ready for ${course.code}'s upcoming class`,
         type: 'prep_before_class',
         dueDate: classDay - DAY_MS,
         courseId: course.id,
@@ -157,6 +159,7 @@ async function collectReviewAfterClass(db: Db, userId: string, now: number): Pro
     id: crypto.randomUUID(),
     userId,
     title: `Review notes: ${r.courseCode}`,
+    description: `Review your notes from ${r.courseCode}'s class`,
     type: 'review_after_class' as const,
     dueDate: r.date + DAY_MS,
     courseId: r.courseId,
@@ -211,6 +214,7 @@ async function collectPracticeKc(db: Db, userId: string, now: number): Promise<N
         id: crypto.randomUUID(),
         userId,
         title: `Practice ${row.kcName} for ${row.assessmentTitle}`,
+        description: `${row.kcName} is linked to ${row.assessmentTitle}`,
         type: 'practice_kc',
         dueDate,
         courseId: row.courseId,
@@ -259,6 +263,7 @@ async function collectStaleKc(db: Db, userId: string, now: number): Promise<NewT
       id: crypto.randomUUID(),
       userId,
       title: `Revisit ${row.kcName}`,
+      description: `${row.kcName} hasn't been practiced recently`,
       type: 'stale_kc',
       dueDate: null,
       courseId: row.courseId,
@@ -296,6 +301,7 @@ async function collectGradeEntry(db: Db, userId: string, now: number): Promise<N
     id: crypto.randomUUID(),
     userId,
     title: `Enter grade: ${r.title}`,
+    description: `Enter your grade for ${r.title}`,
     type: 'grade_entry' as const,
     dueDate: localNoon(r.dueDate!) + GRADE_ENTRY_FOLLOWUP_MS,
     courseId: r.courseId,
@@ -358,6 +364,10 @@ export async function sweepTasks(db: Db, userId: string, now: number = Date.now(
   }
 
   // Retention: purge dismissed system tasks older than 120d (mirrors the
-  // read-notification purge in sweepNotifications).
-  await db.delete(tasks).where(and(isNotNull(tasks.dismissedAt), lt(tasks.dismissedAt, now - RETENTION_DISMISSED_AGE_MS)));
+  // read-notification purge in sweepNotifications). Scoped to this user —
+  // an unscoped purge here would delete every user's old dismissed rows on
+  // every single sweep call.
+  await db
+    .delete(tasks)
+    .where(and(eq(tasks.userId, userId), isNotNull(tasks.dismissedAt), lt(tasks.dismissedAt, now - RETENTION_DISMISSED_AGE_MS)));
 }

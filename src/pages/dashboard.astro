@@ -13,22 +13,30 @@ import { listCourses } from '../lib/services/courses';
 import { getCalendar } from '../lib/services/calendar';
 import { getGradesSummary } from '../lib/services/grades';
 import { listTasks } from '../lib/services/tasks';
+import { sweepTasks } from '../lib/services/taskSweep';
 
 const db = getDb(env.DB);
 const user = Astro.locals.user!;
 const userId = user.id;
 
-const userCourses = await listCourses(db, userId);
-const courseById = new Map(userCourses.map((c) => [c.id, c]));
-
 const now = Date.now();
 const weekFromNow = now + 7 * 24 * 60 * 60 * 1000;
-const deadlines = await getCalendar(db, userId, now, weekFromNow);
 
-const gradesSummary = await getGradesSummary(db, userId);
+// One explicit sweep up front, then every fetch below opts out of its own
+// internal sweep (both getCalendar and listTasks otherwise run the full
+// sweepTasks again) so the four independent reads can run in parallel
+// instead of a serialized await chain.
+await sweepTasks(db, userId, now);
+
+const [userCourses, deadlines, gradesSummary, allTasks] = await Promise.all([
+  listCourses(db, userId),
+  getCalendar(db, userId, now, weekFromNow, undefined, { sweep: false }),
+  getGradesSummary(db, userId),
+  listTasks(db, userId, { sweep: false }),
+]);
+
+const courseById = new Map(userCourses.map((c) => [c.id, c]));
 const weightedGradeByCourse = new Map(gradesSummary.by_course.map((c) => [c.course_id, c.weighted_grade]));
-
-const allTasks = await listTasks(db, userId);
 
 // Per-course open-task count + earliest due date, for CourseCards' slim
 // meta line — replaces the old KC/assessment progress queries now that
