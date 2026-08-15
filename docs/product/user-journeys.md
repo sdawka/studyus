@@ -8,8 +8,8 @@
 
 1. **Sign in** with email/password (`POST /auth/login`; there is no `username` field anywhere in the schema or auth flow — see `docs/architecture/data-model.md`'s `users` entry). Redirect to onboarding if new.
 2. **Explain KC concept**: what is a knowledge component? Why should you care? (Svelte stepper modal, `OnboardingFlow.svelte`.)
-3. **Set preferences**: your name, current term.
-4. **Review imported courses**: the 9 seeded courses from `courses/courses.json`, grouped by term. Confirm or archive. (Later: multi-user → email verification, manual signup — still deferred, see `docs/todo.md`.)
+3. **Review imported courses**: the 9 seeded courses from `courses/courses.json`, grouped by term. Confirm or archive. (Later: multi-user → email verification, manual signup — still deferred, see `docs/todo.md`.)
+4. **Set preferences**: your name, current term (`PATCH /user`, stamps `onboarded_at`).
 5. **Land on dashboard** with an empty calendar (no events yet) and quick tips ("Ready to log your first lecture?").
 
 ## Returning User: Sidebar Entry Points

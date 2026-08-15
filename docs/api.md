@@ -328,7 +328,7 @@ All constants live in `MASTERY_CONSTANTS` in that file.
 
 ## v1.1 Additions (final)
 
-**Status**: FROZEN as of P3. Every shape below has been exercised end-to-end against the running dev server (login, settings PATCH round-trip, course create/archive, notifications sweep idempotency + mark-read, notes with course links, tutor conversation list) in addition to the automated test suite (360 passing, as of v1.6 — see "v1.6 Additions" below).
+**Status**: FROZEN as of P3. Every shape below has been exercised end-to-end against the running dev server (login, settings PATCH round-trip, course create/archive, notifications sweep idempotency + mark-read, notes with course links, tutor conversation list) in addition to the automated test suite (371 passing, as of v1.6 — see "v1.6 Additions" below).
 
 ### User settings
 

@@ -151,6 +151,39 @@ export interface ToggleTaskOptions {
   completionNote?: string;
 }
 
+// A short-lived signal: ids that completed within roughly the last second.
+// Exists for UI that reclassifies a task the instant it completes (e.g.
+// TasksView moving a task from its open list into a collapsed Done
+// disclosure — a different {#each} block, which Svelte can only implement
+// as destroy-then-recreate, never an in-place update). A consumer can hold
+// such a task in its "still open" position while its id is in this set, so
+// the component watching the actual completed prop sees a real false→true
+// transition in place — a fresh mount always looks identical to "loaded
+// already done," which is exactly what silently ate TaskCheckbox's
+// confetti celebration on /tasks before this existed. Set synchronously
+// here (before the optimistic flip below), in the same tick as every
+// completion path (TaskItem's instant toggle, CompletionFlow's typed
+// completion, EventPopover's task_due toggle) — a later reaction (e.g. a
+// $effect watching the task list) would run one render too late, after the
+// reclassifying re-render has already destroyed the original instance.
+const RECENT_COMPLETION_GRACE_MS = 1300;
+export const recentlyCompletedIds = atom<ReadonlySet<string>>(new Set());
+const recentCompletionTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+function markRecentlyCompleted(id: string) {
+  recentlyCompletedIds.set(new Set(recentlyCompletedIds.get()).add(id));
+  clearTimeout(recentCompletionTimers.get(id));
+  recentCompletionTimers.set(
+    id,
+    setTimeout(() => {
+      const next = new Set(recentlyCompletedIds.get());
+      next.delete(id);
+      recentlyCompletedIds.set(next);
+      recentCompletionTimers.delete(id);
+    }, RECENT_COMPLETION_GRACE_MS),
+  );
+}
+
 // Optimistic flip (+ open children when cascading), then PATCH. Any
 // failure — parent or a cascaded child — rolls the whole map back to the
 // pre-toggle snapshot and surfaces the message on tasksError.
@@ -161,6 +194,7 @@ export async function toggleTask(id: string, options: ToggleTaskOptions = {}): P
 
   const completed = !task.completed;
   const completedAt = completed ? new Date().toISOString() : null;
+  if (completed) markRecentlyCompleted(id);
   tasksById.setKey(id, {
     ...task,
     completed,

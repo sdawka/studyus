@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CalendarItem } from '../../lib/types/calendar';
   import { hueFor } from '../../lib/courseHue';
-  import { addDays, calendarItemStartLabel, isSameLocalDay, localDateKeyFromIso } from '../../lib/plannerDates';
+  import { addDays, calendarItemStartLabel, daysUntil, deadlineUrgency, isSameLocalDay, localDateKeyFromIso } from '../../lib/plannerDates';
 
   interface CourseInfo {
     code: string;
@@ -79,20 +79,6 @@
     // never from parsing hours off its ISO date (see plannerDates.ts).
     return calendarItemStartLabel(item);
   }
-  function daysUntil(iso: string): number {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const d = new Date(iso);
-    d.setHours(0, 0, 0, 0);
-    return Math.round((d.getTime() - now.getTime()) / 86400000);
-  }
-  function urgency(days: number): { cls: string; label: string } {
-    if (days < 0) return { cls: 'pill-danger', label: 'overdue' };
-    if (days === 0) return { cls: 'pill-danger', label: 'Today' };
-    if (days === 1) return { cls: 'pill-warn', label: 'Tomorrow' };
-    if (days <= 3) return { cls: 'pill-warn', label: `in ${days}d` };
-    return { cls: 'pill-idle', label: `in ${days}d` };
-  }
 </script>
 
 <ul class="agenda-list" bind:this={listEl}>
@@ -103,7 +89,7 @@
     <li class="date-header" data-date-group={group.dateKey}>{group.label}</li>
     {#each group.items as item (item.id)}
       {@const days = daysUntil(item.date)}
-      {@const u = urgency(days)}
+      {@const u = deadlineUrgency(days)}
       {@const code = courseFor(item)?.code}
       {@const time = timeLabel(item)}
       <li>

@@ -97,6 +97,17 @@
     filter === 'current_term' ? items.filter((i) => i.course_id === null || currentTermCourseIds.has(i.course_id)) : items,
   );
 
+  // CreateSessionPopover defaults its course select to courses[0] — `courses`
+  // itself has no defined ordering (listCourses has no ORDER BY, so it's
+  // whatever the DB returns). Left unsorted, a Class/Study create can default
+  // to a non-current-term course and then immediately vanish under this
+  // view's default 'current_term' filter with no explanation. Current-term
+  // courses first (stable otherwise) means the default selection is always
+  // one that's actually visible right after creation.
+  const createCourseOptions = $derived(
+    [...courses].sort((a, b) => Number(currentTermCourseIds.has(b.id)) - Number(currentTermCourseIds.has(a.id))),
+  );
+
   async function loadWeek() {
     loading = true;
     error = null;
@@ -503,7 +514,7 @@
        type/title/duration state (and its duration wouldn't re-derive from
        the new drag range, since that only happens at $state init time). -->
   {#key `${createSlot.getTime()}-${createSlotEnd?.getTime() ?? 0}`}
-    <CreateSessionPopover start={createSlot} end={createSlotEnd} anchorRect={createAnchor} {courses} onClose={closeCreate} onCreated={handleSessionCreated} />
+    <CreateSessionPopover start={createSlot} end={createSlotEnd} anchorRect={createAnchor} courses={createCourseOptions} onClose={closeCreate} onCreated={handleSessionCreated} />
   {/key}
 {/if}
 

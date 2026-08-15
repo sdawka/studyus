@@ -110,7 +110,14 @@ and Todoist/Things. Opinionated, implementable, student-focused.
   notes/attachments.
 - **Click an empty slot** → immediately opens a lightweight inline create form at that
   position, pre-filled with a 30-min duration starting at the clicked (snapped) time. Don't
-  make users open a separate modal for the common case.
+  make users open a separate modal for the common case. **Drag an empty slot** (desktop,
+  mouse only — touch keeps tap-to-create) → vertical pointer-drag selects a time range with a
+  live ghost block (15-min snap); releasing opens the same create form pre-filled with the
+  dragged start + duration instead of the 30-min default. **Implemented** (v1.6, 2026-08-15):
+  `WeekGrid.svelte`'s pointer handlers + `CreateSessionPopover`'s type picker (Study session /
+  Class / Other — routing to `POST /sessions`, `POST /courses/:id/class-sessions`, or
+  `POST /tasks` respectively). Escape mid-drag cancels the drag only, not the whole planner
+  overlay (`window.__plannerBlockEscape` convention).
 - **Deep-linking**: support `?event=<id>` in the URL. On load with this param: fetch the event,
   scroll the grid to its week/time, open its detail popover automatically, and highlight the
   block with the selected-state outline. This makes notification links and "jump to this

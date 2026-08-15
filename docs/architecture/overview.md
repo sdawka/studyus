@@ -90,7 +90,9 @@ src/
     fonts/{compass,focus,campus}.css      # Per-theme @fontsource @font-face declarations
   lib/
     auth/                                 # password.ts (PBKDF2), session.ts (token/hash/cookie mgmt)
-    actions/                              # focusTrap.ts, portal.ts, scrollLock.ts — Svelte actions for overlays
+    actions/                              # focusTrap.ts, portal.ts, scrollLock.ts, masonry.ts — Svelte actions
+                                           #   for overlays + the /tasks card-grid masonry action
+    confetti.ts                           # Dependency-free WAAPI confetti burst (TaskCheckbox's check-moment)
     stores/                               # nanostores: ui.ts, courseContext.ts, tasks.ts, toast.ts, viewport.ts
     schemas/                              # Zod validators — one file per domain (assessments, attachments,
                                            #   calendar, classSessions, common, courses, events, kcs, notes,
@@ -140,7 +142,8 @@ src/
     standing/                             # StandingTab + rail cards: AssessmentsCard, AttendanceCard,
                                            #   DeadlinesCard, MasteryCard, PracticeCard, RecentActivityCard, TasksCard
     study/                                # StudyFlow.svelte
-    tasks/                                # TaskItem.svelte, TaskTypeIcon.svelte, TasksView.svelte
+    tasks/                                # TaskItem, TaskTypeIcon, TasksView, TaskCheckbox (checkbox delight +
+                                           #   confetti), CompletionFlow (typed-task completion dialog)
     tutor/                                # ScaffoldChat, InteractiveModel, QuickQuiz
   pages/
     404.astro
@@ -169,7 +172,7 @@ src/
       notes/index.ts, notes/[id].ts
       resources/index.ts, resources/[id].ts
       attachments/[id].ts
-      sessions/index.ts, sessions/[id]/complete.ts
+      sessions/index.ts, sessions/[id].ts, sessions/[id]/complete.ts
       notifications/index.ts, notifications/count.ts, notifications/read-all.ts, notifications/[id]/read.ts
       profile/index.ts
       tutor/conversations/index.ts, tutor/conversations/[id]/index.ts,
@@ -193,7 +196,7 @@ tests/                                    # Flat layout (no unit//integration sp
 docs/
   README.md (this map)
   product/
-    vision.md, user-journeys.md, screens.md
+    vision.md, user-journeys.md, screens.md, student-lifecycle.md (mermaid lifecycle diagrams)
   architecture/
     overview.md (this file), data-model.md, events-and-mastery.md (KLI distillation), tutor.md, cloudflare.md,
     agentic-channels.md

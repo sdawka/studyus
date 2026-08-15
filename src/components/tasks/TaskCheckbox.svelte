@@ -63,6 +63,23 @@
       celebrate = false;
     }
   });
+
+  // A native <input type="checkbox"> flips its own `checked` DOM property on
+  // click before any JS runs — Svelte's one-way `{checked}` binding only
+  // re-applies it when the reactive `checked` PROP itself changes. A caller
+  // that decides NOT to change it (TaskItem opens a typed-task's
+  // CompletionFlow instead of completing immediately, on the check that's
+  // still open — cancel changes nothing) leaves the native property
+  // out of sync with the true value, i.e. the box visually shows checked
+  // for a task that's still open. Forcing it back to the source of truth
+  // on every change event, synchronously before onToggle runs, closes that
+  // gap: for a real completion, `checked` flips true moments later anyway
+  // (in the same tick, no visible flash) and reasserts it; for a deferred
+  // one, it simply never lies in the meantime.
+  function handleChange() {
+    if (inputEl) inputEl.checked = checked;
+    onToggle();
+  }
 </script>
 
 <span class="cb-shell" class:is-busy={busy} class:is-disabled={disabled} class:is-popping={celebrate}>
@@ -73,7 +90,7 @@
     {checked}
     disabled={disabled || busy}
     aria-label={label}
-    onchange={onToggle}
+    onchange={handleChange}
   />
   <svg class="cb-check" viewBox="0 0 16 16" aria-hidden="true">
     <path class="cb-check-path" d="M3.5 8.4 L6.6 11.6 L12.6 4.6" />

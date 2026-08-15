@@ -124,9 +124,16 @@ const CONFIG = {
   // centered modals at ≤767px (docs/design/mobile-shell.md "Route modals
   // → tab destinations"). layerId matches each .astro file's root overlay
   // div id.
+  //
+  // /tasks is NOT here: it was converted from an overlay (slot="overlay"
+  // modal with #tasks-layer/.scrim/.panel/.close-btn) to a normal page
+  // rendered in the default slot. It's already in CONFIG.pages above, so
+  // it gets the same page-level checks as /feed, /notes, etc. — desktop
+  // matrix (no-overflow, centered-gutters, no-right-edge-overflow) and
+  // mobile-pass shell invariants (bottom-nav, sidebar-hidden, header-fits)
+  // — with no separate route-page-mobile check needed.
   routePagesMobile: [
     { name: 'planner', path: '/planner', layerId: 'planner-layer' },
-    { name: 'tasks', path: '/tasks', layerId: 'tasks-layer' },
   ],
 };
 

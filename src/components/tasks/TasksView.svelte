@@ -19,6 +19,7 @@
     bucketByDue,
     deleteTask,
     hydrateTasks,
+    recentlyCompletedIds,
     selectChildren,
     selectCompleted,
     selectForCourse,
@@ -144,13 +145,22 @@
     courseId: string | undefined,
     hue: number | undefined,
     tasks: ApiTask[],
+    graceIds: ReadonlySet<string>,
   ): CardData {
     const topLevel = tasks.filter((t) => !t.parent_task_id);
-    const buckets = bucketByDue(selectOpen(topLevel));
-    const open = [...buckets.overdue, ...buckets.today, ...buckets.next].sort(compareOpen);
-    const catchUp = [...buckets.catchUp].sort(compareOpen);
+    const graceHeld = (t: ApiTask) => t.completed && graceIds.has(t.id);
+    // selectOpen only wants `completed: false` — a grace-held task is
+    // completed, so it's passed through with that flag faked off just for
+    // this classification pass; the real task object (still genuinely
+    // completed) is what actually lands in `open` and renders.
+    const openTopLevel = topLevel.filter((t) => !t.completed || graceHeld(t)).map((t) => (graceHeld(t) ? { ...t, completed: false } : t));
+    const buckets = bucketByDue(selectOpen(openTopLevel));
+    const byId = new Map(topLevel.map((t) => [t.id, t]));
+    const toReal = (t: ApiTask) => byId.get(t.id) ?? t;
+    const open = [...buckets.overdue, ...buckets.today, ...buckets.next].map(toReal).sort(compareOpen);
+    const catchUp = buckets.catchUp.map(toReal).sort(compareOpen);
     const done = topLevel
-      .filter((t) => t.completed)
+      .filter((t) => t.completed && !graceHeld(t))
       .sort((a, b) => (b.completed_at ?? '').localeCompare(a.completed_at ?? ''))
       .slice(0, 10);
     return { key, code, title, courseId, hue, open, catchUp, done };
@@ -159,14 +169,32 @@
   let allTasks = $derived($tasksList);
   let totalOpen = $derived(selectOpen(allTasks).length);
 
+  // A task completing normally jumps straight from the `open` bucket into
+  // `done` (rendered inside a separate, collapsed <details> further down) —
+  // two different {#each} blocks, which Svelte can only implement as
+  // destroy-then-recreate, never an in-place update. TaskCheckbox's
+  // celebration guard (its own $effect comparing checked against the PRIOR
+  // value) needs that in-place update to see the false→true edge; a fresh
+  // instance mounts already-checked, indistinguishable from a page load
+  // showing a task that was already done, so it correctly stays silent —
+  // which silently ate the confetti reward for every ordinary completion on
+  // this page. recentlyCompletedIds (stores/tasks.ts) is set synchronously
+  // inside toggleTask itself, in the same tick as the optimistic flip — a
+  // reaction here (e.g. a $effect watching allTasks) would run one render
+  // too late, after the reclassifying re-render had already destroyed the
+  // original instance. Reading the store's value directly like this keeps
+  // buildCard's `open` classification correct from the very first render
+  // that shows the task as completed.
+  let graceIds = $derived($recentlyCompletedIds);
+
   let cards = $derived.by(() => {
     const result: CardData[] = [];
     for (const c of visibleCourses) {
-      result.push(buildCard(c.slug, c.code, c.title, c.id, c.hue, selectForCourse(allTasks, c.id)));
+      result.push(buildCard(c.slug, c.code, c.title, c.id, c.hue, selectForCourse(allTasks, c.id), graceIds));
     }
     if (showOther) {
       const otherTasks = allTasks.filter((t) => courseIdsOfTask(t).length === 0);
-      result.push(buildCard('other', 'Other', undefined, undefined, undefined, otherTasks));
+      result.push(buildCard('other', 'Other', undefined, undefined, undefined, otherTasks, graceIds));
     }
     return result;
   });
