@@ -191,12 +191,17 @@
      matters here. */
   .main {
     grid-column: 1;
+    /* grid-row is load-bearing alongside grid-column: .rail precedes .main
+       in DOM, and the sparse auto-placement cursor never backtracks — with
+       only the column pinned, .main lands in row 2 under a full-height gap. */
+    grid-row: 1;
     display: grid;
     gap: var(--space-5);
     min-width: 0;
   }
   .rail {
     grid-column: 2;
+    grid-row: 1;
     display: grid;
     gap: var(--space-5);
     min-width: 0;
