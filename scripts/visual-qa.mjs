@@ -197,6 +197,29 @@ async function mobileSheetShot(name, triggerSelector) {
 }
 await mobileSheetShot('mobile-390--dashboard-bell-sheet', 'button[title="Notifications"]');
 await mobileSheetShot('mobile-390--dashboard-avatar-sheet', 'button.avatar');
+
+// Mobile theme×scheme matrix — the tab bar, sheets, and full-page
+// planner/tasks only exist ≤767px, so contrast on those surfaces needs its
+// own pass per theme/scheme (the compass/light combo is already covered by
+// the mobile-390-- shots above).
+for (const theme of THEMES) {
+  for (const scheme of SCHEMES) {
+    if (theme === 'compass' && scheme === 'light') continue;
+    await api('PATCH', '/api/v1/user', { settings: { theme, scheme } });
+    for (const [name, path] of Object.entries(MATRIX_PAGES)) {
+      await shot(`mobile-390--${name}--${theme}-${scheme}`, path);
+    }
+  }
+}
+await api('PATCH', '/api/v1/user', { settings: { theme: 'compass', scheme: 'light' } });
+
+// Landscape phone (844×390): width ≥768 means the DESKTOP shell at a very
+// short viewport height — the risk band is vertical (sticky header + short
+// content window), which the assert-based layout-check doesn't cover.
+await page.setViewportSize({ width: 844, height: 390 });
+for (const [name, path] of Object.entries({ dashboard: '/dashboard', planner: '/planner', tasks: '/tasks', course: MATRIX_PAGES.course })) {
+  await shot(`landscape-844--${name}`, path);
+}
 await page.setViewportSize({ width: 1440, height: 900 });
 
 // Restore defaults (light is now the default scheme, not system)

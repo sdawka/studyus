@@ -70,7 +70,7 @@ const CONFIG = {
   // Mobile pass (plan Part 3, docs/design/mobile-shell.md) — see the header
   // comment above. Runs once per width, after the desktop matrix, with no
   // sidebar-state axis.
-  mobileViewportWidths: [390, 430],
+  mobileViewportWidths: [320, 390, 430],
 
   // Tolerance for "no horizontal overflow" / "no element past the right
   // edge" — sub-pixel layout rounding shows up as <1px slop across browsers.

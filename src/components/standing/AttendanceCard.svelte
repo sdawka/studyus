@@ -337,7 +337,9 @@
 
   .setup { display: flex; flex-direction: column; gap: var(--space-3); align-items: flex-start; }
   .setup-prompt { font-size: 13.5px; color: var(--text); margin: 0; }
-  .day-chips { display: flex; gap: 6px; }
+  /* wrap is load-bearing at 320px viewports: 7 × 40px chips + gaps (~316px)
+     exceed the ~240px card interior there — two rows beat clipped chips. */
+  .day-chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .day-chip { padding: 6px 0; width: 32px; text-align: center; font-size: 12.5px; }
   .save-days-btn { margin-top: 2px; }
   .edit-actions { display: flex; gap: 8px; }

@@ -229,3 +229,31 @@ task-switcher color even on a dark-mode OS, rather than the media-keyed metas' d
 specifically a mobile PWA-chrome-visible symptom (status bar / task switcher color), and S3's
 addition is what makes it visible; not fixed as part of M3 (`ThemeScript.astro` isn't an M3-owned
 file).
+
+## Real-device checklist (~15 min, phone against the dev server)
+
+Headless Chromium cannot observe safe-area insets (`env()` resolves to 0), the iOS on-screen
+keyboard, rubber-band scrolling, or dynamic-viewport URL-bar behavior — these need one manual
+pass on real hardware. Serve `astro dev` on the LAN (`--host`), open `http://<mac-ip>:4321`
+on the phone, log in with the seed user:
+
+1. **Install**: share-sheet → Add to Home Screen. Icon renders (rounded lettermark, not a blank
+   tile); launched app is standalone (no browser chrome); status-bar color matches your scheme.
+2. **Safe areas** (notch/home-indicator devices): the header content clears the notch; the bottom
+   tab bar's labels sit above the home indicator, and tapping Home/Tasks/Planner/Courses near the
+   indicator doesn't trigger the system gesture instead.
+3. **Keyboard vs. sheets/modals**: open Record (FAB) and focus a field — the modal stays visible
+   above the keyboard and the Log button is reachable; same for a quick-add input (TasksCard) and
+   the /tasks inline add. Keyboard dismissal doesn't leave a dead gap.
+4. **Scrolling**: /tasks and /planner (full-page panels) scroll without the page behind them
+   moving; no double-bounce at the ends (overscroll containment); the dashboard week strip and
+   course snap-row scroll horizontally without hijacking vertical page scrolls.
+5. **dvh**: scroll a long page — the bottom tab bar stays pinned while the browser UI collapses
+   (pre-install, in-browser); nothing jumps when the URL bar hides.
+6. **Sheets**: bell/avatar sheets slide up, scrim-tap closes, background doesn't scroll while
+   open; body scroll position is exactly restored on close.
+7. **Touch confidence**: attendance tri-state, task checkboxes, view-toggle chips, and subtask
+   chevrons all hit on the first tap with a thumb, not a stylus posture.
+
+Findings go to docs/todo.md under a "device pass" heading; layout bugs found here usually mean a
+missing safe-area/dvh token consumption, not a component defect.
