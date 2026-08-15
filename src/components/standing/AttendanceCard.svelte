@@ -3,7 +3,7 @@
   // day) whose status gets updated in place — not events appended by a
   // button click. See docs/api.md "Class sessions" for the contract.
   import { apiFetch } from '../../lib/apiClient';
-  import { formatWeekdayAndDate } from '../../lib/plannerDates';
+  import { formatShortDate, formatWeekdayAndDate } from '../../lib/plannerDates';
   import { refetchTasks } from '../../lib/stores/tasks';
 
   interface Props {
@@ -27,14 +27,19 @@
 
   // Index 0 = Monday (ISO weekday 1) .. index 6 = Sunday (ISO weekday 7).
   const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  const ROW_LIMIT = 8;
+  // How far back the dot strip reaches — a glance-length recent history,
+  // not a full ledger (that's what the "slim from ledger to pulse" rework
+  // replaces).
+  const STRIP_LENGTH = 14;
 
   let loading = $state(true);
   let loadError = $state<string | null>(null);
   let sessions = $state<ClassSession[]>([]);
   let meetingDays = $state<number[] | null>(meetingDaysInitial);
-  let showAll = $state(false);
-  let savingIds = $state<Set<string>>(new Set());
+  let marking = $state(false);
+  let noteOpenId = $state<string | null>(null);
+  let noteDraft = $state('');
+  let noteSaving = $state(false);
 
   let editingDays = $state(false);
   let dayDraft = $state<Set<number>>(new Set());
@@ -76,23 +81,53 @@
   const percent = $derived(
     attendedCount + missedCount > 0 ? Math.round((attendedCount / (attendedCount + missedCount)) * 100) : null,
   );
-  const visibleSessions = $derived(showAll ? sessions : sessions.slice(0, ROW_LIMIT));
 
   function endOfToday(): number {
     const d = new Date();
     d.setHours(23, 59, 59, 999);
     return d.getTime();
   }
-  // The card's nudge toward action: unmarked sessions that have already
-  // happened (today included) are the ones worth a student's attention.
-  function isNudged(s: ClassSession): boolean {
-    return s.status === null && new Date(s.date).getTime() <= endOfToday();
+  function startOfToday(): number {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
   }
 
-  async function setStatus(session: ClassSession, status: 'attended' | 'missed' | null) {
-    if (session.status === status) return;
+  // The single row worth a student's attention right now: today's session
+  // if it's still unmarked, otherwise the most recent past unmarked one.
+  // `sessions` comes back ordered desc(date) (services/classSessions.ts), so
+  // the first past-or-today match while scanning in that order is already
+  // the most recent one — no separate sort needed. A future manually-added
+  // makeup class is deliberately excluded here; it isn't due yet.
+  const actionable = $derived.by(() => {
+    const todayEnd = endOfToday();
+    const todayStart = startOfToday();
+    const today = sessions.find((s) => {
+      const t = new Date(s.date).getTime();
+      return s.status === null && t >= todayStart && t <= todayEnd;
+    });
+    if (today) return today;
+    return sessions.find((s) => s.status === null && new Date(s.date).getTime() < todayStart) ?? null;
+  });
+
+  const isActionablePastDue = $derived(
+    actionable !== null && new Date(actionable.date).getTime() < startOfToday(),
+  );
+
+  // Oldest-to-newest reading order (left→right), most recent STRIP_LENGTH
+  // sessions — display-only, no per-dot editing (the actionable row above
+  // is the only write surface left; see the rework's plan comment).
+  const dotStrip = $derived([...sessions.slice(0, STRIP_LENGTH)].reverse());
+
+  function dotTitle(s: ClassSession): string {
+    const label = formatShortDate(s.date);
+    const status = s.status === 'attended' ? 'Attended' : s.status === 'missed' ? 'Missed' : 'Unmarked';
+    return `${label} — ${status}`;
+  }
+
+  async function markStatus(session: ClassSession, status: 'attended' | 'missed') {
+    marking = true;
     const prev = session.status;
-    savingIds = new Set(savingIds).add(session.id);
     sessions = sessions.map((s) => (s.id === session.id ? { ...s, status } : s));
     try {
       // Either failure mode (non-ok response or the request never landing)
@@ -105,14 +140,43 @@
       if (!result.ok) {
         sessions = sessions.map((s) => (s.id === session.id ? { ...s, status: prev } : s));
       } else {
+        if (noteOpenId === session.id) noteOpenId = null;
         // Backend two-way syncs this session's linked attend_class task
         // (see classSessions.ts) — refetch so TasksCard picks up the flip.
         await refetchTasks();
       }
     } finally {
-      const next = new Set(savingIds);
-      next.delete(session.id);
-      savingIds = next;
+      marking = false;
+    }
+  }
+
+  function toggleNoteEditor(session: ClassSession) {
+    if (noteOpenId === session.id) {
+      noteOpenId = null;
+      return;
+    }
+    noteOpenId = session.id;
+    noteDraft = session.note ?? '';
+  }
+
+  // Note-only PATCH (no `status` key at all) — the server only touches the
+  // attend_class task sync when `status` is present in the body, so this
+  // never disturbs a session's mark either way.
+  async function saveNote(session: ClassSession) {
+    noteSaving = true;
+    try {
+      const trimmed = noteDraft.trim();
+      const result = await apiFetch<ClassSession>(`/api/v1/class-sessions/${session.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note: trimmed || null }),
+      });
+      if (result.ok) {
+        sessions = sessions.map((s) => (s.id === session.id ? { ...s, note: result.data.note } : s));
+        noteOpenId = null;
+      }
+    } finally {
+      noteSaving = false;
     }
   }
 
@@ -231,51 +295,57 @@
   {:else if sessions.length === 0}
     <p class="empty">No classes scheduled yet.</p>
   {:else}
-    <ul class="session-list">
-      {#each visibleSessions as s (s.id)}
-        {@const row = formatWeekdayAndDate(s.date)}
-        <li class:nudge={isNudged(s)}>
+    {#if actionable}
+      <!-- `current` is a real const (unlike the $derived `actionable` above),
+           so its non-null narrowing actually persists into the onclick
+           closures below — a direct `actionable` reference wouldn't. -->
+      {@const current = actionable}
+      {@const row = formatWeekdayAndDate(current.date)}
+      <div class="actionable" class:nudge={isActionablePastDue}>
+        <div class="actionable-top">
           <span class="row-date num">
             <span class="row-weekday">{row.weekday}</span>
             <span class="row-day">{row.date}</span>
           </span>
-          <div class="tri" role="group" aria-label={`Attendance for ${row.weekday} ${row.date}`}>
-            <button
-              type="button"
-              class="tri-btn tri-ok"
-              class:active={s.status === 'attended'}
-              disabled={savingIds.has(s.id)}
-              title="Attended"
-              aria-label="Mark attended"
-              onclick={() => setStatus(s, 'attended')}
-            >✓</button>
-            <button
-              type="button"
-              class="tri-btn tri-unset"
-              class:active={s.status === null}
-              disabled={savingIds.has(s.id)}
-              title="Unmarked"
-              aria-label="Mark unmarked"
-              onclick={() => setStatus(s, null)}
-            >–</button>
-            <button
-              type="button"
-              class="tri-btn tri-danger"
-              class:active={s.status === 'missed'}
-              disabled={savingIds.has(s.id)}
-              title="Missed"
-              aria-label="Mark missed"
-              onclick={() => setStatus(s, 'missed')}
-            >✗</button>
+          <div class="one-tap" role="group" aria-label={`Attendance for ${row.weekday} ${row.date}`}>
+            <button type="button" class="btn btn-primary one-tap-btn" disabled={marking} onclick={() => markStatus(current, 'attended')}>
+              Attended
+            </button>
+            <button type="button" class="btn btn-secondary one-tap-btn" disabled={marking} onclick={() => markStatus(current, 'missed')}>
+              Missed
+            </button>
           </div>
-        </li>
-      {/each}
-    </ul>
-    {#if sessions.length > ROW_LIMIT}
-      <button type="button" class="show-all-btn" onclick={() => (showAll = !showAll)}>
-        {showAll ? 'Show fewer' : `Show all (${sessions.length})`}
-      </button>
+        </div>
+        <button type="button" class="note-toggle" onclick={() => toggleNoteEditor(current)}>
+          {noteOpenId === current.id ? 'Hide note' : current.note ? 'Edit note' : '+ Note'}
+        </button>
+        {#if noteOpenId === current.id}
+          <div class="note-editor">
+            <textarea rows="2" bind:value={noteDraft} placeholder="Add a note (optional)" disabled={noteSaving}></textarea>
+            <div class="note-actions">
+              <button type="button" class="btn btn-secondary" disabled={noteSaving} onclick={() => (noteOpenId = null)}>Cancel</button>
+              <button type="button" class="btn btn-primary" disabled={noteSaving} onclick={() => saveNote(current)}>
+                {noteSaving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        {/if}
+      </div>
+    {:else}
+      <p class="all-set">All sessions marked — nice work.</p>
     {/if}
+
+    <div class="dot-strip" role="list" aria-label="Recent attendance">
+      {#each dotStrip as s (s.id)}
+        <span
+          class="hdot"
+          class:hdot-ok={s.status === 'attended'}
+          class:hdot-danger={s.status === 'missed'}
+          role="listitem"
+          title={dotTitle(s)}
+        ></span>
+      {/each}
+    </div>
   {/if}
 
   {#if !loading && !loadError && meetingDays !== null && !editingDays}
@@ -335,61 +405,94 @@
   .save-days-btn { margin-top: 2px; }
   .edit-actions { display: flex; gap: 8px; }
 
-  .session-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-  .session-list li {
+  /* ---------- Actionable row (the one session worth marking now) ---------- */
+
+  .actionable {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: var(--space-2) 8px;
+    border-radius: var(--radius-sm);
+  }
+  .actionable.nudge {
+    background: var(--warn-soft);
+  }
+
+  .actionable-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
-    padding: var(--space-2) 4px;
-    border-bottom: 1px solid var(--hairline);
-    border-radius: var(--radius-sm);
-  }
-  .session-list li:last-child { border-bottom: none; }
-  .session-list li.nudge {
-    background: var(--warn-soft);
-    margin: 0 -4px;
-    padding: var(--space-2) 8px;
+    min-width: 0;
   }
 
-  .row-date { display: flex; align-items: baseline; gap: 6px; font-size: 13px; }
+  .row-date { display: flex; align-items: baseline; gap: 6px; font-size: 13px; flex-shrink: 0; }
   .row-weekday { color: var(--muted); }
   .row-day { color: var(--text); }
 
-  .tri {
-    display: inline-flex;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-    flex-shrink: 0;
+  .one-tap {
+    display: flex;
+    gap: 6px;
+    min-width: 0;
   }
-  .tri-btn {
-    width: 26px;
-    height: 24px;
-    display: grid;
-    place-items: center;
+  /* Slimmer than the shared .btn recipe — this pair has to sit comfortably
+     next to a date label in a ~300px rail card, and two full-padding .btns
+     would fight it for room at any container width. */
+  .one-tap-btn {
+    padding: 5px 10px;
     font-size: 12px;
-    line-height: 1;
-    color: var(--muted);
-    border-right: 1px solid var(--border);
-    transition: var(--motion-fast) var(--ease);
+    min-width: 0;
   }
-  .tri-btn:last-child { border-right: none; }
-  .tri-btn:hover:not(:disabled) { background: var(--hover); }
-  .tri-btn:disabled { opacity: 0.5; cursor: default; }
-  .tri-ok.active { background: var(--good-soft); color: var(--good-ink); }
-  .tri-danger.active { background: var(--danger-soft); color: var(--danger-ink); }
-  .tri-unset.active { background: var(--hairline); color: var(--muted); }
 
-  .show-all-btn {
+  .note-toggle {
+    align-self: flex-start;
     background: none;
     color: var(--accent);
-    padding: var(--space-2) 4px 0;
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: 550;
-    text-align: left;
   }
-  .show-all-btn:hover { text-decoration: underline; }
+  .note-toggle:hover { text-decoration: underline; }
+
+  .note-editor { display: flex; flex-direction: column; gap: 6px; }
+  .note-editor textarea {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 12.5px;
+    resize: vertical;
+  }
+  .note-actions { display: flex; justify-content: flex-end; gap: 6px; }
+
+  .all-set {
+    font-size: 13px;
+    color: var(--muted);
+    padding: 4px 8px;
+  }
+
+  /* ---------- Dot strip (display-only recent history) ---------- */
+
+  .dot-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: var(--space-3);
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--hairline);
+  }
+  .hdot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: none;
+    flex-shrink: 0;
+  }
+  .hdot-ok { background: var(--good-ink); border-color: var(--good-ink); }
+  .hdot-danger { background: var(--danger-ink); border-color: var(--danger-ink); }
 
   .card-footer {
     margin-top: var(--space-4);
@@ -424,12 +527,11 @@
   }
 
   /* PHONE — main content-box ≤ 480px: bigger touch targets for the day
-     chips and the per-session tri-state buttons. 7 chips × 40px + 6 × 6px
+     chips and the actionable row's one-tap buttons. 7 chips × 40px + 6 × 6px
      gaps = 316px, well inside a ~358px phone content-box. */
   @container (max-width: 480px) {
     .day-chip { width: 40px; padding: 9px 0; font-size: 13px; }
-    .tri-btn { width: 40px; height: 40px; font-size: 14px; }
-    .session-list li,
-    .session-list li.nudge { padding: 10px 4px; }
+    .one-tap-btn { min-height: 40px; padding: 8px 12px; font-size: 13px; }
+    .actionable-top { flex-wrap: wrap; }
   }
 </style>

@@ -6,7 +6,9 @@
   // tasksError on failure), then still bubble via ontoggle/ondelete — the
   // public contract is frozen so callers with their own non-store list state
   // (or a side-effect hook to run) keep working unchanged.
+  import TaskCheckbox from './TaskCheckbox.svelte';
   import TaskTypeIcon from './TaskTypeIcon.svelte';
+  import CompletionFlow from './CompletionFlow.svelte';
   import { daysUntil, taskDueMeta } from '../../lib/plannerDates';
   import { deleteTask, snoozeTask, tasksById, toggleTask, type ApiTask } from '../../lib/stores/tasks';
   import { TASK_TYPE_META, type TaskType } from '../../lib/taskTypeMeta';
@@ -34,6 +36,9 @@
 
   let { task, compact = false, courseHues = {}, ontoggle, ondelete }: Props = $props();
   let busy = $state(false);
+  // Mounted only while checking (not unchecking) a typed task — the flow
+  // owns collecting recap/follow-ups and completing it; see handleCheck.
+  let flowOpen = $state(false);
 
   function dueMeta(t: TaskItemTask) {
     if (!t.due_date) return null;
@@ -51,6 +56,27 @@
     } finally {
       busy = false;
     }
+  }
+
+  // TaskCheckbox's onToggle fires on both check and uncheck; only checking
+  // (task.completed is still false here) a typed task detours through
+  // CompletionFlow instead of completing right away — a todo's reward is
+  // the instant confetti moment, so it (and every uncheck) stays instant.
+  function handleCheck() {
+    if (!task.completed && task.type && task.type !== 'todo') {
+      flowOpen = true;
+      return;
+    }
+    void toggle();
+  }
+
+  // The flow already called toggleTask (+ any follow-ups) itself by the
+  // time this fires — just close the dialog and bubble the same way toggle()
+  // does for every other completion path.
+  function handleFlowCompleted() {
+    flowOpen = false;
+    const current = tasksById.get()[task.id];
+    if (current) ontoggle?.(current as ApiTask);
   }
 
   async function del() {
@@ -77,14 +103,14 @@
 </script>
 
 <div class="task-item" class:compact class:completed={task.completed}>
-  <input
-    type="checkbox"
-    class="task-checkbox"
-    checked={task.completed}
-    disabled={busy}
-    onchange={toggle}
-    aria-label={task.completed ? 'Mark incomplete' : 'Mark complete'}
-  />
+  <span class="task-checkbox-slot">
+    <TaskCheckbox
+      checked={task.completed}
+      busy={busy || flowOpen}
+      label={task.completed ? 'Mark incomplete' : 'Mark complete'}
+      onToggle={handleCheck}
+    />
+  </span>
   <div class="task-info">
     <div class="task-title-row">
       {#if task.type && task.type !== 'todo'}
@@ -125,12 +151,16 @@
   {#if !compact}
     <div class="task-actions">
       {#if canSnooze}
-        <button type="button" class="btn-snooze" onclick={snooze} title="Push due date to tomorrow" disabled={busy}>Not today</button>
+        <button type="button" class="btn-snooze" onclick={snooze} title="Push due date to tomorrow" disabled={busy || flowOpen}>Not today</button>
       {/if}
-      <button type="button" class="btn-delete" onclick={del} title="Delete task" disabled={busy}>Delete</button>
+      <button type="button" class="btn-delete" onclick={del} title="Delete task" disabled={busy || flowOpen}>Delete</button>
     </div>
   {/if}
 </div>
+
+{#if flowOpen}
+  <CompletionFlow task={task as ApiTask} onClose={() => (flowOpen = false)} onCompleted={handleFlowCompleted} />
+{/if}
 
 <style>
   .task-item {
@@ -163,7 +193,11 @@
     opacity: 0.7;
   }
 
-  .task-checkbox {
+  /* Wraps TaskCheckbox (its own internals aren't ours to target) so this
+     row's geometry — margin, cursor, shrink behavior, mobile scale bump
+     below — stays exactly what it was on the raw <input> this replaced. */
+  .task-checkbox-slot {
+    display: inline-flex;
     margin-top: 0.2rem;
     cursor: pointer;
     flex-shrink: 0;
@@ -267,11 +301,11 @@
     color: var(--danger-ink, var(--danger));
   }
 
-  /* Dual-context component: TaskItem renders both inside main (TodayTasks,
-     TasksCard, TodoDropdown) and inside the fixed /tasks overlay layer
-     (TasksView) — @media (not @container) is deliberate here, since this
-     is a viewport-keyed touch-ergonomics bump (bigger tap targets), not a
-     layout reflow. Public contract (props, classes, markup) is untouched. */
+  /* TaskItem renders inside main in every consumer (TodayTasks, TasksCard,
+     TodoDropdown, and now TasksView too) — @media (not @container) is
+     deliberate here regardless, since this is a viewport-keyed touch-
+     ergonomics bump (bigger tap targets), not a layout reflow. Public
+     contract (props, classes, markup) is untouched. */
   @media (max-width: 767px) {
     .task-item:not(.compact) {
       padding: 0.85rem 0.75rem;
@@ -283,7 +317,7 @@
          the title's row here would reopen the same crush. */
       flex-wrap: wrap;
     }
-    .task-checkbox {
+    .task-checkbox-slot {
       transform: scale(1.25);
     }
     .task-actions {
