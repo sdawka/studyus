@@ -323,6 +323,14 @@
     return '';
   }
 
+  // Overlap columns halve (or worse) a block's width; the "Class: "/"Study: "
+  // prefix then eats the whole line and ellipsis leaves "Class: …" — cutting
+  // the course code, the only distinguishing text. Strip the prefix on shared
+  // columns; border style + hue still encode the kind.
+  function blockTitle(p: { item: CalendarItem; totalCols: number }): string {
+    return p.totalCols > 1 ? p.item.title.replace(/^(Class|Study): /, '') : p.item.title;
+  }
+
   // Hover card (internal, presentational — distinct from the click-driven
   // EventPopover PlannerView owns; this is a lightweight 200ms hover peek).
   let hoverItem = $state<CalendarItem | null>(null);
@@ -592,13 +600,14 @@
               class:dashed={p.item.type === 'study_session'}
               class:past={isToday(day) && isPast(p.endMs)}
               class:one-line={!twoLine}
+              class:overlap={p.totalCols > 1}
               data-event-id={p.item.id}
               style={`--course-h:${hueForItem(p.item)}; top:${top}px; height:${height}px; left:calc(${leftPct}% + 2px); width:calc(${widthPct}% - 4px);`}
               onclick={() => onSelect?.(p.item)}
               onmouseenter={(e) => onBlockEnter(e, p.item)}
               onmouseleave={onBlockLeave}
             >
-              <span class="evt-title">{#if statusGlyph}<span class="evt-status">{statusGlyph}</span>{/if}{p.item.title}</span>
+              <span class="evt-title">{#if statusGlyph}<span class="evt-status">{statusGlyph}</span>{/if}{blockTitle(p)}</span>
               {#if twoLine}
                 <span class="evt-time">{timeRangeLabel(new Date(p.startMs), new Date(p.endMs))}</span>
               {/if}
@@ -886,6 +895,17 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  /* Overlap columns halve a block's width; even the prefix-stripped title
+     ("CHEE 310") ellipsizes at ~55px. Two-line wrap keeps the whole code
+     visible ("CHEE" / "310") — but only on tall-enough blocks, where the
+     script's twoLine gate already guarantees the vertical room. */
+  .event-block.overlap:not(.one-line) .evt-title {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow-wrap: anywhere;
   }
   .evt-status {
     margin-right: 3px;

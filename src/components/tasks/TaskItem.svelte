@@ -227,9 +227,15 @@
   .task-title {
     font-weight: 500;
     color: var(--text);
+    /* Two-line clamp, not single-line ellipsis: in narrow masonry columns
+       the inline actions squeeze this line, and nowrap turned every
+       generated title into "Attend CHEE…". Two lines keep rows scannable
+       without letting long titles run away. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
 
   /* Wraps freely (never truncates) — these are small discrete badges, not

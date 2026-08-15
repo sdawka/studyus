@@ -87,6 +87,15 @@
     return item.type === 'task_due' && item.details.task_type === 'attend_class';
   }
   function chipLabel(item: CalendarItem): string {
+    if (item.type === 'class_session') {
+      // "CODE · Class: CODE" (or a bare "Class: …") truncates to nothing at
+      // 7-column chip width — show status glyph + course code; the chip's
+      // time slot and hue carry the rest. Full text stays in the tooltip.
+      const code = courseFor(item)?.code ?? item.title.replace(/^Class: /, '');
+      const status = item.details?.status;
+      const glyph = status === 'attended' ? '✓ ' : status === 'missed' ? '✗ ' : '';
+      return `${glyph}${code}`;
+    }
     const base = shortTitle(item);
     if (!isAttendClassItem(item)) return base;
     return `${item.details.done ? '●' : '○'} ${base}`;
@@ -95,15 +104,6 @@
   const itemsByDay = $derived(collapsedDays.map((d) => items.filter((it) => isSameDay(new Date(it.date), d))));
   const MAX_CHIPS = 4;
 
-  // Monday-start local ISO date, for the WeekGrid contract.
-  function mondayOf(d: Date): Date {
-    const m = new Date(d);
-    const dow = m.getDay(); // 0 = Sun
-    const diff = dow === 0 ? -6 : 1 - dow;
-    m.setDate(m.getDate() + diff);
-    m.setHours(0, 0, 0, 0);
-    return m;
-  }
   function toIsoDate(d: Date): string {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -111,7 +111,14 @@
     return `${y}-${m}-${day}`;
   }
 
-  const weekStartDate = mondayOf(today);
+  // Rolling window from today, NOT mondayOf(today): this widget is "Next 7
+  // days" — the collapsed chips, the SSR item window, and the compact grid's
+  // sub-7-day rolling display all anchor on today. A Monday-anchored fetch
+  // here silently dropped items on days the rolling display shows but the
+  // calendar-week window doesn't cover (e.g. next Monday's classes, viewed
+  // on a Saturday) — the expanded grid rendered them as empty columns.
+  const weekStartDate = new Date(today);
+  weekStartDate.setHours(0, 0, 0, 0);
   const weekStart = toIsoDate(weekStartDate);
 
   // `force` re-fetches even after the initial load already ran — used after

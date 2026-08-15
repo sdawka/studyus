@@ -91,13 +91,16 @@ for (const { theme, scheme } of EXPANDED_WEEK_COMBOS) {
     before: async () => {
       // Expanded/collapsed state persists in localStorage (sb:weekview) across
       // page loads, so an unconditional click would collapse an already-expanded
-      // view on later combos. Only click if not already expanded.
-      if ((await page.locator('.week-grid').count()) > 0) return;
+      // view on later combos. Only click if not already expanded — and gate on
+      // the toggle's aria-expanded, NOT on `.week-grid` existing: the expanded
+      // grid stays mounted while collapsed (the cross-fade needs it), so an
+      // existence check always short-circuits and captures the collapsed view.
       const el = page.locator('.toggle-btn').first();
       if ((await el.count()) === 0) {
         console.log(`MISSING selector for dashboard-week-expanded--${theme}-${scheme}: .toggle-btn`);
         return;
       }
+      if ((await el.getAttribute('aria-expanded')) === 'true') return;
       await el.click();
       await page.waitForTimeout(300);
     },
