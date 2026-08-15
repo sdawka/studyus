@@ -1,17 +1,26 @@
 <script lang="ts">
-  // /tasks route-modal body (rebuild of the old flat TaskList.svelte, now
-  // deleted). One card per course (course-hued) + an always-last neutral
-  // "Other" card, each with inline add + one level of subtasks. Filter chip
-  // bar narrows the grid to a single card and syncs ?course= (slug, or
-  // 'other') via history.replaceState — mirrors PlannerView's course filter.
+  // /tasks page body (full page — tasks.astro renders this directly into
+  // AppShell's default slot, not a route-modal overlay). Two tabs: Open
+  // (one card per course, course-hued, + an always-last neutral "Other"
+  // card, each with inline add + one level of subtasks) and Ta-Da
+  // (selectCompleted(), grouped by day — a trophy shelf, not a graveyard).
+  // Both tabs render into the same CSS-grid masonry (src/lib/actions/
+  // masonry.ts) so short cards don't leave gaps. The course filter chips
+  // (Open tab only) are multi-select and sync ?course=slug1,slug2 (comma
+  // list) via history.replaceState; the active tab syncs ?tab=tada the
+  // same way. tasks.astro parses both server-side for the first paint.
+  import { flip } from 'svelte/animate';
+  import { fade } from 'svelte/transition';
   import TaskItem from './TaskItem.svelte';
   import TaskTypeIcon from './TaskTypeIcon.svelte';
+  import { masonryItem } from '../../lib/actions/masonry';
   import {
     addTask,
     bucketByDue,
     deleteTask,
     hydrateTasks,
     selectChildren,
+    selectCompleted,
     selectForCourse,
     selectOpen,
     snoozeTask,
@@ -20,6 +29,7 @@
     type ApiTask,
   } from '../../lib/stores/tasks';
   import { TASK_TYPE_META } from '../../lib/taskTypeMeta';
+  import { addDays, formatWeekdayAndDate, isSameLocalDay, localDateKeyFromIso } from '../../lib/plannerDates';
 
   interface CourseOption {
     id: string;
@@ -32,34 +42,61 @@
   interface Props {
     initialTasks: ApiTask[];
     courses: CourseOption[];
-    initialCourseFilter: string | null;
+    initialCourseFilters: string[];
+    initialTab: 'open' | 'tada';
   }
 
-  let { initialTasks, courses, initialCourseFilter }: Props = $props();
+  let { initialTasks, courses, initialCourseFilters, initialTab }: Props = $props();
 
   hydrateTasks(initialTasks);
 
   const courseHues: Record<string, number> = {};
   for (const c of courses) courseHues[c.id] = c.hue;
 
-  let activeFilter = $state<string | null>(
-    initialCourseFilter === 'other' || courses.some((c) => c.slug === initialCourseFilter) ? initialCourseFilter : null,
-  );
+  const validSlugs = new Set(['other', ...courses.map((c) => c.slug)]);
 
-  let visibleCourses = $derived(
-    activeFilter === null ? courses : activeFilter === 'other' ? [] : courses.filter((c) => c.slug === activeFilter),
-  );
-  let showOther = $derived(activeFilter === null || activeFilter === 'other');
+  // ---- tab -------------------------------------------------------------
 
-  function setFilter(next: string | null) {
-    activeFilter = next;
+  let activeTab = $state<'open' | 'tada'>(initialTab);
+
+  function setTab(tab: 'open' | 'tada') {
+    activeTab = tab;
     const url = new URL(window.location.href);
-    if (next === null) url.searchParams.delete('course');
-    else url.searchParams.set('course', next);
+    if (tab === 'open') url.searchParams.delete('tab');
+    else url.searchParams.set('tab', tab);
     history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
   }
 
-  // ---- grouping/ordering ----------------------------------------------
+  // ---- course filter (multi-select, Open tab only) ----------------------
+
+  let activeFilters = $state<Set<string>>(new Set(initialCourseFilters.filter((s) => validSlugs.has(s))));
+
+  let visibleCourses = $derived(
+    activeFilters.size === 0 ? courses : courses.filter((c) => activeFilters.has(c.slug)),
+  );
+  let showOther = $derived(activeFilters.size === 0 || activeFilters.has('other'));
+
+  function syncFilterUrl() {
+    const url = new URL(window.location.href);
+    if (activeFilters.size === 0) url.searchParams.delete('course');
+    else url.searchParams.set('course', [...activeFilters].join(','));
+    history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
+  }
+
+  function toggleFilter(slug: string) {
+    const next = new Set(activeFilters);
+    if (next.has(slug)) next.delete(slug);
+    else next.add(slug);
+    activeFilters = next;
+    syncFilterUrl();
+  }
+
+  function clearFilters() {
+    activeFilters = new Set();
+    syncFilterUrl();
+  }
+
+  // ---- grouping/ordering (Open tab) --------------------------------------
 
   // A task's course membership can come from either the origin FK
   // (system-generated tasks) or a task_courses link row (user tasks) —
@@ -91,7 +128,8 @@
 
   interface CardData {
     key: string;
-    title: string;
+    code: string;
+    title?: string;
     courseId?: string;
     hue?: number;
     open: ApiTask[];
@@ -99,7 +137,14 @@
     done: ApiTask[];
   }
 
-  function buildCard(key: string, title: string, courseId: string | undefined, hue: number | undefined, tasks: ApiTask[]): CardData {
+  function buildCard(
+    key: string,
+    code: string,
+    title: string | undefined,
+    courseId: string | undefined,
+    hue: number | undefined,
+    tasks: ApiTask[],
+  ): CardData {
     const topLevel = tasks.filter((t) => !t.parent_task_id);
     const buckets = bucketByDue(selectOpen(topLevel));
     const open = [...buckets.overdue, ...buckets.today, ...buckets.next].sort(compareOpen);
@@ -108,24 +153,71 @@
       .filter((t) => t.completed)
       .sort((a, b) => (b.completed_at ?? '').localeCompare(a.completed_at ?? ''))
       .slice(0, 10);
-    return { key, title, courseId, hue, open, catchUp, done };
+    return { key, code, title, courseId, hue, open, catchUp, done };
   }
 
   let allTasks = $derived($tasksList);
+  let totalOpen = $derived(selectOpen(allTasks).length);
 
   let cards = $derived.by(() => {
     const result: CardData[] = [];
     for (const c of visibleCourses) {
-      result.push(buildCard(c.slug, c.code, c.id, c.hue, selectForCourse(allTasks, c.id)));
+      result.push(buildCard(c.slug, c.code, c.title, c.id, c.hue, selectForCourse(allTasks, c.id)));
     }
     if (showOther) {
       const otherTasks = allTasks.filter((t) => courseIdsOfTask(t).length === 0);
-      result.push(buildCard('other', 'Other', undefined, undefined, otherTasks));
+      result.push(buildCard('other', 'Other', undefined, undefined, undefined, otherTasks));
     }
     return result;
   });
 
-  // ---- subtask expand/collapse ----------------------------------------
+  // ---- Ta-Da tab: completed tasks grouped by local calendar day ---------
+
+  interface DayGroup {
+    key: string;
+    label: string;
+    tasks: ApiTask[];
+  }
+
+  function dayLabel(d: Date, now: Date, yesterday: Date): string {
+    if (isSameLocalDay(d, now)) return 'Today';
+    if (isSameLocalDay(d, yesterday)) return 'Yesterday';
+    const { weekday, date } = formatWeekdayAndDate(d);
+    return `${weekday} ${date}`;
+  }
+
+  // selectCompleted() is already sorted completed_at desc, so the first
+  // task seen for a given calendar day fixes that day's position in
+  // `order` — day groups come out most-recent-first for free.
+  let tadaGroups = $derived.by(() => {
+    const now = new Date();
+    const yesterday = addDays(now, -1);
+    const order: string[] = [];
+    const byKey = new Map<string, DayGroup>();
+    for (const t of selectCompleted(allTasks)) {
+      if (!t.completed_at) continue;
+      const key = localDateKeyFromIso(t.completed_at);
+      let group = byKey.get(key);
+      if (!group) {
+        group = { key, label: dayLabel(new Date(t.completed_at), now, yesterday), tasks: [] };
+        byKey.set(key, group);
+        order.push(key);
+      }
+      group.tasks.push(t);
+    }
+    return order.map((key) => byKey.get(key)!);
+  });
+
+  function completionTimeLabel(iso: string): string {
+    return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }).replace(' ', '');
+  }
+
+  function primaryHue(t: ApiTask): number | undefined {
+    const ids = courseIdsOfTask(t);
+    return ids.length > 0 ? courseHues[ids[0]] : undefined;
+  }
+
+  // ---- subtask expand/collapse ------------------------------------------
 
   let expandedIds = $state<Set<string>>(new Set());
   function toggleExpanded(id: string) {
@@ -150,7 +242,7 @@
     await snoozeTask(task.id);
   }
 
-  // ---- inline add (per card) -------------------------------------------
+  // ---- inline add (per card) ---------------------------------------------
 
   let openAddFormKey = $state<string | null>(null);
   let addTitle = $state('');
@@ -161,11 +253,9 @@
     openAddFormKey = key;
     addTitle = '';
     addDate = '';
-    (window as any).__tasksBlockEscape = true;
   }
   function closeAddForm() {
     openAddFormKey = null;
-    syncBlockEscape();
   }
 
   // Local <input type=date> values are calendar days with no timezone of
@@ -194,7 +284,7 @@
     }
   }
 
-  // ---- inline add (subtask) --------------------------------------------
+  // ---- inline add (subtask) ----------------------------------------------
 
   let openSubtaskAddId = $state<string | null>(null);
   let subtaskTitle = $state('');
@@ -203,14 +293,9 @@
   function openSubtaskAdd(parentId: string) {
     openSubtaskAddId = parentId;
     subtaskTitle = '';
-    (window as any).__tasksBlockEscape = true;
   }
   function closeSubtaskAdd() {
     openSubtaskAddId = null;
-    syncBlockEscape();
-  }
-  function syncBlockEscape() {
-    (window as any).__tasksBlockEscape = openAddFormKey !== null || openSubtaskAddId !== null;
   }
 
   async function submitSubtask(parent: ApiTask) {
@@ -231,12 +316,7 @@
   }
 
   function onFormKeydown(e: KeyboardEvent, close: () => void) {
-    if (e.key !== 'Escape') return;
-    // Stop the modal's own Escape listener (tasks.astro, guarded by the
-    // same __tasksBlockEscape flag) from also seeing this keypress — a
-    // first Escape should only close the form, not the whole modal.
-    e.stopPropagation();
-    close();
+    if (e.key === 'Escape') close();
   }
 </script>
 
@@ -310,86 +390,159 @@
 {/snippet}
 
 <div class="tasks-view">
-  <div class="chip-row" role="group" aria-label="Filter by course">
-    <button type="button" class="chip" aria-pressed={activeFilter === null} onclick={() => setFilter(null)}>All</button>
-    {#each courses as c (c.id)}
-      <button type="button" class="chip course-chip" aria-pressed={activeFilter === c.slug} onclick={() => setFilter(c.slug)}>
-        <span class="dot" style={`--course-h:${c.hue}`}></span>{c.code}
-      </button>
-    {/each}
-    <button type="button" class="chip" aria-pressed={activeFilter === 'other'} onclick={() => setFilter('other')}>Other</button>
+  <div class="page-head">
+    <h1>Tasks</h1>
+    <span class="pill pill-idle open-total">{totalOpen} open</span>
   </div>
 
-  {#if courses.length === 0}
-    <p class="muted-hint">
-      No courses yet.
-      <button type="button" class="link-btn" onclick={() => window.dispatchEvent(new CustomEvent('open-add-course'))}>
-        Add a course
-      </button>
-      to start organizing tasks by course.
-    </p>
-  {/if}
+  <div class="tab-strip" role="group" aria-label="Tasks view">
+    <button type="button" aria-selected={activeTab === 'open'} onclick={() => setTab('open')}>Open</button>
+    <button type="button" aria-selected={activeTab === 'tada'} onclick={() => setTab('tada')}>Ta-Da</button>
+  </div>
 
-  <div class="card-grid">
-    {#each cards as card (card.key)}
-      <section class="card task-card" class:other-card={!card.courseId} style={card.hue !== undefined ? `--course-h:${card.hue}` : ''}>
-        <div class="card-head">
-          <h2 class="card-title">{card.title}</h2>
-          <span class="open-count">{card.open.length + card.catchUp.length} open</span>
-        </div>
+  {#if activeTab === 'open'}
+    <div class="chip-row" role="group" aria-label="Filter by course">
+      <button type="button" class="chip" aria-pressed={activeFilters.size === 0} onclick={clearFilters}>All</button>
+      {#each courses as c (c.id)}
+        <button type="button" class="chip course-chip" aria-pressed={activeFilters.has(c.slug)} onclick={() => toggleFilter(c.slug)}>
+          <span class="dot" style={`--course-h:${c.hue}`}></span>{c.code}
+        </button>
+      {/each}
+      <button type="button" class="chip" aria-pressed={activeFilters.has('other')} onclick={() => toggleFilter('other')}>Other</button>
+    </div>
 
-        <div class="card-body">
-          {#each card.open as task (task.id)}
-            {@const kids = selectChildren(allTasks, task.id)}
-            {#if kids.length > 0}
-              {@render parentRow(task, kids)}
-            {:else}
-              <TaskItem {task} {courseHues} />
-            {/if}
-          {/each}
+    {#if courses.length === 0}
+      <p class="muted-hint">
+        No courses yet.
+        <button type="button" class="link-btn" onclick={() => window.dispatchEvent(new CustomEvent('open-add-course'))}>
+          Add a course
+        </button>
+        to start organizing tasks by course.
+      </p>
+    {/if}
 
-          {#if card.catchUp.length > 0}
-            <div class="catch-up-cluster">
-              <p class="kicker">Catch up</p>
-              {#each card.catchUp as task (task.id)}
-                {@const kids = selectChildren(allTasks, task.id)}
-                {#if kids.length > 0}
-                  {@render parentRow(task, kids)}
-                {:else}
-                  <TaskItem {task} {courseHues} />
-                {/if}
-              {/each}
+    <div class="card-grid">
+      {#each cards as card (card.key)}
+        <section
+          class="card task-card"
+          class:other-card={!card.courseId}
+          style={card.hue !== undefined ? `--course-h:${card.hue}` : ''}
+          use:masonryItem
+          animate:flip={{ duration: 200 }}
+          out:fade={{ duration: 150 }}
+        >
+          <div class="card-head">
+            <div class="card-head-text">
+              {#if card.title}
+                <p class="kicker">{card.code}</p>
+                <h2 class="card-title">{card.title}</h2>
+              {:else}
+                <h2 class="card-title">{card.code}</h2>
+              {/if}
             </div>
-          {/if}
+            <span class="pill pill-idle open-count">{card.open.length + card.catchUp.length} open</span>
+          </div>
 
-          {#if card.open.length === 0 && card.catchUp.length === 0 && card.done.length === 0}
-            <p class="empty">Nothing here — add a task.</p>
-          {/if}
+          <div class="card-body">
+            {#each card.open as task (task.id)}
+              {@const kids = selectChildren(allTasks, task.id)}
+              {#if kids.length > 0}
+                {@render parentRow(task, kids)}
+              {:else}
+                <TaskItem {task} {courseHues} />
+              {/if}
+            {/each}
 
-          {#if card.done.length > 0}
-            <details class="done-disclosure">
-              <summary>Done ({card.done.length})</summary>
-              <div class="done-list">
-                {#each card.done as task (task.id)}
-                  <TaskItem {task} compact {courseHues} />
+            {#if card.catchUp.length > 0}
+              <div class="catch-up-cluster">
+                <p class="kicker">Catch up</p>
+                {#each card.catchUp as task (task.id)}
+                  {@const kids = selectChildren(allTasks, task.id)}
+                  {#if kids.length > 0}
+                    {@render parentRow(task, kids)}
+                  {:else}
+                    <TaskItem {task} {courseHues} />
+                  {/if}
                 {/each}
               </div>
-            </details>
-          {/if}
+            {/if}
 
-          {#if openAddFormKey === card.key}
-            <form class="inline-add" onsubmit={(e) => { e.preventDefault(); submitAdd(card.courseId); }} onkeydown={(e) => onFormKeydown(e, closeAddForm)}>
-              <input type="text" bind:value={addTitle} placeholder="Task title" autofocus />
-              <input type="date" bind:value={addDate} aria-label="Due date" />
-              <button type="submit" class="btn btn-primary" disabled={!addTitle.trim() || addBusy}>Add</button>
-            </form>
-          {:else}
-            <button type="button" class="ghost-add" onclick={() => openAddForm(card.key)}>+ Add task</button>
-          {/if}
+            {#if card.open.length === 0 && card.catchUp.length === 0 && card.done.length === 0}
+              <p class="empty">Nothing here — add a task.</p>
+            {/if}
+
+            {#if card.done.length > 0}
+              <details class="done-disclosure">
+                <summary>Done ({card.done.length})</summary>
+                <div class="done-list">
+                  {#each card.done as task (task.id)}
+                    <TaskItem {task} compact {courseHues} />
+                  {/each}
+                </div>
+              </details>
+            {/if}
+
+            {#if openAddFormKey === card.key}
+              <form class="inline-add" onsubmit={(e) => { e.preventDefault(); submitAdd(card.courseId); }} onkeydown={(e) => onFormKeydown(e, closeAddForm)}>
+                <input type="text" bind:value={addTitle} placeholder="Task title" autofocus />
+                <input type="date" bind:value={addDate} aria-label="Due date" />
+                <button type="submit" class="btn btn-primary" disabled={!addTitle.trim() || addBusy}>Add</button>
+              </form>
+            {:else}
+              <button type="button" class="ghost-add" onclick={() => openAddForm(card.key)}>+ Add task</button>
+            {/if}
+          </div>
+        </section>
+      {/each}
+    </div>
+  {:else if tadaGroups.length === 0}
+    <p class="empty">Nothing here yet — check something off.</p>
+  {:else}
+    <div class="card-grid">
+      {#each tadaGroups as group (group.key)}
+        <div class="day-divider" use:masonryItem>
+          <p class="kicker">{group.label}</p>
         </div>
-      </section>
-    {/each}
-  </div>
+        {#each group.tasks as task (task.id)}
+          <div
+            class="card celebration-card"
+            class:other-card={primaryHue(task) === undefined}
+            style={primaryHue(task) !== undefined ? `--course-h:${primaryHue(task)}` : ''}
+            use:masonryItem
+            animate:flip={{ duration: 200 }}
+            out:fade={{ duration: 150 }}
+          >
+            <div class="celebration-head">
+              {#if task.type && task.type !== 'todo'}
+                <span class="task-type-icon" title={TASK_TYPE_META[task.type]?.label ?? task.type}><TaskTypeIcon type={task.type} /></span>
+              {/if}
+              <span class="celebration-title">{task.title}</span>
+            </div>
+            <div class="celebration-meta">
+              {#if task.courses.length > 0}
+                <span class="course-dots">
+                  {#each task.courses as c (c.id)}
+                    <span
+                      class="dot"
+                      class:neutral={courseHues[c.id] === undefined}
+                      style={courseHues[c.id] !== undefined ? `--course-h:${courseHues[c.id]}` : ''}
+                      title={c.code}
+                    ></span>
+                  {/each}
+                </span>
+              {/if}
+              {#if task.completed_at}
+                <span class="completion-time">{completionTimeLabel(task.completed_at)}</span>
+              {/if}
+            </div>
+            {#if task.completion_note}
+              <p class="completion-note">“{task.completion_note}”</p>
+            {/if}
+          </div>
+        {/each}
+      {/each}
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -397,6 +550,44 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+  }
+
+  .page-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+  .page-head h1 {
+    font-size: 26px;
+    letter-spacing: -0.015em;
+  }
+  .open-total {
+    flex-shrink: 0;
+  }
+
+  /* Segmented-control look shared with AppearanceSettings.svelte's scheme
+     picker (.seg) — same recipe, renamed for this file's own scope. */
+  .tab-strip {
+    display: inline-flex;
+    width: fit-content;
+    padding: 3px;
+    gap: 2px;
+    background: var(--hairline);
+    border-radius: 999px;
+  }
+  .tab-strip button {
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 550;
+    color: var(--muted);
+    transition: var(--motion-fast) var(--ease);
+  }
+  .tab-strip button[aria-selected='true'] {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow-card);
   }
 
   .chip-row {
@@ -418,6 +609,9 @@
     background: var(--course);
     flex-shrink: 0;
   }
+  .dot.neutral {
+    background: var(--muted);
+  }
 
   .muted-hint {
     color: var(--muted);
@@ -431,38 +625,116 @@
     text-decoration: underline;
   }
 
-  /* Fixed overlay layer (the modal panel, not AppShell's <main>), so page
-     breakpoints here use plain @media rather than a container query — the
-     PlannerView-documented exception to the repo's @container convention
-     (PlannerView.svelte's .planner-body follows the same rule). */
+  /* True CSS-grid masonry (see src/lib/actions/masonry.ts): a fine
+     grid-auto-rows lets each item claim exactly the row-tracks its own
+     height needs via grid-row-end, so shorter cards don't leave a gap
+     below them the way an even-row auto-fill grid would. row-gap stays 0
+     — the visual gap is each item's own margin-bottom (below), which is
+     what the JS span math is measuring against. align-items:start is
+     load-bearing: without it a grid item stretches to fill its whole
+     spanned row-area instead of sitting at its natural height.
+     grid-auto-flow stays the default `row` (non-dense) so packing never
+     reorders items out of DOM/tab order. This grid now lives inside
+     main's default slot (not the old fixed overlay), so its breakpoints
+     are @container against main's content-box per the repo's convention
+     (mobile-shell.md) — thresholds tuned so a column stays close to
+     TaskItem's ~300-380px comfortable width up through --content-max's
+     1320px ceiling. */
   .card-grid {
+    --masonry-gap: var(--space-4);
     display: grid;
-    /* 380px min, not 320: a non-compact TaskItem row carries ~250px of fixed
-       chrome (checkbox, type icon, hue dot, due pill, Delete, gaps, padding),
-       so a 320px track leaves titles ~70px before ellipsis. 380 keeps three
-       columns at 1440 with ~180px of readable title. */
-    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-    gap: 18px;
+    grid-auto-rows: 4px;
+    row-gap: 0;
+    column-gap: var(--masonry-gap);
+    grid-template-columns: 1fr;
     align-items: start;
   }
-  @media (max-width: 900px) {
+  @container (min-width: 520px) {
     .card-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @container (min-width: 860px) {
+    .card-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  @container (min-width: 1160px) {
+    .card-grid {
+      grid-template-columns: repeat(4, 1fr);
     }
   }
 
-  .task-card {
-    border-top: 3px solid var(--course);
+  .task-card,
+  .celebration-card,
+  .day-divider {
+    margin-bottom: var(--masonry-gap);
+    min-width: 0;
   }
-  .task-card.other-card {
+
+  /* Progressive enhancement: once a browser natively supports CSS masonry
+     (the `grid-lanes` proposal) it owns row placement and gap directly —
+     masonry.ts's ResizeObserver span math becomes redundant (masonryItem
+     itself no-ops in that branch; the !important here only guards a stale
+     inline grid-row-end surviving from before support landed, e.g. across
+     a bfcache restore). */
+  @supports (display: grid-lanes) {
+    .card-grid {
+      display: grid-lanes;
+      grid-auto-rows: unset;
+      row-gap: var(--masonry-gap);
+    }
+    .task-card,
+    .celebration-card,
+    .day-divider {
+      grid-row: auto !important;
+      margin-bottom: 0;
+    }
+  }
+
+  @container (max-width: 520px) {
+    .page-head h1 {
+      font-size: 21px;
+    }
+  }
+
+  /* Hue accent + hover: shared identity language for both the per-course
+     card and the Ta-Da celebration card. border-top (not an inset
+     box-shadow) because --shadow-card is `none` in the compass theme —
+     box-shadow can't mix a `none` component into a comma list, but a
+     plain border composes fine regardless of what --shadow-card is doing.
+     Hover swaps the whole box-shadow to --shadow-pop (defined in every
+     theme, never `none`), so this stays tokens-only across all 3 themes. */
+  .task-card,
+  .celebration-card {
+    border-top: 3px solid var(--course);
+    transition: transform var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease);
+  }
+  .task-card.other-card,
+  .celebration-card.other-card {
     border-top-color: var(--border);
+  }
+  .task-card:hover,
+  .celebration-card:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-pop);
+  }
+
+  .card-head-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .card-head-text .kicker,
+  .card-head-text .card-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .open-count {
-    font-size: 12px;
-    color: var(--muted);
     flex-shrink: 0;
-    white-space: nowrap;
   }
 
   .card-body {
@@ -597,10 +869,12 @@
     margin-bottom: 0;
   }
 
+  /* Quiet footer: a hairline rule separates it from the open/catch-up
+     rows above, muted summary text keeps it from competing with them. */
   .done-disclosure {
-    margin-top: 6px;
+    margin-top: var(--space-2);
     border-top: 1px solid var(--hairline);
-    padding-top: 8px;
+    padding-top: var(--space-2);
   }
   .done-disclosure summary {
     cursor: pointer;
@@ -661,11 +935,74 @@
     margin-top: 4px;
   }
 
-  /* Touch ergonomics on the fixed /tasks layer — @media (not @container)
-     per the same fixed-overlay exception as .card-grid's comment above.
-     Placed last in this file (not grouped with .card-grid's own 767 rule
-     above) so every property here wins its cascade tie against the
-     later-equal-specificity base rules it targets (.chevron-btn,
+  /* Ta-Da celebration cards: compact — a type icon + title, course dots +
+     completion time on their own meta line, and the completion_note (when
+     present) as a quoted line. No strikethrough, no checkbox: it's a
+     trophy shelf, not the open-tab task row. */
+  .celebration-card {
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .celebration-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .celebration-title {
+    font-weight: 500;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .celebration-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .course-dots {
+    display: flex;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+  .completion-time {
+    white-space: nowrap;
+  }
+  .completion-note {
+    font-style: italic;
+    font-size: 12.5px;
+    color: var(--muted);
+    overflow-wrap: break-word;
+  }
+
+  /* Full-width section break between day groups — grid-column:1/-1 forces
+     non-dense auto-placement to start every card after it on a fresh row
+     across all columns, which is what keeps one day's cards from mixing
+     with the next day's in the same column. */
+  .day-divider {
+    grid-column: 1 / -1;
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--hairline);
+  }
+  .day-divider:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+  .day-divider .kicker {
+    margin: 0;
+  }
+
+  /* Touch ergonomics on /tasks — @media (not @container) since these are
+     viewport-keyed touch-target bumps, not layout reflow (mirrors the
+     rule of thumb documented on AppShell.astro's `main`). Placed last in
+     this file so every property here wins its cascade tie against the
+     earlier-equal-specificity base rules it targets (.chevron-btn,
      .task-checkbox, .children, .inline-add) — an @media block earlier in
      source order does NOT automatically beat an unwrapped rule of the same
      specificity that appears after it. */
@@ -741,7 +1078,7 @@
     }
 
     .card-grid {
-      gap: 12px;
+      --masonry-gap: 12px;
     }
   }
 </style>
