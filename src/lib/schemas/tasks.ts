@@ -34,5 +34,9 @@ export const updateTaskSchema = z.strictObject({
   due_date: isoDatetimeSchema.nullable().optional(),
   completed: z.boolean().optional(),
   course_ids: z.array(idSchema).optional(),
+  // v1.6: a short recap attachable when completing any task (not just
+  // attend_class) — see CompletionFlow.svelte / toggleTask's completionNote
+  // option. Independent of `completed`; can be set/cleared on its own.
+  completion_note: z.string().max(2000).nullable().optional(),
 });
 export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;

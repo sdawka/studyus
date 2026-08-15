@@ -45,7 +45,7 @@ Alternatives:
 
 1. Edit `src/db/schema.ts`.
 2. Delete everything under `migrations/` (including `migrations/meta/`).
-3. `npm run db:generate` (`drizzle-kit generate`) regenerates one fresh baseline file from the full current schema (as of this writing, `migrations/0000_outgoing_bishop.sql`) — review the SQL by hand: it must be pure `CREATE TABLE`/`CREATE INDEX`. If a future edit makes drizzle-kit emit a table-recreate for an existing column change, D1 rejects the `PRAGMA foreign_keys=OFF` it wraps that in; hand-fix to `PRAGMA defer_foreign_keys = true`.
+3. `npm run db:generate` (`drizzle-kit generate`) regenerates one fresh baseline file from the full current schema (as of this writing, `migrations/0000_chemical_ink.sql` — drizzle-kit names each regen with a fresh random slug, so this filename changes on every regen; don't treat it as stable) — review the SQL by hand: it must be pure `CREATE TABLE`/`CREATE INDEX`. If a future edit makes drizzle-kit emit a table-recreate for an existing column change, D1 rejects the `PRAGMA foreign_keys=OFF` it wraps that in; hand-fix to `PRAGMA defer_foreign_keys = true`.
 4. Wipe local D1 state — delete `.wrangler/state/v3/d1/` (no local data is worth preserving either).
 5. `npm run db:migrate:local` re-applies the fresh baseline, then `npm run db:seed` reseeds demo data.
 
@@ -62,7 +62,7 @@ One consequence: "Migration 000N adds X" phrasing elsewhere in the docs (`docs/a
 ## Notes
 
 > **2026-08-15 erratum**: both bullets immediately below are stale.
-> - **FK constraints ARE emitted.** Every `.references()` call in `src/db/schema.ts` compiles to a real SQL `FOREIGN KEY ... ON DELETE ...` clause in `migrations/0000_yielding_nocturne.sql` (cascade/set-null per relation) — D1/SQLite enforces these at the database level, not just "at app level." See `docs/architecture/data-model.md`'s full FK inventory.
+> - **FK constraints ARE emitted.** Every `.references()` call in `src/db/schema.ts` compiles to a real SQL `FOREIGN KEY ... ON DELETE ...` clause in `migrations/0000_chemical_ink.sql` (the current baseline, regenerated for v1.6 — supersedes the v1.5-era `0000_yielding_nocturne.sql` this note originally pointed at; cascade/set-null per relation) — D1/SQLite enforces these at the database level, not just "at app level." See `docs/architecture/data-model.md`'s full FK inventory.
 > - **An indexing strategy now exists.** The baseline migration carries 15 indexes (composite + unique) covering the query patterns identified so far (event timelines, mastery rollups, calendar coalesce filters, sweep dedupe keys) — see `docs/architecture/data-model.md`'s Index Inventory section for the full list. "Post-v1, analyze query patterns first" is no longer an accurate description of the current state, though the indexing set may still grow as new query patterns emerge.
 
 - **Mastery fold is pure**: queries are simple reads + single batch write.

@@ -29,6 +29,7 @@ import * as notesDetailRoutes from '../../src/pages/api/v1/notes/[id]';
 import * as resourcesIndexRoutes from '../../src/pages/api/v1/resources/index';
 import * as resourcesDetailRoutes from '../../src/pages/api/v1/resources/[id]';
 import * as sessionsIndexRoutes from '../../src/pages/api/v1/sessions/index';
+import * as sessionsDetailRoutes from '../../src/pages/api/v1/sessions/[id]';
 import * as sessionsCompleteRoutes from '../../src/pages/api/v1/sessions/[id]/complete';
 import * as gradesRoutes from '../../src/pages/api/v1/grades/summary';
 import * as calendarRoutes from '../../src/pages/api/v1/calendar/index';
@@ -771,6 +772,52 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
       expect(body.data.events_appended).toHaveLength(1);
       expect(body.data.events_appended[0].kc_id).toBe(fixture.kcId);
       expect(Array.isArray(body.data.mastery_deltas)).toBe(true);
+    });
+  });
+
+  describe('PATCH|DELETE /sessions/:id (v1.6)', () => {
+    it('PATCH reschedules a still-planned session', async () => {
+      const createReq = new Request('http://local.test/api/v1', {
+        method: 'POST',
+        body: JSON.stringify({ course_id: fixture.courseId, intended_event_type: 'practice_done' }),
+      });
+      const createRes = await sessionsIndexRoutes.POST(astroContext({
+        request: createReq,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      const sessionId = ((await createRes.json()) as any).data.id;
+
+      const patchReq = new Request('http://local.test/api/v1', {
+        method: 'PATCH',
+        body: JSON.stringify({ planned_minutes: 45 }),
+      });
+      const patchRes = await sessionsDetailRoutes.PATCH(astroContext({
+        params: { id: sessionId },
+        request: patchReq,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(patchRes.status).toBe(200);
+      const body = (await patchRes.json()) as any;
+      expect(body.data.planned_minutes).toBe(45);
+    });
+
+    it('DELETE removes a session', async () => {
+      const createReq = new Request('http://local.test/api/v1', {
+        method: 'POST',
+        body: JSON.stringify({ course_id: fixture.courseId, intended_event_type: 'practice_done' }),
+      });
+      const createRes = await sessionsIndexRoutes.POST(astroContext({
+        request: createReq,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      const sessionId = ((await createRes.json()) as any).data.id;
+
+      const delRes = await sessionsDetailRoutes.DELETE(astroContext({
+        params: { id: sessionId },
+        request: new Request('http://local.test/api/v1', { method: 'DELETE' }),
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(delRes.status).toBe(200);
     });
   });
 

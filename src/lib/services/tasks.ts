@@ -113,6 +113,7 @@ export async function updateTask(db: Db, userId: string, taskId: string, input: 
   if (input.title !== undefined) patch.title = input.title;
   if (input.description !== undefined) patch.description = input.description;
   if (input.due_date !== undefined) patch.dueDate = input.due_date ? Date.parse(input.due_date) : null;
+  if (input.completion_note !== undefined) patch.completionNote = input.completion_note;
   if (input.completed !== undefined) {
     patch.done = input.completed;
     // Stamp/clear completed_at only on an actual transition — a redundant

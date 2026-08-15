@@ -75,6 +75,33 @@ describe('updateTask — completed_at stamping', () => {
   });
 });
 
+describe('updateTask — completion_note (v1.6)', () => {
+  it('round-trips completion_note, independent of completed_at semantics', async () => {
+    const created = await createTask(db, userId, { title: 'Task' });
+    expect(created.completionNote).toBeNull();
+
+    const withNote = await updateTask(db, userId, created.id, { completed: true, completion_note: 'Went well, covered ch. 4' });
+    expect(withNote.completed).toBe(true);
+    expect(withNote.completionNote).toBe('Went well, covered ch. 4');
+    expect(withNote.completedAt).not.toBeNull();
+
+    const cleared = await updateTask(db, userId, created.id, { completion_note: null });
+    expect(cleared.completionNote).toBeNull();
+    // Clearing the note alone doesn't touch completed_at.
+    expect(cleared.completed).toBe(true);
+    expect(cleared.completedAt).toEqual(withNote.completedAt);
+  });
+
+  it('setting completion_note without touching completed does not re-stamp or clear completed_at', async () => {
+    const created = await createTask(db, userId, { title: 'Task' });
+    const completed = await updateTask(db, userId, created.id, { completed: true });
+
+    const noted = await updateTask(db, userId, created.id, { completion_note: 'a recap' });
+    expect(noted.completedAt).toEqual(completed.completedAt);
+    expect(noted.completed).toBe(true);
+  });
+});
+
 describe('updateTask — attend_class two-way sync', () => {
   it('flips the linked class session status in both directions via a raw update (not the class-session service)', async () => {
     const sessionId = crypto.randomUUID();

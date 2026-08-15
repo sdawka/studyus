@@ -115,18 +115,34 @@ async function main() {
   const COURSE_HUES = [235, 25, 150, 305, 65, 190, 340, 105, 45];
 
   // Populated per-course below; feeds the demo data block after the main loop.
-  const currentTermCourses: { id: string; slug: string; meetingDays: number[] | null; kcs: { id: string; name: string }[] }[] = [];
+  const currentTermCourses: {
+    id: string;
+    slug: string;
+    meetingDays: number[] | null;
+    timeSlot: [number, number] | null;
+    kcs: { id: string; name: string }[];
+  }[] = [];
 
   // Varied meeting-day patterns (Mon=1..Sun=7) cycled across the current-term
   // demo courses so the class sessions sweep has something realistic to
   // generate for each of them.
   const MEETING_DAY_PATTERNS: number[][] = [[1, 3], [2, 4], [1, 3, 5], [2, 5]];
 
+  // Stable meeting-time slots (minutes from midnight, [start, end)) cycled
+  // per current-term course, same idiom as MEETING_DAY_PATTERNS/COURSE_HUES —
+  // gives class_sessions rows something for the v1.6 timed `class_session`
+  // calendar projection (getCalendar) to render instead of just all-day rows.
+  const CLASS_TIME_SLOTS: [number, number][] = [
+    [605, 685], // 10:05-11:25
+    [815, 895], // 13:35-14:55
+  ];
+
   for (const [courseIdx, course] of coursesData.entries()) {
     const courseId = deterministicId('course', course.slug);
     const colorHue = COURSE_HUES[courseIdx % COURSE_HUES.length];
     const isCurrentTerm = course.term.includes(CURRENT_TERM);
     const meetingDays = isCurrentTerm ? MEETING_DAY_PATTERNS[currentTermCourses.length % MEETING_DAY_PATTERNS.length] : null;
+    const timeSlot = isCurrentTerm ? CLASS_TIME_SLOTS[currentTermCourses.length % CLASS_TIME_SLOTS.length] : null;
     statements.push(
       `INSERT INTO courses (id, user_id, code, slug, title, credits, term, instructor, prereqs, overview, source_url, color, meeting_days, archived, created_at)
        VALUES (${sqlStr(courseId)}, ${sqlStr(userId)}, ${sqlStr(course.code)}, ${sqlStr(course.slug)}, ${sqlStr(course.title)}, ${sqlStr(course.credits)}, ${sqlStr(course.term)}, ${sqlStr(course.instructor)}, ${sqlStr(course.prereqs)}, ${sqlStr(course.overview)}, ${sqlStr(course.source)}, ${sqlStr(colorHue)}, ${sqlStr(meetingDays ? JSON.stringify(meetingDays) : null)}, 0, ${Date.now()})
@@ -177,7 +193,7 @@ async function main() {
     });
 
     if (isCurrentTerm) {
-      currentTermCourses.push({ id: courseId, slug: course.slug, meetingDays, kcs: courseKcs });
+      currentTermCourses.push({ id: courseId, slug: course.slug, meetingDays, timeSlot, kcs: courseKcs });
     }
   }
 
@@ -394,8 +410,16 @@ async function main() {
   // so re-seeding is stable: ~80% attended, ~10% missed, ~10% unmarked —
   // except the most recent 1-2 sessions per course, always forced to
   // unmarked so the UI's "mark attendance" call-to-action always has
-  // something to act on.
+  // something to act on. v1.6 also seeds a short window of *future*
+  // sessions (always unmarked — attendance can't be known ahead of time),
+  // both so the attend_class sweep (±7d window, services/taskSweep.ts) has
+  // upcoming class_sessions rows to key off of, and so getCalendar's new
+  // timed `class_session` projection has something in the next 7 days to
+  // render, not just history. Every seed-sourced session (past or future)
+  // also carries the course's stable meeting time (timeSlot, above) —
+  // sweep-generated ('schedule') rows are untouched here and stay all-day.
   const CLASS_SESSION_WINDOW_DAYS = 28;
+  const CLASS_SESSION_FUTURE_DAYS = 7;
 
   // Explicit UTC, matching services/classSessions.ts::toLocalNoon exactly
   // (that service's "local noon" is really UTC noon, since the Workers
@@ -438,13 +462,20 @@ async function main() {
     return (h % 10_000) / 10_000;
   }
 
-  currentTermCourses.forEach(({ id: courseId, slug, meetingDays }) => {
+  currentTermCourses.forEach(({ id: courseId, slug, meetingDays, timeSlot }) => {
     if (!meetingDays || meetingDays.length === 0) return;
 
-    const sessionDates: number[] = [];
+    const pastDates: number[] = [];
     for (let daysAgo = CLASS_SESSION_WINDOW_DAYS; daysAgo >= 0; daysAgo--) {
       const noon = localNoonDaysAgo(daysAgo);
-      if (meetingDays.includes(isoWeekdayOf(noon))) sessionDates.push(noon);
+      if (meetingDays.includes(isoWeekdayOf(noon))) pastDates.push(noon);
+    }
+    // Future window — localNoonDaysAgo(-N) lands N days ahead (setUTCDate
+    // subtracting a negative adds).
+    const futureDates: number[] = [];
+    for (let daysAhead = 1; daysAhead <= CLASS_SESSION_FUTURE_DAYS; daysAhead++) {
+      const noon = localNoonDaysAgo(-daysAhead);
+      if (meetingDays.includes(isoWeekdayOf(noon))) futureDates.push(noon);
     }
 
     // Self-healing cleanup: delete any 'seed'-sourced row for this course
@@ -453,15 +484,19 @@ async function main() {
     // noon rather than UTC noon, which would otherwise sit forever as a
     // same-day duplicate alongside the correctly-timed row (they're a few
     // hours apart, so the UNIQUE(course_id, date) index never caught them).
-    const validDatesList = sessionDates.length ? sessionDates.join(',') : '-1';
+    const validDates = [...pastDates, ...futureDates];
+    const validDatesList = validDates.length ? validDates.join(',') : '-1';
     statements.push(
       `DELETE FROM class_sessions WHERE course_id=${sqlStr(courseId)} AND source='seed' AND date NOT IN (${validDatesList});`,
     );
 
-    sessionDates.forEach((dateMs, idx) => {
+    const startMinSql = sqlStr(timeSlot ? timeSlot[0] : null);
+    const endMinSql = sqlStr(timeSlot ? timeSlot[1] : null);
+
+    pastDates.forEach((dateMs, idx) => {
       const key = `demo-csess-${slug}-${yyyymmdd(dateMs)}`;
       const sessionId = deterministicId('csess', key);
-      const isMostRecent = idx >= sessionDates.length - 2;
+      const isMostRecent = idx >= pastDates.length - 2;
 
       let status: 'attended' | 'missed' | null;
       if (isMostRecent) {
@@ -478,10 +513,25 @@ async function main() {
       // still enrich an unmarked row with the seed's deterministic demo
       // status (COALESCE keeps whichever status is already non-null) — a
       // real/backfilled status is never overwritten, only a still-null one.
+      // Same COALESCE treatment for start_min/end_min (v1.6): a schedule-
+      // sourced row that already claimed the day keeps its own (null) time
+      // unless this seed row fills it in.
       statements.push(
-        `INSERT INTO class_sessions (id, user_id, course_id, date, status, note, source, created_at)
-         VALUES (${sqlStr(sessionId)}, ${sqlStr(userId)}, ${sqlStr(courseId)}, ${dateMs}, ${sqlStr(status)}, NULL, 'seed', ${now})
-         ON CONFLICT(course_id, date) DO UPDATE SET status = COALESCE(status, excluded.status);`,
+        `INSERT INTO class_sessions (id, user_id, course_id, date, status, note, source, start_min, end_min, created_at)
+         VALUES (${sqlStr(sessionId)}, ${sqlStr(userId)}, ${sqlStr(courseId)}, ${dateMs}, ${sqlStr(status)}, NULL, 'seed', ${startMinSql}, ${endMinSql}, ${now})
+         ON CONFLICT(course_id, date) DO UPDATE SET status = COALESCE(status, excluded.status), start_min = COALESCE(start_min, excluded.start_min), end_min = COALESCE(end_min, excluded.end_min);`,
+      );
+    });
+
+    // Future sessions (v1.6) — always unmarked (status null); see the block
+    // comment above for why these exist at all.
+    futureDates.forEach((dateMs) => {
+      const key = `demo-csess-${slug}-${yyyymmdd(dateMs)}`;
+      const sessionId = deterministicId('csess', key);
+      statements.push(
+        `INSERT INTO class_sessions (id, user_id, course_id, date, status, note, source, start_min, end_min, created_at)
+         VALUES (${sqlStr(sessionId)}, ${sqlStr(userId)}, ${sqlStr(courseId)}, ${dateMs}, NULL, NULL, 'seed', ${startMinSql}, ${endMinSql}, ${now})
+         ON CONFLICT(course_id, date) DO UPDATE SET start_min = COALESCE(start_min, excluded.start_min), end_min = COALESCE(end_min, excluded.end_min);`,
       );
     });
   });

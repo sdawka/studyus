@@ -1,6 +1,6 @@
 import { and, eq, gte, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { assessments, courses, events, kcs, studySessions, taskCourses, tasks } from '../../db/schema';
+import { assessments, classSessions, courses, events, kcs, studySessions, taskCourses, tasks } from '../../db/schema';
 import { sweepTasks } from './taskSweep';
 import type { CalendarItem } from '../types/calendar';
 
@@ -58,6 +58,66 @@ export async function getCalendar(
     });
   }
 
+  // --- class_session (v1.6) ----------------------------------------------
+  // Emitted only for class_sessions rows with a concrete meeting time
+  // (start_min/end_min both non-null) — untimed (all-day) sessions have no
+  // calendar presence of their own; the sweep-generated attend_class task is
+  // what represents those (task_due, below). Windowed on the same `date`
+  // column every other date-scoped item type uses (the class day's local-
+  // noon marker — see services/classSessions.ts::localNoon), same
+  // convention as assessment_due's dueDate filter above.
+  const classSessionConditions = [
+    eq(classSessions.userId, userId),
+    isNotNull(classSessions.startMin),
+    isNotNull(classSessions.endMin),
+    gte(classSessions.date, fromMs),
+    lte(classSessions.date, toMs),
+  ];
+  if (courseId) classSessionConditions.push(eq(classSessions.courseId, courseId));
+
+  const timedClassSessions = await db
+    .select({ session: classSessions, courseCode: courses.code, courseSlug: courses.slug })
+    .from(classSessions)
+    .innerJoin(courses, eq(classSessions.courseId, courses.id))
+    .where(and(...classSessionConditions));
+
+  // Dedupe: when a class_session emits a timed item, suppress the linked
+  // attend_class task's task_due item so the same class doesn't render
+  // twice (join is via tasks.class_session_id, below).
+  const suppressedClassSessionIds = new Set<string>();
+
+  const timedSessionIds = timedClassSessions.map((r) => r.session.id);
+  const linkedAttendClassTasks = timedSessionIds.length
+    ? await db
+        .select({ id: tasks.id, classSessionId: tasks.classSessionId })
+        .from(tasks)
+        .where(and(eq(tasks.userId, userId), eq(tasks.type, 'attend_class'), inArray(tasks.classSessionId, timedSessionIds)))
+    : [];
+  const attendClassTaskIdBySession = new Map(linkedAttendClassTasks.map((t) => [t.classSessionId!, t.id]));
+
+  for (const row of timedClassSessions) {
+    const s = row.session;
+    const startMs = s.date + s.startMin! * 60_000;
+    const endMs = s.date + s.endMin! * 60_000;
+    suppressedClassSessionIds.add(s.id);
+    items.push({
+      id: s.id,
+      type: 'class_session',
+      title: `Class: ${row.courseCode}`,
+      date: new Date(startMs).toISOString(),
+      end_date: new Date(endMs).toISOString(),
+      all_day: false,
+      course_id: s.courseId,
+      href: `/courses/${row.courseSlug}`,
+      details: {
+        status: s.status,
+        note: s.note,
+        source: s.source,
+        task_id: attendClassTaskIdBySession.get(s.id) ?? null,
+      },
+    });
+  }
+
   // --- task_due ---------------------------------------------------------
   const dueTasks = await db
     .select()
@@ -84,6 +144,9 @@ export async function getCalendar(
   }
 
   for (const task of dueTasks) {
+    // A timed class_session item above already represents this class —
+    // don't also emit its linked attend_class task_due item.
+    if (task.type === 'attend_class' && task.classSessionId && suppressedClassSessionIds.has(task.classSessionId)) continue;
     const linkedCourseIds = courseIdsByTask.get(task.id) ?? [];
     if (courseId && !linkedCourseIds.includes(courseId)) continue;
     items.push({

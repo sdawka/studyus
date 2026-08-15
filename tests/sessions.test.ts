@@ -3,7 +3,8 @@ import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
 import { courses, studySessions, users } from '../src/db/schema';
-import { completeSession, createSession, listSessions } from '../src/lib/services/sessions';
+import { completeSession, createSession, deleteSession, listSessions, updateSession } from '../src/lib/services/sessions';
+import { ConflictError, NotFoundError } from '../src/lib/services/util';
 
 const db = getDb(env.DB);
 
@@ -69,5 +70,59 @@ describe('sessions.completeSession', () => {
 
     const rows = await db.select().from(studySessions).where(eq(studySessions.id, session.id)).limit(1);
     expect(rows[0].scheduledAt).toBe(Date.parse(rescheduledIso));
+  });
+});
+
+describe('sessions.updateSession (v1.6 — PATCH /sessions/:id)', () => {
+  it('reschedules scheduled_at and planned_minutes on a still-planned session', async () => {
+    const session = await createSession(db, userId, {
+      intended_event_type: 'practice_done',
+      scheduled_at: new Date(Date.now() + DAY_MS).toISOString(),
+      planned_minutes: 45,
+    });
+    const rescheduledIso = new Date(Date.now() + 3 * DAY_MS).toISOString();
+
+    const updated = await updateSession(db, userId, session.id, { scheduled_at: rescheduledIso, planned_minutes: 90 });
+    expect(updated.scheduledAt).toBe(Date.parse(rescheduledIso));
+    expect(updated.plannedMinutes).toBe(90);
+  });
+
+  it('rejects rescheduling a completed session with ConflictError', async () => {
+    const session = await createSession(db, userId, { intended_event_type: 'practice_done' });
+    await completeSession(db, userId, session.id, {});
+
+    await expect(
+      updateSession(db, userId, session.id, { scheduled_at: new Date(Date.now() + DAY_MS).toISOString() }),
+    ).rejects.toThrow(ConflictError);
+  });
+
+  it('404s for a cross-user session id', async () => {
+    const otherUserId = crypto.randomUUID();
+    await db.insert(users).values({ id: otherUserId, email: `${otherUserId}@test.local`, passwordHash: 'x' });
+    const session = await createSession(db, userId, { intended_event_type: 'practice_done' });
+
+    await expect(updateSession(db, otherUserId, session.id, { planned_minutes: 30 })).rejects.toThrow(NotFoundError);
+  });
+});
+
+describe('sessions.deleteSession (v1.6 — DELETE /sessions/:id)', () => {
+  it('hard-deletes an owned session', async () => {
+    const session = await createSession(db, userId, { intended_event_type: 'practice_done' });
+
+    await deleteSession(db, userId, session.id);
+
+    const rows = await db.select().from(studySessions).where(eq(studySessions.id, session.id));
+    expect(rows).toHaveLength(0);
+  });
+
+  it('404s for a cross-user session id, leaving the row untouched', async () => {
+    const otherUserId = crypto.randomUUID();
+    await db.insert(users).values({ id: otherUserId, email: `${otherUserId}@test.local`, passwordHash: 'x' });
+    const session = await createSession(db, userId, { intended_event_type: 'practice_done' });
+
+    await expect(deleteSession(db, otherUserId, session.id)).rejects.toThrow(NotFoundError);
+
+    const rows = await db.select().from(studySessions).where(eq(studySessions.id, session.id));
+    expect(rows).toHaveLength(1);
   });
 });

@@ -27,6 +27,7 @@ export interface ApiTask {
   due_date?: string | null;
   completed: boolean;
   completed_at?: string | null;
+  completion_note?: string | null;
   parent_task_id?: string | null;
   course_id?: string | null;
   class_session_id?: string | null;
@@ -144,6 +145,10 @@ async function patchTask(id: string, body: Record<string, unknown>): Promise<Api
 
 export interface ToggleTaskOptions {
   cascadeChildren?: boolean;
+  // A short recap to attach when completing (CompletionFlow.svelte's typed-
+  // task completion path). Ignored when toggling back to incomplete — a
+  // completion_note only ever gets set on the false→true edge.
+  completionNote?: string;
 }
 
 // Optimistic flip (+ open children when cascading), then PATCH. Any
@@ -156,7 +161,12 @@ export async function toggleTask(id: string, options: ToggleTaskOptions = {}): P
 
   const completed = !task.completed;
   const completedAt = completed ? new Date().toISOString() : null;
-  tasksById.setKey(id, { ...task, completed, completed_at: completedAt });
+  tasksById.setKey(id, {
+    ...task,
+    completed,
+    completed_at: completedAt,
+    ...(completed && options.completionNote !== undefined ? { completion_note: options.completionNote } : {}),
+  });
 
   const cascadeIds: string[] = [];
   if (options.cascadeChildren && completed) {
@@ -169,7 +179,9 @@ export async function toggleTask(id: string, options: ToggleTaskOptions = {}): P
   }
 
   try {
-    const patched = await patchTask(id, { completed });
+    const patchBody: Record<string, unknown> = { completed };
+    if (completed && options.completionNote !== undefined) patchBody.completion_note = options.completionNote;
+    const patched = await patchTask(id, patchBody);
     tasksById.setKey(id, patched);
     // Sequential by design (plan: "PATCH loop for cascade") — cascade sets
     // are small (one level of subtasks) and this keeps failure handling to
@@ -245,6 +257,16 @@ export async function snoozeTask(id: string): Promise<void> {
 
 export function selectOpen(tasks: ApiTask[]): ApiTask[] {
   return tasks.filter((t) => !t.completed);
+}
+
+// The "Ta-Da" tab's data source — completed tasks, most-recently-completed
+// first. A task completed before v1.4 (no completed_at) sorts last, after
+// every dated one; the 120-day sweep purge already bounds how large this
+// ever gets for system-sourced rows (services/taskSweep.ts).
+export function selectCompleted(tasks: ApiTask[]): ApiTask[] {
+  return tasks
+    .filter((t) => t.completed)
+    .sort((a, b) => (b.completed_at ?? '').localeCompare(a.completed_at ?? ''));
 }
 
 export function selectForCourse(tasks: ApiTask[], courseId: string): ApiTask[] {

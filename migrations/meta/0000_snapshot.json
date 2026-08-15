@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "789f615d-fd1f-4908-9bd6-9eed1401989a",
+  "id": "24e0312b-59a4-4325-8de9-55fe47a2220d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "assessment_kcs": {
@@ -405,6 +405,20 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'schedule'"
+        },
+        "start_min": {
+          "name": "start_min",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "end_min": {
+          "name": "end_min",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
@@ -1642,6 +1656,13 @@
         "completed_at": {
           "name": "completed_at",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "completion_note": {
+          "name": "completion_note",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false

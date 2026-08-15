@@ -189,6 +189,81 @@ describe('getCalendar', () => {
     expect(items.map((i) => i.id)).not.toContain(otherAssessmentId);
   });
 
+  it('emits a class_session item for a timed class session, and suppresses its linked attend_class task_due item', async () => {
+    const sessionDate = Date.now() + DAY_MS;
+    const classSessionId = crypto.randomUUID();
+    await db.insert(classSessions).values({
+      id: classSessionId,
+      userId,
+      courseId,
+      date: sessionDate,
+      status: null,
+      source: 'seed',
+      startMin: 605,
+      endMin: 685,
+    });
+    const taskId = crypto.randomUUID();
+    await db.insert(tasks).values({
+      id: taskId,
+      userId,
+      title: `Attend ${courseSlug}`,
+      type: 'attend_class',
+      dueDate: sessionDate,
+      classSessionId,
+      courseId,
+      source: 'system',
+      dedupeKey: `attend_class:${classSessionId}`,
+    });
+
+    const items = await getCalendar(db, userId, Date.now(), Date.now() + 7 * DAY_MS);
+
+    const classItem = items.find((i) => i.id === classSessionId);
+    expect(classItem).toBeDefined();
+    expect(classItem!.type).toBe('class_session');
+    expect(classItem!.title).toBe('Class: TEST 101');
+    expect(classItem!.date).toBe(new Date(sessionDate + 605 * 60_000).toISOString());
+    expect(classItem!.end_date).toBe(new Date(sessionDate + 685 * 60_000).toISOString());
+    expect(classItem!.all_day).toBe(false);
+    expect(classItem!.course_id).toBe(courseId);
+    expect(classItem!.href).toBe(`/courses/${courseSlug}`);
+    expect(classItem!.details).toEqual({ status: null, note: null, source: 'seed', task_id: taskId });
+
+    // The linked attend_class task_due item must not also appear.
+    expect(items.find((i) => i.id === taskId)).toBeUndefined();
+  });
+
+  it('does not emit a class_session item for an untimed (start_min/end_min null) session', async () => {
+    const sessionDate = Date.now() + DAY_MS;
+    const classSessionId = crypto.randomUUID();
+    await db.insert(classSessions).values({ id: classSessionId, userId, courseId, date: sessionDate, status: null, source: 'schedule' });
+
+    const items = await getCalendar(db, userId, Date.now(), Date.now() + 7 * DAY_MS);
+    expect(items.find((i) => i.id === classSessionId)).toBeUndefined();
+  });
+
+  it('does not suppress an attend_class task_due item whose session has no meeting time', async () => {
+    const sessionDate = Date.now() + DAY_MS;
+    const classSessionId = crypto.randomUUID();
+    await db.insert(classSessions).values({ id: classSessionId, userId, courseId, date: sessionDate, status: null, source: 'schedule' });
+    const taskId = crypto.randomUUID();
+    await db.insert(tasks).values({
+      id: taskId,
+      userId,
+      title: `Attend ${courseSlug}`,
+      type: 'attend_class',
+      dueDate: sessionDate,
+      classSessionId,
+      courseId,
+      source: 'system',
+      dedupeKey: `attend_class:${classSessionId}`,
+    });
+
+    const items = await getCalendar(db, userId, Date.now(), Date.now() + 7 * DAY_MS);
+    const item = items.find((i) => i.id === taskId);
+    expect(item).toBeDefined();
+    expect(item!.type).toBe('task_due');
+  });
+
   it('sorts all items ascending by date', async () => {
     const now = Date.now();
     await db.insert(assessments).values({ id: crypto.randomUUID(), courseId, title: 'Later', type: 'quiz', dueDate: now + 5 * DAY_MS });

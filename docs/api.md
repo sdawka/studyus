@@ -328,7 +328,7 @@ All constants live in `MASTERY_CONSTANTS` in that file.
 
 ## v1.1 Additions (final)
 
-**Status**: FROZEN as of P3. Every shape below has been exercised end-to-end against the running dev server (login, settings PATCH round-trip, course create/archive, notifications sweep idempotency + mark-read, notes with course links, tutor conversation list) in addition to the automated test suite (115 passing).
+**Status**: FROZEN as of P3. Every shape below has been exercised end-to-end against the running dev server (login, settings PATCH round-trip, course create/archive, notifications sweep idempotency + mark-read, notes with course links, tutor conversation list) in addition to the automated test suite (360 passing, as of v1.6 — see "v1.6 Additions" below).
 
 ### User settings
 
@@ -565,3 +565,68 @@ Every sweep-generated task also carries a non-null, human-readable `description`
 ### A note on "Migration NNNN" phrasing
 
 This build (v1.4) landed as a regenerated single-baseline migration, not an incrementally-numbered file appended to a growing history — see the "Schema Management" section's "Pre-v0.1 workflow" in `docs/decisions/ADR-003-d1-drizzle.md` for the workflow and why. The "Migration 000N adds..." phrasing used throughout this document (v1.1 onward, including "Migration `0005` adds to `tasks`..." above) narrates *when* a change landed in the project's history, not a literal file you'll find under `migrations/` today — that directory holds one regenerated baseline covering the full current schema.
+
+---
+
+## v1.6 Additions — class-session timing, session reschedule/delete, task completion notes
+
+**Status**: additive to the FROZEN v1 contract above. No existing field or endpoint shape changed, except `PATCH /class-sessions/:id`'s `status`, which goes from required to **optional** — every existing caller already sends it, and the two-way `attend_class` sync behaves identically whenever `status` is present, so this is backward compatible in practice, not just in principle.
+
+Landed as another regenerated single-baseline migration (`migrations/0000_chemical_ink.sql`, per ADR-003's pre-v0.1 workflow) adding `class_sessions.start_min`/`end_min` (nullable integers, minutes-from-midnight 0-1439) and `tasks.completion_note` (nullable text).
+
+### Class sessions — meeting time + note
+
+- `class_sessions` gains `start_min`/`end_min` — nullable integers, minutes-from-midnight of the class day (0-1439), both-or-neither. Sweep-generated (`source: "schedule"`) rows always keep both `null` (all-day semantics unchanged, see `services/classSessions.ts::sweepClassSessions`); only `manual`/`seed` rows may set them.
+- `POST /courses/:id/class-sessions` body gains optional `start_min`/`end_min` (integers, 0-1439) — both-or-neither and `end_min > start_min`, enforced at the schema level (`createClassSessionSchema`); violating either fails the request with `400 invalid_input`.
+- `PATCH /class-sessions/:id` body's `status` is now **optional** (was required) and the body gains optional `note` (string, max 2000, nullable). A PATCH can now touch just `note` without resending `status` — the `attend_class` two-way sync (see v1.4's "Two-way sync" section) only fires when `status` is actually present in the request, so a note-only PATCH never flips the linked task's completion state. This also unlocks `note`, which was schema-ready but write-unreachable before this.
+- `GET /courses/:id/class-sessions` response rows now include `start_min`/`end_min` (raw integers — minute offsets, not timestamps, so `toApi` passes them through unconverted) alongside the now-write-reachable `note`.
+
+### Study sessions — reschedule + delete
+
+Closes the sessions-DELETE deferral (`docs/todo.md`'s v1.2-Specific Deferrals).
+
+- NEW `PATCH /sessions/:id` — body `{ scheduled_at?: ISO, planned_minutes?: number }` (`services/sessions.ts::updateSession`). Reschedules a still-planned session. Rejects with `409 invalid_input` if the session is already completed (`ended_at` set) — distinct from `PATCH /sessions/:id/complete`'s own optional `scheduled_at`, which records a last-second reschedule as part of the same call that finishes the session.
+- NEW `DELETE /sessions/:id` — hard delete, ownership-checked (cross-user id → `404 not_found`). No soft-delete/dismissal semantics here — that's a `tasks`-only concept (see v1.4's "dismissal semantics for system tasks").
+
+### Tasks — `completion_note`
+
+- `tasks` gains `completion_note` (nullable text) — a short recap the user can attach when completing any task, not just `attend_class`.
+- `PATCH /tasks/:id` body gains optional `completion_note` (string, max 2000, nullable) — settable and clearable independent of `completed`; setting it alone does not stamp or clear `completed_at`.
+- The task object (v1.4's "Task object — extended shape") gains `completion_note: string|null`.
+
+### Calendar — `class_session` item type
+
+`GET /calendar` gains a fifth item type, `class_session`, emitted only for a `class_sessions` row with a concrete meeting time (`start_min` **and** `end_min` both non-null):
+
+```json
+{
+  "id": "uuid (class_sessions.id)",
+  "type": "class_session",
+  "title": "Class: <course code>",
+  "date": "iso (class day + start_min)",
+  "end_date": "iso (class day + end_min)",
+  "all_day": false,
+  "course_id": "uuid",
+  "href": "/courses/:slug",
+  "details": { "status": "attended|missed|null", "note": "string|null", "source": "schedule|manual|seed", "task_id": "uuid|null" }
+}
+```
+
+`details.task_id` is the id of the linked `attend_class` task (joined via `tasks.class_session_id`), or `null` if none exists yet. **Dedupe rule**: whenever a `class_session` item is emitted, its linked `attend_class` task's `task_due` item is suppressed from the same response — a class with a concrete meeting time renders once, not twice. A class session with no meeting time (`start_min`/`end_min` still null) is never emitted as a `class_session` item; its `attend_class` task's `task_due` item remains its only calendar presence, unchanged from v1.4.
+
+### Seed data
+
+`scripts/seed.ts`'s current-term demo courses each get a stable meeting-time slot (10:05-11:25 or 13:35-14:55, cycled per course the same way as the existing meeting-day pattern), applied to every `seed`-sourced `class_sessions` row for that course. This now includes a short window of **future** sessions (1-7 days ahead, always unmarked — attendance can't be known in advance) in addition to the existing ~4-week trailing window, so both the `attend_class` sweep's ±7d window and the new `class_session` calendar projection have upcoming rows to render on first load, not just history.
+
+### Component contract stubs (for the parallel UI tracks)
+
+Two prop interfaces landed frozen, ahead of their real implementations — neither is mounted anywhere yet:
+
+- `src/components/tasks/TaskCheckbox.svelte` — `{ checked: boolean, busy?: boolean, disabled?: boolean, label: string, onToggle: () => void }`. Stub renders a plain `<input type="checkbox">` with `aria-label`.
+- `src/components/tasks/CompletionFlow.svelte` — `{ task: ApiTask, onClose: () => void, onCompleted: (opts?: { note?: string }) => void }`. Contract: mounted when a user checks a *typed* (non-todo) task instead of completing it immediately; owns collecting a recap/note (and any type-specific follow-up) and calling the tasks store itself before invoking `onCompleted`; `onClose` cancels without completing. Stub calls `onCompleted()` immediately on mount (pure pass-through).
+
+### Client store — `src/lib/stores/tasks.ts`
+
+- `ApiTask` gains `completion_note?: string | null`.
+- `toggleTask(id, opts?: { cascadeChildren?: boolean; completionNote?: string })` — `completionNote` only applies on the false→true edge (toggling back to incomplete ignores it); when set, the PATCH body includes `completion_note`.
+- NEW `selectCompleted(tasks: ApiTask[]): ApiTask[]` — completed tasks sorted by `completed_at` descending; the "Ta-Da" tab's data source.

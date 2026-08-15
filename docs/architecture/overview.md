@@ -69,7 +69,7 @@ prototype/                                # Old static-HTML design prototype (fr
 public/                                   # Static assets served as-is: manifest.webmanifest, icons/ (PWA)
 
 migrations/                               # D1 migration SQL — single regenerated baseline, pre-v0.1 (ADR-003)
-  0000_yielding_nocturne.sql
+  0000_chemical_ink.sql
   meta/
 scripts/
   seed.ts                                 # Idempotent course+KC+demo-data seed

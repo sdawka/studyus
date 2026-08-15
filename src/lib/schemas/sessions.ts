@@ -29,6 +29,16 @@ export const completeStudySessionSchema = z.strictObject({
 });
 export type CompleteStudySessionInput = z.infer<typeof completeStudySessionSchema>;
 
+// v1.6: reschedule a still-planned session (PATCH /sessions/:id, distinct
+// from PATCH /sessions/:id/complete above). services/sessions.ts::updateSession
+// rejects with ConflictError once the session has an ended_at — a completed
+// session's time/duration is history, not a plan to move around.
+export const updateSessionSchema = z.strictObject({
+  scheduled_at: isoDatetimeSchema.optional(),
+  planned_minutes: z.number().int().min(1).optional(),
+});
+export type UpdateSessionInput = z.infer<typeof updateSessionSchema>;
+
 export const listSessionsQuerySchema = z.strictObject({
   course: idSchema.optional(),
   // Range over COALESCE(scheduled_at, started_at), matching the calendar

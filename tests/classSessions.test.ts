@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
 import { classSessions, courses, tasks, users } from '../src/db/schema';
 import { updateCourseSchema } from '../src/lib/schemas/courses';
+import { createClassSessionSchema } from '../src/lib/schemas/classSessions';
 import { toApi } from '../src/lib/serialize';
 import { createEvent } from '../src/lib/services/events';
 import { updateCourse } from '../src/lib/services/courses';
@@ -221,6 +222,103 @@ describe('createManualClassSession (POST)', () => {
     await expect(
       createManualClassSession(db, otherUserId, courseId, { date: new Date().toISOString() }),
     ).rejects.toThrow(NotFoundError);
+  });
+});
+
+describe('createClassSessionSchema — timed sessions (v1.6)', () => {
+  it('accepts a session with both start_min and end_min', () => {
+    const parsed = createClassSessionSchema.parse({ date: new Date().toISOString(), start_min: 605, end_min: 685 });
+    expect(parsed.start_min).toBe(605);
+    expect(parsed.end_min).toBe(685);
+  });
+
+  it('accepts a session with neither start_min nor end_min (untimed)', () => {
+    const parsed = createClassSessionSchema.parse({ date: new Date().toISOString() });
+    expect(parsed.start_min).toBeUndefined();
+    expect(parsed.end_min).toBeUndefined();
+  });
+
+  it('rejects start_min without end_min, and vice versa', () => {
+    const dateIso = new Date().toISOString();
+    expect(() => createClassSessionSchema.parse({ date: dateIso, start_min: 605 })).toThrow();
+    expect(() => createClassSessionSchema.parse({ date: dateIso, end_min: 685 })).toThrow();
+  });
+
+  it('rejects end_min <= start_min', () => {
+    const dateIso = new Date().toISOString();
+    expect(() => createClassSessionSchema.parse({ date: dateIso, start_min: 685, end_min: 685 })).toThrow();
+    expect(() => createClassSessionSchema.parse({ date: dateIso, start_min: 685, end_min: 605 })).toThrow();
+  });
+
+  it('rejects out-of-range minute values', () => {
+    const dateIso = new Date().toISOString();
+    expect(() => createClassSessionSchema.parse({ date: dateIso, start_min: -1, end_min: 100 })).toThrow();
+    expect(() => createClassSessionSchema.parse({ date: dateIso, start_min: 100, end_min: 1440 })).toThrow();
+  });
+});
+
+describe('createManualClassSession — timed sessions (v1.6)', () => {
+  it('stores start_min/end_min when provided', async () => {
+    const created = await createManualClassSession(db, userId, courseId, {
+      date: new Date().toISOString(),
+      start_min: 605,
+      end_min: 685,
+    });
+    expect(created.startMin).toBe(605);
+    expect(created.endMin).toBe(685);
+  });
+
+  it('leaves start_min/end_min null when omitted', async () => {
+    const created = await createManualClassSession(db, userId, courseId, { date: new Date().toISOString() });
+    expect(created.startMin).toBeNull();
+    expect(created.endMin).toBeNull();
+  });
+});
+
+describe('updateClassSessionStatus — note (v1.6)', () => {
+  it('writes note independent of status, leaving status untouched', async () => {
+    const sessionId = crypto.randomUUID();
+    await db.insert(classSessions).values({
+      id: sessionId,
+      userId,
+      courseId,
+      date: toLocalNoon(new Date().toISOString()),
+      status: 'attended',
+      source: 'manual',
+    });
+
+    const updated = await updateClassSessionStatus(db, userId, sessionId, { note: 'Missed the first 10 minutes' });
+    expect(updated.note).toBe('Missed the first 10 minutes');
+    expect(updated.status).toBe('attended');
+  });
+
+  it('a note-only PATCH does not trigger the attend_class two-way sync', async () => {
+    const sessionId = crypto.randomUUID();
+    await db.insert(classSessions).values({
+      id: sessionId,
+      userId,
+      courseId,
+      date: toLocalNoon(new Date().toISOString()),
+      status: null,
+      source: 'manual',
+    });
+    const taskId = crypto.randomUUID();
+    await db.insert(tasks).values({
+      id: taskId,
+      userId,
+      title: 'Attend TEST 101',
+      type: 'attend_class',
+      classSessionId: sessionId,
+      courseId,
+      source: 'system',
+      dedupeKey: `attend_class:${sessionId}`,
+      done: false,
+    });
+
+    await updateClassSessionStatus(db, userId, sessionId, { note: 'just a note' });
+
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId));
+    expect(task!.done).toBe(false);
   });
 });
 

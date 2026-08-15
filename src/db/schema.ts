@@ -241,6 +241,11 @@ export const tasks = sqliteTable(
     // its children.
     parentTaskId: text('parent_task_id').references((): AnySQLiteColumn => tasks.id, { onDelete: 'cascade' }),
     completedAt: integer('completed_at'),
+    // v1.6: optional short recap the user can attach when completing any
+    // task (not just attend_class) — wired through
+    // toggleTask(id, {completionNote}) and PATCH /tasks/:id's
+    // `completion_note`. Independent of `description`; never required.
+    completionNote: text('completion_note'),
     // System-task soft delete (user dismissal). NEVER serialized — a
     // dismissed row stays in the table (with its dedupe key) purely so the
     // sweep can't resurrect it. Retention-purged after 120d, see taskSweep.ts.
@@ -420,6 +425,14 @@ export const classSessions = sqliteTable(
     status: text('status', { enum: ['attended', 'missed'] }),
     note: text('note'),
     source: text('source', { enum: ['schedule', 'manual', 'seed'] }).notNull().default('schedule'),
+    // v1.6: minutes-from-midnight (0-1439) of the class day, for a session
+    // with a concrete meeting time. NULL for both — sweep-generated
+    // ('schedule') rows always keep these null (all-day semantics
+    // unchanged); only 'manual'/'seed' rows may set them. Powers
+    // getCalendar's `class_session` timed item (services/calendar.ts) —
+    // emitted only when both are non-null.
+    startMin: integer('start_min'),
+    endMin: integer('end_min'),
     createdAt: createdAt(),
   },
   (table) => [uniqueIndex('class_sessions_course_date_unique').on(table.courseId, table.date)],

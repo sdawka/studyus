@@ -5,11 +5,11 @@
 import { and, eq, sql } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { sessionKcs, studySessions } from '../../db/schema';
-import type { CompleteStudySessionInput, CreateStudySessionInput, ListSessionsQuery } from '../schemas/sessions';
+import type { CompleteStudySessionInput, CreateStudySessionInput, ListSessionsQuery, UpdateSessionInput } from '../schemas/sessions';
 import { EVENT_TYPES, type EventType } from '../schemas/events';
 import { toEpochMs } from '../schemas/common';
 import { createEvent } from './events';
-import { NotFoundError, requireOwnedCourse } from './util';
+import { ConflictError, NotFoundError, requireOwnedCourse } from './util';
 
 function resolveEventType(intended: string): EventType {
   return (EVENT_TYPES as readonly string[]).includes(intended) ? (intended as EventType) : 'practice_done';
@@ -90,4 +90,32 @@ export async function completeSession(db: Db, userId: string, sessionId: string,
   }
 
   return { id: sessionId, events_appended: eventsAppended, mastery_deltas: masteryDeltas };
+}
+
+// v1.6: reschedule a still-planned session (PATCH /sessions/:id). Rejects
+// once the session is completed (ended_at set) — a completed session's
+// time/duration is history, not a plan to move; distinct from
+// completeSession's own optional `scheduled_at` (used to record what a
+// session that's finishing right now was actually rescheduled to earlier).
+export async function updateSession(db: Db, userId: string, sessionId: string, input: UpdateSessionInput) {
+  const session = await requireOwnedSession(db, userId, sessionId);
+  if (session.endedAt) throw new ConflictError('Study session already completed');
+
+  const patch: Partial<typeof studySessions.$inferInsert> = {};
+  if (input.scheduled_at !== undefined) patch.scheduledAt = toEpochMs(input.scheduled_at);
+  if (input.planned_minutes !== undefined) patch.plannedMinutes = input.planned_minutes;
+
+  if (Object.keys(patch).length > 0) {
+    await db.update(studySessions).set(patch).where(eq(studySessions.id, sessionId));
+  }
+
+  const rows = await db.select().from(studySessions).where(eq(studySessions.id, sessionId)).limit(1);
+  return rows[0];
+}
+
+// v1.6: hard delete, ownership-checked — closes the sessions-DELETE
+// deferral (docs/todo.md).
+export async function deleteSession(db: Db, userId: string, sessionId: string): Promise<void> {
+  await requireOwnedSession(db, userId, sessionId);
+  await db.delete(studySessions).where(eq(studySessions.id, sessionId));
 }

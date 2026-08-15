@@ -55,6 +55,8 @@ CREATE TABLE `class_sessions` (
 	`status` text,
 	`note` text,
 	`source` text DEFAULT 'schedule' NOT NULL,
+	`start_min` integer,
+	`end_min` integer,
 	`created_at` integer NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`course_id`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE cascade
@@ -225,6 +227,7 @@ CREATE TABLE `tasks` (
 	`type` text DEFAULT 'todo' NOT NULL,
 	`parent_task_id` text,
 	`completed_at` integer,
+	`completion_note` text,
 	`dismissed_at` integer,
 	`course_id` text,
 	`class_session_id` text,

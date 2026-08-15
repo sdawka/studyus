@@ -151,23 +151,35 @@ async function requireOwnedClassSession(db: Db, userId: string, id: string) {
 
 export async function updateClassSessionStatus(db: Db, userId: string, id: string, input: UpdateClassSessionInput) {
   await requireOwnedClassSession(db, userId, id);
-  await db.update(classSessions).set({ status: input.status }).where(eq(classSessions.id, id));
+
+  // `status` is optional (v1.6) so a PATCH can touch just `note` — the
+  // two-way attend_class sync below only runs when `status` is actually
+  // present in the request, not merely because the column happens to have
+  // some value already.
+  const patch: Partial<typeof classSessions.$inferInsert> = {};
+  if (input.status !== undefined) patch.status = input.status;
+  if (input.note !== undefined) patch.note = input.note;
+  if (Object.keys(patch).length > 0) {
+    await db.update(classSessions).set(patch).where(eq(classSessions.id, id));
+  }
 
   // Two-way sync (v1.4) with the linked attend_class task, if one exists —
   // raw db.update, never the tasks service, so this can't loop with
   // updateTask's own class_sessions sync (services/tasks.ts). Syncing a
   // dismissed task row is harmless: dismissal only hides it from list/
   // calendar output, it doesn't stop it existing.
-  if (input.status === 'attended') {
-    await db
-      .update(tasks)
-      .set({ done: true, completedAt: Date.now() })
-      .where(and(eq(tasks.classSessionId, id), eq(tasks.type, 'attend_class'), eq(tasks.done, false)));
-  } else {
-    await db
-      .update(tasks)
-      .set({ done: false, completedAt: null })
-      .where(and(eq(tasks.classSessionId, id), eq(tasks.type, 'attend_class')));
+  if (input.status !== undefined) {
+    if (input.status === 'attended') {
+      await db
+        .update(tasks)
+        .set({ done: true, completedAt: Date.now() })
+        .where(and(eq(tasks.classSessionId, id), eq(tasks.type, 'attend_class'), eq(tasks.done, false)));
+    } else {
+      await db
+        .update(tasks)
+        .set({ done: false, completedAt: null })
+        .where(and(eq(tasks.classSessionId, id), eq(tasks.type, 'attend_class')));
+    }
   }
 
   const rows = await db.select().from(classSessions).where(eq(classSessions.id, id)).limit(1);
@@ -196,6 +208,8 @@ export async function createManualClassSession(db: Db, userId: string, courseId:
     status: null,
     note: null,
     source: 'manual',
+    startMin: input.start_min ?? null,
+    endMin: input.end_min ?? null,
     createdAt: Date.now(),
   });
 

@@ -1,6 +1,6 @@
 # studyus Data Model
 
-**Re-derived 2026-08-15 from `src/db/schema.ts` and `migrations/0000_yielding_nocturne.sql`** (the sole migration file — see ADR-003's "Schema Management" section for why this is a single regenerated baseline, not an incremental history). Column names below are the actual snake_case DB names; `src/db/schema.ts` uses camelCase Drizzle field names that map onto them (e.g. `userId` → `user_id`). Every table's primary key is `id` (text, UUID from `crypto.randomUUID()`) unless noted otherwise; every table has `created_at` (integer epoch ms) unless noted.
+**Re-derived 2026-08-15 from `src/db/schema.ts` and `migrations/0000_chemical_ink.sql`** (the sole migration file — see ADR-003's "Schema Management" section for why this is a single regenerated baseline, not an incremental history; this filename is the v1.6 regen, superseding the v1.5-era `0000_yielding_nocturne.sql`). Column names below are the actual snake_case DB names; `src/db/schema.ts` uses camelCase Drizzle field names that map onto them (e.g. `userId` → `user_id`). Every table's primary key is `id` (text, UUID from `crypto.randomUUID()`) unless noted otherwise; every table has `created_at` (integer epoch ms) unless noted.
 
 Timestamps are epoch-ms integers in the DB; the API boundary (`src/lib/serialize.ts::toApi`) converts every `_at`/`_date` field (plus `ts` and `date`) to an ISO 8601 string — see `docs/api.md`.
 
@@ -157,6 +157,7 @@ Upload size is capped at `MAX_ATTACHMENT_BYTES` = 10 MB (`src/lib/schemas/attach
 - `type` (text enum, default `'todo'`): `todo | attend_class | prep_before_class | review_after_class | practice_kc | stale_kc | grade_entry` (`TASK_TYPES` in `src/lib/schemas/tasks.ts`) — only `todo` is user-mintable (`createTaskSchema`/`updateTaskSchema` have no `type` field); the other six are sweep-only
 - `parent_task_id` → `tasks.id` (self-referential), nullable, **ON DELETE CASCADE** — one level of subtasks; a parent must not itself have a `parent_task_id` (enforced in `services/tasks.ts`, a DB lookup, not a column constraint); create-only, no re-parenting via `PATCH`
 - `completed_at` (integer, nullable) — stamped/cleared only on an actual `done` transition
+- `completion_note` (text, nullable) — **v1.6**: an optional short recap the user can attach when completing any task (not just `attend_class`), via `PATCH /tasks/:id`'s `completion_note`; independent of `description` and of `completed`/`completed_at`
 - `dismissed_at` (integer, nullable) — system-task soft delete; **never serialized**
 - `course_id` → `courses.id`, nullable, **ON DELETE CASCADE**
 - `class_session_id` → `class_sessions.id`, nullable, **ON DELETE CASCADE**
@@ -254,11 +255,12 @@ Attendance is modeled as **pre-existing scheduled rows whose status gets updated
 - `status` (text enum: `attended | missed`, nullable) — `null` = unmarked
 - `note` (text, nullable)
 - `source` (text enum: `schedule | manual | seed`, default `'schedule'`)
+- `start_min` / `end_min` (integer, nullable) — **v1.6**: minutes-from-midnight (0-1439) of the class day, for a session with a concrete meeting time; both-or-neither. Sweep-generated (`source: 'schedule'`) rows always keep both `null` — only `manual`/`seed` rows may set them. Powers `getCalendar`'s `class_session` item (`src/lib/services/calendar.ts`), emitted only when both are non-null
 - `created_at`
 
 Index: `class_sessions_course_date_unique` (unique, on `course_id` + `date`).
 
-## Index Inventory (full, from `migrations/0000_yielding_nocturne.sql`)
+## Index Inventory (full, from `migrations/0000_chemical_ink.sql`)
 
 Every non-PK index currently in the schema:
 
@@ -284,7 +286,7 @@ Every table's `id` primary key is implicitly indexed by SQLite on top of the abo
 
 ## Foreign Keys & ON DELETE Behavior (full inventory)
 
-All FKs below are real SQL `FOREIGN KEY ... ON DELETE ...` constraints emitted into `migrations/0000_yielding_nocturne.sql` from each column's `.references()` call in `schema.ts` — **D1 does enforce these**, contrary to a stale claim in ADR-003 (see that ADR's erratum).
+All FKs below are real SQL `FOREIGN KEY ... ON DELETE ...` constraints emitted into `migrations/0000_chemical_ink.sql` from each column's `.references()` call in `schema.ts` — **D1 does enforce these**, contrary to a stale claim in ADR-003 (see that ADR's erratum).
 
 | Column | References | ON DELETE |
 |---|---|---|
