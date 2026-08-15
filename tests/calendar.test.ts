@@ -4,6 +4,7 @@ import { getDb } from '../src/db/client';
 import { assessments, branches, classSessions, courses, kcs, studySessions, taskCourses, tasks, users } from '../src/db/schema';
 import { getCalendar } from '../src/lib/services/calendar';
 import { createEvent } from '../src/lib/services/events';
+import { toLocalNoon } from '../src/lib/services/classSessions';
 
 const db = getDb(env.DB);
 
@@ -190,7 +191,16 @@ describe('getCalendar', () => {
   });
 
   it('emits a class_session item for a timed class session, and suppresses its linked attend_class task_due item', async () => {
-    const sessionDate = Date.now() + DAY_MS;
+    // `date` is stored at local NOON (see classSessions.ts::localNoon);
+    // start_min/end_min are minutes since MIDNIGHT — the actual instant is
+    // midnight (date - 12h) + start_min, not date + start_min (12h late).
+    // Anchoring sessionDate to a real noon value here (rather than an
+    // arbitrary Date.now()+DAY_MS) and asserting the concrete UTC
+    // hour/minute below is what actually pins that arithmetic, instead of
+    // just checking the item's date against the same formula the
+    // implementation uses (which would pass even if both were wrong the
+    // same way).
+    const sessionDate = toLocalNoon(new Date(Date.now() + DAY_MS).toISOString());
     const classSessionId = crypto.randomUUID();
     await db.insert(classSessions).values({
       id: classSessionId,
@@ -199,8 +209,8 @@ describe('getCalendar', () => {
       date: sessionDate,
       status: null,
       source: 'seed',
-      startMin: 605,
-      endMin: 685,
+      startMin: 605, // 10:05
+      endMin: 685, // 11:25
     });
     const taskId = crypto.randomUUID();
     await db.insert(tasks).values({
@@ -221,12 +231,28 @@ describe('getCalendar', () => {
     expect(classItem).toBeDefined();
     expect(classItem!.type).toBe('class_session');
     expect(classItem!.title).toBe('Class: TEST 101');
-    expect(classItem!.date).toBe(new Date(sessionDate + 605 * 60_000).toISOString());
-    expect(classItem!.end_date).toBe(new Date(sessionDate + 685 * 60_000).toISOString());
+
+    const startDate = new Date(classItem!.date);
+    const endDate = new Date(classItem!.end_date!);
+    expect(startDate.getUTCHours()).toBe(10);
+    expect(startDate.getUTCMinutes()).toBe(5);
+    expect(endDate.getUTCHours()).toBe(11);
+    expect(endDate.getUTCMinutes()).toBe(25);
+    // Same calendar day as the class session itself, not shifted by a
+    // stray 12h offset onto the next day.
+    expect(startDate.getUTCDate()).toBe(new Date(sessionDate).getUTCDate());
+
     expect(classItem!.all_day).toBe(false);
     expect(classItem!.course_id).toBe(courseId);
     expect(classItem!.href).toBe(`/courses/${courseSlug}`);
-    expect(classItem!.details).toEqual({ status: null, note: null, source: 'seed', task_id: taskId });
+    expect(classItem!.details).toEqual({
+      status: null,
+      note: null,
+      source: 'seed',
+      task_id: taskId,
+      start_min: 605,
+      end_min: 685,
+    });
 
     // The linked attend_class task_due item must not also appear.
     expect(items.find((i) => i.id === taskId)).toBeUndefined();

@@ -66,6 +66,28 @@ export async function getCalendar(
   // column every other date-scoped item type uses (the class day's local-
   // noon marker — see services/classSessions.ts::localNoon), same
   // convention as assessment_due's dueDate filter above.
+  //
+  // start_min/end_min are minutes-since-MIDNIGHT of the class day, but
+  // `date` is stamped at that day's local NOON (see localNoon) — so the
+  // actual instant is midnight + start_min, i.e. `date - 12h + start_min`,
+  // not `date + start_min` (which lands 12h late). NOON_OFFSET_MS backs
+  // that day-start recovery below.
+  //
+  // Deeper wrinkle the recovery above doesn't fully solve: start_min/end_min
+  // are wall-clock minutes in whatever timezone the class actually meets in
+  // (there's no per-user timezone column to convert against) — they are NOT
+  // UTC minutes. The emitted `date`/`end_date` ISO strings below are a
+  // best-effort ABSOLUTE instant (correct calendar day, and correct if read
+  // back with getUTCHours/getUTCMinutes — same "UTC-as-wall-clock" idiom
+  // classSessions.ts's `date`/`localNoon` already uses), good enough for
+  // sorting/windowing, but a client must NOT derive the displayed time-of-
+  // day from them via local Date getters (getHours()) — that reintroduces
+  // the browser's own real UTC offset and shows the wrong wall-clock time.
+  // The unambiguous source of truth for position/label is `details.
+  // start_min`/`details.end_min` (raw minute integers, added below) — the
+  // client renders directly from those, never by re-deriving hour/minute
+  // from the ISO fields.
+  const NOON_OFFSET_MS = 12 * 60 * 60 * 1000;
   const classSessionConditions = [
     eq(classSessions.userId, userId),
     isNotNull(classSessions.startMin),
@@ -97,8 +119,9 @@ export async function getCalendar(
 
   for (const row of timedClassSessions) {
     const s = row.session;
-    const startMs = s.date + s.startMin! * 60_000;
-    const endMs = s.date + s.endMin! * 60_000;
+    const dayStartMs = s.date - NOON_OFFSET_MS;
+    const startMs = dayStartMs + s.startMin! * 60_000;
+    const endMs = dayStartMs + s.endMin! * 60_000;
     suppressedClassSessionIds.add(s.id);
     items.push({
       id: s.id,
@@ -114,6 +137,10 @@ export async function getCalendar(
         note: s.note,
         source: s.source,
         task_id: attendClassTaskIdBySession.get(s.id) ?? null,
+        // Raw wall-clock minute integers — the client's positioning/label
+        // contract (see the block comment above `NOON_OFFSET_MS`).
+        start_min: s.startMin,
+        end_min: s.endMin,
       },
     });
   }

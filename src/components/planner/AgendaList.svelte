@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CalendarItem } from '../../lib/types/calendar';
   import { hueFor } from '../../lib/courseHue';
-  import { addDays, isSameLocalDay, localDateKeyFromIso } from '../../lib/plannerDates';
+  import { addDays, calendarItemStartLabel, isSameLocalDay, localDateKeyFromIso } from '../../lib/plannerDates';
 
   interface CourseInfo {
     code: string;
@@ -74,7 +74,10 @@
   }
   function timeLabel(item: CalendarItem): string | null {
     if (item.all_day) return null;
-    return new Date(item.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    // calendarItemStartLabel, not a raw `new Date(item.date)` — a
+    // class_session's real wall-clock start comes from details.start_min,
+    // never from parsing hours off its ISO date (see plannerDates.ts).
+    return calendarItemStartLabel(item);
   }
   function daysUntil(iso: string): number {
     const now = new Date();

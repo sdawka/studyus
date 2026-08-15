@@ -6,8 +6,12 @@
 // strings (formatShortDate etc.) are asserted loosely (contains the day
 // number) rather than pinned to one locale's exact separators.
 import { describe, expect, it } from 'vitest';
+import type { CalendarItem } from '../src/lib/types/calendar';
 import {
   addMinutes,
+  calendarItemStartLabel,
+  calendarItemTimeLabel,
+  classSessionLocalDate,
   daysUntil,
   deadlineUrgency,
   formatDueDate,
@@ -16,6 +20,7 @@ import {
   formatShortDate,
   formatWeekdayAndDate,
   railDueLabel,
+  resolvedEventTimes,
   snap15,
   taskDueMeta,
 } from '../src/lib/plannerDates';
@@ -130,6 +135,96 @@ describe('addMinutes (drag-range math + EventPopover reschedule nudges)', () => 
     const before = base.getTime();
     addMinutes(base, 45);
     expect(base.getTime()).toBe(before);
+  });
+});
+
+// class_session helpers (v1.6.1): the fix for the "class times render 12h+
+// off" bug — a class_session's `date`/`end_date` ISO fields are a
+// best-effort absolute instant that is only meaningful for sorting/windowing
+// (see types/calendar.ts's contract comment); its real wall-clock time comes
+// exclusively from `details.start_min`/`end_min`. Every assertion below
+// deliberately sets `date`'s hour to something implausible for the class
+// (e.g. 3am) to prove the resolved time comes from start_min, not from
+// parsing the ISO's hour/minute.
+function classSessionItem(overrides: Partial<CalendarItem> = {}): CalendarItem {
+  return {
+    id: 'cs-1',
+    type: 'class_session',
+    title: 'Class: TEST 101',
+    date: '2026-08-17T03:00:00.000Z', // deliberately not 10:05 — must be ignored
+    end_date: '2026-08-17T03:00:00.000Z',
+    all_day: false,
+    course_id: 'course-1',
+    href: '/courses/test-101',
+    details: { status: null, note: null, source: 'seed', task_id: null, start_min: 605, end_min: 685 },
+    ...overrides,
+  };
+}
+
+describe('classSessionLocalDate', () => {
+  it('builds local midnight + minutesSinceMidnight, independent of the anchor ISO time-of-day', () => {
+    const d = classSessionLocalDate('2026-08-17T03:00:00.000Z', 605); // 605min = 10:05
+    expect(d.getHours()).toBe(10);
+    expect(d.getMinutes()).toBe(5);
+  });
+
+  it('only uses the anchor ISO for its calendar day', () => {
+    const d = classSessionLocalDate('2026-08-17T23:55:00.000Z', 0);
+    expect(d.getHours()).toBe(0);
+    expect(d.getMinutes()).toBe(0);
+    expect(d.getDate()).toBe(new Date('2026-08-17T23:55:00.000Z').getDate());
+  });
+});
+
+describe('resolvedEventTimes / calendarItemTimeLabel (class_session 12h-offset fix)', () => {
+  it('resolves a class_session from details.start_min/end_min, not the ISO hour', () => {
+    const { startMs, endMs } = resolvedEventTimes(classSessionItem());
+    const start = new Date(startMs);
+    const end = new Date(endMs!);
+    expect(start.getHours()).toBe(10);
+    expect(start.getMinutes()).toBe(5);
+    expect(end.getHours()).toBe(11);
+    expect(end.getMinutes()).toBe(25);
+  });
+
+  it('falls back to parsing the ISO when start_min/end_min are absent (older/partial data)', () => {
+    const item = classSessionItem({ date: '2026-08-17T14:05:00.000Z', end_date: '2026-08-17T15:25:00.000Z', details: {} });
+    const { startMs, endMs } = resolvedEventTimes(item);
+    expect(startMs).toBe(Date.parse('2026-08-17T14:05:00.000Z'));
+    expect(endMs).toBe(Date.parse('2026-08-17T15:25:00.000Z'));
+  });
+
+  it('leaves every other item type resolving straight from the ISO, unchanged', () => {
+    const item: CalendarItem = {
+      id: 's-1',
+      type: 'study_session',
+      title: 'Study: TEST 101',
+      date: '2026-08-17T09:00:00.000Z',
+      end_date: '2026-08-17T09:45:00.000Z',
+      all_day: false,
+      course_id: 'course-1',
+      href: '/planner',
+      details: {},
+    };
+    const { startMs, endMs } = resolvedEventTimes(item);
+    expect(startMs).toBe(Date.parse('2026-08-17T09:00:00.000Z'));
+    expect(endMs).toBe(Date.parse('2026-08-17T09:45:00.000Z'));
+  });
+
+  // Loosely asserted (contains the digits), same locale-formatting caveat as
+  // the plain formatters below — toLocaleTimeString's exact separators/AM-PM
+  // whitespace aren't pinned to one ICU build.
+  it('calendarItemTimeLabel renders the class_session range from start_min/end_min', () => {
+    const label = calendarItemTimeLabel(classSessionItem());
+    expect(label).toMatch(/10:05/);
+    expect(label).toMatch(/11:25/);
+    expect(label).not.toMatch(/3:00|03:00/); // the ISO's (wrong) hour must never leak through
+  });
+
+  it('calendarItemStartLabel renders just the start', () => {
+    const label = calendarItemStartLabel(classSessionItem());
+    expect(label).toMatch(/10:05/);
+    expect(label).not.toMatch(/11:25/);
   });
 });
 

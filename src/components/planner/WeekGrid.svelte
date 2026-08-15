@@ -1,7 +1,18 @@
 <script lang="ts">
   import type { CalendarItem } from '../../lib/types/calendar';
   import { hueFor } from '../../lib/courseHue';
-  import { addDays, addMinutes, isSameLocalDay, localDateKey, localDateKeyFromIso, snap15, startOfDay, timeRangeLabel } from '../../lib/plannerDates';
+  import {
+    addDays,
+    addMinutes,
+    calendarItemTimeLabel,
+    isSameLocalDay,
+    localDateKey,
+    localDateKeyFromIso,
+    resolvedEventTimes,
+    snap15,
+    startOfDay,
+    timeRangeLabel,
+  } from '../../lib/plannerDates';
 
   interface CourseOption {
     id: string;
@@ -126,8 +137,11 @@
     return timedItems
       .filter((i) => localDateKeyFromIso(i.date) === dayKey)
       .map((i) => {
-        const startMs = Date.parse(i.date);
-        const endMs = i.end_date ? Date.parse(i.end_date) : startMs + 30 * 60_000;
+        // resolvedEventTimes is the class_session-aware resolver (details.
+        // start_min/end_min, never the ISO's local getHours()) — see
+        // plannerDates.ts. Every other type resolves identically to before.
+        const { startMs, endMs: resolvedEndMs } = resolvedEventTimes(i);
+        const endMs = resolvedEndMs ?? startMs + 30 * 60_000;
         return { item: i, startMs, endMs };
       });
   }
@@ -142,8 +156,12 @@
       let minHour = Infinity;
       let maxHour = -Infinity;
       for (const i of timedItems) {
-        const start = new Date(i.date);
-        const end = i.end_date ? new Date(i.end_date) : new Date(start.getTime() + 30 * 60_000);
+        // resolvedEventTimes, not a raw `new Date(i.date)` — see timedForDay's
+        // identical comment; a class_session's window must come from its
+        // details.start_min/end_min or the auto-sized hour range comes out wrong.
+        const { startMs, endMs: resolvedEndMs } = resolvedEventTimes(i);
+        const start = new Date(startMs);
+        const end = new Date(resolvedEndMs ?? startMs + 30 * 60_000);
         minHour = Math.min(minHour, start.getHours() + start.getMinutes() / 60);
         maxHour = Math.max(maxHour, end.getHours() + end.getMinutes() / 60);
       }
@@ -158,8 +176,9 @@
     let minHour = DEFAULT_START;
     let maxHour = DEFAULT_END;
     for (const i of timedItems) {
-      const start = new Date(i.date);
-      const end = i.end_date ? new Date(i.end_date) : new Date(start.getTime() + 30 * 60_000);
+      const { startMs, endMs: resolvedEndMs } = resolvedEventTimes(i);
+      const start = new Date(startMs);
+      const end = new Date(resolvedEndMs ?? startMs + 30 * 60_000);
       minHour = Math.min(minHour, start.getHours() + start.getMinutes() / 60);
       maxHour = Math.max(maxHour, end.getHours() + end.getMinutes() / 60);
     }
@@ -605,7 +624,7 @@
   {@const course = courseFor(item)}
   <div class="hover-card" style={`left:${hoverPos.x}px; top:${hoverPos.y}px; --course-h:${hueForItem(item)}`}>
     <p class="hc-title">{item.title}</p>
-    <p class="hc-time">{timeRangeLabel(new Date(item.date), item.end_date ? new Date(item.end_date) : null)}</p>
+    <p class="hc-time">{calendarItemTimeLabel(item)}</p>
     {#if course}
       <span class="chip hc-chip">{course.code}</span>
     {/if}

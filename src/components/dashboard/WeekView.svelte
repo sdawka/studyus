@@ -5,6 +5,7 @@
   import EventPopover from '../planner/EventPopover.svelte';
   import CreateSessionPopover from '../planner/CreateSessionPopover.svelte';
   import { apiFetch } from '../../lib/apiClient';
+  import { calendarItemStartLabel } from '../../lib/plannerDates';
   import type { CalendarItem } from '../../lib/types/calendar';
 
   interface CourseInfo {
@@ -65,7 +66,6 @@
   });
 
   const weekdayFmt = new Intl.DateTimeFormat(undefined, { weekday: 'short' });
-  const timeFmt = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
 
   function courseFor(item: CalendarItem): CourseInfo | undefined {
     return item.course_id ? courses.find((c) => c.id === item.course_id) : undefined;
@@ -232,7 +232,7 @@
                   title={shortTitle(item)}
                 >
                   <span class="t">{chipLabel(item)}</span>
-                  {#if !item.all_day}<span class="time">{timeFmt.format(new Date(item.date))}</span>{/if}
+                  {#if !item.all_day}<span class="time">{calendarItemStartLabel(item)}</span>{/if}
                 </div>
               {/each}
               {#if itemsByDay[i].length > MAX_CHIPS}

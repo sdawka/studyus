@@ -603,16 +603,27 @@ Closes the sessions-DELETE deferral (`docs/todo.md`'s v1.2-Specific Deferrals).
   "id": "uuid (class_sessions.id)",
   "type": "class_session",
   "title": "Class: <course code>",
-  "date": "iso (class day + start_min)",
-  "end_date": "iso (class day + end_min)",
+  "date": "iso (best-effort absolute instant — see timezone note below)",
+  "end_date": "iso (best-effort absolute instant — see timezone note below)",
   "all_day": false,
   "course_id": "uuid",
   "href": "/courses/:slug",
-  "details": { "status": "attended|missed|null", "note": "string|null", "source": "schedule|manual|seed", "task_id": "uuid|null" }
+  "details": {
+    "status": "attended|missed|null",
+    "note": "string|null",
+    "source": "schedule|manual|seed",
+    "task_id": "uuid|null",
+    "start_min": "integer, 0-1439",
+    "end_min": "integer, 0-1439"
+  }
 }
 ```
 
 `details.task_id` is the id of the linked `attend_class` task (joined via `tasks.class_session_id`), or `null` if none exists yet. **Dedupe rule**: whenever a `class_session` item is emitted, its linked `attend_class` task's `task_due` item is suppressed from the same response — a class with a concrete meeting time renders once, not twice. A class session with no meeting time (`start_min`/`end_min` still null) is never emitted as a `class_session` item; its `attend_class` task's `task_due` item remains its only calendar presence, unchanged from v1.4.
+
+**Timezone note — `details.start_min`/`end_min` are the canonical positioning/label source, not `date`/`end_date`.** There is no per-user timezone column anywhere in this schema (`class_sessions.date` and every other "local" timestamp in this app is really UTC — see "Class sessions (v1.3)"'s `localNoon` comment), so `start_min`/`end_min` are stored as plain wall-clock minutes-of-day with no fixed UTC relationship. `date`/`end_date` are computed as `(midnight UTC of the class day) + start_min` — an absolute instant that lands on the right calendar day and reads correctly *only* via UTC-based accessors (`getUTCHours`/`getUTCMinutes`), good enough for cross-item-type sorting/windowing — but a client rendering the actual time-of-day (a position in a day grid, an "10:05 AM" label) **must read it from `details.start_min`/`details.end_min` directly**, never by calling local `Date` getters (`getHours()`) on the ISO fields — that applies the browser's own real UTC offset on top and shows the wrong wall-clock time.
+
+**12h-offset erratum (same-day fix)**: the first implementation of this item computed `date + start_min` directly against `class_sessions.date` (stored at that day's local **noon**, not midnight), landing every timed class 12 hours late (a 10:05 slot came back as 22:05). `getCalendar` now recovers midnight explicitly (`date - 12h`) before adding the minute offset — see the `NOON_OFFSET_MS` comment in `src/lib/services/calendar.ts`. Caught during Track A's planner integration, which is also what surfaced the deeper timezone point above — the 12h fix alone still left `date`/`end_date` unsafe for a client to read a wall-clock hour off of directly, hence `details.start_min`/`end_min` being added as the authoritative source.
 
 ### Seed data
 

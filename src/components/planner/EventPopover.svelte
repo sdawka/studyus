@@ -2,7 +2,7 @@
   import type { CalendarItem } from '../../lib/types/calendar';
   import { apiFetch } from '../../lib/apiClient';
   import { hueFor } from '../../lib/courseHue';
-  import { addMinutes, timeRangeLabel } from '../../lib/plannerDates';
+  import { addMinutes, calendarItemTimeLabel } from '../../lib/plannerDates';
   import { bindPopoverDismiss } from '../shell/popover.svelte.ts';
   import { tasksById, toggleTask } from '../../lib/stores/tasks';
   import { isMobile } from '../../lib/stores/viewport';
@@ -305,7 +305,7 @@
 </script>
 
 {#snippet body()}
-  <p class="pop-time num">{timeRangeLabel(new Date(item.date), item.end_date ? new Date(item.end_date) : null)}</p>
+  <p class="pop-time num">{calendarItemTimeLabel(item)}</p>
   <div class="pop-meta">
     {#if course}
       <span class="chip pop-chip">{course.code}</span>
