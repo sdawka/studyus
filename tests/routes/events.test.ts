@@ -34,7 +34,8 @@ describe('POST /api/v1/events', () => {
 
     const body = (await response.json()) as any;
     expect(body.data.type).toBe('lecture_attended');
-    expect(body.data.is_instructional ?? true).toBeDefined();
+    expect(body.data).toHaveProperty('is_instructional');
+    expect(body.data.is_instructional).toBe(true);
     expect(body.data.mastery_deltas).toHaveLength(1);
     expect(body.data.mastery_deltas[0].kc_id).toBe(kcId);
   });

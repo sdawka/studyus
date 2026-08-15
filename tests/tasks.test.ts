@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
 import { classSessions, courses, tasks, users } from '../src/db/schema';
+import { localNoon } from '../src/lib/services/classSessions';
 import { createTask, deleteTask, listTasks, updateTask } from '../src/lib/services/tasks';
 import { sweepTasks } from '../src/lib/services/taskSweep';
 import { ConflictError, NotFoundError } from '../src/lib/services/util';
@@ -157,16 +158,29 @@ describe('deleteTask', () => {
     expect(child).toHaveLength(0);
   });
 
-  it('excludes a dismissed system task from listTasks, and re-running sweepTasks does not resurrect it', async () => {
+  it('excludes a dismissed system task from listTasks, and re-running sweepTasks does not resurrect it (real ON CONFLICT DO NOTHING collision)', async () => {
+    const now = Date.now();
+    // A real class_sessions row still inside collectAttendClass's ±7d
+    // window — so re-sweeping genuinely retries the insert this dismissed
+    // row's dedupe_key collides with, unlike a dedupe_key with no backing
+    // row for a collector to ever regenerate (see the pattern in
+    // tests/taskSweep.test.ts's "dismissal" describe block).
+    const sessionId = crypto.randomUUID();
+    await db.insert(classSessions).values({ id: sessionId, userId, courseId, date: localNoon(now), status: null, source: 'schedule' });
+
+    // Seeded directly (as sweepTasks itself would produce it) so this test
+    // can exercise deleteTask's soft-dismiss path specifically, rather than
+    // taskSweep.test.ts's raw-SQL dismissal.
     const taskId = crypto.randomUUID();
     await db.insert(tasks).values({
       id: taskId,
       userId,
       title: 'Attend TEST 101',
       type: 'attend_class',
+      classSessionId: sessionId,
       source: 'system',
-      dedupeKey: `attend_class:${taskId}`,
-      dueDate: Date.now(),
+      dedupeKey: `attend_class:${sessionId}`,
+      dueDate: localNoon(now),
     });
 
     await deleteTask(db, userId, taskId);
@@ -174,17 +188,13 @@ describe('deleteTask', () => {
     const list = await listTasks(db, userId);
     expect(list.find((t) => t.id === taskId)).toBeUndefined();
 
-    // sweepTasks' collectors are stubbed no-ops today, so this doesn't yet
-    // exercise a real dedupe-conflict re-insert — but the invariant it
-    // depends on (a dismissed row's id + dedupe_key survive deletion, so a
-    // future collector's ON CONFLICT DO NOTHING can never resurrect it)
-    // holds regardless, and this assertion keeps passing once collectors land.
-    await sweepTasks(db, userId);
+    await sweepTasks(db, userId, now);
     const listAfterSweep = await listTasks(db, userId);
     expect(listAfterSweep.find((t) => t.id === taskId)).toBeUndefined();
 
     const row = await db.select().from(tasks).where(eq(tasks.id, taskId));
     expect(row).toHaveLength(1);
+    expect(row[0].id).toBe(taskId);
     expect(row[0].dismissedAt).not.toBeNull();
   });
 

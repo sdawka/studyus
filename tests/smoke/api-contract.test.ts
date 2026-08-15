@@ -203,10 +203,19 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
   // ========== USER ==========
 
   describe('GET|PATCH /user', () => {
-    it.skip('GET returns user profile — user object incomplete in test context', async () => {
-      // locals.user needs full object from validateSessionToken (id, email, name, currentTerm, onboardedAt)
-      // Direct handler calls in test env don't have complete user object. Use dev-server tests.
-      expect(true).toBe(true);
+    it('GET returns user profile', async () => {
+      const res = await userRoutes.GET(astroContext({
+        request: new Request('http://local.test/api/v1/user'),
+        locals: { user: { id: fixture.userId, email: 'test@test.local', name: 'Test User', currentTerm: null, onboardedAt: null } },
+      }) as any);
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(body.data.id).toBe(fixture.userId);
+      expect(body.data.email).toBe('test@test.local');
+      expect(body.data.current_term).toBeNull();
+      expect(body.data.onboarded_at).toBeNull();
+      expect(body.data.settings).toHaveProperty('theme');
+      expect(body.data.settings).toHaveProperty('task_generators');
     });
 
     it('PATCH updates user name', async () => {
@@ -598,9 +607,21 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
       expect(Array.isArray(body.data)).toBe(true);
     });
 
-    it.skip('POST creates user_shared resource — requires full request body parsing', async () => {
-      // URL validation in Zod schema fails in test context; dev-server tests verify this.
-      expect(true).toBe(true);
+    it('POST creates user_shared resource', async () => {
+      const req = new Request('http://local.test/api/v1', {
+        method: 'POST',
+        body: JSON.stringify({ url: 'https://example.com/article', label: 'Great article', course_id: fixture.courseId }),
+      });
+      const res = await resourcesIndexRoutes.POST(astroContext({
+        request: req,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(res.status).toBe(201);
+      const body = (await res.json()) as any;
+      expect(body.data.url).toBe('https://example.com/article');
+      expect(body.data.label).toBe('Great article');
+      expect(body.data.kind).toBe('user_shared');
+      expect(body.data.course_id).toBe(fixture.courseId);
     });
 
     it('DELETE removes resource', async () => {
@@ -704,13 +725,52 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
       expect(Array.isArray(body.data)).toBe(true);
     });
 
-    it.skip('POST creates study session — requires full request body parsing', async () => {
-      // Zod validation in test context; dev-server tests verify this.
-      expect(true).toBe(true);
+    it('POST creates study session', async () => {
+      // A real EVENT_TYPES value (see src/lib/schemas/events.ts) rather than
+      // an arbitrary string — intended_event_type is currently a bare
+      // z.string().min(1), but is future-proof if it's later tightened to
+      // z.enum(EVENT_TYPES).
+      const req = new Request('http://local.test/api/v1', {
+        method: 'POST',
+        body: JSON.stringify({ course_id: fixture.courseId, intended_event_type: 'practice_done', kc_ids: [fixture.kcId] }),
+      });
+      const res = await sessionsIndexRoutes.POST(astroContext({
+        request: req,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(res.status).toBe(201);
+      const body = (await res.json()) as any;
+      expect(body.data.course_id).toBe(fixture.courseId);
+      expect(body.data.intended_event_type).toBe('practice_done');
+      expect(body.data.ended_at).toBeNull();
     });
 
-    it.skip('PATCH /sessions/:id/complete marks session done — depends on POST sessions', async () => {
-      expect(true).toBe(true);
+    it('PATCH /sessions/:id/complete marks session done and appends one event per touched KC', async () => {
+      const createReq = new Request('http://local.test/api/v1', {
+        method: 'POST',
+        body: JSON.stringify({ course_id: fixture.courseId, intended_event_type: 'practice_done', kc_ids: [fixture.kcId] }),
+      });
+      const createRes = await sessionsIndexRoutes.POST(astroContext({
+        request: createReq,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      const sessionId = ((await createRes.json()) as any).data.id;
+
+      const completeReq = new Request('http://local.test/api/v1', {
+        method: 'PATCH',
+        body: JSON.stringify({ reflection: 'Went well' }),
+      });
+      const completeRes = await sessionsCompleteRoutes.PATCH(astroContext({
+        params: { id: sessionId },
+        request: completeReq,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(completeRes.status).toBe(200);
+      const body = (await completeRes.json()) as any;
+      expect(body.data.id).toBe(sessionId);
+      expect(body.data.events_appended).toHaveLength(1);
+      expect(body.data.events_appended[0].kc_id).toBe(fixture.kcId);
+      expect(Array.isArray(body.data.mastery_deltas)).toBe(true);
     });
   });
 
@@ -871,35 +931,118 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
   // ========== QUICK QUIZ (AGENTIC FLOWS) ==========
 
   describe('POST /flows/quick_quiz + POST /answers (with mocked OpenRouter)', () => {
-    it.skip('POST /flows/quick_quiz generates quiz questions — requires full session create', async () => {
-      expect(true).toBe(true);
+    it('POST /flows/quick_quiz generates quiz questions and strips answers from the response', async () => {
+      mockOpenRouterJsonFetch({
+        items: [{ kc_id: fixture.kcId, question: 'Q?', options: ['A', 'B', 'C', 'D'], correct_index: 1, explanation: 'E' }],
+      });
+      const req = new Request('http://local.test/api/v1', {
+        method: 'POST',
+        body: JSON.stringify({ kc_id: fixture.kcId }),
+      });
+      const res = await quickQuizIndexRoutes.POST(astroContext({
+        request: req,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(res.status).toBe(201);
+      const body = (await res.json()) as any;
+      expect(body.data.questions).toHaveLength(1);
+      expect(body.data.questions[0].kc_id).toBe(fixture.kcId);
+      expect(body.data.questions[0].options).toHaveLength(4);
+      expect(body.data.questions[0]).not.toHaveProperty('correct_index');
+      expect(body.data.questions[0]).not.toHaveProperty('explanation');
     });
 
-    it.skip('POST /flows/quick_quiz supports course_id filtering — requires full session create', async () => {
-      expect(true).toBe(true);
+    it('POST /flows/quick_quiz supports course_id filtering', async () => {
+      mockOpenRouterJsonFetch({
+        items: [{ kc_id: fixture.kcId, question: 'Q?', options: ['A', 'B', 'C', 'D'], correct_index: 0, explanation: 'E' }],
+      });
+      const req = new Request('http://local.test/api/v1', {
+        method: 'POST',
+        body: JSON.stringify({ course_id: fixture.courseId, count: 1 }),
+      });
+      const res = await quickQuizIndexRoutes.POST(astroContext({
+        request: req,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(res.status).toBe(201);
+      const body = (await res.json()) as any;
+      expect(body.data.questions.map((q: any) => q.kc_id)).toEqual([fixture.kcId]);
     });
 
-    it.skip('POST /flows/quick_quiz/:id/answers grades and returns results — depends on POST', async () => {
-      expect(true).toBe(true);
+    it('POST /flows/quick_quiz/:id/answers grades and returns results', async () => {
+      mockOpenRouterJsonFetch({
+        items: [{ kc_id: fixture.kcId, question: 'Q?', options: ['A', 'B', 'C', 'D'], correct_index: 1, explanation: 'E' }],
+      });
+      const createReq = new Request('http://local.test/api/v1', {
+        method: 'POST',
+        body: JSON.stringify({ kc_id: fixture.kcId }),
+      });
+      const createRes = await quickQuizIndexRoutes.POST(astroContext({
+        request: createReq,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      const quizId = ((await createRes.json()) as any).data.id;
+
+      const answersReq = new Request('http://local.test/api/v1', {
+        method: 'POST',
+        body: JSON.stringify({ answers: [{ question_index: 0, selected_index: 1 }] }),
+      });
+      const answersRes = await quickQuizAnswersRoutes.POST(astroContext({
+        params: { id: quizId },
+        request: answersReq,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(answersRes.status).toBe(200);
+      const body = (await answersRes.json()) as any;
+      expect(body.data.score).toBe(100);
+      expect(body.data.results[0].correct).toBe(true);
+      expect(body.data.mastery_deltas.length).toBeGreaterThan(0);
     });
 
-    it.skip('POST /flows/quick_quiz/:id/answers returns 400 on re-submission — depends on POST', async () => {
-      expect(true).toBe(true);
+    it('POST /flows/quick_quiz/:id/answers returns 400 on re-submission', async () => {
+      mockOpenRouterJsonFetch({
+        items: [{ kc_id: fixture.kcId, question: 'Q?', options: ['A', 'B', 'C', 'D'], correct_index: 0, explanation: 'E' }],
+      });
+      const createReq = new Request('http://local.test/api/v1', {
+        method: 'POST',
+        body: JSON.stringify({ kc_id: fixture.kcId }),
+      });
+      const createRes = await quickQuizIndexRoutes.POST(astroContext({
+        request: createReq,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      const quizId = ((await createRes.json()) as any).data.id;
+
+      const answersReq = () => new Request('http://local.test/api/v1', {
+        method: 'POST',
+        body: JSON.stringify({ answers: [{ question_index: 0, selected_index: 0 }] }),
+      });
+      const first = await quickQuizAnswersRoutes.POST(astroContext({
+        params: { id: quizId },
+        request: answersReq(),
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(first.status).toBe(200);
+
+      const second = await quickQuizAnswersRoutes.POST(astroContext({
+        params: { id: quizId },
+        request: answersReq(),
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(second.status).toBe(400);
+      const body = (await second.json()) as any;
+      expect(body.error.code).toBe('quiz_not_gradable');
     });
   });
 
   // ========== 401 AUTHORIZATION (MIDDLEWARE) ==========
-
-  describe('401 Unauthorized — Astro auth middleware', () => {
-    it.skip('Middleware 401 enforcement — requires astro:middleware (not available in workers pool)', async () => {
-      // src/middleware.ts enforces auth via Astro's middleware system.
-      // Astro middleware can't be tested in cloudflare/vitest-pool-workers.
-      // Verify via: dev-server smoke tests (curl to http://localhost:4332 without session)
-      expect(true).toBe(true);
-    });
-
-    it.skip('Public auth paths accessible without session — verify in dev-server', async () => {
-      expect(true).toBe(true);
-    });
-  });
+  //
+  // This file exercises route handlers directly (bypassing src/middleware.ts
+  // entirely), so it can't be the place that verifies 401 enforcement — that's
+  // a property of the middleware, not of any individual handler. Real
+  // coverage: tests/middleware.test.ts, which invokes src/middleware.ts's
+  // onRequest directly (stubbing the astro:middleware virtual module) and
+  // asserts both the 401-on-API-path and redirect-to-/login behaviors for an
+  // unauthenticated request, plus the public-path (/login, /api/v1/auth/*)
+  // passthrough case.
 });
