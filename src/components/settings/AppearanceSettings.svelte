@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { pushToast } from '../../lib/stores/toast';
+
   interface Settings {
     theme: 'compass' | 'focus' | 'campus';
     scheme: 'light' | 'dark' | 'system';
@@ -29,11 +31,14 @@
   async function persist() {
     saving = true;
     try {
-      await fetch('/api/v1/user', {
+      const res = await fetch('/api/v1/user', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ settings: { theme, scheme } }),
       });
+      if (!res.ok) pushToast('Could not save appearance settings', 'error');
+    } catch {
+      pushToast('Network error — could not save appearance settings', 'error');
     } finally {
       saving = false;
     }

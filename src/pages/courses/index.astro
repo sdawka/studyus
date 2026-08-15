@@ -77,7 +77,13 @@ function statusSummary(courseId: string): string {
       </div>
     </section>
   ))}
-  {courses.length === 0 && <p>No courses yet.</p>}
+  {courses.length === 0 && (
+    <div class="card empty-state">
+      <h2>No courses yet</h2>
+      <p>Add a course to start tracking assignments, grades, and concepts.</p>
+      <button type="button" class="btn btn-primary" id="courses-empty-add">Add a course</button>
+    </div>
+  )}
 
   {archivedCourses.length > 0 && (
     <details class="archived-group">
@@ -99,6 +105,12 @@ function statusSummary(courseId: string): string {
     </details>
   )}
 </AppShell>
+
+<script>
+  document.getElementById('courses-empty-add')?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('open-add-course'));
+  });
+</script>
 
 <style>
   .term-group { margin-bottom: 2.5rem; }
@@ -148,4 +160,15 @@ function statusSummary(courseId: string): string {
   .title { margin: 0.25rem 0 0.15rem 0; font-size: 1.05rem; }
   .instructor { margin: 0 0 0.75rem 0; font-size: 0.85rem; color: var(--muted); }
   .kc-summary { margin: 0.5rem 0 0 0; font-size: 0.78rem; color: var(--muted); }
+
+  /* Mobile dead end fix: the sidebar's Add-course trigger is display:none
+     ≤767px (mobile-shell cutover), so a course-less phone visitor had no
+     way to add one from this page — this gives the empty state its own
+     trigger that dispatches the same open-add-course event Sidebar.astro
+     does (AddCourseModal is mounted globally in AppShell). */
+  .empty-state p {
+    color: var(--muted);
+    font-size: 14px;
+    margin: 8px 0 16px;
+  }
 </style>

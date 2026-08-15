@@ -7,15 +7,17 @@
   // public contract is frozen so callers with their own non-store list state
   // (or a side-effect hook to run) keep working unchanged.
   import TaskTypeIcon from './TaskTypeIcon.svelte';
-  import { deleteTask, tasksById, toggleTask, type ApiTask } from '../../lib/stores/tasks';
-  import type { TaskType } from '../../lib/taskTypeMeta';
+  import { deleteTask, snoozeTask, tasksById, toggleTask, type ApiTask } from '../../lib/stores/tasks';
+  import { TASK_TYPE_META, type TaskType } from '../../lib/taskTypeMeta';
 
   export interface TaskItemTask {
     id: string;
     title: string;
+    description?: string | null;
     completed: boolean;
     due_date?: string | null;
     type?: TaskType;
+    source?: 'user' | 'system';
     parent_task_id?: string | null;
     completed_at?: string | null;
     courses: Array<{ id: string; code: string }>;
@@ -73,6 +75,17 @@
       busy = false;
     }
   }
+
+  async function snooze() {
+    busy = true;
+    try {
+      await snoozeTask(task.id);
+    } finally {
+      busy = false;
+    }
+  }
+
+  let canSnooze = $derived(!compact && task.source === 'system' && !!task.due_date && !task.completed);
 </script>
 
 <div class="task-item" class:compact class:completed={task.completed}>
@@ -85,28 +98,41 @@
     aria-label={task.completed ? 'Mark incomplete' : 'Mark complete'}
   />
   <div class="task-info">
-    {#if task.type && task.type !== 'todo'}
-      <span class="task-type-icon" title={task.type}><TaskTypeIcon type={task.type} /></span>
-    {/if}
-    <span class="task-title">{task.title}</span>
-    {#if task.courses.length > 0}
-      <span class="course-dots">
-        {#each task.courses as c (c.id)}
-          <span
-            class="dot"
-            class:neutral={courseHues[c.id] === undefined}
-            style={courseHues[c.id] !== undefined ? `--course-h:${courseHues[c.id]}` : ''}
-            title={c.code}
-          ></span>
-        {/each}
-      </span>
+    <div class="task-title-row">
+      {#if task.type && task.type !== 'todo'}
+        <span class="task-type-icon" title={TASK_TYPE_META[task.type]?.label ?? task.type}><TaskTypeIcon type={task.type} /></span>
+      {/if}
+      <span class="task-title">{task.title}</span>
+      {#if task.source === 'system'}
+        <span class="pill pill-idle auto-chip" title="Generated automatically">auto</span>
+      {/if}
+      {#if task.courses.length > 0}
+        <span class="course-dots">
+          {#each task.courses as c (c.id)}
+            <span
+              class="dot"
+              class:neutral={courseHues[c.id] === undefined}
+              style={courseHues[c.id] !== undefined ? `--course-h:${courseHues[c.id]}` : ''}
+              title={c.code}
+            ></span>
+          {/each}
+        </span>
+      {/if}
+    </div>
+    {#if task.description}
+      <span class="task-desc">{task.description}</span>
     {/if}
   </div>
   {#if due}
     <span class="pill" class:pill-danger={due.danger} class:pill-idle={!due.danger}>{due.label}</span>
   {/if}
   {#if !compact}
-    <button type="button" class="btn-delete" onclick={del} title="Delete task" disabled={busy}>Delete</button>
+    <div class="task-actions">
+      {#if canSnooze}
+        <button type="button" class="btn-snooze" onclick={snooze} title="Push due date to tomorrow" disabled={busy}>Not today</button>
+      {/if}
+      <button type="button" class="btn-delete" onclick={del} title="Delete task" disabled={busy}>Delete</button>
+    </div>
   {/if}
 </div>
 
@@ -149,9 +175,16 @@
 
   .task-info {
     display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .task-title-row {
+    display: flex;
     align-items: center;
     gap: 0.5rem;
-    flex: 1;
     min-width: 0;
   }
 
@@ -164,6 +197,18 @@
   .task-title {
     font-weight: 500;
     color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .auto-chip {
+    flex-shrink: 0;
+  }
+
+  .task-desc {
+    font-size: 12px;
+    color: var(--muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -191,13 +236,25 @@
     background: var(--muted);
   }
 
-  .btn-delete {
+  .task-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  .btn-delete,
+  .btn-snooze {
     background: none;
     color: var(--muted);
     font-size: 0.8rem;
     padding: 0.3rem 0.4rem;
     white-space: nowrap;
     flex-shrink: 0;
+  }
+
+  .btn-snooze:hover {
+    color: var(--accent-ink, var(--accent));
   }
 
   .btn-delete:hover {
@@ -216,7 +273,8 @@
     .task-checkbox {
       transform: scale(1.25);
     }
-    .btn-delete {
+    .btn-delete,
+    .btn-snooze {
       min-height: 44px;
       padding: 0.65rem 0.5rem;
       display: inline-flex;

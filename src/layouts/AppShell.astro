@@ -12,6 +12,7 @@ import Sidebar from '../components/shell/Sidebar.astro';
 import Header from '../components/shell/Header.astro';
 import AddCourseModal from '../components/shell/AddCourseModal.svelte';
 import BottomNav from '../components/shell/BottomNav.astro';
+import Toast from '../components/shell/Toast.svelte';
 import { resolveSettings } from '../lib/services/user';
 
 interface Props {
@@ -58,6 +59,7 @@ const sidebarAttr = settings.sidebar_collapsed ? 'collapsed' : undefined;
       </div>
     </div>
     <BottomNav />
+    <Toast client:load />
     <!-- Direct body child, after .shell. Route-modal layers (planner.astro,
          tasks.astro) and any future overlay render here instead of inside
          main's default slot — main has `container-type: inline-size`, which

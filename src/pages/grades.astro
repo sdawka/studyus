@@ -33,7 +33,7 @@ const courseData = await Promise.all(
 
   {courseData.map((course) => (
     <GradeTable
-      client:load
+      client:visible
       courseId={course.id}
       courseCode={course.code}
       courseTitle={course.title}

@@ -224,9 +224,12 @@
 
   /* main content-box ≤ 480px (phone): the Delete affordance costs ~55px of a
      ~310px row and starves task titles down to ~10 characters; deletion keeps
-     its home on /tasks, where rows are the page's full width. */
+     its home on /tasks, where rows are the page's full width. Same call for
+     Not today (snooze) — it's a system-task-only extra action, and /tasks
+     (TasksView, full page width) is where it stays reachable at this size. */
   @container (max-width: 480px) {
-    .rows :global(.btn-delete) {
+    .rows :global(.btn-delete),
+    .rows :global(.btn-snooze) {
       display: none;
     }
   }

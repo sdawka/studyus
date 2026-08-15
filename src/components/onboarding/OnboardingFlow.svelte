@@ -24,15 +24,17 @@
     step = Math.min(Math.max(n, 1), STEPS.length);
   }
 
-  async function finish(markOnboarded: boolean) {
+  // No markOnboarded flag: Skip (available on every step) and the step-4
+  // Finish button both just call this — whatever's typed in the name/term
+  // fields at the moment either is pressed goes along, so Skip never
+  // silently drops what the user already filled in.
+  async function finish() {
     saving = true;
     saveError = null;
     try {
       const body: Record<string, unknown> = { onboarded: true };
-      if (markOnboarded) {
-        if (name.trim()) body.name = name.trim();
-        if (currentTerm.trim()) body.current_term = currentTerm.trim();
-      }
+      if (name.trim()) body.name = name.trim();
+      if (currentTerm.trim()) body.current_term = currentTerm.trim();
       const res = await fetch('/api/v1/user', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -59,8 +61,10 @@
         <div class="step" class:active={step === i + 1} class:done={step > i + 1}>{i + 1}. {label}</div>
       {/each}
     </div>
-    <button type="button" class="skip" disabled={saving} onclick={() => finish(false)}>Skip setup</button>
+    <button type="button" class="skip" disabled={saving} onclick={() => finish()}>Skip setup</button>
   </div>
+
+  {#if saveError}<p class="error">{saveError}</p>{/if}
 
   {#if step === 1}
     <div class="card panel">
@@ -140,10 +144,9 @@
         <span>Current term</span>
         <input type="text" bind:value={currentTerm} placeholder="e.g. Fall 2024" />
       </label>
-      {#if saveError}<p class="error">{saveError}</p>{/if}
       <div class="nav-row">
         <button type="button" class="ink-btn ghost" onclick={() => goTo(3)}>Back</button>
-        <button type="button" class="ink-btn" disabled={saving} onclick={() => finish(true)}>
+        <button type="button" class="ink-btn" disabled={saving} onclick={() => finish()}>
           {saving ? 'Saving…' : 'Finish'}
         </button>
       </div>
@@ -253,7 +256,9 @@
     color: var(--text);
   }
   .field input:focus { outline: 1px solid var(--accent); }
-  .error { color: var(--danger); font-size: 0.85rem; }
+  /* Rendered above the step panel (not inside it) so it shows regardless of
+     which step Skip/Finish was pressed from, not just step 4. */
+  .error { color: var(--danger); font-size: 0.85rem; margin: 0 0 0.9rem; }
 
   .nav-row { display: flex; justify-content: space-between; margin-top: 1.5rem; }
   .ink-btn {

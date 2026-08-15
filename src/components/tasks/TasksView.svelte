@@ -14,6 +14,7 @@
     selectChildren,
     selectForCourse,
     selectOpen,
+    snoozeTask,
     tasksList,
     toggleTask,
     type ApiTask,
@@ -145,6 +146,10 @@
     await deleteTask(task.id);
   }
 
+  async function snoozeParent(task: ApiTask) {
+    await snoozeTask(task.id);
+  }
+
   // ---- inline add (per card) -------------------------------------------
 
   let openAddFormKey = $state<string | null>(null);
@@ -257,15 +262,28 @@
       aria-label={task.completed ? 'Mark incomplete' : 'Mark complete'}
     />
     <div class="task-info">
-      {#if task.type && task.type !== 'todo'}
-        <span class="task-type-icon" title={task.type}><TaskTypeIcon type={task.type} /></span>
+      <div class="task-title-row">
+        {#if task.type && task.type !== 'todo'}
+          <span class="task-type-icon" title={TASK_TYPE_META[task.type]?.label ?? task.type}><TaskTypeIcon type={task.type} /></span>
+        {/if}
+        <span class="task-title">{task.title}</span>
+        {#if task.source === 'system'}
+          <span class="pill pill-idle auto-chip" title="Generated automatically">auto</span>
+        {/if}
+      </div>
+      {#if task.description}
+        <span class="task-desc">{task.description}</span>
       {/if}
-      <span class="task-title">{task.title}</span>
     </div>
     <span class="pill" class:pill-ok={allDone && !task.completed} class:pill-idle={!(allDone && !task.completed)}>
       {doneCount}/{children.length}
     </span>
-    <button type="button" class="btn-delete" onclick={() => removeTask(task)} title="Delete task">Delete</button>
+    <div class="task-actions">
+      {#if task.source === 'system' && task.due_date && !task.completed}
+        <button type="button" class="btn-snooze" onclick={() => snoozeParent(task)} title="Push due date to tomorrow">Not today</button>
+      {/if}
+      <button type="button" class="btn-delete" onclick={() => removeTask(task)} title="Delete task">Delete</button>
+    </div>
   </div>
   {#if expanded}
     <div class="children">
@@ -485,9 +503,15 @@
   }
   .task-info {
     display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+  .task-title-row {
+    display: flex;
     align-items: center;
     gap: 0.5rem;
-    flex: 1;
     min-width: 0;
   }
   .task-type-icon {
@@ -502,17 +526,37 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .auto-chip {
+    flex-shrink: 0;
+  }
+  .task-desc {
+    font-size: 12px;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .task-row.completed .task-title {
     text-decoration: line-through;
     color: var(--muted);
   }
-  .btn-delete {
+  .task-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .btn-delete,
+  .btn-snooze {
     background: none;
     color: var(--muted);
     font-size: 0.8rem;
     padding: 0.3rem 0.4rem;
     white-space: nowrap;
     flex-shrink: 0;
+  }
+  .btn-snooze:hover {
+    color: var(--accent-ink, var(--accent));
   }
   .btn-delete:hover {
     color: var(--danger-ink, var(--danger));

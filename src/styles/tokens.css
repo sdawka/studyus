@@ -19,7 +19,8 @@
      values — only the two new mobile-shell layers get tokens):
        grid 1-3 (dashboard rail internals) · header 30 · popover 50 ·
        hover-card 60 · event-pop 70 · modal 100 ·
-       route-layer 200 desktop / 10 mobile · tabbar 210 · sheet 240. */
+       route-layer 200 desktop / 10 mobile · tabbar 210 · sheet 240 ·
+       toast 250. */
   --content-pad-x: 32px;
   --content-pad-top: 28px;
   --content-pad-bottom: 56px;
@@ -27,6 +28,7 @@
   --tabbar-h: 56px;
   --z-tabbar: 210;
   --z-sheet: 240;
+  --z-toast: 250;
 }
 
 /* Mobile shell cutover — see docs/design/mobile-shell.md. Canonical

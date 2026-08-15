@@ -56,6 +56,7 @@
   }
 
   async function deleteEventRow(eventId: string) {
+    if (!confirm('Delete this event?')) return;
     eventSavingId = eventId;
     try {
       const res = await fetch(`/api/v1/events/${eventId}`, { method: 'DELETE' });

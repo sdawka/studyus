@@ -235,6 +235,38 @@ export async function deleteTask(id: string): Promise<void> {
   }
 }
 
+// "Not today" — pushes a task's due date to tomorrow. If it already has a
+// due date, tomorrow keeps the same time-of-day (new Date(iso).setDate()
+// only moves the calendar day in local time, leaving hour/minute alone);
+// an undated task (defensive — the UI only offers this action once a due
+// date exists) lands at local noon tomorrow instead, matching the
+// dateInputToIso convention used by the /tasks inline-add form. Same
+// optimistic-then-rollback shape as toggleTask/deleteTask.
+function tomorrowDue(currentDueIso: string | null | undefined): string {
+  const next = currentDueIso ? new Date(currentDueIso) : new Date();
+  if (!currentDueIso) next.setHours(12, 0, 0, 0);
+  next.setDate(next.getDate() + 1);
+  return next.toISOString();
+}
+
+export async function snoozeTask(id: string): Promise<void> {
+  const snapshot = tasksById.get();
+  const task = snapshot[id];
+  if (!task) return;
+
+  const due_date = tomorrowDue(task.due_date);
+  tasksById.setKey(id, { ...task, due_date });
+
+  try {
+    const patched = await patchTask(id, { due_date });
+    tasksById.setKey(id, patched);
+    tasksError.set(null);
+  } catch (err) {
+    tasksById.set(snapshot);
+    tasksError.set(err instanceof Error ? err.message : 'Failed to update task');
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Selectors — plain functions (no store reads inside), safe to call from
 // $derived and unit-testable without a DOM.

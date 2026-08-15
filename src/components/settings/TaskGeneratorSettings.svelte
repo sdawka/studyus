@@ -6,6 +6,7 @@
   // sibling toggles.
   import TaskTypeIcon from '../tasks/TaskTypeIcon.svelte';
   import { TASK_TYPE_META, type TaskType } from '../../lib/taskTypeMeta';
+  import { pushToast } from '../../lib/stores/toast';
 
   // Fixed display order (matches the plan's generator table), distinct from
   // TASK_TYPE_META's sort-weight order which also includes 'todo'.
@@ -53,6 +54,7 @@
         // Roll back on failure — mirrors the optimistic-rollback pattern
         // used by the tasks store.
         generators = { ...generators, [key]: !next };
+        pushToast(`Could not save "${TASK_TYPE_META[key].label}" setting`, 'error');
         return;
       }
       savedKey = key;
@@ -61,6 +63,7 @@
       }, 2000);
     } catch {
       generators = { ...generators, [key]: !next };
+      pushToast(`Network error — could not save "${TASK_TYPE_META[key].label}" setting`, 'error');
     } finally {
       savingKey = null;
     }

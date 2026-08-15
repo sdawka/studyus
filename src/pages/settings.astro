@@ -45,6 +45,8 @@ const settings = resolveSettings(user.settings);
 </AppShell>
 
 <script>
+  import { pushToast } from '../lib/stores/toast';
+
   const form = document.getElementById('profile-form') as HTMLFormElement | null;
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -53,24 +55,41 @@ const settings = resolveSettings(user.settings);
       name: String(data.get('name') || ''),
       current_term: String(data.get('current_term') || '') || null,
     };
-    const res = await fetch('/api/v1/user', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const savedMsg = document.getElementById('profile-saved');
-    if (res.ok && savedMsg) {
-      savedMsg.hidden = false;
-      setTimeout(() => { savedMsg.hidden = true; }, 2000);
+    try {
+      const res = await fetch('/api/v1/user', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        pushToast(json?.error?.message ?? 'Could not save profile', 'error');
+        return;
+      }
+      const savedMsg = document.getElementById('profile-saved');
+      if (savedMsg) {
+        savedMsg.hidden = false;
+        setTimeout(() => { savedMsg.hidden = true; }, 2000);
+      }
+    } catch {
+      pushToast('Network error — could not save profile', 'error');
     }
   });
 
   document.getElementById('logout-btn')?.addEventListener('click', async () => {
-    await fetch('/api/v1/auth/logout', {
-      method: 'POST',
-      headers: { Origin: window.location.origin },
-    });
-    window.location.href = '/login';
+    try {
+      const res = await fetch('/api/v1/auth/logout', {
+        method: 'POST',
+        headers: { Origin: window.location.origin },
+      });
+      if (!res.ok) {
+        pushToast('Could not log out — try again', 'error');
+        return;
+      }
+      window.location.href = '/login';
+    } catch {
+      pushToast('Network error — could not log out', 'error');
+    }
   });
 </script>
 
