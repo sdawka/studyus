@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CalendarItem } from '../../lib/types/calendar';
   import { hueFor } from '../../lib/courseHue';
-  import { addDays, isSameLocalDay, localDateKey, localDateKeyFromIso, startOfDay, timeRangeLabel } from '../../lib/plannerDates';
+  import { addDays, addMinutes, isSameLocalDay, localDateKey, localDateKeyFromIso, snap15, startOfDay, timeRangeLabel } from '../../lib/plannerDates';
 
   interface CourseOption {
     id: string;
@@ -38,7 +38,10 @@
     // the width thresholds.
     dayCount?: number;
     onSelect?: (item: CalendarItem) => void;
-    onSlotClick?: (start: Date) => void;
+    // `end` is only present for a drag-created range (see the pointer drag
+    // handlers below) — a plain click/tap always calls this with one arg,
+    // same contract as before drag-create existed.
+    onSlotClick?: (start: Date, end?: Date) => void;
   } = $props();
 
   // Container-measured, not @media/@container: this component renders both
@@ -75,6 +78,15 @@
   const DEFAULT_START = $derived(compact ? 9 : 8);
   const DEFAULT_END = $derived(compact ? 17 : 20);
   const MIN_BLOCK_HEIGHT = $derived(compact ? 27 : 24);
+
+  // Two-line gate for a block's title+time, recomputed against real box
+  // metrics instead of the old flat `height >= 32` guess: content box =
+  // block height minus its 3px+3px vertical padding; a title line at 12px/
+  // line-height 1.2 is 14.4px, the time line at 10.5px/1.2 is 12.6px, plus
+  // the 1px flex gap between them = 28px of content, so anything under
+  // padding(6) + 28 = 34px total block height can't fit both without
+  // clipping — those blocks show the (vertically centered) title alone.
+  const TWO_LINE_THRESHOLD = 34;
 
   const weekStartDate = $derived(new Date(`${weekStart}T00:00:00`));
   // 7-day mode always shows the calendar week (Monday-anchored, matching the
@@ -278,7 +290,18 @@
         return 'Study session';
       case 'event_logged':
         return 'Logged';
+      case 'class_session':
+        return 'Class';
     }
+  }
+
+  // class_session's attendance glyph on the block itself (unmarked shows
+  // nothing — an empty grid slot shouldn't imply "missed").
+  function classStatusGlyph(item: CalendarItem): string {
+    const status = item.details?.status;
+    if (status === 'attended') return '✓';
+    if (status === 'missed') return '✗';
+    return '';
   }
 
   // Hover card (internal, presentational — distinct from the click-driven
@@ -287,12 +310,24 @@
   let hoverPos = $state({ x: 0, y: 0 });
   let hoverTimer: ReturnType<typeof setTimeout> | undefined;
 
+  // Hover card's own footprint — used both to flip it to the anchor's left
+  // when it would overflow the right edge, and to clamp it vertically so it
+  // never overflows the bottom (neither existed before; the card just
+  // overflowed silently at the right edge of the viewport).
+  const HOVER_CARD_W = 220;
+  const HOVER_CARD_H_EST = 132;
+  const HOVER_MARGIN = 8;
+
   function onBlockEnter(e: MouseEvent, item: CalendarItem) {
     clearTimeout(hoverTimer);
     const target = e.currentTarget as HTMLElement;
     hoverTimer = setTimeout(() => {
       const rect = target.getBoundingClientRect();
-      hoverPos = { x: rect.right + 8, y: rect.top };
+      let x = rect.right + HOVER_MARGIN;
+      if (x + HOVER_CARD_W + HOVER_MARGIN > window.innerWidth) x = Math.max(HOVER_MARGIN, rect.left - HOVER_CARD_W - HOVER_MARGIN);
+      let y = rect.top;
+      if (y + HOVER_CARD_H_EST + HOVER_MARGIN > window.innerHeight) y = Math.max(HOVER_MARGIN, window.innerHeight - HOVER_CARD_H_EST - HOVER_MARGIN);
+      hoverPos = { x, y };
       hoverItem = item;
     }, 200);
   }
@@ -306,20 +341,44 @@
     if (item.type === 'assessment_due' && typeof d.weight_pct === 'number') return `Worth ${d.weight_pct}% of grade`;
     if (item.type === 'study_session' && typeof d.planned_minutes === 'number') return `${d.planned_minutes} min planned`;
     if (item.type === 'event_logged' && typeof d.kc_name === 'string' && d.kc_name) return d.kc_name;
+    if (item.type === 'class_session') {
+      const status = d.status === 'attended' ? 'Attended' : d.status === 'missed' ? 'Missed' : 'Not marked';
+      const note = typeof d.note === 'string' && d.note ? d.note : null;
+      return note ? `${status} — ${note}` : status;
+    }
     return null;
   }
 
+  // Shared pixel->Date math for both the plain-click path and drag-create:
+  // `clientY` relative to the day column's measured top, clamped to the
+  // visible [bounds.start, bounds.end] window, converted to minutes-from-
+  // bounds.start and added onto `day` at bounds.start. Callers snap15() the
+  // result themselves (click wants the click position snapped; drag wants
+  // both endpoints snapped independently).
+  function yToDate(day: Date, clientY: number, columnTop: number): Date {
+    const offsetY = clientY - columnTop;
+    const totalMinutes = (bounds.end - bounds.start) * 60;
+    const minutesFromStart = Math.max(0, Math.min(totalMinutes, (offsetY / PX_PER_HOUR) * 60));
+    const d = new Date(day);
+    d.setHours(bounds.start, 0, 0, 0);
+    d.setMinutes(d.getMinutes() + minutesFromStart);
+    return d;
+  }
+
   function handleSlotClick(e: MouseEvent, day: Date) {
+    // A completed drag (moved past the threshold) already fired onSlotClick
+    // from the pointerup handler below — the browser still dispatches this
+    // click event afterward (pointerup's target === pointerdown's target),
+    // so without this guard every drag would create a slot twice.
+    if (suppressNextClick) {
+      suppressNextClick = false;
+      return;
+    }
     if ((e.target as HTMLElement).closest('.event-block')) return;
     if (!onSlotClick) return;
     const columnEl = e.currentTarget as HTMLElement;
     const rect = columnEl.getBoundingClientRect();
-    const offsetY = e.clientY - rect.top;
-    const minutesFromStart = (offsetY / PX_PER_HOUR) * 60;
-    const snappedMinutes = Math.round(minutesFromStart / 15) * 15;
-    const start = new Date(day);
-    start.setHours(bounds.start, 0, 0, 0);
-    start.setMinutes(start.getMinutes() + snappedMinutes);
+    const start = snap15(yToDate(day, e.clientY, rect.top));
     onSlotClick(start);
   }
 
@@ -337,6 +396,93 @@
     start.setHours(9, 0, 0, 0);
     onSlotClick(start);
   }
+
+  // --- Drag-create ---------------------------------------------------------
+  // Vertical pointer-drag on a day column selects a time range with a live
+  // ghost block. Mouse only: touch/pen pointers fall straight through to the
+  // existing tap-to-create click path above (no drag threshold logic runs
+  // for them at all), matching the "touch keeps tap-to-create" requirement
+  // without needing a viewport/hover-capability check here.
+  interface DragState {
+    dayIndex: number;
+    day: Date;
+    columnTop: number;
+    startY: number;
+    currentY: number;
+    pointerId: number;
+    moved: boolean;
+  }
+  const DRAG_THRESHOLD_PX = 4;
+  let dragState = $state<DragState | null>(null);
+  // Set by a completed drag so the click event the browser still fires
+  // afterward is a no-op (see handleSlotClick's guard above); also set when
+  // Escape cancels an in-flight drag, for the same reason.
+  let suppressNextClick = false;
+
+  function computeDragRange(state: DragState): { start: Date; end: Date } {
+    const lo = Math.min(state.startY, state.currentY);
+    const hi = Math.max(state.startY, state.currentY);
+    const start = snap15(yToDate(state.day, lo, state.columnTop));
+    let end = snap15(yToDate(state.day, hi, state.columnTop));
+    if (end.getTime() <= start.getTime()) end = addMinutes(start, 15);
+    return { start, end };
+  }
+
+  function onColumnPointerDown(e: PointerEvent, day: Date, dayIndex: number) {
+    if (!onSlotClick) return;
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    if ((e.target as HTMLElement).closest('.event-block')) return;
+    const columnEl = e.currentTarget as HTMLElement;
+    const rect = columnEl.getBoundingClientRect();
+    columnEl.setPointerCapture(e.pointerId);
+    dragState = { dayIndex, day, columnTop: rect.top, startY: e.clientY, currentY: e.clientY, pointerId: e.pointerId, moved: false };
+  }
+
+  function onColumnPointerMove(e: PointerEvent) {
+    if (!dragState || e.pointerId !== dragState.pointerId) return;
+    const moved = dragState.moved || Math.abs(e.clientY - dragState.startY) > DRAG_THRESHOLD_PX;
+    // Block the outer route-modal Escape-closes-planner handler the instant
+    // a real drag starts (see planner.astro / PlannerView's __plannerBlockEscape
+    // convention) — an Escape from here on should cancel the drag, not close
+    // the whole planner. Reset in endDrag/the keydown handler below.
+    if (moved && !dragState.moved) (window as unknown as Record<string, boolean>).__plannerBlockEscape = true;
+    dragState = { ...dragState, currentY: e.clientY, moved };
+  }
+
+  function endDrag(e: PointerEvent, fire: boolean) {
+    if (!dragState || e.pointerId !== dragState.pointerId) return;
+    const state = dragState;
+    dragState = null;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // Already released (e.g. implicit release on pointerup) — nothing to do.
+    }
+    if (!state.moved) return; // never crossed the drag threshold — let the native click fire normally
+    suppressNextClick = true;
+    (window as unknown as Record<string, boolean>).__plannerBlockEscape = false;
+    if (!fire || !onSlotClick) return;
+    const { start, end } = computeDragRange(state);
+    onSlotClick(start, end);
+  }
+
+  function onColumnPointerUp(e: PointerEvent) {
+    endDrag(e, true);
+  }
+  function onColumnPointerCancel(e: PointerEvent) {
+    endDrag(e, false);
+  }
+
+  $effect(() => {
+    function onKeydown(e: KeyboardEvent) {
+      if (e.key !== 'Escape' || !dragState) return;
+      suppressNextClick = true;
+      dragState = null;
+      (window as unknown as Record<string, boolean>).__plannerBlockEscape = false;
+    }
+    window.addEventListener('keydown', onKeydown);
+    return () => window.removeEventListener('keydown', onKeydown);
+  });
 
   const weekHasItems = $derived(weekItems.length > 0);
 </script>
@@ -376,7 +522,7 @@
   </div>
 
   {#if !weekHasItems}
-    <p class="empty-hint">Nothing scheduled — click any time slot to add a study block.</p>
+    <p class="empty-hint">Nothing scheduled — click or drag a time slot to add a study block.</p>
   {/if}
 
   <div class="time-body" style={`height:${gridHeight}px; --gutter: ${gutterPx}px`}>
@@ -394,11 +540,16 @@
           class="day-column"
           class:weekend={isWeekend(day)}
           class:today={isToday(day)}
+          class:dragging={!!dragState && dragState.dayIndex === i && dragState.moved}
           role={onSlotClick ? 'button' : undefined}
           tabindex={onSlotClick ? 0 : undefined}
           aria-label={onSlotClick ? `Add study block on ${day.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}` : undefined}
           onclick={(e) => handleSlotClick(e, day)}
           onkeydown={(e) => handleSlotKeydown(e, day)}
+          onpointerdown={(e) => onColumnPointerDown(e, day, i)}
+          onpointermove={onColumnPointerMove}
+          onpointerup={onColumnPointerUp}
+          onpointercancel={onColumnPointerCancel}
         >
           {#each hourTicks as h}
             <div class="hour-line" style={`top:${(h - bounds.start) * PX_PER_HOUR}px`}></div>
@@ -413,24 +564,36 @@
             {@const height = heightFor(p.startMs, p.endMs)}
             {@const widthPct = 100 / p.totalCols}
             {@const leftPct = p.col * widthPct}
+            {@const twoLine = height >= TWO_LINE_THRESHOLD}
+            {@const statusGlyph = p.item.type === 'class_session' ? classStatusGlyph(p.item) : ''}
             <button
               type="button"
               class="event-block"
               class:selected={selectedId === p.item.id}
               class:dashed={p.item.type === 'study_session'}
               class:past={isToday(day) && isPast(p.endMs)}
+              class:one-line={!twoLine}
               data-event-id={p.item.id}
               style={`--course-h:${hueForItem(p.item)}; top:${top}px; height:${height}px; left:calc(${leftPct}% + 2px); width:calc(${widthPct}% - 4px);`}
               onclick={() => onSelect?.(p.item)}
               onmouseenter={(e) => onBlockEnter(e, p.item)}
               onmouseleave={onBlockLeave}
             >
-              <span class="evt-title">{p.item.title}</span>
-              {#if height >= 32}
+              <span class="evt-title">{#if statusGlyph}<span class="evt-status">{statusGlyph}</span>{/if}{p.item.title}</span>
+              {#if twoLine}
                 <span class="evt-time">{timeRangeLabel(new Date(p.startMs), new Date(p.endMs))}</span>
               {/if}
             </button>
           {/each}
+          {#if dragState && dragState.dayIndex === i && dragState.moved}
+            {@const range = computeDragRange(dragState)}
+            <div
+              class="drag-ghost"
+              style={`top:${topFor(range.start.getTime())}px; height:${heightFor(range.start.getTime(), range.end.getTime())}px;`}
+            >
+              <span class="ghost-label">{timeRangeLabel(range.start, range.end)}</span>
+            </div>
+          {/if}
         </div>
       {/each}
     </div>
@@ -612,6 +775,33 @@
   .day-column.weekend {
     background: color-mix(in oklch, var(--surface-2) 45%, var(--bg));
   }
+  /* Active drag: suppress text selection (no preventDefault on the pointer
+     handlers themselves — that would also swallow the mouse-compat events
+     PlannerView's capture-phase mousedown listener relies on for popover
+     anchoring) and swap the cursor to signal the vertical drag. */
+  .day-column.dragging {
+    cursor: ns-resize;
+    user-select: none;
+  }
+  .drag-ghost {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in oklch, var(--accent) 16%, var(--surface));
+    border: 1.5px dashed var(--accent);
+    border-radius: 5px;
+    pointer-events: none;
+  }
+  .ghost-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent-ink);
+    font-variant-numeric: tabular-nums;
+  }
   .hour-line {
     position: absolute;
     left: 0;
@@ -664,15 +854,26 @@
     outline-offset: 1px;
     box-shadow: var(--shadow-pop);
   }
+  /* Short blocks (30-min/15-min) show the title alone — see TWO_LINE_THRESHOLD
+     in the script — and read better vertically centered in the remaining
+     content box than pinned to the top like the two-line layout below. */
+  .event-block.one-line {
+    justify-content: center;
+  }
   .evt-title {
     font-size: 12px;
     font-weight: 600;
+    line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .evt-status {
+    margin-right: 3px;
+  }
   .evt-time {
     font-size: 10.5px;
+    line-height: 1.2;
     font-variant-numeric: tabular-nums;
     opacity: 0.85;
   }

@@ -71,6 +71,12 @@ export function snap15(d: Date): Date {
   return r;
 }
 
+// Offset a Date by `n` minutes (negative moves earlier). Shared by the
+// planner's drag-create range math and EventPopover's reschedule nudges.
+export function addMinutes(d: Date, n: number): Date {
+  return new Date(d.getTime() + n * 60_000);
+}
+
 // ---------------------------------------------------------------------------
 // "Due in N days" — shared day-math plus the per-surface label wording that
 // grew independently in TaskItem, dashboard/DeadlinesList, and

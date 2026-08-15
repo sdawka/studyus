@@ -7,6 +7,7 @@
 // number) rather than pinned to one locale's exact separators.
 import { describe, expect, it } from 'vitest';
 import {
+  addMinutes,
   daysUntil,
   deadlineUrgency,
   formatDueDate,
@@ -15,6 +16,7 @@ import {
   formatShortDate,
   formatWeekdayAndDate,
   railDueLabel,
+  snap15,
   taskDueMeta,
 } from '../src/lib/plannerDates';
 
@@ -98,6 +100,36 @@ describe('railDueLabel (PlannerRail due label)', () => {
     const label = railDueLabel(5, daysFromNow(5));
     expect(label).not.toMatch(/in \d+d/);
     expect(label).toMatch(/\d/); // contains a day-of-month digit
+  });
+});
+
+describe('snap15 (WeekGrid click + drag-create snapping)', () => {
+  it('floors down to the nearest 15-minute mark', () => {
+    expect(snap15(new Date('2026-08-15T09:07:00')).toISOString()).toBe(new Date('2026-08-15T09:00:00').toISOString());
+    expect(snap15(new Date('2026-08-15T09:14:59')).toISOString()).toBe(new Date('2026-08-15T09:00:00').toISOString());
+    expect(snap15(new Date('2026-08-15T09:15:00')).toISOString()).toBe(new Date('2026-08-15T09:15:00').toISOString());
+    expect(snap15(new Date('2026-08-15T09:44:00')).toISOString()).toBe(new Date('2026-08-15T09:30:00').toISOString());
+  });
+
+  it('clears seconds/ms so two snaps of the same minute always match', () => {
+    const a = snap15(new Date('2026-08-15T09:07:12.500'));
+    const b = snap15(new Date('2026-08-15T09:07:59.999'));
+    expect(a.getTime()).toBe(b.getTime());
+  });
+});
+
+describe('addMinutes (drag-range math + EventPopover reschedule nudges)', () => {
+  it('adds positive and negative minute offsets', () => {
+    const base = new Date('2026-08-15T09:00:00');
+    expect(addMinutes(base, 30).toISOString()).toBe(new Date('2026-08-15T09:30:00').toISOString());
+    expect(addMinutes(base, -30).toISOString()).toBe(new Date('2026-08-15T08:30:00').toISOString());
+  });
+
+  it('does not mutate the input Date', () => {
+    const base = new Date('2026-08-15T09:00:00');
+    const before = base.getTime();
+    addMinutes(base, 45);
+    expect(base.getTime()).toBe(before);
   });
 });
 

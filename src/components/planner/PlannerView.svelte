@@ -78,6 +78,10 @@
   let showPopover = $state(false);
 
   let createSlot = $state<Date | null>(null);
+  // Present only when the slot came from a WeekGrid drag (see handleSlotClick)
+  // — CreateSessionPopover pre-fills its duration from this range when set,
+  // falling back to its own 30-min default for a plain click.
+  let createSlotEnd = $state<Date | null>(null);
   let createAnchor = $state<{ x: number; y: number; width: number; height: number } | null>(null);
 
   let rootEl = $state<HTMLElement | null>(null);
@@ -278,13 +282,15 @@
 
   function closeCreate() {
     createSlot = null;
+    createSlotEnd = null;
     createAnchor = null;
     (window as any).__plannerBlockEscape = false;
   }
 
-  function handleSlotClick(start: Date) {
+  function handleSlotClick(start: Date, end?: Date) {
     closePopover();
     createSlot = start;
+    createSlotEnd = end ?? null;
     createAnchor = { x: lastPointerPos.x, y: lastPointerPos.y, width: 0, height: 0 };
     (window as any).__plannerBlockEscape = true;
   }
@@ -318,6 +324,27 @@
     railItems = patch(railItems);
     if (selectedItem?.id === itemId) {
       selectedItem = { ...selectedItem, details: { ...selectedItem.details, done } };
+    }
+  }
+
+  // Generic counterpart to handleTaskToggled, for the other optimistic
+  // in-popover edits EventPopover now makes (study_session reschedule,
+  // class_session status/note) — same "propagate the settled value back
+  // into the arrays WeekGrid/PlannerRail actually read from" reasoning,
+  // just not narrowed to one field. `patch.details` is merged onto the
+  // existing details object rather than replacing it wholesale, since
+  // EventPopover only ever sends the one or two keys it actually changed.
+  function handlePlannerItemUpdated(itemId: string, patch: Partial<CalendarItem>) {
+    const apply = (list: CalendarItem[]) =>
+      list.map((i) => (i.id === itemId ? { ...i, ...patch, details: patch.details ? { ...i.details, ...patch.details } : i.details } : i));
+    items = apply(items);
+    railItems = apply(railItems);
+    if (selectedItem?.id === itemId) {
+      selectedItem = {
+        ...selectedItem,
+        ...patch,
+        details: patch.details ? { ...selectedItem.details, ...patch.details } : selectedItem.details,
+      };
     }
   }
 
@@ -452,18 +479,32 @@
 </div>
 
 {#if showPopover && selectedItem && popoverAnchor}
-  <EventPopover
-    item={selectedItem}
-    course={selectedItem.course_id ? courseById.get(selectedItem.course_id) : undefined}
-    anchorRect={popoverAnchor}
-    onClose={closePopover}
-    onDeleted={() => (view === 'week' ? loadWeek() : loadMonth())}
-    onTaskToggled={handleTaskToggled}
-  />
+  <!-- Keyed by item id: clicking straight from one event block to another
+       (without closing first) keeps this {#if} true throughout, so Svelte
+       would otherwise reuse the same component instance and its per-item
+       $state (EventPopover's note draft, delete-confirm step, etc.) would
+       carry over from the previous item instead of resetting. -->
+  {#key selectedItem.id}
+    <EventPopover
+      item={selectedItem}
+      course={selectedItem.course_id ? courseById.get(selectedItem.course_id) : undefined}
+      anchorRect={popoverAnchor}
+      onClose={closePopover}
+      onDeleted={() => (view === 'week' ? loadWeek() : loadMonth())}
+      onTaskToggled={handleTaskToggled}
+      onItemUpdated={handlePlannerItemUpdated}
+    />
+  {/key}
 {/if}
 
 {#if createSlot && createAnchor}
-  <CreateSessionPopover start={createSlot} anchorRect={createAnchor} {courses} onClose={closeCreate} onCreated={handleSessionCreated} />
+  <!-- Same reuse hazard as above: dragging a second range without closing
+       the first popover would otherwise carry over CreateSessionPopover's
+       type/title/duration state (and its duration wouldn't re-derive from
+       the new drag range, since that only happens at $state init time). -->
+  {#key `${createSlot.getTime()}-${createSlotEnd?.getTime() ?? 0}`}
+    <CreateSessionPopover start={createSlot} end={createSlotEnd} anchorRect={createAnchor} {courses} onClose={closeCreate} onCreated={handleSessionCreated} />
+  {/key}
 {/if}
 
 <style>

@@ -1,6 +1,10 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { hueFor } from '../../lib/courseHue';
   import WeekGrid from '../planner/WeekGrid.svelte';
+  import EventPopover from '../planner/EventPopover.svelte';
+  import CreateSessionPopover from '../planner/CreateSessionPopover.svelte';
+  import { apiFetch } from '../../lib/apiClient';
   import type { CalendarItem } from '../../lib/types/calendar';
 
   interface CourseInfo {
@@ -22,6 +26,21 @@
   let items = $state<CalendarItem[]>(initialItems);
   let loading = $state(false);
   let loadedExpandedWeek = false;
+
+  // In-place event detail + create popovers for the expanded grid — mirrors
+  // PlannerView's own state, scoped to this widget instead of a route-level
+  // overlay. Selecting an item here no longer navigates away (see the old
+  // goToPlanner, replaced by plannerLinkFor below): the popover opens right
+  // over the grid, with an "Open in planner" link inside it for anyone who
+  // wants the full surface.
+  let rootEl = $state<HTMLElement | null>(null);
+  let selectedItem = $state<CalendarItem | null>(null);
+  let popoverAnchor = $state<{ x: number; y: number; width: number; height: number } | null>(null);
+  let showPopover = $state(false);
+  let createSlot = $state<Date | null>(null);
+  let createSlotEnd = $state<Date | null>(null);
+  let createAnchor = $state<{ x: number; y: number; width: number; height: number } | null>(null);
+  let lastPointerPos = { x: 0, y: 0 };
 
   function toggle() {
     expanded = !expanded;
@@ -95,33 +114,91 @@
   const weekStartDate = mondayOf(today);
   const weekStart = toIsoDate(weekStartDate);
 
-  async function loadExpandedWeek() {
+  // `force` re-fetches even after the initial load already ran — used after
+  // a create/delete in the popovers below, where the SSR/first-expand items
+  // array is stale by definition (a brand-new item can't be in it yet).
+  async function loadExpandedWeek(force = false) {
+    if (loadedExpandedWeek && !force) return;
     loading = true;
-    try {
-      const from = new Date(weekStartDate);
-      const to = new Date(weekStartDate);
-      to.setDate(to.getDate() + 7);
-      const params = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
-      const res = await fetch(`/api/v1/calendar?${params.toString()}`);
-      const json = await res.json();
-      if (res.ok) {
-        items = json.data as CalendarItem[];
-        loadedExpandedWeek = true;
-      }
-    } catch {
-      // Keep whatever items we already have (the SSR 7-day window) — the
-      // expanded grid just won't cover the full Mon-Sun range.
-    } finally {
-      loading = false;
+    const from = new Date(weekStartDate);
+    const to = new Date(weekStartDate);
+    to.setDate(to.getDate() + 7);
+    const params = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
+    const result = await apiFetch<CalendarItem[]>(`/api/v1/calendar?${params.toString()}`);
+    if (result.ok) {
+      items = result.data;
+      loadedExpandedWeek = true;
+    }
+    // On failure, keep whatever items we already have (the SSR 7-day window)
+    // — the expanded grid just won't cover the full Mon-Sun range.
+    loading = false;
+  }
+
+  function plannerLinkFor(item: CalendarItem): string {
+    return `/planner?event=${item.id}&date=${item.date.slice(0, 10)}`;
+  }
+
+  function closePopover() {
+    showPopover = false;
+    selectedItem = null;
+  }
+
+  async function selectItem(item: CalendarItem) {
+    selectedItem = item;
+    await tick();
+    const target = rootEl?.querySelector<HTMLElement>(`[data-event-id="${item.id}"]`);
+    if (target) {
+      const r = target.getBoundingClientRect();
+      popoverAnchor = { x: r.left, y: r.top, width: r.width, height: r.height };
+    } else {
+      popoverAnchor = { x: window.innerWidth / 2 - 20, y: window.innerHeight / 2 - 20, width: 40, height: 40 };
+    }
+    showPopover = true;
+  }
+
+  function closeCreate() {
+    createSlot = null;
+    createSlotEnd = null;
+    createAnchor = null;
+  }
+
+  function handleSlotClick(start: Date, end?: Date) {
+    closePopover();
+    createSlot = start;
+    createSlotEnd = end ?? null;
+    createAnchor = { x: lastPointerPos.x, y: lastPointerPos.y, width: 0, height: 0 };
+  }
+
+  function handleCreated() {
+    void loadExpandedWeek(true);
+  }
+
+  function handleTaskToggled(itemId: string, done: boolean) {
+    items = items.map((i) => (i.id === itemId ? { ...i, details: { ...i.details, done } } : i));
+    if (selectedItem?.id === itemId) selectedItem = { ...selectedItem, details: { ...selectedItem.details, done } };
+  }
+
+  function handleItemUpdated(itemId: string, patch: Partial<CalendarItem>) {
+    items = items.map((i) => (i.id === itemId ? { ...i, ...patch, details: patch.details ? { ...i.details, ...patch.details } : i.details } : i));
+    if (selectedItem?.id === itemId) {
+      selectedItem = {
+        ...selectedItem,
+        ...patch,
+        details: patch.details ? { ...selectedItem.details, ...patch.details } : selectedItem.details,
+      };
     }
   }
 
-  function goToPlanner(item: CalendarItem) {
-    location.href = `/planner?event=${item.id}&date=${item.date.slice(0, 10)}`;
-  }
+  $effect(() => {
+    function onPointerDown(e: MouseEvent) {
+      lastPointerPos = { x: e.clientX, y: e.clientY };
+    }
+    rootEl?.addEventListener('mousedown', onPointerDown, true);
+    return () => rootEl?.removeEventListener('mousedown', onPointerDown, true);
+  });
 </script>
 
-<section class="card">
+<section class="card" bind:this={rootEl}>
   <div class="card-head">
     <h2>Next 7 days</h2>
     <div class="head-actions">
@@ -171,10 +248,45 @@
   <div class="reveal" class:open={expanded} aria-hidden={!expanded}>
     <div class="reveal-inner">
       {#if loading}<p class="loading">Loading…</p>{/if}
-      <WeekGrid {items} {weekStart} {courses} compact={true} onSelect={goToPlanner} />
+      <WeekGrid
+        {items}
+        {weekStart}
+        {courses}
+        compact={true}
+        selectedId={selectedItem?.id ?? null}
+        onSelect={selectItem}
+        onSlotClick={handleSlotClick}
+      />
     </div>
   </div>
 </section>
+
+{#if showPopover && selectedItem && popoverAnchor}
+  <!-- Keyed by item id — see PlannerView's identical comment: reuse of this
+       component instance across a direct item-to-item click would otherwise
+       carry over its per-item $state (note draft, delete-confirm step). -->
+  {#key selectedItem.id}
+    <EventPopover
+      item={selectedItem}
+      course={courseFor(selectedItem)}
+      anchorRect={popoverAnchor}
+      onClose={closePopover}
+      onDeleted={() => void loadExpandedWeek(true)}
+      onTaskToggled={handleTaskToggled}
+      onItemUpdated={handleItemUpdated}
+      plannerLink={plannerLinkFor(selectedItem)}
+    />
+  {/key}
+{/if}
+
+{#if createSlot && createAnchor}
+  <!-- See PlannerView's identical comment: keeps type/title/duration state
+       (and the drag-derived initial duration) from carrying over between
+       two different slot selections made without closing in between. -->
+  {#key `${createSlot.getTime()}-${createSlotEnd?.getTime() ?? 0}`}
+    <CreateSessionPopover start={createSlot} end={createSlotEnd} anchorRect={createAnchor} {courses} onClose={closeCreate} onCreated={handleCreated} />
+  {/key}
+{/if}
 
 <style>
   .card-head {

@@ -2,7 +2,7 @@
   import type { CalendarItem } from '../../lib/types/calendar';
   import { apiFetch } from '../../lib/apiClient';
   import { hueFor } from '../../lib/courseHue';
-  import { timeRangeLabel } from '../../lib/plannerDates';
+  import { addMinutes, timeRangeLabel } from '../../lib/plannerDates';
   import { bindPopoverDismiss } from '../shell/popover.svelte.ts';
   import { tasksById, toggleTask } from '../../lib/stores/tasks';
   import { isMobile } from '../../lib/stores/viewport';
@@ -23,6 +23,8 @@
     onClose,
     onDeleted,
     onTaskToggled,
+    onItemUpdated,
+    plannerLink,
   }: {
     item: CalendarItem;
     course: CourseOption | undefined;
@@ -34,11 +36,21 @@
     // (WeekGrid/PlannerRail read from it) can be kept in sync — this popover
     // may be showing an item copied out of that array, not the live object.
     onTaskToggled?: (itemId: string, done: boolean) => void;
+    // Generic counterpart of onTaskToggled for the other in-popover edits
+    // below (study_session reschedule, class_session status/note) — same
+    // "propagate the settled value back to the parent's array" contract,
+    // just carrying whatever fields actually changed instead of one boolean.
+    onItemUpdated?: (itemId: string, patch: Partial<CalendarItem>) => void;
+    // dashboard/WeekView passes a `/planner?event=...` deep link so its
+    // in-place popover can still hand off to the full planner; PlannerView
+    // itself is already the planner, so it never passes this.
+    plannerLink?: string | null;
   } = $props();
 
   let panelEl = $state<HTMLElement | null>(null);
   let deleting = $state(false);
   let deleteError = $state<string | null>(null);
+  let deleteConfirming = $state(false);
   let taskToggling = $state(false);
 
   const hue = $derived(course ? hueFor({ slug: course.slug, color: course.color === null ? null : String(course.color) }) : 220);
@@ -53,12 +65,18 @@
         return 'Study session';
       case 'event_logged':
         return 'Logged event';
+      case 'class_session':
+        return 'Class session';
     }
   });
 
   // Manual-source logged events can be deleted from here; seeded/session/tutor
-  // events and deadlines/sessions cannot (sessions have no DELETE endpoint yet).
-  const canDelete = $derived(item.type === 'event_logged' && item.details?.source === 'manual');
+  // events and deadlines cannot. study_session has its own DELETE endpoint
+  // (v1.6) with an inline confirm step below, rather than reusing this
+  // instant-delete path — class_session has no DELETE endpoint at all
+  // (attendance is corrected via PATCH, not by removing the row).
+  const canDeleteEvent = $derived(item.type === 'event_logged' && item.details?.source === 'manual');
+  const canDeleteSession = $derived(item.type === 'study_session');
 
   const detailLines = $derived.by(() => {
     const d = item.details ?? {};
@@ -98,19 +116,41 @@
   });
 
   async function handleDelete() {
-    if (!canDelete) return;
-    deleting = true;
-    deleteError = null;
-    try {
-      const result = await apiFetch(`/api/v1/events/${item.id}`, { method: 'DELETE' }, 'Could not delete this event.');
-      if (!result.ok) {
-        deleteError = result.error;
+    if (canDeleteEvent) {
+      deleting = true;
+      deleteError = null;
+      try {
+        const result = await apiFetch(`/api/v1/events/${item.id}`, { method: 'DELETE' }, 'Could not delete this event.');
+        if (!result.ok) {
+          deleteError = result.error;
+          return;
+        }
+        onDeleted?.();
+        onClose();
+      } finally {
+        deleting = false;
+      }
+      return;
+    }
+    if (canDeleteSession) {
+      if (!deleteConfirming) {
+        deleteConfirming = true;
         return;
       }
-      onDeleted?.();
-      onClose();
-    } finally {
-      deleting = false;
+      deleting = true;
+      deleteError = null;
+      try {
+        const result = await apiFetch(`/api/v1/sessions/${item.id}`, { method: 'DELETE' }, 'Could not delete this session.');
+        if (!result.ok) {
+          deleteError = result.error;
+          deleteConfirming = false;
+          return;
+        }
+        onDeleted?.();
+        onClose();
+      } finally {
+        deleting = false;
+      }
     }
   }
 
@@ -157,6 +197,111 @@
       taskToggling = false;
     }
   }
+
+  // --- study_session quick actions (v1.6) -----------------------------------
+  let rescheduling = $state(false);
+  let rescheduleError = $state<string | null>(null);
+
+  // ±30 min nudge rather than a date/time input — PATCH /sessions/:id 409s
+  // once the session is completed, so the buttons are hidden for those in
+  // the template rather than disabled-but-clickable.
+  async function nudgeSession(deltaMinutes: number) {
+    if (item.type !== 'study_session') return;
+    const prevDate = item.date;
+    const prevEnd = item.end_date;
+    const newStart = addMinutes(new Date(item.date), deltaMinutes);
+    const newEnd = item.end_date ? addMinutes(new Date(item.end_date), deltaMinutes).toISOString() : null;
+    rescheduling = true;
+    rescheduleError = null;
+    item.date = newStart.toISOString();
+    item.end_date = newEnd;
+    onItemUpdated?.(item.id, { date: item.date, end_date: item.end_date });
+    try {
+      const result = await apiFetch(
+        `/api/v1/sessions/${item.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ scheduled_at: newStart.toISOString() }),
+        },
+        'Could not reschedule this session.',
+      );
+      if (!result.ok) {
+        item.date = prevDate;
+        item.end_date = prevEnd;
+        onItemUpdated?.(item.id, { date: prevDate, end_date: prevEnd });
+        rescheduleError = result.error;
+      }
+    } finally {
+      rescheduling = false;
+    }
+  }
+
+  // --- class_session quick actions (v1.6) -----------------------------------
+  let statusUpdating = $state(false);
+  let statusError = $state<string | null>(null);
+
+  async function setClassStatus(next: 'attended' | 'missed' | null) {
+    if (item.type !== 'class_session') return;
+    const prevStatus = (item.details?.status as 'attended' | 'missed' | null | undefined) ?? null;
+    if (prevStatus === next) return;
+    statusUpdating = true;
+    statusError = null;
+    item.details = { ...item.details, status: next };
+    onItemUpdated?.(item.id, { details: { status: next } });
+    try {
+      const result = await apiFetch(
+        `/api/v1/class-sessions/${item.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ status: next }),
+        },
+        'Could not update attendance.',
+      );
+      if (!result.ok) {
+        item.details = { ...item.details, status: prevStatus };
+        onItemUpdated?.(item.id, { details: { status: prevStatus } });
+        statusError = result.error;
+      }
+    } finally {
+      statusUpdating = false;
+    }
+  }
+
+  let noteDraft = $state(typeof item.details?.note === 'string' ? (item.details.note as string) : '');
+  let savingNote = $state(false);
+  let noteError = $state<string | null>(null);
+  const noteDirty = $derived(noteDraft !== (typeof item.details?.note === 'string' ? item.details.note : ''));
+
+  async function saveNote() {
+    if (item.type !== 'class_session') return;
+    const prevNote: string | null = typeof item.details?.note === 'string' ? (item.details.note as string) : null;
+    const next = noteDraft.trim() ? noteDraft : null;
+    savingNote = true;
+    noteError = null;
+    item.details = { ...item.details, note: next };
+    onItemUpdated?.(item.id, { details: { note: next } });
+    try {
+      const result = await apiFetch(
+        `/api/v1/class-sessions/${item.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ note: next }),
+        },
+        'Could not save note.',
+      );
+      if (!result.ok) {
+        item.details = { ...item.details, note: prevNote };
+        onItemUpdated?.(item.id, { details: { note: prevNote } });
+        noteError = result.error;
+        noteDraft = prevNote ?? '';
+      }
+    } finally {
+      savingNote = false;
+    }
+  }
 </script>
 
 {#snippet body()}
@@ -185,15 +330,64 @@
       {/each}
     </ul>
   {/if}
+
+  {#if item.type === 'study_session' && !item.details?.completed}
+    <div class="quick-actions">
+      <span class="qa-label">Reschedule</span>
+      <button type="button" class="btn btn-secondary qa-btn" onclick={() => nudgeSession(-30)} disabled={rescheduling}>−30 min</button>
+      <button type="button" class="btn btn-secondary qa-btn" onclick={() => nudgeSession(30)} disabled={rescheduling}>+30 min</button>
+    </div>
+    {#if rescheduleError}<p class="pop-error">{rescheduleError}</p>{/if}
+  {/if}
+
+  {#if item.type === 'class_session'}
+    {@const status = (item.details?.status as 'attended' | 'missed' | null | undefined) ?? null}
+    <div class="quick-actions">
+      <span class="qa-label">Attendance</span>
+      <button type="button" class="btn btn-secondary qa-btn" class:qa-active={status === 'attended'} onclick={() => setClassStatus('attended')} disabled={statusUpdating}>
+        ✓ Attended
+      </button>
+      <button type="button" class="btn btn-secondary qa-btn" class:qa-active={status === 'missed'} onclick={() => setClassStatus('missed')} disabled={statusUpdating}>
+        ✗ Missed
+      </button>
+      {#if status}
+        <button type="button" class="btn btn-secondary qa-btn" onclick={() => setClassStatus(null)} disabled={statusUpdating}>Clear</button>
+      {/if}
+    </div>
+    {#if statusError}<p class="pop-error">{statusError}</p>{/if}
+    <label class="field">
+      <span class="field-label">Note</span>
+      <textarea bind:value={noteDraft} rows="2" maxlength="2000" placeholder="Add a note…"></textarea>
+    </label>
+    <button type="button" class="btn btn-secondary" onclick={saveNote} disabled={savingNote || !noteDirty}>
+      {savingNote ? 'Saving…' : 'Save note'}
+    </button>
+    {#if noteError}<p class="pop-error">{noteError}</p>{/if}
+  {/if}
+
   {#if deleteError}<p class="pop-error">{deleteError}</p>{/if}
   <div class="pop-actions">
     {#if item.href}
       <a class="btn btn-secondary" href={item.href}>Open →</a>
     {/if}
-    {#if canDelete}
+    {#if plannerLink}
+      <a class="btn btn-secondary" href={plannerLink}>Open in planner →</a>
+    {/if}
+    {#if canDeleteEvent}
       <button type="button" class="btn pop-delete" onclick={handleDelete} disabled={deleting}>
         {deleting ? 'Deleting…' : 'Delete'}
       </button>
+    {/if}
+    {#if canDeleteSession}
+      {#if deleteConfirming}
+        <span class="confirm-row">
+          <span class="confirm-label">Delete this session?</span>
+          <button type="button" class="btn pop-delete" onclick={handleDelete} disabled={deleting}>{deleting ? 'Deleting…' : 'Confirm'}</button>
+          <button type="button" class="btn btn-secondary" onclick={() => (deleteConfirming = false)} disabled={deleting}>Cancel</button>
+        </span>
+      {:else}
+        <button type="button" class="btn pop-delete" onclick={handleDelete}>Delete</button>
+      {/if}
     {/if}
   </div>
 {/snippet}
@@ -281,8 +475,52 @@
     color: var(--danger);
     font-size: 12px;
   }
+  .quick-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .qa-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-right: 2px;
+  }
+  .qa-btn {
+    padding: 4px 9px;
+    font-size: 11.5px;
+  }
+  .qa-btn.qa-active {
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    border-color: var(--accent);
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .field-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .field textarea {
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+  }
   .pop-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 2px;
   }
@@ -290,6 +528,16 @@
     background: var(--danger-soft);
     color: var(--danger-ink);
     border: 1px solid transparent;
+  }
+  .confirm-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .confirm-label {
+    font-size: 12px;
+    color: var(--text);
   }
   /* Sheet.svelte's .sheet-body already provides the panel chrome (padding,
      scroll); this just reproduces the desktop .popover recipe's internal
