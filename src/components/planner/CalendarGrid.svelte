@@ -49,6 +49,18 @@
     if ((e.target as HTMLElement).closest('.chip-evt')) return;
     onDayTap(date);
   }
+
+  // Keyboard equivalent of handleCellClick. Only reachable when onDayTap is
+  // wired (day-cells are otherwise not a tab stop — see the day-cell markup
+  // below); the chip-evt buttons inside a cell handle their own Enter/Space
+  // natively, so this only needs to guard against activating on top of one.
+  function handleCellKeydown(e: KeyboardEvent, date: Date | null) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (!date || !onDayTap) return;
+    if ((e.target as HTMLElement).closest('.chip-evt')) return;
+    e.preventDefault();
+    onDayTap(date);
+  }
 </script>
 
 <div class="month-grid">
@@ -61,7 +73,11 @@
       class:empty={!cell.date}
       class:today={isToday(cell.date)}
       class:tappable={cell.date && onDayTap}
+      role={cell.date && onDayTap ? 'button' : undefined}
+      tabindex={cell.date && onDayTap ? 0 : undefined}
+      aria-label={cell.date && onDayTap ? `Jump to agenda for ${cell.date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}` : undefined}
       onclick={(e) => handleCellClick(e, cell.date)}
+      onkeydown={(e) => handleCellKeydown(e, cell.date)}
     >
       {#if cell.date}
         <div class="day-number num">{cell.date.getDate()}</div>

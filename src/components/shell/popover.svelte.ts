@@ -17,7 +17,16 @@ export function bindPopoverDismiss(opts: {
     if (!opts.isOpen()) return;
 
     function onKeydown(e: KeyboardEvent) {
-      if (e.key === 'Escape') opts.close();
+      if (e.key !== 'Escape') return;
+      // Gate on mobile, same reasoning as the pointerdown gate below: at
+      // ≤767px every caller of this module presents as a Sheet (either
+      // conditionally, like NotificationsBell/TodoDropdown/AvatarMenu, or
+      // unconditionally alongside an always-"open" bindPopoverDismiss call,
+      // like EventPopover/CreateSessionPopover), and Sheet.svelte owns its
+      // own Escape dismissal there. Without this gate, one Escape press fired
+      // onClose twice — once from Sheet's own handler, once from here.
+      if (isMobile.get()) return;
+      opts.close();
     }
     function onPointerdown(e: PointerEvent) {
       // Gate on mobile: at ≤767px the panel renders as a Sheet portaled to

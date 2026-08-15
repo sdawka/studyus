@@ -12,6 +12,21 @@
   let uploading = $state(false);
   let dragOver = $state(false);
   let error = $state<string | null>(null);
+  let fileInputEl = $state<HTMLInputElement | null>(null);
+
+  function openFilePicker(e: MouseEvent) {
+    // The "browse" label already opens the picker natively on click; without
+    // this guard its click would bubble here and call .click() on the input
+    // a second time.
+    if ((e.target as HTMLElement).closest('label, input')) return;
+    fileInputEl?.click();
+  }
+
+  function handleDropzoneKeydown(e: KeyboardEvent) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    fileInputEl?.click();
+  }
 
   function formatSize(bytes: number | null): string {
     if (!bytes) return '';
@@ -87,6 +102,8 @@
     class:drag={dragOver}
     role="button"
     tabindex="0"
+    onclick={openFilePicker}
+    onkeydown={handleDropzoneKeydown}
     ondragover={(e) => {
       e.preventDefault();
       dragOver = true;
@@ -101,7 +118,7 @@
         Drag a file here, or
         <label class="file-label">
           browse
-          <input type="file" onchange={onFileInput} hidden />
+          <input type="file" bind:this={fileInputEl} onchange={onFileInput} hidden />
         </label>
       </p>
     {/if}

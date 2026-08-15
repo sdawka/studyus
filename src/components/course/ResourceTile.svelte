@@ -89,8 +89,14 @@
     <span class="tile-pin" title="Pinned">📌</span>
   {/if}
   {#if deletable}
-    <button class="tile-delete" onclick={deleteResource} disabled={deleting} title="Delete this resource">
-      ×
+    <button
+      class="tile-delete"
+      onclick={deleteResource}
+      disabled={deleting}
+      title="Delete this resource"
+      aria-label={`Delete ${resource.label}`}
+    >
+      <span aria-hidden="true">×</span>
     </button>
   {/if}
 </article>

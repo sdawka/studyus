@@ -52,7 +52,7 @@
         {@render menuRows()}
       </Sheet>
     {:else}
-      <div class="popover panel" role="menu" style="--pop-w: var(--pop-w-sm)">
+      <div class="popover panel" role="group" aria-label="Account menu" style="--pop-w: var(--pop-w-sm)">
         {@render menuRows()}
       </div>
     {/if}

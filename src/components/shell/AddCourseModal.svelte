@@ -4,6 +4,8 @@
   // `window` CustomEvent 'open-add-course' (Sidebar.astro::#add-course-btn)
   // and this listens for it, same decoupling as LogEventModal.
   import { onMount } from 'svelte';
+  import { scrollLock } from '../../lib/actions/scrollLock';
+  import { focusTrap } from '../../lib/actions/focusTrap';
 
   // Same spaced hue list the server cycles through for auto-assignment
   // (src/lib/services/courses.ts::COLOR_HUES), minus the trailing 45 —
@@ -107,8 +109,8 @@
 </script>
 
 {#if open}
-  <div class="overlay" role="presentation" onclick={closeModal}>
-    <div class="modal" role="dialog" aria-modal="true" onclick={(e) => e.stopPropagation()}>
+  <div class="overlay" role="presentation" onclick={closeModal} use:scrollLock>
+    <div class="modal" role="dialog" aria-modal="true" onclick={(e) => e.stopPropagation()} use:focusTrap>
       <div class="modal-header">
         <h2>Add course</h2>
         <button type="button" class="icon-btn" onclick={closeModal} aria-label="Close">×</button>

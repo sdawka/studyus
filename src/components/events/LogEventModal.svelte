@@ -6,6 +6,8 @@
   // instead of mounting its own always-present button.
   import { courseContext } from '../../lib/stores/courseContext';
   import { portalToBody } from '../../lib/actions/portal';
+  import { scrollLock } from '../../lib/actions/scrollLock';
+  import { focusTrap } from '../../lib/actions/focusTrap';
 
   interface Props {
     open?: boolean;
@@ -225,8 +227,8 @@
 <!-- The sticky header's backdrop-filter creates a containing block that traps
      position:fixed descendants, so the overlay must escape to <body>. -->
 {#if open}
-  <div class="overlay" role="presentation" onclick={closeModal} use:portalToBody>
-    <div class="modal" role="dialog" aria-modal="true" onclick={(e) => e.stopPropagation()}>
+  <div class="overlay" role="presentation" onclick={closeModal} use:portalToBody use:scrollLock>
+    <div class="modal" role="dialog" aria-modal="true" onclick={(e) => e.stopPropagation()} use:focusTrap>
       <div class="modal-header">
         <h2>Record event</h2>
         <button type="button" class="icon-btn" onclick={closeModal} aria-label="Close">×</button>

@@ -238,7 +238,13 @@
               {#if link.kc_id}
                 <span class="link-badge kc">{link.kc_id}</span>
               {/if}
-              <button class="btn-remove" onclick={() => removeLink(idx)}>×</button>
+              <button
+                class="btn-remove"
+                onclick={() => removeLink(idx)}
+                aria-label={`Remove link${link.course_id ? ` to course ${link.course_id}` : link.kc_id ? ` to KC ${link.kc_id}` : ''}`}
+              >
+                <span aria-hidden="true">×</span>
+              </button>
             </div>
           {/each}
         </div>

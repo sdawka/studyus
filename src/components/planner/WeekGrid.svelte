@@ -323,6 +323,21 @@
     onSlotClick(start);
   }
 
+  // Keyboard equivalent of handleSlotClick: a day-column has no clientY to
+  // derive a precise slot from, so Enter/Space creates a study block at a
+  // sensible default (9 AM) on that day instead. Only reachable when
+  // onSlotClick is actually wired (day-columns are otherwise not a tab stop
+  // — see the day-column markup below).
+  function handleSlotKeydown(e: KeyboardEvent, day: Date) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if ((e.target as HTMLElement).closest('.event-block')) return;
+    if (!onSlotClick) return;
+    e.preventDefault();
+    const start = new Date(day);
+    start.setHours(9, 0, 0, 0);
+    onSlotClick(start);
+  }
+
   const weekHasItems = $derived(weekItems.length > 0);
 </script>
 
@@ -379,7 +394,11 @@
           class="day-column"
           class:weekend={isWeekend(day)}
           class:today={isToday(day)}
+          role={onSlotClick ? 'button' : undefined}
+          tabindex={onSlotClick ? 0 : undefined}
+          aria-label={onSlotClick ? `Add study block on ${day.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}` : undefined}
           onclick={(e) => handleSlotClick(e, day)}
+          onkeydown={(e) => handleSlotKeydown(e, day)}
         >
           {#each hourTicks as h}
             <div class="hour-line" style={`top:${(h - bounds.start) * PX_PER_HOUR}px`}></div>

@@ -122,8 +122,14 @@
         <span class="pinned-badge" title="Pinned">📌</span>
       {/if}
       {#if resource.kind === 'user_shared'}
-        <button class="delete-btn" onclick={deleteResource} disabled={deleting} title="Delete this resource">
-          ×
+        <button
+          class="delete-btn"
+          onclick={deleteResource}
+          disabled={deleting}
+          title="Delete this resource"
+          aria-label={`Delete ${resource.label}`}
+        >
+          <span aria-hidden="true">×</span>
         </button>
       {/if}
     </div>

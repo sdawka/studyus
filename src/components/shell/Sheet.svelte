@@ -10,6 +10,8 @@
   // which would otherwise trap `position: fixed`.
   import type { Snippet } from 'svelte';
   import { portalToBody } from '../../lib/actions/portal';
+  import { scrollLock } from '../../lib/actions/scrollLock';
+  import { focusTrap } from '../../lib/actions/focusTrap';
 
   interface Props {
     open: boolean;
@@ -20,19 +22,12 @@
 
   let { open, onClose, title, children }: Props = $props();
 
-  // Body scroll lock: pin the page at its current scroll offset (position:
-  // fixed + negative top, the standard iOS-safe lock) while the sheet is
-  // open, and restore both the inline styles and the scroll position on
-  // close/unmount so the page doesn't jump.
+  // Escape-to-close. Body scroll lock lives in the shared scrollLock action
+  // (use:scrollLock below); focus trap/restore in the shared focusTrap
+  // action (use:focusTrap below) — both mount for exactly the sheet's open
+  // lifetime, same as this effect.
   $effect(() => {
     if (!open) return;
-
-    const scrollY = window.scrollY;
-    const body = document.body;
-    const prev = { position: body.style.position, top: body.style.top, width: body.style.width };
-    body.style.position = 'fixed';
-    body.style.top = `-${scrollY}px`;
-    body.style.width = '100%';
 
     // Joins the same "block escape" convention as the planner/tasks route
     // layers (__plannerBlockEscape / __tasksBlockEscape): while a sheet is
@@ -49,10 +44,6 @@
     window.addEventListener('keydown', onKeydown);
 
     return () => {
-      body.style.position = prev.position;
-      body.style.top = prev.top;
-      body.style.width = prev.width;
-      window.scrollTo(0, scrollY);
       (window as unknown as Record<string, boolean>).__plannerBlockEscape = false;
       (window as unknown as Record<string, boolean>).__tasksBlockEscape = false;
       window.removeEventListener('keydown', onKeydown);
@@ -61,9 +52,9 @@
 </script>
 
 {#if open}
-  <div class="sheet-layer" use:portalToBody>
+  <div class="sheet-layer" use:portalToBody use:scrollLock>
     <div class="sheet-scrim" role="presentation" onclick={onClose}></div>
-    <div class="sheet-panel" role="dialog" aria-modal="true" aria-label={title}>
+    <div class="sheet-panel" role="dialog" aria-modal="true" aria-label={title} use:focusTrap>
       <!-- Visual affordance only — no drag-to-dismiss this pass (plan Part 1,
            "Sheet primitive"). Dismissal is scrim tap, close button, or Escape. -->
       <div class="grab-handle" aria-hidden="true"></div>

@@ -137,7 +137,7 @@
         {@render panelContent()}
       </Sheet>
     {:else}
-      <div class="popover panel" role="menu" style="--pop-w: var(--pop-w-md)">
+      <div class="popover panel" role="group" aria-label="To-do" style="--pop-w: var(--pop-w-md)">
         {@render panelContent()}
       </div>
     {/if}

@@ -34,7 +34,7 @@ const initialTasks = toApi(userTasks);
 <AppShell title="Tasks">
   <div class="tasks-layer" id="tasks-layer" slot="overlay">
     <div class="scrim" id="tasks-scrim"></div>
-    <div class="panel" role="dialog" aria-modal="true" aria-label="Tasks">
+    <div class="panel" id="tasks-panel" role="dialog" aria-modal="true" aria-label="Tasks">
       <div class="panel-head">
         <h1>Tasks</h1>
         <button type="button" class="close-btn" id="tasks-close" aria-label="Close tasks">
@@ -47,6 +47,10 @@ const initialTasks = toApi(userTasks);
 </AppShell>
 
 <script>
+  import { focusTrap } from '../lib/actions/focusTrap';
+  import { scrollLock } from '../lib/actions/scrollLock';
+  import type { ActionHandle } from '../lib/actions/focusTrap';
+
   declare global {
     interface Window {
       __tasksBlockEscape?: boolean;
@@ -54,6 +58,7 @@ const initialTasks = toApi(userTasks);
   }
 
   function closeTasks() {
+    deactivateDesktopModal();
     if (history.length > 1) history.back();
     else window.location.assign('/dashboard');
   }
@@ -69,6 +74,41 @@ const initialTasks = toApi(userTasks);
     // open, so a first Escape closes that instead of the whole modal.
     if (!window.__tasksBlockEscape) closeTasks();
   });
+
+  // Desktop-only modal semantics (T4 a11y pass): on mobile this route layer
+  // is a full page between header and tab bar — chrome stays interactive
+  // and the page scrolls internally, so none of focus-trap, scroll-lock, or
+  // background `inert` apply there (same matchMedia gate the Escape guard
+  // above already uses). On desktop it behaves like a true modal: background
+  // chrome (the .shell wrapper — Sidebar + Header + main; BottomNav is
+  // already display:none above the mobile breakpoint) goes inert, focus is
+  // trapped in the panel, and body scroll is locked.
+  const mq = matchMedia('(max-width: 767px)');
+  const shellEl = document.querySelector('.shell');
+  const panelEl = document.getElementById('tasks-panel');
+  let trapHandle: ActionHandle | null = null;
+  let lockHandle: ActionHandle | null = null;
+
+  function activateDesktopModal() {
+    if (trapHandle || !panelEl) return;
+    trapHandle = focusTrap(panelEl, { enabled: true });
+    lockHandle = scrollLock(document.body, { enabled: true });
+    shellEl?.setAttribute('inert', '');
+  }
+  function deactivateDesktopModal() {
+    trapHandle?.destroy();
+    trapHandle = null;
+    lockHandle?.destroy();
+    lockHandle = null;
+    shellEl?.removeAttribute('inert');
+  }
+
+  if (!mq.matches) activateDesktopModal();
+  mq.addEventListener('change', (e) => {
+    if (e.matches) deactivateDesktopModal();
+    else activateDesktopModal();
+  });
+  window.addEventListener('pagehide', deactivateDesktopModal);
 </script>
 
 <style>

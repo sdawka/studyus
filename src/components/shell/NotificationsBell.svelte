@@ -58,10 +58,13 @@
 
   async function fetchUnreadCount() {
     try {
-      const res = await fetch('/api/v1/notifications?unread=1&limit=1');
+      // Dedicated count endpoint (contract: `{ data: { unread } }`) — the
+      // full list endpoint runs the whole notification sweep on every call,
+      // which this 60s poll was doing needlessly just to read a badge count.
+      const res = await fetch('/api/v1/notifications/count');
       if (res.ok) {
         const json = await res.json();
-        unreadCount = json.data.unread_count;
+        unreadCount = json.data.unread;
       }
     } catch {
       // best-effort; leave stale count on network failure
@@ -167,7 +170,7 @@
         {@render panelContent()}
       </Sheet>
     {:else}
-      <div class="popover panel" role="menu" style="--pop-w: var(--pop-w-lg)">
+      <div class="popover panel" role="group" aria-label="Notifications" style="--pop-w: var(--pop-w-lg)">
         {@render panelContent()}
       </div>
     {/if}
