@@ -1,5 +1,6 @@
 <script lang="ts">
   import { bindPopoverDismiss } from '../shell/popover.svelte.ts';
+  import { apiFetch } from '../../lib/apiClient';
   import { isMobile } from '../../lib/stores/viewport';
   import Sheet from '../shell/Sheet.svelte';
 
@@ -55,25 +56,26 @@
     submitting = true;
     error = null;
     try {
-      const res = await fetch('/api/v1/sessions', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          course_id: courseId || undefined,
-          intended_event_type: 'practice_done',
-          planned_minutes: duration,
-          scheduled_at: start.toISOString(),
-        }),
-      });
-      if (!res.ok) {
-        const json = await res.json().catch(() => null);
-        error = json?.error?.message ?? 'Could not create session.';
+      const result = await apiFetch(
+        '/api/v1/sessions',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            course_id: courseId || undefined,
+            intended_event_type: 'practice_done',
+            planned_minutes: duration,
+            scheduled_at: start.toISOString(),
+          }),
+        },
+        'Could not create session.',
+      );
+      if (!result.ok) {
+        error = result.error;
         return;
       }
       onCreated();
       onClose();
-    } catch {
-      error = 'Network error, please try again.';
     } finally {
       submitting = false;
     }

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { apiFetch } from '../../lib/apiClient';
+
   interface Note {
     id: string;
     title: string;
@@ -20,23 +22,18 @@
     loading = true;
     error = null;
     try {
-      const res = await fetch('/api/v1/notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: 'Untitled note', content: '' }),
-      });
+      const result = await apiFetch<{ id: string }>(
+        '/api/v1/notes',
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Untitled note', content: '' }) },
+        'Failed to create note',
+      );
 
-      if (!res.ok) {
-        const json = await res.json();
-        error = json?.error?.message ?? 'Failed to create note';
+      if (!result.ok) {
+        error = result.error;
         return;
       }
 
-      const json = await res.json();
-      const newNote = json.data;
-      window.location.href = `/notes/${newNote.id}`;
-    } catch (err) {
-      error = 'Network error, please try again.';
+      window.location.href = `/notes/${result.data.id}`;
     } finally {
       loading = false;
     }

@@ -7,6 +7,7 @@
   // public contract is frozen so callers with their own non-store list state
   // (or a side-effect hook to run) keep working unchanged.
   import TaskTypeIcon from './TaskTypeIcon.svelte';
+  import { daysUntil, taskDueMeta } from '../../lib/plannerDates';
   import { deleteTask, snoozeTask, tasksById, toggleTask, type ApiTask } from '../../lib/stores/tasks';
   import { TASK_TYPE_META, type TaskType } from '../../lib/taskTypeMeta';
 
@@ -36,20 +37,7 @@
 
   function dueMeta(t: TaskItemTask) {
     if (!t.due_date) return null;
-    const due = new Date(t.due_date);
-    due.setHours(0, 0, 0, 0);
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const days = Math.round((due.getTime() - now.getTime()) / 86_400_000);
-    if (days < 0) {
-      // A past-due attend_class task means a class was missed — that's
-      // catch-up work, not a broken commitment. Never the red overdue pill.
-      if (t.type === 'attend_class') return { label: 'catch up', danger: false };
-      return { label: 'overdue', danger: true };
-    }
-    if (days === 0) return { label: 'Today', danger: false };
-    if (days === 1) return { label: 'Tomorrow', danger: false };
-    return { label: `in ${days}d`, danger: false };
+    return taskDueMeta(daysUntil(t.due_date), t.type === 'attend_class');
   }
 
   let due = $derived(dueMeta(task));

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { apiFetch } from '../../lib/apiClient';
+
   interface CourseOption {
     id: string;
     code: string;
@@ -29,19 +31,16 @@
     error = null;
     message = null;
     try {
-      const res = await fetch('/api/v1/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, course_id: courseId || undefined }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        error = json?.error?.message ?? 'Could not log that event.';
+      const result = await apiFetch(
+        '/api/v1/events',
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, course_id: courseId || undefined }) },
+        'Could not log that event.',
+      );
+      if (!result.ok) {
+        error = result.error;
         return;
       }
       message = 'Logged.';
-    } catch {
-      error = 'Network error, please try again.';
     } finally {
       submitting = false;
     }

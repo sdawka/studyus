@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { apiFetch } from '../../lib/apiClient';
+
   interface Assessment {
     id: string;
     title: string;
@@ -46,24 +48,21 @@
       const body: Record<string, number | null> = {};
       body.grade_received = draft.received === '' ? null : Number(draft.received);
       body.grade_max = draft.max === '' ? null : Number(draft.max);
-      const res = await fetch(`/api/v1/assessments/${assessmentId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        feedback = { ...feedback, [assessmentId]: json?.error?.message ?? 'Save failed' };
+      const result = await apiFetch(
+        `/api/v1/assessments/${assessmentId}`,
+        { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+        'Save failed',
+      );
+      if (!result.ok) {
+        feedback = { ...feedback, [assessmentId]: result.error };
         return;
       }
-      const updated = json.data;
+      const updated = result.data as { grade_received: number | null; grade_max: number | null; mastery_deltas?: unknown[] };
       assessments = assessments.map((a) =>
         a.id === assessmentId ? { ...a, gradeReceived: updated.grade_received, gradeMax: updated.grade_max } : a,
       );
       const loggedEvent = Array.isArray(updated.mastery_deltas) && updated.mastery_deltas.length > 0;
       feedback = { ...feedback, [assessmentId]: loggedEvent ? 'Saved — logged a grade event for linked KCs.' : 'Saved.' };
-    } catch {
-      feedback = { ...feedback, [assessmentId]: 'Network error, please try again.' };
     } finally {
       savingId = null;
     }

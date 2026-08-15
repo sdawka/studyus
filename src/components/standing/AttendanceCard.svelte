@@ -2,6 +2,8 @@
   // Attendance lives as pre-generated class_sessions rows (one per meeting
   // day) whose status gets updated in place — not events appended by a
   // button click. See docs/api.md "Class sessions" for the contract.
+  import { apiFetch } from '../../lib/apiClient';
+  import { formatWeekdayAndDate } from '../../lib/plannerDates';
   import { refetchTasks } from '../../lib/stores/tasks';
 
   interface Props {
@@ -49,15 +51,15 @@
     try {
       const from = new Date(Date.now() - 60 * 86400000).toISOString();
       const to = new Date(Date.now() + 14 * 86400000).toISOString();
-      const res = await fetch(`/api/v1/courses/${courseId}/class-sessions?from=${from}&to=${to}&limit=200`);
-      if (!res.ok) {
-        loadError = 'Could not load attendance.';
+      const result = await apiFetch<ClassSession[]>(`/api/v1/courses/${courseId}/class-sessions?from=${from}&to=${to}&limit=200`);
+      if (!result.ok) {
+        // A non-ok response always shows this fixed message (ignoring
+        // whatever the server said); only a true network failure shows its
+        // own message — matches the pre-apiFetch behavior here.
+        loadError = result.reason === 'network' ? result.error : 'Could not load attendance.';
         return;
       }
-      const json = await res.json();
-      sessions = json.data;
-    } catch {
-      loadError = 'Network error, please try again.';
+      sessions = result.data;
     } finally {
       loading = false;
     }
@@ -87,34 +89,26 @@
     return s.status === null && new Date(s.date).getTime() <= endOfToday();
   }
 
-  function formatRow(dateIso: string): { weekday: string; date: string } {
-    const d = new Date(dateIso);
-    return {
-      weekday: d.toLocaleDateString(undefined, { weekday: 'short' }),
-      date: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-    };
-  }
-
   async function setStatus(session: ClassSession, status: 'attended' | 'missed' | null) {
     if (session.status === status) return;
     const prev = session.status;
     savingIds = new Set(savingIds).add(session.id);
     sessions = sessions.map((s) => (s.id === session.id ? { ...s, status } : s));
     try {
-      const res = await fetch(`/api/v1/class-sessions/${session.id}`, {
+      // Either failure mode (non-ok response or the request never landing)
+      // reverts identically, so there's nothing left for a catch to do.
+      const result = await apiFetch(`/api/v1/class-sessions/${session.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
-      if (!res.ok) {
+      if (!result.ok) {
         sessions = sessions.map((s) => (s.id === session.id ? { ...s, status: prev } : s));
       } else {
         // Backend two-way syncs this session's linked attend_class task
         // (see classSessions.ts) — refetch so TasksCard picks up the flip.
         await refetchTasks();
       }
-    } catch {
-      sessions = sessions.map((s) => (s.id === session.id ? { ...s, status: prev } : s));
     } finally {
       const next = new Set(savingIds);
       next.delete(session.id);
@@ -136,14 +130,13 @@
     savingDays = true;
     try {
       const days = [...dayDraft].sort((a, b) => a - b);
-      const res = await fetch(`/api/v1/courses/${courseId}`, {
+      const result = await apiFetch<{ meeting_days: number[] | null }>(`/api/v1/courses/${courseId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ meeting_days: days.length ? days : null }),
       });
-      if (res.ok) {
-        const updated = (await res.json()).data;
-        meetingDays = updated.meeting_days ?? (days.length ? days : null);
+      if (result.ok) {
+        meetingDays = result.data.meeting_days ?? (days.length ? days : null);
         editingDays = false;
         await loadSessions();
       }
@@ -158,21 +151,19 @@
     addSaving = true;
     addError = null;
     try {
-      const res = await fetch(`/api/v1/courses/${courseId}/class-sessions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: new Date(`${addDate}T12:00:00`).toISOString() }),
-      });
-      const json = await res.json().catch(() => null);
-      if (!res.ok) {
-        addError = json?.error?.message ?? 'Could not add class.';
+      const result = await apiFetch<ClassSession>(
+        `/api/v1/courses/${courseId}/class-sessions`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: new Date(`${addDate}T12:00:00`).toISOString() }) },
+        'Could not add class.',
+        'Network error.',
+      );
+      if (!result.ok) {
+        addError = result.error;
         return;
       }
-      sessions = [json.data, ...sessions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      sessions = [result.data, ...sessions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       addingOpen = false;
       addDate = new Date().toISOString().slice(0, 10);
-    } catch {
-      addError = 'Network error.';
     } finally {
       addSaving = false;
     }
@@ -242,7 +233,7 @@
   {:else}
     <ul class="session-list">
       {#each visibleSessions as s (s.id)}
-        {@const row = formatRow(s.date)}
+        {@const row = formatWeekdayAndDate(s.date)}
         <li class:nudge={isNudged(s)}>
           <span class="row-date num">
             <span class="row-weekday">{row.weekday}</span>

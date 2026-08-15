@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { apiFetch } from '../../lib/apiClient';
+
   interface Link {
     course_id?: string;
     kc_id?: string;
@@ -115,27 +117,20 @@
     saveSuccess = false;
 
     try {
-      const res = await fetch(`/api/v1/notes/${noteId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title,
-          content,
-          links,
-        }),
-      });
+      const result = await apiFetch(
+        `/api/v1/notes/${noteId}`,
+        { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, content, links }) },
+        'Failed to save note',
+      );
 
-      if (!res.ok) {
-        const json = await res.json();
-        saveError = json?.error?.message ?? 'Failed to save note';
+      if (!result.ok) {
+        saveError = result.error;
         return;
       }
 
       unsavedChanges = false;
       saveSuccess = true;
       setTimeout(() => (saveSuccess = false), 2000);
-    } catch (err) {
-      saveError = 'Network error, please try again.';
     } finally {
       saving = false;
     }

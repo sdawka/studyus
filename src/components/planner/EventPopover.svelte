@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { CalendarItem } from '../../lib/types/calendar';
+  import { apiFetch } from '../../lib/apiClient';
   import { hueFor } from '../../lib/courseHue';
   import { timeRangeLabel } from '../../lib/plannerDates';
   import { bindPopoverDismiss } from '../shell/popover.svelte.ts';
@@ -101,16 +102,13 @@
     deleting = true;
     deleteError = null;
     try {
-      const res = await fetch(`/api/v1/events/${item.id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const json = await res.json().catch(() => null);
-        deleteError = json?.error?.message ?? 'Could not delete this event.';
+      const result = await apiFetch(`/api/v1/events/${item.id}`, { method: 'DELETE' }, 'Could not delete this event.');
+      if (!result.ok) {
+        deleteError = result.error;
         return;
       }
       onDeleted?.();
       onClose();
-    } catch {
-      deleteError = 'Network error, please try again.';
     } finally {
       deleting = false;
     }
@@ -143,19 +141,18 @@
           onTaskToggled?.(id, finalDone);
         }
       } else {
-        const res = await fetch(`/api/v1/tasks/${id}`, {
+        // Either failure mode (non-ok response or the request never landing)
+        // reverts identically, so there's nothing left for a catch to do.
+        const result = await apiFetch(`/api/v1/tasks/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ completed: nextDone }),
         });
-        if (!res.ok) {
+        if (!result.ok) {
           item.details = { ...item.details, done: !nextDone };
           onTaskToggled?.(id, !nextDone);
         }
       }
-    } catch {
-      item.details = { ...item.details, done: !nextDone };
-      onTaskToggled?.(id, !nextDone);
     } finally {
       taskToggling = false;
     }

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { apiFetch } from '../../lib/apiClient';
+
   interface CourseSummary {
     id: string;
     code: string;
@@ -35,19 +37,16 @@
       const body: Record<string, unknown> = { onboarded: true };
       if (name.trim()) body.name = name.trim();
       if (currentTerm.trim()) body.current_term = currentTerm.trim();
-      const res = await fetch('/api/v1/user', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}));
-        saveError = json?.error?.message ?? 'Could not save — try again.';
+      const result = await apiFetch(
+        '/api/v1/user',
+        { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+        'Could not save — try again.',
+      );
+      if (!result.ok) {
+        saveError = result.error;
         return;
       }
       window.location.href = '/dashboard';
-    } catch {
-      saveError = 'Network error, please try again.';
     } finally {
       saving = false;
     }

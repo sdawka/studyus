@@ -4,6 +4,7 @@
   // `window` CustomEvent 'open-add-course' (Sidebar.astro::#add-course-btn)
   // and this listens for it, same decoupling as LogEventModal.
   import { onMount } from 'svelte';
+  import { apiFetch } from '../../lib/apiClient';
   import { scrollLock } from '../../lib/actions/scrollLock';
   import { focusTrap } from '../../lib/actions/focusTrap';
 
@@ -29,15 +30,11 @@
   });
 
   async function loadTerms() {
-    try {
-      const res = await fetch('/api/v1/courses');
-      const json = await res.json();
-      if (res.ok) {
-        const terms = (json.data as { term: string | null }[]).map((c) => c.term).filter((t): t is string => !!t);
-        existingTerms = [...new Set(terms)];
-      }
-    } catch {
-      // Non-fatal — the datalist is just a convenience.
+    // Non-fatal on failure — the datalist is just a convenience.
+    const result = await apiFetch<{ term: string | null }[]>('/api/v1/courses');
+    if (result.ok) {
+      const terms = result.data.map((c) => c.term).filter((t): t is string => !!t);
+      existingTerms = [...new Set(terms)];
     }
   }
 
@@ -85,23 +82,19 @@
       if (instructor.trim()) body.instructor = instructor.trim();
       if (selectedHue !== null) body.color_hue = selectedHue;
 
-      const res = await fetch('/api/v1/courses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        submitError = json?.error?.message ?? 'Failed to create course';
+      const result = await apiFetch<{ slug: string }>(
+        '/api/v1/courses',
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+        'Failed to create course',
+      );
+      if (!result.ok) {
+        submitError = result.error;
         return;
       }
 
-      const slug = json.data.slug as string;
       resetForm();
       open = false;
-      window.location.href = `/courses/${slug}`;
-    } catch {
-      submitError = 'Network error, please try again.';
+      window.location.href = `/courses/${result.data.slug}`;
     } finally {
       submitting = false;
     }

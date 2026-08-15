@@ -1,14 +1,12 @@
 <script lang="ts">
+  import { formatShortDate } from '../../lib/plannerDates';
+
   interface CalendarItem { id: string; type: string; title: string; date: string }
 
   interface Props {
     deadlines: CalendarItem[];
   }
   let { deadlines }: Props = $props();
-
-  function formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  }
 </script>
 
 <section class="card">
@@ -20,7 +18,7 @@
   {:else}
     <ul class="deadline-list">
       {#each deadlines as d}
-        <li><span class="deadline-date num">{formatDate(d.date)}</span><span class="deadline-title">{d.title}</span></li>
+        <li><span class="deadline-date num">{formatShortDate(d.date)}</span><span class="deadline-title">{d.title}</span></li>
       {/each}
     </ul>
   {/if}

@@ -45,6 +45,7 @@ const settings = resolveSettings(user.settings);
 </AppShell>
 
 <script>
+  import { apiFetch } from '../lib/apiClient';
   import { pushToast } from '../lib/stores/toast';
 
   const form = document.getElementById('profile-form') as HTMLFormElement | null;
@@ -55,41 +56,38 @@ const settings = resolveSettings(user.settings);
       name: String(data.get('name') || ''),
       current_term: String(data.get('current_term') || '') || null,
     };
-    try {
-      const res = await fetch('/api/v1/user', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const json = await res.json().catch(() => null);
-        pushToast(json?.error?.message ?? 'Could not save profile', 'error');
-        return;
-      }
-      const savedMsg = document.getElementById('profile-saved');
-      if (savedMsg) {
-        savedMsg.hidden = false;
-        setTimeout(() => { savedMsg.hidden = true; }, 2000);
-      }
-    } catch {
-      pushToast('Network error — could not save profile', 'error');
+    const result = await apiFetch(
+      '/api/v1/user',
+      { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+      'Could not save profile',
+      'Network error — could not save profile',
+    );
+    if (!result.ok) {
+      pushToast(result.error, 'error');
+      return;
+    }
+    const savedMsg = document.getElementById('profile-saved');
+    if (savedMsg) {
+      savedMsg.hidden = false;
+      setTimeout(() => { savedMsg.hidden = true; }, 2000);
     }
   });
 
   document.getElementById('logout-btn')?.addEventListener('click', async () => {
-    try {
-      const res = await fetch('/api/v1/auth/logout', {
-        method: 'POST',
-        headers: { Origin: window.location.origin },
-      });
-      if (!res.ok) {
-        pushToast('Could not log out — try again', 'error');
-        return;
-      }
-      window.location.href = '/login';
-    } catch {
-      pushToast('Network error — could not log out', 'error');
+    const result = await apiFetch(
+      '/api/v1/auth/logout',
+      { method: 'POST', headers: { Origin: window.location.origin } },
+      'Could not log out — try again',
+      'Network error — could not log out',
+    );
+    if (!result.ok) {
+      // A non-ok response always shows this fixed message (ignoring
+      // whatever the server said); only a true network failure shows its
+      // own message — matches the pre-apiFetch behavior here.
+      pushToast(result.reason === 'network' ? result.error : 'Could not log out — try again', 'error');
+      return;
     }
+    window.location.href = '/login';
   });
 </script>
 

@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CalendarItem } from '../../lib/types/calendar';
   import { hueFor } from '../../lib/courseHue';
-  import { addDays, localDateKey, mondayOf, startOfDay } from '../../lib/plannerDates';
+  import { daysUntil, localDateKey, mondayOf, railDueLabel, startOfDay } from '../../lib/plannerDates';
   import TaskTypeIcon from '../tasks/TaskTypeIcon.svelte';
   import type { TaskType } from '../../lib/taskTypeMeta';
 
@@ -40,17 +40,16 @@
 
   const today = $derived(startOfDay(new Date()));
 
-  function daysUntil(item: CalendarItem): number {
-    const d = startOfDay(new Date(item.date));
-    return Math.round((d.getTime() - today.getTime()) / 86_400_000);
+  function daysUntilItem(item: CalendarItem): number {
+    return daysUntil(item.date, today);
   }
 
   const incomplete = $derived(items.filter((i) => !(i.type === 'task_due' && i.details?.done === true)));
 
-  const overdue = $derived(incomplete.filter((i) => daysUntil(i) < 0).sort((a, b) => a.date.localeCompare(b.date)));
-  const dueSoon = $derived(incomplete.filter((i) => daysUntil(i) === 0 || daysUntil(i) === 1).sort((a, b) => a.date.localeCompare(b.date)));
+  const overdue = $derived(incomplete.filter((i) => daysUntilItem(i) < 0).sort((a, b) => a.date.localeCompare(b.date)));
+  const dueSoon = $derived(incomplete.filter((i) => daysUntilItem(i) === 0 || daysUntilItem(i) === 1).sort((a, b) => a.date.localeCompare(b.date)));
   const thisWeek = $derived(
-    incomplete.filter((i) => daysUntil(i) >= 2 && daysUntil(i) <= 7).sort((a, b) => a.date.localeCompare(b.date)),
+    incomplete.filter((i) => daysUntilItem(i) >= 2 && daysUntilItem(i) <= 7).sort((a, b) => a.date.localeCompare(b.date)),
   );
 
   function weekStartFor(date: Date): string {
@@ -76,11 +75,7 @@
   }
 
   function dueLabel(item: CalendarItem): string {
-    const days = daysUntil(item);
-    if (days < 0) return `${Math.abs(days)}d overdue`;
-    if (days === 0) return 'Today';
-    if (days === 1) return 'Tomorrow';
-    return new Date(item.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    return railDueLabel(daysUntilItem(item), item.date);
   }
 </script>
 

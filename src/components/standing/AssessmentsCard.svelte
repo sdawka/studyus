@@ -9,6 +9,8 @@
   // v1.4: Q-matrix linking moves into this card as a "Concepts covered"
   // chip-picker in both add and edit forms — see courseKcs below for the
   // lazy-fetch source.
+  import { apiFetch } from '../../lib/apiClient';
+  import { formatDueDate } from '../../lib/plannerDates';
   import { courseContext } from '../../lib/stores/courseContext';
 
   interface Assessment {
@@ -86,18 +88,17 @@
         courseKcs = [];
         return;
       }
-      const res = await fetch(`/api/v1/courses/${slug}`);
-      if (!res.ok) {
-        kcsLoadError = 'Could not load concepts.';
+      const result = await apiFetch<{ branches?: { kcs: Kc[] }[] }>(`/api/v1/courses/${slug}`, {}, 'Could not load concepts.', 'Network error.');
+      if (!result.ok) {
+        // A non-ok response always shows this fixed message (ignoring
+        // whatever the server said); only a true network failure shows its
+        // own message — matches the pre-apiFetch behavior here.
+        kcsLoadError = result.reason === 'network' ? result.error : 'Could not load concepts.';
         courseKcs = [];
         return;
       }
-      const course = (await res.json()).data;
-      const branches: { kcs: Kc[] }[] = course.branches ?? [];
+      const branches: { kcs: Kc[] }[] = result.data.branches ?? [];
       courseKcs = branches.flatMap((b) => b.kcs.map((k) => ({ id: k.id, name: k.name })));
-    } catch {
-      kcsLoadError = 'Network error.';
-      courseKcs = [];
     } finally {
       kcsLoading = false;
     }
@@ -162,17 +163,23 @@
         kc_ids: [...editDraft.kcIds],
       };
       if (a.kind === 'official') body.weight_pct = editDraft.weight === '' ? null : Number(editDraft.weight);
-      const res = await fetch(`/api/v1/assessments/${a.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const json = await res.json().catch(() => null);
-      if (!res.ok) {
-        editError = json?.error?.message ?? 'Could not save.';
+      const result = await apiFetch<{
+        title: string;
+        type: string;
+        due_date: string | null;
+        weight_pct: number | null;
+        kc_ids: string[];
+      }>(
+        `/api/v1/assessments/${a.id}`,
+        { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+        'Could not save.',
+        'Network error.',
+      );
+      if (!result.ok) {
+        editError = result.error;
         return;
       }
-      const updated = json.data;
+      const updated = result.data;
       assessments = assessments.map((row) =>
         row.id === a.id
           ? {
@@ -186,16 +193,9 @@
           : row,
       );
       closeEdit();
-    } catch {
-      editError = 'Network error.';
     } finally {
       editSaving = false;
     }
-  }
-
-  function formatDate(iso: string | null): string {
-    if (!iso) return 'No due date';
-    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
   async function saveGrade(assessmentId: string) {
@@ -204,28 +204,30 @@
     gradeSavingId = assessmentId;
     gradeFeedback = { ...gradeFeedback, [assessmentId]: '' };
     try {
-      const res = await fetch(`/api/v1/assessments/${assessmentId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          grade_received: draft.received === '' ? null : Number(draft.received),
-          grade_max: draft.max === '' ? null : Number(draft.max),
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        gradeFeedback = { ...gradeFeedback, [assessmentId]: json?.error?.message ?? 'Save failed' };
+      const result = await apiFetch<{ grade_received: number | null; grade_max: number | null; mastery_deltas?: unknown[] }>(
+        `/api/v1/assessments/${assessmentId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            grade_received: draft.received === '' ? null : Number(draft.received),
+            grade_max: draft.max === '' ? null : Number(draft.max),
+          }),
+        },
+        'Save failed',
+        'Network error.',
+      );
+      if (!result.ok) {
+        gradeFeedback = { ...gradeFeedback, [assessmentId]: result.error };
         return;
       }
-      const updated = json.data;
+      const updated = result.data;
       assessments = assessments.map((a) =>
         a.id === assessmentId ? { ...a, grade_received: updated.grade_received, grade_max: updated.grade_max } : a,
       );
       const logged = Array.isArray(updated.mastery_deltas) && updated.mastery_deltas.length > 0;
       gradeFeedback = { ...gradeFeedback, [assessmentId]: logged ? 'Saved — logged an event for linked KCs.' : 'Saved.' };
       onGraded?.();
-    } catch {
-      gradeFeedback = { ...gradeFeedback, [assessmentId]: 'Network error.' };
     } finally {
       gradeSavingId = null;
     }
@@ -242,18 +244,18 @@
       : { grade_received: null, grade_max: assessment.grade_max };
     assessments = assessments.map((a) => (a.id === assessment.id ? { ...a, ...next } : a));
     try {
-      const res = await fetch(`/api/v1/assessments/${assessment.id}`, {
+      // Either failure mode (non-ok response or the request never landing)
+      // reverts identically, so there's nothing left for a catch to do.
+      const result = await apiFetch(`/api/v1/assessments/${assessment.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(next),
       });
-      if (!res.ok) {
+      if (!result.ok) {
         assessments = assessments.map((a) => (a.id === assessment.id ? { ...a, ...prev } : a));
       } else {
         onPracticeChange?.();
       }
-    } catch {
-      assessments = assessments.map((a) => (a.id === assessment.id ? { ...a, ...prev } : a));
     } finally {
       practiceSavingId = null;
     }
@@ -273,18 +275,18 @@
       if (draftKind === 'official' && draftWeight !== '') body.weight_pct = Number(draftWeight);
       if (draftDue) body.due_date = new Date(`${draftDue}T12:00:00`).toISOString();
       if (draftKcIds.size > 0) body.kc_ids = [...draftKcIds];
-      const res = await fetch(`/api/v1/courses/${courseId}/assessments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const json = await res.json().catch(() => null);
-      if (!res.ok) {
-        addError = json?.error?.message ?? 'Could not add assessment.';
+      const result = await apiFetch<Assessment>(
+        `/api/v1/courses/${courseId}/assessments`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+        'Could not add assessment.',
+        'Network error.',
+      );
+      if (!result.ok) {
+        addError = result.error;
         return;
       }
-      assessments = [...assessments, json.data];
-      gradeDrafts = { ...gradeDrafts, [json.data.id]: { received: '', max: '' } };
+      assessments = [...assessments, result.data];
+      gradeDrafts = { ...gradeDrafts, [result.data.id]: { received: '', max: '' } };
       if (draftKind === 'practice') onPracticeChange?.();
       addOpen = false;
       draftTitle = '';
@@ -293,8 +295,6 @@
       draftWeight = '';
       draftDue = '';
       draftKcIds = new Set();
-    } catch {
-      addError = 'Network error.';
     } finally {
       addSaving = false;
     }
@@ -319,7 +319,7 @@
             <tr>
               <td>{a.title}</td>
               <td class="capitalize">{a.type}</td>
-              <td>{formatDate(a.due_date)}</td>
+              <td>{formatDueDate(a.due_date)}</td>
               <td class="num">{a.weight_pct !== null ? `${a.weight_pct}%` : '—'}</td>
               <td><input type="number" min="0" bind:value={gradeDrafts[a.id].received} class="grade-input num" /></td>
               <td><input type="number" min="0" bind:value={gradeDrafts[a.id].max} class="grade-input num" /></td>

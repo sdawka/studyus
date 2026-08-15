@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Db } from '../../db/client';
+  import { apiFetch } from '../../lib/apiClient';
 
   interface Course {
     id: string;
@@ -28,19 +29,18 @@
     submitting = true;
 
     try {
-      const res = await fetch('/api/v1/resources', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          url,
-          label,
-          course_id: courseId || null,
-        }),
-      });
+      const result = await apiFetch(
+        '/api/v1/resources',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url, label, course_id: courseId || null }),
+        },
+        'Failed to share resource',
+      );
 
-      const json = await res.json();
-      if (!res.ok) {
-        error = json?.error?.message ?? 'Failed to share resource';
+      if (!result.ok) {
+        error = result.error;
         return;
       }
 
@@ -51,9 +51,6 @@
 
       // Reload to show new resource
       setTimeout(() => window.location.reload(), 1000);
-    } catch (err) {
-      error = 'Network error, please try again.';
-      console.error('Submit error:', err);
     } finally {
       submitting = false;
     }

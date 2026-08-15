@@ -5,6 +5,8 @@
   // (self-ratings) are recorded as extra self_assessment events via the
   // events API — the sessions service only tags the auto-appended event
   // with { session_id }, so a rating needs its own event to land in payload.
+  import { apiFetch } from '../../lib/apiClient';
+
   interface Course {
     id: string;
     slug: string;
@@ -156,8 +158,9 @@
     }
 
     error = null;
-    try {
-      const res = await fetch('/api/v1/sessions', {
+    const result = await apiFetch<{ id: string }>(
+      '/api/v1/sessions',
+      {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -165,21 +168,19 @@
           intended_event_type: type,
           planned_minutes: plannedMinutes,
         }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        error = json?.error?.message ?? 'Failed to start session';
-        return;
-      }
-      sessionId = json.data.id;
-      sessionPlannedMinutes = plannedMinutes;
-      sessionStartedAt = Date.now();
-      elapsedSeconds = 0;
-      step = 'running';
-      startTimer();
-    } catch {
-      error = 'Network error, please try again.';
+      },
+      'Failed to start session',
+    );
+    if (!result.ok) {
+      error = result.error;
+      return;
     }
+    sessionId = result.data.id;
+    sessionPlannedMinutes = plannedMinutes;
+    sessionStartedAt = Date.now();
+    elapsedSeconds = 0;
+    step = 'running';
+    startTimer();
   }
 
   async function endSession() {
@@ -188,13 +189,10 @@
     touchedKcIds = new Set();
     selfRatings = {};
     if (selectedCourse) {
-      try {
-        const res = await fetch(`/api/v1/courses/${selectedCourse.slug}`);
-        const json = await res.json();
-        if (res.ok) branches = json.data.branches ?? [];
-      } catch {
-        // Non-fatal — completion screen just shows no KC checklist.
-      }
+      // Non-fatal on failure (either branch) — completion screen just shows
+      // no KC checklist.
+      const result = await apiFetch<{ branches: Branch[] }>(`/api/v1/courses/${selectedCourse.slug}`);
+      if (result.ok) branches = result.data.branches ?? [];
     }
     step = 'complete';
   }

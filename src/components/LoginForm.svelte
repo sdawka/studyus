@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { apiFetch } from '../lib/apiClient';
+
   let email = $state('');
   let password = $state('');
   let error = $state<string | null>(null);
@@ -9,19 +11,16 @@
     error = null;
     submitting = true;
     try {
-      const res = await fetch('/api/v1/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        error = json?.error?.message ?? 'Login failed';
+      const result = await apiFetch(
+        '/api/v1/auth/login',
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) },
+        'Login failed',
+      );
+      if (!result.ok) {
+        error = result.error;
         return;
       }
       window.location.href = '/dashboard';
-    } catch (err) {
-      error = 'Network error, please try again.';
     } finally {
       submitting = false;
     }

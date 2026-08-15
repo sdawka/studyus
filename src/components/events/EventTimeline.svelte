@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { apiFetch } from '../../lib/apiClient';
+
   // Reusable event timeline island. Fetches from the events API and
   // self-refreshes after any mutation — no props out, no events emitted.
   interface Props {
@@ -79,15 +81,12 @@
     loading = true;
     loadError = null;
     try {
-      const res = await fetch(fetchUrl());
-      const json = await res.json();
-      if (!res.ok) {
-        loadError = json?.error?.message ?? 'Failed to load events';
+      const result = await apiFetch<ApiEvent[]>(fetchUrl(), {}, 'Failed to load events');
+      if (!result.ok) {
+        loadError = result.error;
         return;
       }
-      events = json.data;
-    } catch {
-      loadError = 'Network error, please try again.';
+      events = result.data;
     } finally {
       loading = false;
     }

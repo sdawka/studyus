@@ -9,6 +9,7 @@
   // (attendance, recent activity). Attendance is no longer logged via
   // events; it's class_sessions rows whose status gets updated in place —
   // see AttendanceCard.
+  import { apiFetch } from '../../lib/apiClient';
   import AssessmentsCard from './AssessmentsCard.svelte';
   import MasteryCard from './MasteryCard.svelte';
   import DeadlinesCard from './DeadlinesCard.svelte';
@@ -64,35 +65,36 @@
     loading = true;
     loadError = null;
     try {
-      const [courseRes, assessmentsRes, gradesRes, eventsRes, calendarRes] = await Promise.all([
-        fetch(`/api/v1/courses/${courseSlug}`),
-        fetch(`/api/v1/courses/${courseId}/assessments`),
-        fetch(`/api/v1/grades/summary`),
-        fetch(`/api/v1/events?course=${courseId}&limit=50`),
-        fetch(
+      const [courseResult, assessmentsResult, gradesResult, eventsResult, calendarResult] = await Promise.all([
+        apiFetch<CourseDetail>(`/api/v1/courses/${courseSlug}`),
+        apiFetch<Assessment[]>(`/api/v1/courses/${courseId}/assessments`),
+        apiFetch<{ by_course: { course_id: string; weighted_grade: number | null }[] }>(`/api/v1/grades/summary`),
+        apiFetch<EventRow[]>(`/api/v1/events?course=${courseId}&limit=50`),
+        apiFetch<CalendarItem[]>(
           `/api/v1/calendar?course=${courseId}&from=${new Date().toISOString()}&to=${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()}`,
         ),
       ]);
 
-      if (!courseRes.ok || !assessmentsRes.ok || !gradesRes.ok || !eventsRes.ok || !calendarRes.ok) {
+      if (!courseResult.ok || !assessmentsResult.ok || !gradesResult.ok || !eventsResult.ok || !calendarResult.ok) {
         loadError = 'Could not load standing data.';
         return;
       }
 
-      const course: CourseDetail = (await courseRes.json()).data;
-      branches = course.branches;
-      meetingDays = course.meeting_days ?? null;
+      branches = courseResult.data.branches;
+      meetingDays = courseResult.data.meeting_days ?? null;
 
-      assessments = (await assessmentsRes.json()).data;
+      assessments = assessmentsResult.data;
 
-      const gradesSummary = (await gradesRes.json()).data;
-      const mine = gradesSummary.by_course.find((c: { course_id: string }) => c.course_id === courseId);
+      const mine = gradesResult.data.by_course.find((c) => c.course_id === courseId);
       weightedGrade = mine?.weighted_grade ?? null;
 
-      events = (await eventsRes.json()).data;
+      events = eventsResult.data;
 
-      deadlines = (await calendarRes.json()).data;
+      deadlines = calendarResult.data;
     } catch {
+      // Guards the extremely rare case of a 2xx response with an unparseable
+      // body (apiFetch already returns `ok:true` there; accessing `.data`'s
+      // shape below is what would throw) — same fallback as before.
       loadError = 'Network error, please try again.';
     } finally {
       loading = false;
@@ -107,15 +109,11 @@
   }
 
   async function refetchGrade() {
-    try {
-      const res = await fetch(`/api/v1/grades/summary`);
-      if (!res.ok) return;
-      const gradesSummary = (await res.json()).data;
-      const mine = gradesSummary.by_course.find((c: { course_id: string }) => c.course_id === courseId);
-      weightedGrade = mine?.weighted_grade ?? null;
-    } catch {
-      // best-effort refresh; the saved grade already reflects on the assessment row.
-    }
+    // Best-effort refresh; the saved grade already reflects on the assessment row.
+    const result = await apiFetch<{ by_course: { course_id: string; weighted_grade: number | null }[] }>(`/api/v1/grades/summary`);
+    if (!result.ok) return;
+    const mine = result.data.by_course.find((c) => c.course_id === courseId);
+    weightedGrade = mine?.weighted_grade ?? null;
   }
 </script>
 

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { apiFetch } from '../../lib/apiClient';
+
   type Attachment = {
     id: string;
     filename: string;
@@ -41,23 +43,24 @@
     try {
       const fd = new FormData();
       fd.append('file', file);
-      const res = await fetch(`/api/v1/courses/${courseId}/attachments`, { method: 'POST', body: fd });
-      const json = await res.json();
-      if (!res.ok) {
-        error = json?.error?.message ?? 'Upload failed';
+      const result = await apiFetch<{ attachment_id: string; filename: string; mime_type: string | null }>(
+        `/api/v1/courses/${courseId}/attachments`,
+        { method: 'POST', body: fd },
+        'Upload failed',
+      );
+      if (!result.ok) {
+        error = result.error;
         return;
       }
       attachments = [
         ...attachments,
         {
-          id: json.data.attachment_id,
-          filename: json.data.filename,
-          contentType: json.data.mime_type,
+          id: result.data.attachment_id,
+          filename: result.data.filename,
+          contentType: result.data.mime_type,
           sizeBytes: file.size,
         },
       ];
-    } catch {
-      error = 'Network error, please try again.';
     } finally {
       uploading = false;
     }
@@ -78,8 +81,8 @@
 
   async function remove(id: string) {
     if (!confirm('Delete this attachment?')) return;
-    const res = await fetch(`/api/v1/attachments/${id}`, { method: 'DELETE' });
-    if (res.ok) attachments = attachments.filter((a) => a.id !== id);
+    const result = await apiFetch(`/api/v1/attachments/${id}`, { method: 'DELETE' });
+    if (result.ok) attachments = attachments.filter((a) => a.id !== id);
   }
 </script>
 

@@ -11,6 +11,7 @@
 // other new fields) may be entirely absent from a response until then, so
 // every task is normalized to default `type: 'todo'` on the way in.
 import { atom, computed, map } from 'nanostores';
+import { apiFetch } from '../apiClient';
 import type { TaskType } from '../taskTypeMeta';
 
 export interface ApiTaskCourse {
@@ -48,27 +49,6 @@ function normalize(task: ApiTask): ApiTask {
   return task.type ? task : { ...task, type: 'todo' };
 }
 
-// The frozen API envelope (src/lib/api.ts): { data } on success,
-// { error: { code, message } } on failure.
-interface ApiEnvelope<T> {
-  data?: T;
-  error?: { code?: string; message?: string };
-}
-
-// `Response#json()` rejects on a non-JSON body; a request that never made
-// it to a route handler (offline, backend redeploying) can do that.
-async function parseJson<T>(res: Response): Promise<ApiEnvelope<T> | null> {
-  try {
-    return (await res.json()) as ApiEnvelope<T>;
-  } catch {
-    return null;
-  }
-}
-
-function errorMessage(json: ApiEnvelope<unknown> | null, fallback: string): string {
-  return json?.error?.message ?? fallback;
-}
-
 // First-hydrator-wins: once the store is 'ready', a later hydrator (e.g. a
 // second island seeded from the same page's server-rendered props) only
 // fills in ids it doesn't already know about — it never overwrites
@@ -99,21 +79,17 @@ export function refetchTasks(): Promise<void> {
   tasksStatus.set('loading');
   loadPromise = (async () => {
     try {
-      const res = await fetch('/api/v1/tasks');
-      const json = await parseJson<ApiTask[]>(res);
-      if (!res.ok) {
-        tasksError.set(errorMessage(json, 'Failed to load tasks'));
+      const result = await apiFetch<ApiTask[]>('/api/v1/tasks', {}, 'Failed to load tasks', 'Failed to load tasks');
+      if (!result.ok) {
+        tasksError.set(result.error);
         tasksStatus.set('error');
         return;
       }
       const byId: Record<string, ApiTask> = {};
-      for (const task of json?.data ?? []) byId[task.id] = normalize(task);
+      for (const task of result.data ?? []) byId[task.id] = normalize(task);
       tasksById.set(byId);
       tasksStatus.set('ready');
       tasksError.set(null);
-    } catch {
-      tasksError.set('Failed to load tasks');
-      tasksStatus.set('error');
     } finally {
       loadPromise = null;
     }
@@ -140,32 +116,30 @@ export interface AddTaskInput {
 // Not optimistic — no temp-id dance. Awaits the POST and inserts the real
 // response row.
 export async function addTask(input: AddTaskInput): Promise<ApiTask> {
-  const res = await fetch('/api/v1/tasks', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  });
-  const json = await parseJson<ApiTask>(res);
-  if (!res.ok || !json?.data) {
-    const message = errorMessage(json, 'Failed to add task');
+  const result = await apiFetch<ApiTask>(
+    '/api/v1/tasks',
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) },
+    'Failed to add task',
+  );
+  if (!result.ok || !result.data) {
+    const message = result.ok ? 'Failed to add task' : result.error;
     tasksError.set(message);
     throw new Error(message);
   }
-  const task = normalize(json.data);
+  const task = normalize(result.data);
   tasksById.setKey(task.id, task);
   tasksError.set(null);
   return task;
 }
 
 async function patchTask(id: string, body: Record<string, unknown>): Promise<ApiTask> {
-  const res = await fetch(`/api/v1/tasks/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  const json = await parseJson<ApiTask>(res);
-  if (!res.ok || !json?.data) throw new Error(errorMessage(json, 'Failed to update task'));
-  return normalize(json.data);
+  const result = await apiFetch<ApiTask>(
+    `/api/v1/tasks/${id}`,
+    { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+    'Failed to update task',
+  );
+  if (!result.ok || !result.data) throw new Error(result.ok ? 'Failed to update task' : result.error);
+  return normalize(result.data);
 }
 
 export interface ToggleTaskOptions {
@@ -223,11 +197,8 @@ export async function deleteTask(id: string): Promise<void> {
   tasksById.set(next);
 
   try {
-    const res = await fetch(`/api/v1/tasks/${id}`, { method: 'DELETE' });
-    if (!res.ok) {
-      const json = await parseJson<unknown>(res);
-      throw new Error(errorMessage(json, 'Failed to delete task'));
-    }
+    const result = await apiFetch(`/api/v1/tasks/${id}`, { method: 'DELETE' }, 'Failed to delete task');
+    if (!result.ok) throw new Error(result.error);
     tasksError.set(null);
   } catch (err) {
     tasksById.set(snapshot);

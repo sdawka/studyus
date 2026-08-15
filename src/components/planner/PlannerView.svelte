@@ -7,6 +7,7 @@
   import EventPopover from './EventPopover.svelte';
   import CreateSessionPopover from './CreateSessionPopover.svelte';
   import type { CalendarItem } from '../../lib/types/calendar';
+  import { apiFetch } from '../../lib/apiClient';
   import { addDays, addMonths, firstOfMonth, localDateKey, mondayOf, startOfDay, weekRangeLabel } from '../../lib/plannerDates';
   import { isMobile } from '../../lib/stores/viewport';
 
@@ -100,20 +101,17 @@
       const to = addDays(weekStart, 7);
       const params = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
       if (courseParam) params.set('course', courseParam);
-      const res = await fetch(`/api/v1/calendar?${params.toString()}`);
-      const json = await res.json();
-      if (!res.ok) {
-        error = json?.error?.message ?? 'Could not load calendar.';
+      const result = await apiFetch<CalendarItem[]>(`/api/v1/calendar?${params.toString()}`, {}, 'Could not load calendar.');
+      if (!result.ok) {
+        error = result.error;
         return;
       }
-      items = json.data as CalendarItem[];
+      items = result.data;
       if (pendingSelectItem) {
         const item = pendingSelectItem;
         pendingSelectItem = null;
         await selectItem(item);
       }
-    } catch {
-      error = 'Network error, please try again.';
     } finally {
       loading = false;
     }
@@ -127,33 +125,26 @@
       const to = addMonths(monthAnchor, 1);
       const params = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
       if (courseParam) params.set('course', courseParam);
-      const res = await fetch(`/api/v1/calendar?${params.toString()}`);
-      const json = await res.json();
-      if (!res.ok) {
-        error = json?.error?.message ?? 'Could not load calendar.';
+      const result = await apiFetch<CalendarItem[]>(`/api/v1/calendar?${params.toString()}`, {}, 'Could not load calendar.');
+      if (!result.ok) {
+        error = result.error;
         return;
       }
-      items = json.data as CalendarItem[];
-    } catch {
-      error = 'Network error, please try again.';
+      items = result.data;
     } finally {
       loading = false;
     }
   }
 
   async function loadRail() {
-    try {
-      const from = addDays(new Date(), -30);
-      const to = addDays(new Date(), 7);
-      const params = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
-      if (courseParam) params.set('course', courseParam);
-      const res = await fetch(`/api/v1/calendar?${params.toString()}`);
-      const json = await res.json();
-      if (!res.ok) return;
-      railItems = (json.data as CalendarItem[]).filter((i) => i.type === 'assessment_due' || i.type === 'task_due');
-    } catch {
-      // Rail is a secondary surface — a failed fetch just leaves it empty.
-    }
+    // Rail is a secondary surface — a failed fetch just leaves it empty.
+    const from = addDays(new Date(), -30);
+    const to = addDays(new Date(), 7);
+    const params = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
+    if (courseParam) params.set('course', courseParam);
+    const result = await apiFetch<CalendarItem[]>(`/api/v1/calendar?${params.toString()}`);
+    if (!result.ok) return;
+    railItems = result.data.filter((i) => i.type === 'assessment_due' || i.type === 'task_due');
   }
 
   const visibleRailItems = $derived(
@@ -338,15 +329,11 @@
   async function resolveDeepLink(id: string) {
     let found = initialItems.find((i) => i.id === id);
     if (!found) {
-      try {
-        const from = addDays(new Date(), -60);
-        const to = addDays(new Date(), 180);
-        const res = await fetch(`/api/v1/calendar?from=${from.toISOString()}&to=${to.toISOString()}`);
-        const json = await res.json();
-        if (res.ok) found = (json.data as CalendarItem[]).find((i) => i.id === id);
-      } catch {
-        // Give up quietly — deep link just won't resolve.
-      }
+      // Give up quietly on failure — deep link just won't resolve.
+      const from = addDays(new Date(), -60);
+      const to = addDays(new Date(), 180);
+      const result = await apiFetch<CalendarItem[]>(`/api/v1/calendar?from=${from.toISOString()}&to=${to.toISOString()}`);
+      if (result.ok) found = result.data.find((i) => i.id === id);
     }
     if (!found) return;
     view = 'week';

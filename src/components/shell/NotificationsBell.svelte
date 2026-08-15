@@ -1,5 +1,7 @@
 <script lang="ts">
   import { bindPopoverDismiss } from './popover.svelte.ts';
+  import { apiFetch } from '../../lib/apiClient';
+  import { formatRelativeTime } from '../../lib/plannerDates';
   import { isMobile } from '../../lib/stores/viewport';
   import Sheet from './Sheet.svelte';
 
@@ -46,39 +48,22 @@
     return courses.find((c) => c.id === id)?.code;
   }
 
-  function relativeTime(iso: string) {
-    const ms = Date.now() - new Date(iso).getTime();
-    const min = Math.round(ms / 60_000);
-    if (min < 1) return 'just now';
-    if (min < 60) return `${min}m ago`;
-    const hr = Math.round(min / 60);
-    if (hr < 24) return `${hr}h ago`;
-    return `${Math.round(hr / 24)}d ago`;
-  }
-
   async function fetchUnreadCount() {
-    try {
-      // Dedicated count endpoint (contract: `{ data: { unread } }`) — the
-      // full list endpoint runs the whole notification sweep on every call,
-      // which this 60s poll was doing needlessly just to read a badge count.
-      const res = await fetch('/api/v1/notifications/count');
-      if (res.ok) {
-        const json = await res.json();
-        unreadCount = json.data.unread;
-      }
-    } catch {
-      // best-effort; leave stale count on network failure
-    }
+    // Dedicated count endpoint (contract: `{ data: { unread } }`) — the
+    // full list endpoint runs the whole notification sweep on every call,
+    // which this 60s poll was doing needlessly just to read a badge count.
+    // Best-effort; leave stale count on failure.
+    const result = await apiFetch<{ unread: number }>('/api/v1/notifications/count');
+    if (result.ok) unreadCount = result.data.unread;
   }
 
   async function fetchList() {
     loading = true;
     try {
-      const res = await fetch('/api/v1/notifications?limit=15');
-      if (res.ok) {
-        const json = await res.json();
-        notifications = json.data.notifications;
-        unreadCount = json.data.unread_count;
+      const result = await apiFetch<{ notifications: Notification[]; unread_count: number }>('/api/v1/notifications?limit=15');
+      if (result.ok) {
+        notifications = result.data.notifications;
+        unreadCount = result.data.unread_count;
       }
     } finally {
       loading = false;
@@ -104,7 +89,7 @@
     if (!n.read_at) {
       notifications = notifications.map((x) => (x.id === n.id ? { ...x, read_at: new Date().toISOString() } : x));
       unreadCount = Math.max(0, unreadCount - 1);
-      void fetch(`/api/v1/notifications/${n.id}/read`, { method: 'PATCH' });
+      void apiFetch(`/api/v1/notifications/${n.id}/read`, { method: 'PATCH' });
     }
     onClose();
     window.location.href = n.href;
@@ -113,7 +98,7 @@
   async function markAllRead() {
     notifications = notifications.map((n) => ({ ...n, read_at: n.read_at ?? new Date().toISOString() }));
     unreadCount = 0;
-    await fetch('/api/v1/notifications/read-all', { method: 'POST' });
+    await apiFetch('/api/v1/notifications/read-all', { method: 'POST' });
   }
 </script>
 
@@ -151,7 +136,7 @@
               <span class="row-body">
                 <span class="row-title">{n.title}</span>
                 <span class="row-meta">
-                  {relativeTime(n.created_at)}
+                  {formatRelativeTime(n.created_at)}
                   {#if n.course_id && courseCode(n.course_id)}
                     <span class="course-chip">{courseCode(n.course_id)}</span>
                   {/if}

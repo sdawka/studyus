@@ -4,6 +4,7 @@
   // visibility via the bindable `open` prop (also toggled by the "e"
   // keyboard shortcut), so it can be one island among several popovers
   // instead of mounting its own always-present button.
+  import { apiFetch } from '../../lib/apiClient';
   import { courseContext } from '../../lib/stores/courseContext';
   import { portalToBody } from '../../lib/actions/portal';
   import { scrollLock } from '../../lib/actions/scrollLock';
@@ -96,9 +97,8 @@
   async function loadCourses() {
     if (coursesLoaded) return;
     try {
-      const res = await fetch('/api/v1/courses');
-      const json = await res.json();
-      if (res.ok) courses = json.data;
+      const result = await apiFetch<Course[]>('/api/v1/courses');
+      if (result.ok) courses = result.data;
     } finally {
       coursesLoaded = true;
     }
@@ -109,10 +109,9 @@
     selectedKcId = '';
     const course = courses.find((c) => c.id === courseId);
     if (!course) return;
-    const res = await fetch(`/api/v1/courses/${course.slug}`);
-    const json = await res.json();
-    if (res.ok) {
-      kcs = (json.data.branches ?? []).flatMap((b: { kcs: Kc[] }) => b.kcs);
+    const result = await apiFetch<{ branches?: { kcs: Kc[] }[] }>(`/api/v1/courses/${course.slug}`);
+    if (result.ok) {
+      kcs = (result.data.branches ?? []).flatMap((b) => b.kcs);
     }
   }
 
@@ -201,14 +200,13 @@
       if (selectedCourseId) body.course_id = selectedCourseId;
       if (selectedKcId) body.kc_id = selectedKcId;
 
-      const res = await fetch('/api/v1/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        submitError = json?.error?.message ?? 'Failed to log event';
+      const result = await apiFetch(
+        '/api/v1/events',
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+        'Failed to log event',
+      );
+      if (!result.ok) {
+        submitError = result.error;
         return;
       }
 
@@ -216,8 +214,6 @@
       const typeLabel = ALL_TYPES.get(selectedType) ?? selectedType;
       confirmation = courseLabel ? `Logged: ${typeLabel} — ${courseLabel}` : `Logged: ${typeLabel}`;
       resetForm();
-    } catch {
-      submitError = 'Network error, please try again.';
     } finally {
       submitting = false;
     }

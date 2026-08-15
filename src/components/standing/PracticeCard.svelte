@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { apiFetch } from '../../lib/apiClient';
+  import { formatRelative } from '../../lib/plannerDates';
+
   interface PracticeSummary {
     practice_events_30d: number;
     distinct_kcs_practiced: number;
@@ -26,14 +29,15 @@
     loading = true;
     loadError = null;
     try {
-      const res = await fetch(`/api/v1/courses/${courseId}/practice-summary`);
-      if (!res.ok) {
-        loadError = 'Could not load practice.';
+      const result = await apiFetch<PracticeSummary>(`/api/v1/courses/${courseId}/practice-summary`, {}, 'Could not load practice.', 'Network error.');
+      if (!result.ok) {
+        // A non-ok response always shows this fixed message (ignoring
+        // whatever the server said); only a true network failure shows its
+        // own message — matches the pre-apiFetch behavior here.
+        loadError = result.reason === 'network' ? result.error : 'Could not load practice.';
         return;
       }
-      summary = (await res.json()).data;
-    } catch {
-      loadError = 'Network error.';
+      summary = result.data;
     } finally {
       loading = false;
     }
@@ -50,13 +54,7 @@
 
   function relativeDate(iso: string | null): string {
     if (!iso) return 'never';
-    const diffMs = Date.now() - new Date(iso).getTime();
-    const days = Math.floor(diffMs / 86400000);
-    if (days <= 0) return 'today';
-    if (days === 1) return 'yesterday';
-    if (days < 7) return `${days} days ago`;
-    if (days < 30) return `${Math.floor(days / 7)}w ago`;
-    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return formatRelative(iso);
   }
 </script>
 

@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { apiFetch } from '../../lib/apiClient';
+  import { formatShortDate } from '../../lib/plannerDates';
+
   interface EventRow {
     id: string;
     type: string;
@@ -27,29 +30,23 @@
 
   const visibleEvents = $derived(showAll ? events : events.slice(0, VISIBLE_LIMIT));
 
-  function formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  }
-
   async function saveEventType(eventId: string) {
     const nextType = eventTypeDrafts[eventId];
     eventSavingId = eventId;
     eventFeedback = { ...eventFeedback, [eventId]: '' };
     try {
-      const res = await fetch(`/api/v1/events/${eventId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: nextType }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        eventFeedback = { ...eventFeedback, [eventId]: json?.error?.message ?? 'Update failed' };
+      const result = await apiFetch<{ type: string }>(
+        `/api/v1/events/${eventId}`,
+        { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: nextType }) },
+        'Update failed',
+        'Network error.',
+      );
+      if (!result.ok) {
+        eventFeedback = { ...eventFeedback, [eventId]: result.error };
         return;
       }
-      events = events.map((e) => (e.id === eventId ? { ...e, type: json.data.type } : e));
+      events = events.map((e) => (e.id === eventId ? { ...e, type: result.data.type } : e));
       eventFeedback = { ...eventFeedback, [eventId]: 'Updated.' };
-    } catch {
-      eventFeedback = { ...eventFeedback, [eventId]: 'Network error.' };
     } finally {
       eventSavingId = null;
     }
@@ -59,8 +56,8 @@
     if (!confirm('Delete this event?')) return;
     eventSavingId = eventId;
     try {
-      const res = await fetch(`/api/v1/events/${eventId}`, { method: 'DELETE' });
-      if (res.ok) {
+      const result = await apiFetch(`/api/v1/events/${eventId}`, { method: 'DELETE' });
+      if (result.ok) {
         events = events.filter((e) => e.id !== eventId);
       }
     } finally {
@@ -80,7 +77,7 @@
       {#each visibleEvents as e (e.id)}
         <li>
           <div class="event-row">
-            <span class="event-date num">{formatDate(e.ts)}</span>
+            <span class="event-date num">{formatShortDate(e.ts)}</span>
             {#if e.source === 'manual'}
               <select bind:value={eventTypeDrafts[e.id]} disabled={eventSavingId === e.id}>
                 {#each EVENT_TYPES as t}
