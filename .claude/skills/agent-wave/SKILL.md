@@ -37,5 +37,13 @@ How this repo runs multi-agent implementation waves (used for v1 M0–M5 and v1.
 - Accumulate small findings into the final phase's task description instead of interrupting the wave.
 - After the wave: run `/visual-qa`.
 
+## Lessons from the v1.6 wave (2026-08-15)
+
+- **Wall-clock vs workerd-UTC**: the dev server (workerd) runs in UTC while the browser is local-time. Any entity whose time is a wall-clock fact (class start times) must travel as minutes-from-midnight (`details.start_min`) and be positioned/labeled client-side from those minutes — never by calling local Date getters on a server-built ISO. Full contract note in docs/api.md's class_session section.
+- **Fetch-window vs display-window mismatch**: a widget that displays a rolling window (WeekGrid's sub-7-day anchor mode) must fetch the same window. A Monday-anchored fetch under a rolling display silently drops days late in the week — blocks vanish with zero errors. Grep for `mondayOf`-style anchors when a grid shows empty columns the API can fill.
+- **Transient attendance marks leave sweep residue**: marking a class_session `attended` — even briefly, in a test — makes the sweep generate a `review_after_class` task that does NOT retract when the mark reverts. Test runs must clean these up by hand.
+- **Subagents may go idle without delivering their final report** — nudge with a SendMessage asking them to send the report to "main"; treat an idle notification with no report as undelivered, not as empty.
+- **Verify visual-qa captures actually captured**: byte-identical file sizes between an interaction shot and its base page mean the interaction silently failed (the expand-gate existence-check bug). The harness now gates on `aria-expanded`.
+
 ## TODO
 - Consider worktree isolation per agent if track ownership ever must overlap.
