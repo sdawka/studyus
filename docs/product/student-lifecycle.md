@@ -21,6 +21,8 @@ flowchart TD
     H --> E
 ```
 
+A ninth situation — **absorbing a new KC** (§9, v1.7) — runs orthogonally to this cadence rather than slotting into one point on it: a student can reach for it any time they want to actually *understand* a topic (not just drill it), triggered by curiosity, an upcoming exam, or a KC flagged not-yet-`ready` during another absorb session's own prerequisite check. It feeds into the same long-run mastery loop (§8) as everything else — an absorb conversation still appends a `tutor_session` event on close.
+
 ## 1. Onboarding
 
 A first-time sign-in walks the student from an empty account to a personalized, populated workspace. The goal is confidence in what a "knowledge component" is and a workspace pre-loaded with their real courses, not a blank slate. Surfaces: `OnboardingFlow` (Svelte stepper), the seeded `courses/courses.json` catalog, and the background sweep that turns a confirmed course list into a working calendar.
@@ -161,6 +163,33 @@ flowchart TD
     H --> J["Student practices<br/>(Practice / Play / tutor)"]
     J --> A
 ```
+
+## 9. Absorbing a New KC (Guided Understanding)
+
+Distinct from the class-meeting rhythm above: any time a student wants to *understand* a KC rather than just drill it, they can absorb it. The raw material comes from `courses/<slug>/content.json` (frozen contract: `courses/content-schema.md`), seeded across all 9 current-term courses: 147 KCs (all five KLI types represented — e.g. CHEE 314 alone has 1 fact, 5 concept, 7 rule, 4 principle, and 1 association KC), 187 prerequisite edges (`kc_edges`) including cross-course chains — CHEE 314's "Dimensional analysis and the Buckingham Pi theorem" is itself a prerequisite for two CHEE 315 KCs, and CHEE 314's "Bernoulli equation" requires a MATH 264 calculus KC first — 297 scaffolds (worked examples, retrieval prompts, and 9 other KLI-grounded kinds; `rule` KCs like Buckingham Pi get a full support-fading ladder, the same worked example at levels 1→2→3), and 42 misconceptions with a diagnostic probe and a standalone corrected statement each (e.g. Bernoulli's equation has two documented ones, grounded in physics-education-research literature, not guessed).
+
+Entry point: <!-- pending #49 -->.
+
+```mermaid
+flowchart TD
+    A["Student picks a KC to absorb<br/>(entry point pending #49)"] --> B["POST /tutor/conversations<br/>mode: 'absorb'"]
+    B --> C["GET /kcs/:id/graph<br/>traverses kc_edges"]
+    C --> D{"Any prereq<br/>not yet ready?<br/>(engaged-with AND<br/>mastery >= review threshold)"}
+    D -->|"yes"| E["Tutor addresses the prereq first<br/>(optionally a targeted quick_quiz<br/>scoped to just that KC)"]
+    E --> D
+    D -->|"all ready"| F["Tutor teaches the target KC<br/>via its matched scaffolds<br/>(kind chosen by KLI kc_type)"]
+    F --> G{"Diagnostic probe reveals<br/>a known misconception?"}
+    G -->|"yes"| H["Tutor proposes a correction<br/>(correction_proposal block)"]
+    H --> I{"Student accepts?"}
+    I -->|"accept"| J["POST /corrections<br/>logged to the ledger, status: active"]
+    I -->|"dismiss"| F
+    G -->|"no"| K["Conversation ends —<br/>tutor_session event appended"]
+    J --> K
+    K --> L["Mastery fold re-runs<br/>(feeds §8's long-run loop)"]
+    J --> M["correction_review sweep:<br/>reminds every ~14 days<br/>until marked internalized"]
+```
+
+The corrections ledger is a first-class, revisitable asset — "things I used to believe and have corrected" — not a line buried in a chat transcript. A correction stays `active` (and keeps getting the spaced reminder) until the student marks it `internalized`.
 
 ## Planned Extensions (Not Yet Shipped)
 

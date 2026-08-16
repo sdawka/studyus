@@ -31,7 +31,19 @@ The desktop sidebar (`Sidebar.astro`) offers three persistent entry points above
 - **Flow**: Per-course cards of open tasks (user todos and sweep-generated system tasks alike — attend-class, prep-before-class, practice-KC, etc.), one level of subtasks, inline quick-add. Also reachable without leaving the current page via the header's `TodoDropdown`.
 - **Use case**: "What's actually due, and what has the app already lined up for me?"
 
+### Door 4: Absorb (Guided Understanding) — v1.7
+<!-- pending #49: entry point/route below is not yet built; the flow itself is frozen contract (docs/api.md's v1.7 section) and won't change once #49 lands, only the "Route"/"Flow" framing needs replacing with the real UI. -->
+- **Route**: <!-- pending #49 --> — likely a dedicated `/learn` page and/or a "Tutor me" alternative on KC detail (`/courses/[slug]/kc/[kcId]`); confirm against #49's actual output.
+- **Flow**: Student picks a KC to absorb. The tutor (`POST /tutor/conversations {kc_id, mode: 'absorb'}`) first checks the KC's prerequisite graph (`GET /kcs/:id/graph`, traversing `kc_edges`) — any prerequisite the student hasn't engaged with, or hasn't cleared the mastery review threshold on, gets addressed first (optionally via a targeted `quick_quiz` scoped to just those KCs). Once prerequisites are clear, the tutor teaches using the target KC's matched scaffolds (worked examples, retrieval prompts, derivation walkthroughs, etc. — chosen by the KC's KLI type) and watches for its documented misconceptions, proposing a correction when the diagnostic reveals one. Accepting a proposed correction logs it to the student's corrections ledger; studyus reminds them about it roughly every two weeks until they mark it internalized.
+- **Use case**: "I want to actually understand this topic, not just drill it — and if I've got something backwards, help me see where the mix-up came from."
+
 **Not a door**: `/study` and `/study/quiz` still work if visited directly (`StudyFlow`/`QuickQuiz`), but nothing in the shell links to them — the same drilling flow (pick course → timer → event type → reflect → append events) now lives inside each course's Practice tab instead, preselected to that course.
+
+## Revisiting Corrected Beliefs (v1.7)
+
+Accepting a tutor's correction during an absorb session doesn't just close out that turn of conversation — it creates a durable, per-user ledger entry (`user_corrections`): a specific wrong belief the student held, what they now understand instead, and when they accepted it. Framed for the student as "things I used to believe and have corrected," not an audit log. An entry stays active — and keeps getting a spaced, roughly-14-day reminder notification (`correction_review`) — until the student marks it internalized, at the point they no longer need reminding.
+
+<!-- pending #49: where this ledger actually surfaces in the UI (a dedicated /corrections view? a profile panel? a settings section?) is #49's call — update this section once that lands. -->
 
 ## Recording Outside-App Events
 

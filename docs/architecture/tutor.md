@@ -24,6 +24,8 @@ The AI tutor is a **server-side SSE stream** that adapts its pedagogy by KC type
 
 The client can override the derived mode at conversation creation (`POST /tutor/conversations {kc_id, mode?}`) — e.g. start a `principle` KC in plain `self_explain` if an interactive model doesn't make sense for it.
 
+A sixth mode, **`absorb`** (v1.7), is **never derived from `kc_type`** — unlike the five above, it isn't picked by the KLI mapping table at all. It's only ever set by an explicit client request (`{mode: 'absorb'}`), because it's a structured, multi-step flow (prerequisite check → scaffold-based teaching → misconception diagnosis) layered on top of one KC's dialogue, not a single-KC pedagogical style tied to one KLI category. See "Absorb Mode" below.
+
 Each mode's system-prompt block (`MODE_INSTRUCTIONS` in `prompts.ts`) ends with the same reminder: close every turn with a retrieval question, and keep tone purely informational, calibrated to the KC's current mastery — the KLI asymmetry hypothesis, applied universally.
 
 ## OpenRouter Integration
@@ -47,6 +49,18 @@ Each mode's system-prompt block (`MODE_INSTRUCTIONS` in `prompts.ts`) ends with 
 - Any notes linked to the KC via `note_links`, bodies truncated to 500 chars.
 
 `prompts.ts::buildSystemPrompt` turns that into the system message; `conversations.ts` prepends it to the persisted message history (which only ever contains `user`/`assistant` roles — the system prompt itself is never persisted, since it's rebuilt fresh each turn from current context, e.g. mastery may have moved since the last message).
+
+**Absorb mode gets a superset of this** (v1.7) — see "Absorb Mode" below for the additional context and the `correction_proposal` block it can emit.
+
+## Absorb Mode (v1.7)
+
+`absorb` layers a structured understand-flow on top of the standard per-KC conversation, grounded in the seeded knowledge graph (`kc_edges`), scaffolds, and misconceptions — all sourced from `courses/<slug>/content.json` (frozen contract: `courses/content-schema.md`) via `scripts/seed.ts`. Full endpoint/shape contract: `docs/api.md`'s "v1.7 Additions" section — this section covers the pedagogy and conversation mechanics, not duplicated there.
+
+- **Creation**: `POST /tutor/conversations {kc_id, mode: 'absorb', details?: {flow: 'absorb', focus_order: [kc_id, ...]}}`. `details` is stored verbatim on `tutor_conversations.details` (JSON) and echoed back on read — `focus_order` is typically the not-yet-`ready` prereqs from a prior `GET /kcs/:id/graph` call, target KC last, so the client and the tutor agree on the walk order up front.
+- **Context assembly (superset)**: on top of the standard KC name/type/description/practice_notes/branch/course/mastery/recent-events/notes context (above), an absorb conversation's system prompt also includes: the target KC's full prerequisite graph (`GET /kcs/:id/graph`'s traversal, inlined — each prereq node carries its own `ready` flag), the target KC's `misconceptions` (name, description, root_cause, diagnostic_probe, correction), and its `scaffolds` at every level. This is what lets the tutor open with "let's check X first" when a prerequisite isn't `ready` yet, reach for a specific matched scaffold instead of improvising a worked example from scratch, and recognize a misconception via its `diagnostic_probe` rather than guessing at one.
+- **Prerequisite check**: `ready = status !== 'not-started' && mastery >= MASTERY_CONSTANTS.REVIEW_THRESHOLD` (currently 40 — `src/lib/services/mastery.ts` is authoritative if this changes). A not-`ready` prereq gets addressed before the target KC; the tutor may steer the student toward a targeted `quick_quiz` (`POST /flows/quick_quiz {kc_ids: [...]}` — v1.7's explicit-KC-targeting override, bypassing the usual lowest-mastery heuristic) to verify it quickly rather than re-teaching it from scratch inline.
+- **Correction proposals**: absorb messages may additionally emit at most one fenced ` ```json ` block of the shape `{ "type": "correction_proposal", "misconception_slug": "string?", "prior_belief": "string", "correction": "string" }` — independent of, and in addition to, the existing `interactive_model` block (a principle-KC absorb turn could in principle carry both). Unlike `interactive_model`, this block is **client-interpreted only** — the server never parses or validates it. The client renders an accept/dismiss affordance; accepting calls `POST /corrections` (logging the ledger entry, `status: 'active'`), dismissing does nothing server-side.
+- **The corrections ledger** (`user_corrections`) is what makes an accepted correction a durable, revisitable asset rather than a line lost in a chat transcript — see `docs/api.md`'s v1.7 section for the full CRUD contract and the `correction_review` notification sweep (spaced ~14-day reminders for an `active`, not-yet-`internalized` correction).
 
 ## Interactive Model Spec
 
@@ -82,5 +96,5 @@ Format, grammar, and the parser/evaluator live in `src/lib/services/tutor/modelS
 - **Adaptive difficulty**: track in-conversation performance and adjust question complexity turn-to-turn (currently only the KC's *stored* mastery calibrates difficulty, not the conversation's own trajectory).
 - **Mode switching**: let the tutor suggest switching modes mid-conversation if the student isn't progressing.
 - **Multi-turn planning**: let the tutor plan a multi-turn lesson arc instead of one turn at a time.
-- **Knowledge map integration**: use prerequisite edges (once they exist) to proactively teach foundational KCs.
+- ~~**Knowledge map integration**: use prerequisite edges (once they exist) to proactively teach foundational KCs.~~ **Done, v1.7**: `kc_edges` (seeded from `courses/<slug>/content.json`) models the prerequisite graph; `absorb` mode's context assembly inlines `GET /kcs/:id/graph`'s traversal + readiness and steers the conversation toward not-yet-`ready` prereqs before the target KC. See "Absorb Mode" above.
 - **`quick_quiz` storage**: reuses `study_sessions.reflection` as a JSON blob (documented in `docs/api.md`) rather than a dedicated table — revisit if quizzes need richer item types.

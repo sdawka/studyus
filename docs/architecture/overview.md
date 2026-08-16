@@ -63,13 +63,22 @@ drizzle.config.ts                         # Migration + schema config
 
 courses/                                  # Seed source data (real, at repo root — not nested under prototype/)
   courses.json                            # The 9 seeded courses (code/title/term/etc.), read by scripts/seed.ts
+  content-schema.md                       # v1.7: frozen courses/<slug>/content.json contract (KCs, prereq edges,
+                                           #   scaffolds, misconceptions, assessments) — authoritative on shape
   [course-slug]/README.md                 # One per course — human-readable syllabus notes, not read by code
+  [course-slug]/content.json              # v1.7: all 9 courses now have one — supersedes that course's
+                                           #   courses.json branches/canonical/feed; read by scripts/seed.ts
+                                           #   via src/lib/content/courseContent.ts
 prototype/                                # Old static-HTML design prototype (frozen, pre-Astro) — index.html,
                                            #   dashboard.html, planner.html, course.html + per-variation CSS/JS
 public/                                   # Static assets served as-is: manifest.webmanifest, icons/ (PWA)
 
-migrations/                               # D1 migration SQL — single regenerated baseline, pre-v0.1 (ADR-003)
+migrations/                               # D1 migration SQL — single regenerated baseline, pre-v0.1 (ADR-003).
+                                           #   ACKNOWLEDGED TEMPORARY DEVIATION (v1.7): two files currently exist
+                                           #   (0001 was appended incrementally rather than the baseline being
+                                           #   regenerated fresh) — pending user authorization to squash back to one.
   0000_chemical_ink.sql
+  0001_sticky_white_tiger.sql
   meta/
 scripts/
   seed.ts                                 # Idempotent course+KC+demo-data seed
@@ -95,8 +104,12 @@ src/
     confetti.ts                           # Dependency-free WAAPI confetti burst (TaskCheckbox's check-moment)
     stores/                               # nanostores: ui.ts, courseContext.ts, tasks.ts, toast.ts, viewport.ts
     schemas/                              # Zod validators — one file per domain (assessments, attachments,
-                                           #   calendar, classSessions, common, courses, events, kcs, notes,
-                                           #   notifications, quickQuiz, resources, sessions, tasks, tutor, user)
+                                           #   calendar, classSessions, common, corrections, courses, events, kcs,
+                                           #   notes, notifications, quickQuiz, resources, sessions, tasks, tutor,
+                                           #   user)
+    content/                              # v1.7: courseContent.ts — Zod schema for courses/<slug>/content.json
+                                           #   (authoritative shape lives in courses/content-schema.md) +
+                                           #   cross-course prereq-slug resolver, cycle-safe
     types/
       calendar.ts                         # CalendarItem (FROZEN shape; getCalendar is sole producer)
     plannerDates.ts                       # Week/month date-math helpers shared by planner components
@@ -182,9 +195,9 @@ src/
 tests/                                    # Flat layout (no unit//integration split — that was never built)
   audit-grades-perf, audit-lifecycle, audit-notifications, audit-ownership, audit-schema-bounds,
     audit-sweep, audit-uploads (.test.ts)  # Targeted regression suites from security/perf/lifecycle audits
-  auth, calendar, classSessions, courses-create, events, grades, mastery, middleware, notifications,
-    practiceSummary, quick-quiz, serialize, session, sessions, stores-tasks, tasks, tasksStoreSelectors,
-    taskSweep, tutor-conversations, tutor-list, tutor-modelSpec, tutor-openrouter (.test.ts)
+  auth, calendar, classSessions, course-content, courses-create, events, grades, mastery, middleware,
+    notifications, practiceSummary, quick-quiz, serialize, session, sessions, stores-tasks, tasks,
+    tasksStoreSelectors, taskSweep, tutor-conversations, tutor-list, tutor-modelSpec, tutor-openrouter (.test.ts)
   env.d.ts
   routes/
     assessments.test.ts, assessmentsKcs.test.ts, assessmentsKind.test.ts, events.test.ts, tasks.test.ts
