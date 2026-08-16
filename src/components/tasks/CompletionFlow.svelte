@@ -11,7 +11,9 @@
   //
   // Props are frozen (team contract) — do not add/rename/remove any of the
   // three below.
-  import { addTask, toggleTask, type ApiTask } from '../../lib/stores/tasks';
+  import { addTask, refreshCompletionHold, toggleTask, type ApiTask } from '../../lib/stores/tasks';
+  import { burstConfetti } from '../../lib/confetti';
+  import { markFlowCelebration } from '../../lib/completionMotion';
   import { TASK_TYPE_META } from '../../lib/taskTypeMeta';
   import { isMobile } from '../../lib/stores/viewport';
   import { focusTrap } from '../../lib/actions/focusTrap';
@@ -40,6 +42,11 @@
   let submitting = $state(false);
   let submitError = $state<string | null>(null);
   let primaryBtnEl = $state<HTMLButtonElement | null>(null);
+  // One-shot press pop on the Done button, set alongside the confetti in
+  // complete() — never reset, since a successful flow closes this dialog
+  // and a failed one re-enables the button (the finished animation just
+  // sits inert either way).
+  let celebrating = $state(false);
 
   const type = $derived(task.type ?? 'todo');
   const meta = $derived(TASK_TYPE_META[type]);
@@ -121,6 +128,23 @@
     if (submitting) return;
     submitting = true;
     submitError = null;
+    // The satisfaction moment for the modal path: celebrate at the button
+    // the user just pressed, synchronously BEFORE the store flip below.
+    // Ordering is load-bearing — on a surface that drops completed rows
+    // immediately (no completion hold), toggleTask's optimistic flip
+    // unmounts the host row and this dialog with it in the same tick; a
+    // burst fired after that has no anchor left. The confetti container
+    // lives on document.body (z above the dialog), so it plays out fully
+    // even as the dialog closes. markFlowCelebration tells the row's
+    // checkbox (if it survives) to skip its own confetti — one burst per
+    // completion, never two. Optimistic on purpose, matching toggleTask's
+    // own optimistic flip; a failed PATCH rolls the checkbox back the same
+    // way it always has.
+    if (primaryBtnEl) {
+      markFlowCelebration();
+      burstConfetti(primaryBtnEl);
+      celebrating = true;
+    }
     try {
       const note = buildNote();
       await toggleTask(task.id, note !== undefined ? { completionNote: note } : {});
@@ -133,6 +157,11 @@
           // (or block) the completion that already succeeded.
         }
       }
+      // The toggle above started the row's completion hold while this
+      // dialog still covered it (PATCH + follow-up POSTs can eat most or
+      // all of that window). Restart the hold as the dialog hands back, so
+      // the linger-then-depart choreography always plays in view.
+      refreshCompletionHold(task.id);
       onCompleted(note !== undefined ? { note } : undefined);
     } catch (err) {
       submitError = err instanceof Error ? err.message : 'Could not complete this task.';
@@ -215,7 +244,7 @@
 
   <div class="flow-actions">
     <button type="button" class="btn btn-secondary" onclick={onClose} disabled={submitting}>Cancel</button>
-    <button type="submit" class="btn btn-primary" bind:this={primaryBtnEl} disabled={submitting}>{primaryLabel}</button>
+    <button type="submit" class="btn btn-primary" class:celebrating bind:this={primaryBtnEl} disabled={submitting}>{primaryLabel}</button>
   </div>
 {/snippet}
 
@@ -392,6 +421,25 @@
   @media (max-width: 767px) {
     .flow-actions .btn {
       min-height: 44px;
+    }
+  }
+
+  /* Confirmation press: the Done button pops once as the confetti leaves
+     it — the physical half of the modal path's satisfaction moment. */
+  .btn-primary.celebrating {
+    animation: flow-confirm-pop 360ms var(--ease);
+  }
+
+  @keyframes flow-confirm-pop {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.08); }
+    65%  { transform: scale(0.97); }
+    100% { transform: scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn-primary.celebrating {
+      animation: none;
     }
   }
 </style>

@@ -6,6 +6,8 @@
   import { bindPopoverDismiss } from '../shell/popover.svelte.ts';
   import { tasksById, toggleTask } from '../../lib/stores/tasks';
   import { isMobile } from '../../lib/stores/viewport';
+  import { burstConfetti } from '../../lib/confetti';
+  import { markFlowCelebration } from '../../lib/completionMotion';
   import Sheet from '../shell/Sheet.svelte';
 
   interface CourseOption {
@@ -52,6 +54,7 @@
   let deleteError = $state<string | null>(null);
   let deleteConfirming = $state(false);
   let taskToggling = $state(false);
+  let taskCheckboxEl = $state<HTMLInputElement | null>(null);
 
   const hue = $derived(course ? hueFor({ slug: course.slug, color: course.color === null ? null : String(course.color) }) : 220);
 
@@ -169,6 +172,20 @@
     const id = item.id;
     const nextDone = !(item.details?.done === true);
     taskToggling = true;
+    // Celebrate synchronously, before the store flip below (toggleTask's own
+    // optimistic write to tasksById) — same ordering rule as CompletionFlow's
+    // Done button: burst while the checkbox is guaranteed still mounted,
+    // rather than risk firing from a dead anchor after some other effect of
+    // the completion (a completion-hold departure elsewhere, etc.) tears it
+    // down. markFlowCelebration marks the moment so any OTHER TaskCheckbox
+    // reacting to this same completion (e.g. this task also rendered as a
+    // TodayTasks row, sharing the same tasksById store) skips its own burst
+    // — one celebration per completion, never two. Unchecking stays boring,
+    // matching TaskCheckbox's check-only convention.
+    if (nextDone && taskCheckboxEl) {
+      markFlowCelebration();
+      burstConfetti(taskCheckboxEl);
+    }
     item.details = { ...item.details, done: nextDone };
     onTaskToggled?.(id, nextDone);
     try {
@@ -316,6 +333,7 @@
     <label class="task-toggle">
       <input
         type="checkbox"
+        bind:this={taskCheckboxEl}
         checked={item.details?.done === true}
         disabled={taskToggling}
         onchange={handleTaskToggle}

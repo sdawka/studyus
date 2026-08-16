@@ -6,6 +6,8 @@
 // are driven by WAAPI (element.animate) with hand-rolled projectile
 // keyframes; no canvas, no external library.
 
+import { prefersReducedMotion } from './completionMotion';
+
 interface BurstOptions {
   count?: number;
   hue?: number;
@@ -16,7 +18,7 @@ const PARTICLE_MAX = 24;
 
 export function burstConfetti(originEl: HTMLElement, opts?: BurstOptions): void {
   if (typeof document === 'undefined' || typeof window === 'undefined') return;
-  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  if (prefersReducedMotion()) return;
 
   const rect = originEl.getBoundingClientRect();
   const originX = rect.left + rect.width / 2;

@@ -12,6 +12,7 @@
 // every task is normalized to default `type: 'todo'` on the way in.
 import { atom, computed, map } from 'nanostores';
 import { apiFetch } from '../apiClient';
+import { COMPLETION_HOLD_MS } from '../completionMotion';
 import type { TaskType } from '../taskTypeMeta';
 
 export interface ApiTaskCourse {
@@ -151,7 +152,7 @@ export interface ToggleTaskOptions {
   completionNote?: string;
 }
 
-// A short-lived signal: ids that completed within roughly the last second.
+// A short-lived signal: ids that completed within the last COMPLETION_HOLD_MS.
 // Exists for UI that reclassifies a task the instant it completes (e.g.
 // TasksView moving a task from its open list into a collapsed Done
 // disclosure — a different {#each} block, which Svelte can only implement
@@ -166,7 +167,8 @@ export interface ToggleTaskOptions {
 // completion, EventPopover's task_due toggle) — a later reaction (e.g. a
 // $effect watching the task list) would run one render too late, after the
 // reclassifying re-render has already destroyed the original instance.
-const RECENT_COMPLETION_GRACE_MS = 1300;
+// Duration lives in completionMotion.ts alongside the depart transition
+// that plays when the hold expires — the two are one choreography.
 export const recentlyCompletedIds = atom<ReadonlySet<string>>(new Set());
 const recentCompletionTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
@@ -180,8 +182,17 @@ function markRecentlyCompleted(id: string) {
       next.delete(id);
       recentlyCompletedIds.set(next);
       recentCompletionTimers.delete(id);
-    }, RECENT_COMPLETION_GRACE_MS),
+    }, COMPLETION_HOLD_MS),
   );
+}
+
+// Restarts the hold window for an id that already completed. CompletionFlow
+// calls this as its dialog closes: the toggle (and the original hold) fired
+// while the dialog still covered the row, so without a refresh the linger —
+// strikethrough, then the depart animation — would burn down (or expire
+// entirely, teleporting the row) behind the scrim instead of in view.
+export function refreshCompletionHold(id: string): void {
+  markRecentlyCompleted(id);
 }
 
 // Optimistic flip (+ open children when cascading), then PATCH. Any

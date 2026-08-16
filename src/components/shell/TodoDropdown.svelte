@@ -2,7 +2,8 @@
   import TaskItem from '../tasks/TaskItem.svelte';
   import { bindPopoverDismiss } from './popover.svelte.ts';
   import { courseContext } from '../../lib/stores/courseContext';
-  import { addTask, ensureLoaded, selectOpen, tasksList, tasksStatus } from '../../lib/stores/tasks';
+  import { addTask, ensureLoaded, recentlyCompletedIds, selectOpen, tasksList, tasksStatus, type ApiTask } from '../../lib/stores/tasks';
+  import { taskDepart } from '../../lib/completionMotion';
   import { isMobile } from '../../lib/stores/viewport';
   import Sheet from './Sheet.svelte';
 
@@ -59,9 +60,19 @@
   });
 
   let openTasks = $derived(selectOpen($tasksList));
+  // The badge counts genuinely-open tasks, so it ticks down the instant a
+  // task is checked — the count dropping IS the feedback here. The list
+  // below is the grace-held set instead: the checked row stays put for
+  // COMPLETION_HOLD_MS so the check and strikethrough are watchable inside
+  // the popover, then departs. (Without the hold a completion inside this
+  // panel unmounted the row instantly — and with it any CompletionFlow
+  // dialog TaskItem had open.)
   let openCount = $derived(openTasks.length);
+  let graceIds = $derived($recentlyCompletedIds);
+  let heldTasks = $derived($tasksList.filter((t) => t.completed && graceIds.has(t.id)));
+  let displayTasks = $derived<ApiTask[]>([...openTasks, ...heldTasks]);
   let topSeven = $derived(
-    [...openTasks]
+    [...displayTasks]
       .sort((a, b) => {
         if (!a.due_date && !b.due_date) return 0;
         if (!a.due_date) return 1;
@@ -123,7 +134,9 @@
     {:else}
       <div class="list">
         {#each topSeven as task (task.id)}
-          <TaskItem {task} compact {courseHues} />
+          <div class="depart-wrap" out:taskDepart={{ gap: 2 }}>
+            <TaskItem {task} compact {courseHues} />
+          </div>
         {/each}
       </div>
     {/if}
@@ -250,4 +263,8 @@
   .chip-clear:hover { opacity: 1; background: color-mix(in oklch, currentColor 15%, transparent); }
 
   .list { display: flex; flex-direction: column; gap: 2px; }
+  /* Flex column items default to min-width:auto — the depart wrapper needs
+     the min-width:0 chain continued so long titles ellipsize inside the
+     popover instead of widening it. */
+  .depart-wrap { min-width: 0; }
 </style>

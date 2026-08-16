@@ -28,6 +28,7 @@
   // `:checked`, which never plays on initial insertion (no prior frame to
   // transition from) — no extra JS guard needed there.
   import { burstConfetti } from '../../lib/confetti';
+  import { recentFlowCelebration } from '../../lib/completionMotion';
 
   interface Props {
     checked: boolean;
@@ -50,7 +51,10 @@
 
     if (now && !was) {
       celebrate = true;
-      if (inputEl) burstConfetti(inputEl);
+      // Pop + ring always play on the edge; confetti defers to a burst
+      // CompletionFlow just fired from its Done button (same completion,
+      // one celebration — see completionMotion.ts).
+      if (inputEl && !recentFlowCelebration()) burstConfetti(inputEl);
       const timer = setTimeout(() => {
         celebrate = false;
       }, 520);
@@ -96,6 +100,7 @@
     <path class="cb-check-path" d="M3.5 8.4 L6.6 11.6 L12.6 4.6" />
   </svg>
   <span class="cb-glow" aria-hidden="true"></span>
+  <span class="cb-ring" aria-hidden="true"></span>
 </span>
 
 <style>
@@ -229,5 +234,58 @@
 
   .cb-shell.is-popping .cb-input {
     animation: cb-pop 420ms var(--ease);
+  }
+
+  /* Ring pulse: a halo radiating outward from the box on check — the
+     "impact wave" layer under the confetti. Same course-tinted ink as the
+     fill, transform/opacity only (compositor-friendly), and like every
+     other effect here it overflows the fixed-size shell via absolute
+     positioning, never by resizing it. Invisible at rest; plays only with
+     the JS-gated .is-popping edge, so it can never replay on mount. */
+  .cb-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2.6rem;
+    height: 2.6rem;
+    margin: -1.3rem 0 0 -1.3rem;
+    border-radius: 50%;
+    border: 2px solid var(--course, var(--accent));
+    opacity: 0;
+    transform: scale(0.35);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .cb-shell.is-popping .cb-ring {
+    animation: cb-ring-pulse 500ms var(--ease) forwards;
+  }
+
+  @keyframes cb-ring-pulse {
+    0%   { opacity: 0.85; transform: scale(0.35); }
+    100% { opacity: 0;    transform: scale(1); }
+  }
+
+  /* Reduced motion: the acknowledgment stays — the color fill, checkmark,
+     and hover glow all still appear, just instantly — but nothing moves,
+     springs, or radiates. Confetti self-gates in confetti.ts. */
+  @media (prefers-reduced-motion: reduce) {
+    .cb-input,
+    .cb-check-path,
+    .cb-glow {
+      transition: none;
+    }
+    .cb-shell:hover .cb-input:not(:disabled) {
+      transform: none;
+      animation: none;
+    }
+    .cb-shell.is-popping .cb-input,
+    .cb-shell.is-popping .cb-ring,
+    .cb-shell.is-busy .cb-input {
+      animation: none;
+    }
+    .cb-shell.is-busy .cb-input {
+      opacity: 0.65;
+    }
   }
 </style>
