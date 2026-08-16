@@ -36,7 +36,7 @@ Mastery is **never stored directly** — it's computed on-demand from an append-
 ### Client State (nanostores)
 Cross-island state that used to be prop-threaded or duplicated per-component now lives in `nanostores` atoms under `src/lib/stores/`. Svelte 5 subscribes directly via the `$storeName` auto-subscription (nanostores atoms implement `.subscribe`) — no `@nanostores/svelte` adapter needed. `ui.ts`'s `activePopover` (which of the header's popovers — scratchpad/todo/bell/avatar — is open; previously local `$state` in `HeaderActions.svelte`) and `courseContext.ts`'s `courseContext` (the course the user is currently viewing, `{id, slug, code, title} | null`, SSR-safe default `null`) were the first two. `CourseLayout.astro` mounts a tiny invisible `CourseContextSetter.svelte` island (`client:load`) on every course subpage to publish it; `ScratchpadPopup`, `TodoDropdown`, and `LogEventModal` read it to default a course selection — always just a default, never enforced.
 
-`stores/tasks.ts` (v1.4) is the larger third: a `map` of tasks by id, a `TasksStatus` atom (`idle|loading|ready|error`), and plain-function selectors (`selectOpen`/`selectForCourse`/`selectChildren`/`bucketByDue`) rather than a `computed` list, since consumers need to filter/group differently (TodayTasks buckets by due date, TasksView groups by course, TasksCard/PlannerRail want a plain open-tasks slice). `ensureLoaded()` dedupes concurrent first-load fetches across islands on the same page via a module-level promise; `addTask`/`toggleTask`/`deleteTask` mutate optimistically (except `addTask`, which awaits the `POST` and inserts the real row — no temp-id reconciliation) with rollback on a failed request; `refetchTasks()` does a full replace, used after attendance mutations elsewhere on the page so a backend-side `attend_class` sync is picked up without mirroring the sync rule client-side. Every task-consuming island (`TodoDropdown`, `TodayTasks`, `TasksView`, `TasksCard`, `EventPopover`, `AttendanceCard`) reads and writes through this one store instead of doing its own fetch — `PlannerRail` is the one exception, still server-fetched via props (it only gained a `TaskTypeIcon` on its rows, no structural change).
+`stores/tasks.ts` (v1.4) is the larger third: a `map` of tasks by id, a `TasksStatus` atom (`idle|loading|ready|error`), and plain-function selectors (`selectOpen`/`selectForCourse`/`selectChildren`/`bucketByDue`) rather than a `computed` list, since consumers need to filter/group differently (TodayTasks buckets by due date, TasksView groups by course, CourseTasks/PlannerRail want a plain open-tasks slice). v1.8 adds `recentlyCompletedIds` — a just-completed task is held in that set for `COMPLETION_HOLD_MS` and is passed through each surface's "open" classification with its `completed` flag faked off, so the row keeps its place (struck through, confetti landing) instead of vanishing on the optimistic flip, then leaves via the `taskDepart` transition. `ensureLoaded()` dedupes concurrent first-load fetches across islands on the same page via a module-level promise; `addTask`/`toggleTask`/`deleteTask` mutate optimistically (except `addTask`, which awaits the `POST` and inserts the real row — no temp-id reconciliation) with rollback on a failed request; `refetchTasks()` does a full replace, used after attendance mutations elsewhere on the page so a backend-side `attend_class` sync is picked up without mirroring the sync rule client-side. Every task-consuming island (`TodoDropdown`, `TodayTasks`, `TasksView`, `CourseTasks`, `EventPopover`, `AttendanceCard`) reads and writes through this one store instead of doing its own fetch — `PlannerRail` is the one exception, still server-fetched via props (it only gained a `TaskTypeIcon` on its rows, no structural change).
 
 ### Design Tokens — 3 Themes × 2 Schemes
 The whole app shares one token vocabulary, split across files under `src/styles/`:
@@ -101,7 +101,11 @@ src/
     auth/                                 # password.ts (PBKDF2), session.ts (token/hash/cookie mgmt)
     actions/                              # focusTrap.ts, portal.ts, scrollLock.ts, masonry.ts — Svelte actions
                                            #   for overlays + the /tasks card-grid masonry action
-    confetti.ts                           # Dependency-free WAAPI confetti burst (TaskCheckbox's check-moment)
+    completionMotion.ts                   # Completion choreography vocabulary: COMPLETION_HOLD_MS (linger),
+                                           #   taskDepart (collapse-and-glide out), flow-celebration suppression,
+                                           #   prefersReducedMotion. Pure TS so stores/tasks.ts can import it.
+    confetti.ts                           # Dependency-free WAAPI confetti burst (every completion path:
+                                           #   TaskCheckbox, CompletionFlow's Done button, EventPopover task_due)
     stores/                               # nanostores: ui.ts, courseContext.ts, tasks.ts, toast.ts, viewport.ts
     schemas/                              # Zod validators — one file per domain (assessments, attachments,
                                            #   calendar, classSessions, common, corrections, courses, events, kcs,
@@ -115,6 +119,8 @@ src/
     plannerDates.ts                       # Week/month date-math helpers shared by planner components
     courseHue.ts                          # Canonical hueFor/hashHue (one definition, no duplicates)
     taskTypeMeta.ts                       # TaskType → icon/label metadata (TaskTypeIcon, PlannerRail)
+    understandNext.ts                     # Pure selection of the KCs worth an absorb session next (weakest
+                                           #   started, stalest as tiebreak, + next untouched) — course home
     tracing.ts                            # Cloudflare Workers trace helpers
     handleNotFound.ts                     # Shared 404 handling
     api.ts                                # Request/response envelope helpers
@@ -142,8 +148,12 @@ src/
     corrections/                          # v1.7: CorrectionsLedger.svelte (Active/Internalized/All filters,
                                            #   inline "mark internalized" two-step confirm)
     course/                               # AttachmentsPanel, KcTypeBadge, MasteryBar, PlayPanel (v1.7: gains an
-                                           #   "Understand" link per KC row), PracticePanel, ResourceTile, StatusChip
+                                           #   "Understand" link per KC row), PracticePanel, ResourceTile, StatusChip;
+                                           #   v1.8 course-home rebuild: CourseHome (island), CourseTasks,
+                                           #   UnderstandNext, UpNextCard, GradeStatCard
     dashboard/                            # CourseCards, DeadlinesList, RecordEventCard, TodayTasks, WeekView
+                                           #   (v1.8: collapsed chips get the shared planner hover card + open
+                                           #    EventPopover in place instead of deep-linking to /planner)
     events/                               # EventTimeline.svelte, LogEventModal.svelte
     feed/                                 # ResourceCard (favicon tiles), ShareResourceForm, StudySessionStub
     learn/                                # v1.7: /learn/[kcId]'s 4-stage flow — PrereqGraph (layered, BFS depth),
@@ -158,11 +168,15 @@ src/
                                            #   CourseContextSetter, Header, HeaderActions, Icon, NotificationsBell,
                                            #   popover.svelte.ts, ScratchpadPopup, Sheet (mobile bottom-sheet
                                            #   primitive), Sidebar, ThemeScript, Toast, TodoDropdown
-    standing/                             # StandingTab + rail cards: AssessmentsCard, AttendanceCard,
-                                           #   DeadlinesCard, MasteryCard, PracticeCard, RecentActivityCard, TasksCard
+    standing/                             # Cards reused by the course Overview: AssessmentsCard, AttendanceCard,
+                                           #   MasteryCard, PracticeCard, RecentActivityCard
+                                           #   (StandingTab/TasksCard/DeadlinesCard retired in the v1.8
+                                           #    task-oriented course-home rebuild — see components/course/)
     study/                                # StudyFlow.svelte
     tasks/                                # TaskItem, TaskTypeIcon, TasksView, TaskCheckbox (checkbox delight +
-                                           #   confetti), CompletionFlow (typed-task completion dialog)
+                                           #   confetti), CompletionFlow (typed-task completion dialog),
+                                           #   TaskQuickActions (v1.8: hover/focus-revealed icon cluster —
+                                           #   snooze/delete/log-practice; ⋯ disclosure on coarse pointers)
     tutor/                                # ScaffoldChat (v1.7: scans every fenced block per message, not just
                                            #   the first, so a turn can carry interactive_model AND
                                            #   correction_proposal), InteractiveModel, QuickQuiz
