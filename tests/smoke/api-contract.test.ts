@@ -9,7 +9,7 @@ import { env } from 'cloudflare:test';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../src/db/client';
-import { attachments, branches, courses, kcs, users } from '../../src/db/schema';
+import { attachments, branches, courses, kcEdges, kcs, misconceptions, scaffolds, users } from '../../src/db/schema';
 import * as authLoginRoutes from '../../src/pages/api/v1/auth/login';
 import * as authLogoutRoutes from '../../src/pages/api/v1/auth/logout';
 import * as userRoutes from '../../src/pages/api/v1/user/index';
@@ -39,6 +39,11 @@ import * as tutorConvDetailRoutes from '../../src/pages/api/v1/tutor/conversatio
 import * as tutorEndRoutes from '../../src/pages/api/v1/tutor/conversations/[id]/end';
 import * as quickQuizIndexRoutes from '../../src/pages/api/v1/flows/quick_quiz/index';
 import * as quickQuizAnswersRoutes from '../../src/pages/api/v1/flows/quick_quiz/[id]/answers';
+import * as kcGraphRoutes from '../../src/pages/api/v1/kcs/[id]/graph';
+import * as kcScaffoldsRoutes from '../../src/pages/api/v1/kcs/[id]/scaffolds';
+import * as kcMisconceptionsRoutes from '../../src/pages/api/v1/kcs/[id]/misconceptions';
+import * as correctionsIndexRoutes from '../../src/pages/api/v1/corrections/index';
+import * as correctionsDetailRoutes from '../../src/pages/api/v1/corrections/[id]/index';
 
 const db = getDb(env.DB);
 
@@ -1079,6 +1084,244 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
       expect(second.status).toBe(400);
       const body = (await second.json()) as any;
       expect(body.error.code).toBe('quiz_not_gradable');
+    });
+  });
+
+  // ========== KNOWLEDGE GRAPH / SCAFFOLDS / MISCONCEPTIONS (v1.7) ==========
+
+  describe('GET /kcs/:id/graph', () => {
+    it('returns the prereq graph with depth/ready/prereq_kc_ids for a seeded-shape prerequisite edge', async () => {
+      const prereqId = crypto.randomUUID();
+      await db.insert(kcs).values({
+        id: prereqId,
+        branchId: fixture.branchId,
+        courseId: fixture.courseId,
+        name: 'Dimensional analysis basics',
+        kcType: 'concept',
+        slug: 'dimensional-analysis-basics',
+        mastery: 60,
+        status: 'review',
+      });
+      await db.insert(kcEdges).values({ id: crypto.randomUUID(), kcId: fixture.kcId, prereqKcId: prereqId });
+
+      const res = await kcGraphRoutes.GET(astroContext({
+        params: { id: fixture.kcId },
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(body.data.kc.id).toBe(fixture.kcId);
+      expect(body.data.prereqs).toHaveLength(1);
+      expect(body.data.prereqs[0]).toMatchObject({
+        kc_id: prereqId,
+        slug: 'dimensional-analysis-basics',
+        depth: 1,
+        ready: true, // status 'review' !== 'not-started' and mastery 60 >= REVIEW_THRESHOLD (40)
+      });
+      expect(body.data.warnings).toEqual([]);
+    });
+
+    it('is cycle-safe and reports a defensively-detected cycle in warnings', async () => {
+      const aId = crypto.randomUUID();
+      const bId = crypto.randomUUID();
+      await db.insert(kcs).values([
+        { id: aId, branchId: fixture.branchId, courseId: fixture.courseId, name: 'A', kcType: 'concept' },
+        { id: bId, branchId: fixture.branchId, courseId: fixture.courseId, name: 'B', kcType: 'concept' },
+      ]);
+      await db.insert(kcEdges).values([
+        { id: crypto.randomUUID(), kcId: fixture.kcId, prereqKcId: aId },
+        { id: crypto.randomUUID(), kcId: aId, prereqKcId: bId },
+        { id: crypto.randomUUID(), kcId: bId, prereqKcId: aId }, // back-edge B -> A: a genuine cycle
+      ]);
+
+      const res = await kcGraphRoutes.GET(astroContext({
+        params: { id: fixture.kcId },
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(body.data.prereqs.map((p: any) => p.kc_id).sort()).toEqual([aId, bId].sort());
+      expect(body.data.warnings.some((w: string) => w.toLowerCase().includes('cycle'))).toBe(true);
+    });
+
+    it('404s on a KC owned by another user', async () => {
+      const otherUserId = crypto.randomUUID();
+      const otherCourseId = crypto.randomUUID();
+      const otherBranchId = crypto.randomUUID();
+      const otherKcId = crypto.randomUUID();
+      await db.insert(users).values({ id: otherUserId, email: `${otherUserId}@test.local`, passwordHash: 'x' });
+      await db.insert(courses).values({ id: otherCourseId, userId: otherUserId, code: 'X 1', slug: `other-${otherCourseId}`, title: 'Other' });
+      await db.insert(branches).values({ id: otherBranchId, courseId: otherCourseId, name: 'B' });
+      await db.insert(kcs).values({ id: otherKcId, branchId: otherBranchId, courseId: otherCourseId, name: 'Other KC', kcType: 'concept' });
+
+      const res = await kcGraphRoutes.GET(astroContext({
+        params: { id: otherKcId },
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe('GET /kcs/:id/scaffolds', () => {
+    it('filters by inclusive max_level and by kind, ordered by sort_order', async () => {
+      await db.insert(scaffolds).values([
+        { id: crypto.randomUUID(), kcId: fixture.kcId, kind: 'retrieval_prompt', level: 1, title: 'Recall prompt', body: 'b1', sortOrder: 1 },
+        { id: crypto.randomUUID(), kcId: fixture.kcId, kind: 'worked_example', level: 2, title: 'Worked example', body: 'b2', sortOrder: 2 },
+        { id: crypto.randomUUID(), kcId: fixture.kcId, kind: 'derivation_walkthrough', level: 3, title: 'Full derivation', body: 'b3', sortOrder: 3 },
+      ]);
+
+      const url = new URL('http://local.test/api/v1/kcs');
+      url.searchParams.set('max_level', '2');
+      const res = await kcScaffoldsRoutes.GET(astroContext({
+        params: { id: fixture.kcId },
+        url,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(body.data.map((s: any) => s.title)).toEqual(['Recall prompt', 'Worked example']);
+
+      const url2 = new URL('http://local.test/api/v1/kcs');
+      url2.searchParams.set('kind', 'derivation_walkthrough');
+      const res2 = await kcScaffoldsRoutes.GET(astroContext({
+        params: { id: fixture.kcId },
+        url: url2,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      const body2 = (await res2.json()) as any;
+      expect(body2.data).toHaveLength(1);
+      expect(body2.data[0].title).toBe('Full derivation');
+    });
+  });
+
+  describe('GET /kcs/:id/misconceptions', () => {
+    it('returns seeded-shape misconception rows for the KC', async () => {
+      await db.insert(misconceptions).values({
+        id: crypto.randomUUID(),
+        kcId: fixture.kcId,
+        slug: 'high-speed-always-low-pressure',
+        name: 'Higher velocity always means lower pressure',
+        description: 'The learner believes velocity alone determines pressure everywhere.',
+        rootCause: 'Overgeneralizing Bernoulli from a single worked example.',
+        diagnosticProbe: 'What additional condition does Bernoulli require to hold?',
+        correction: "Bernoulli's equation applies along a streamline for steady, incompressible, inviscid flow — not universally.",
+      });
+
+      const res = await kcMisconceptionsRoutes.GET(astroContext({
+        params: { id: fixture.kcId },
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0].slug).toBe('high-speed-always-low-pressure');
+      expect(body.data[0].root_cause).toContain('Bernoulli');
+    });
+  });
+
+  // ========== CORRECTIONS (v1.7) ==========
+
+  describe('POST|GET|PATCH /corrections', () => {
+    it('POST creates a KC-scoped correction with joined kc_name/course_slug', async () => {
+      const req = new Request('http://local.test/api/v1', {
+        method: 'POST',
+        body: JSON.stringify({ kc_id: fixture.kcId, correction: 'Bernoulli needs a streamline.', prior_belief: 'It applies everywhere.' }),
+      });
+      const res = await correctionsIndexRoutes.POST(astroContext({
+        request: req,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(res.status).toBe(201);
+      const body = (await res.json()) as any;
+      expect(body.data.kc_id).toBe(fixture.kcId);
+      expect(body.data.kc_name).toBe('Test KC');
+      expect(body.data.status).toBe('active');
+      expect(body.data.accepted_at).toBeTruthy();
+    });
+
+    it('POST creates a freeform correction (no kc_id) with null kc_name/course_slug', async () => {
+      const req = new Request('http://local.test/api/v1', {
+        method: 'POST',
+        body: JSON.stringify({ correction: 'General reminder to check units.' }),
+      });
+      const res = await correctionsIndexRoutes.POST(astroContext({
+        request: req,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(res.status).toBe(201);
+      const body = (await res.json()) as any;
+      expect(body.data.kc_id).toBeNull();
+      expect(body.data.kc_name).toBeNull();
+      expect(body.data.course_slug).toBeNull();
+    });
+
+    it('POST 404s on a kc_id owned by another user', async () => {
+      const otherUserId = crypto.randomUUID();
+      const otherCourseId = crypto.randomUUID();
+      const otherBranchId = crypto.randomUUID();
+      const otherKcId = crypto.randomUUID();
+      await db.insert(users).values({ id: otherUserId, email: `${otherUserId}@test.local`, passwordHash: 'x' });
+      await db.insert(courses).values({ id: otherCourseId, userId: otherUserId, code: 'X 1', slug: `other-${otherCourseId}`, title: 'Other' });
+      await db.insert(branches).values({ id: otherBranchId, courseId: otherCourseId, name: 'B' });
+      await db.insert(kcs).values({ id: otherKcId, branchId: otherBranchId, courseId: otherCourseId, name: 'Other KC', kcType: 'concept' });
+
+      const req = new Request('http://local.test/api/v1', {
+        method: 'POST',
+        body: JSON.stringify({ kc_id: otherKcId, correction: 'x' }),
+      });
+      const res = await correctionsIndexRoutes.POST(astroContext({
+        request: req,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(res.status).toBe(404);
+    });
+
+    it('GET lists corrections newest-first and filters by status', async () => {
+      const createOne = async (correction: string) => {
+        const req = new Request('http://local.test/api/v1', { method: 'POST', body: JSON.stringify({ correction }) });
+        const res = await correctionsIndexRoutes.POST(astroContext({ request: req, locals: { user: { id: fixture.userId } } }) as any);
+        return ((await res.json()) as any).data;
+      };
+      const first = await createOne('First correction');
+      await new Promise((r) => setTimeout(r, 5)); // guarantee distinct accepted_at for the desc-order assertion below
+      const second = await createOne('Second correction');
+
+      const listRes = await correctionsIndexRoutes.GET(astroContext({
+        url: new URL('http://local.test/api/v1/corrections'),
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      const listBody = (await listRes.json()) as any;
+      expect(listBody.data[0].id).toBe(second.id);
+      expect(listBody.data[1].id).toBe(first.id);
+
+      const patchReq = new Request('http://local.test/api/v1', { method: 'PATCH', body: JSON.stringify({ status: 'internalized' }) });
+      await correctionsDetailRoutes.PATCH(astroContext({
+        params: { id: first.id },
+        request: patchReq,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+
+      const url = new URL('http://local.test/api/v1/corrections');
+      url.searchParams.set('status', 'internalized');
+      const filteredRes = await correctionsIndexRoutes.GET(astroContext({ url, locals: { user: { id: fixture.userId } } }) as any);
+      const filteredBody = (await filteredRes.json()) as any;
+      expect(filteredBody.data.map((c: any) => c.id)).toEqual([first.id]);
+    });
+
+    it('PATCH 404s on a correction owned by another user', async () => {
+      const otherUserId = crypto.randomUUID();
+      await db.insert(users).values({ id: otherUserId, email: `${otherUserId}@test.local`, passwordHash: 'x' });
+      const req = new Request('http://local.test/api/v1', { method: 'POST', body: JSON.stringify({ correction: 'mine' }) });
+      const res = await correctionsIndexRoutes.POST(astroContext({ request: req, locals: { user: { id: otherUserId } } }) as any);
+      const created = ((await res.json()) as any).data;
+
+      const patchReq = new Request('http://local.test/api/v1', { method: 'PATCH', body: JSON.stringify({ status: 'internalized' }) });
+      const patchRes = await correctionsDetailRoutes.PATCH(astroContext({
+        params: { id: created.id },
+        request: patchReq,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(patchRes.status).toBe(404);
     });
   });
 

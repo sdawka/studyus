@@ -1,8 +1,8 @@
 import { env } from 'cloudflare:test';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
-import { assessments, branches, courses, kcs, notifications, studySessions, tasks, users } from '../src/db/schema';
+import { assessments, branches, courses, kcs, notifications, studySessions, tasks, userCorrections, users } from '../src/db/schema';
 import { updateAssessment } from '../src/lib/services/assessments';
 import {
   createNotification,
@@ -191,6 +191,109 @@ describe('retention', () => {
     await sweepNotifications(db, userId, now);
     const remaining = await db.select().from(notifications).where(eq(notifications.userId, userId));
     expect(remaining.length).toBeLessThanOrEqual(100);
+  });
+});
+
+describe('correction_review sweep (v1.7)', () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  const REMIND_INTERVAL = 14 * DAY;
+
+  it('notifies for an active correction unreminded 14+ days since acceptance, and stamps last_reminded_at', async () => {
+    const now = Date.now();
+    const correctionId = crypto.randomUUID();
+    await db.insert(userCorrections).values({
+      id: correctionId,
+      userId,
+      correction: 'Bernoulli needs a streamline.',
+      status: 'active',
+      acceptedAt: now - 15 * DAY,
+    });
+
+    await sweepNotifications(db, userId, now);
+    const rows = await db
+      .select()
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), eq(notifications.type, 'correction_review')));
+    expect(rows).toHaveLength(1);
+    expect(rows[0].dedupeKey).toBe(`correction_review:${correctionId}:${Math.floor(now / REMIND_INTERVAL)}`);
+
+    const [correction] = await db.select().from(userCorrections).where(eq(userCorrections.id, correctionId));
+    expect(correction.lastRemindedAt).toBe(now);
+  });
+
+  it('does not notify before the 14-day window since acceptance has elapsed', async () => {
+    const now = Date.now();
+    await db.insert(userCorrections).values({ id: crypto.randomUUID(), userId, correction: 'x', status: 'active', acceptedAt: now - 5 * DAY });
+
+    await sweepNotifications(db, userId, now);
+    const rows = await db
+      .select()
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), eq(notifications.type, 'correction_review')));
+    expect(rows).toHaveLength(0);
+  });
+
+  it('does not notify for an internalized correction, however old', async () => {
+    const now = Date.now();
+    await db.insert(userCorrections).values({ id: crypto.randomUUID(), userId, correction: 'x', status: 'internalized', acceptedAt: now - 20 * DAY });
+
+    await sweepNotifications(db, userId, now);
+    const rows = await db
+      .select()
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), eq(notifications.type, 'correction_review')));
+    expect(rows).toHaveLength(0);
+  });
+
+  it('re-fires once last_reminded_at is itself 14+ days old', async () => {
+    const now = Date.now();
+    await db.insert(userCorrections).values({
+      id: crypto.randomUUID(),
+      userId,
+      correction: 'x',
+      status: 'active',
+      acceptedAt: now - 30 * DAY,
+      lastRemindedAt: now - 15 * DAY,
+    });
+
+    await sweepNotifications(db, userId, now);
+    const rows = await db
+      .select()
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), eq(notifications.type, 'correction_review')));
+    expect(rows).toHaveLength(1);
+  });
+
+  it('does not re-notify before 14 days have passed since the last reminder', async () => {
+    const now = Date.now();
+    await db.insert(userCorrections).values({
+      id: crypto.randomUUID(),
+      userId,
+      correction: 'x',
+      status: 'active',
+      acceptedAt: now - 30 * DAY,
+      lastRemindedAt: now - 5 * DAY,
+    });
+
+    await sweepNotifications(db, userId, now);
+    const rows = await db
+      .select()
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), eq(notifications.type, 'correction_review')));
+    expect(rows).toHaveLength(0);
+  });
+
+  it('is idempotent within the same 14-day bucket — re-running the sweep does not duplicate', async () => {
+    const now = Date.now();
+    await db.insert(userCorrections).values({ id: crypto.randomUUID(), userId, correction: 'x', status: 'active', acceptedAt: now - 15 * DAY });
+
+    await sweepNotifications(db, userId, now);
+    await sweepNotifications(db, userId, now);
+    const rows = await db
+      .select()
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), eq(notifications.type, 'correction_review')));
+    expect(rows).toHaveLength(1);
   });
 });
 

@@ -3,13 +3,14 @@
 // run at the top of every list call, plus retention trimming in the same
 // sweep. The one non-sweep write path is createNotification, called inline
 // from services/assessments.ts at the grade-entry site (grade_recorded).
-import { and, desc, eq, isNotNull, isNull, lt, lte, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, isNull, lt, lte, or, sql } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { assessments, courses, kcs, notifications, studySessions, tasks } from '../../db/schema';
+import { assessments, courses, kcs, notifications, studySessions, tasks, userCorrections } from '../../db/schema';
 import type { CreateNotificationInput } from '../schemas/notifications';
 
 const ASSESSMENT_DUE_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
 const SESSION_UNFINISHED_AGE_MS = 6 * 60 * 60 * 1000;
+const CORRECTION_REVIEW_INTERVAL_MS = 14 * 24 * 60 * 60 * 1000;
 const RETENTION_READ_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 const RETENTION_MAX_PER_USER = 100;
 
@@ -129,22 +130,72 @@ async function collectSessionUnfinished(db: Db, userId: string, now: number): Pr
   }));
 }
 
+// v1.7: active, not-yet-internalized corrections get a spaced-repetition
+// nudge starting 14d after acceptance, then every 14d again as long as they
+// stay active. Dedupe key buckets on a 14d epoch (not accepted_at/
+// last_reminded_at), so at most one notification per correction per bucket,
+// re-firing in the next bucket if still due.
+async function collectCorrectionReview(db: Db, userId: string, now: number): Promise<NewNotification[]> {
+  const rows = await db
+    .select({ id: userCorrections.id, correction: userCorrections.correction, courseId: kcs.courseId })
+    .from(userCorrections)
+    .leftJoin(kcs, eq(userCorrections.kcId, kcs.id))
+    .where(
+      and(
+        eq(userCorrections.userId, userId),
+        eq(userCorrections.status, 'active'),
+        or(
+          and(isNull(userCorrections.lastRemindedAt), lt(userCorrections.acceptedAt, now - CORRECTION_REVIEW_INTERVAL_MS)),
+          lt(userCorrections.lastRemindedAt, now - CORRECTION_REVIEW_INTERVAL_MS),
+        ),
+      ),
+    );
+
+  const bucket = Math.floor(now / CORRECTION_REVIEW_INTERVAL_MS);
+  return rows.map((r) => ({
+    id: crypto.randomUUID(),
+    userId,
+    type: 'correction_review' as const,
+    title: 'A correction is due for review',
+    body: r.correction,
+    courseId: r.courseId ?? null,
+    href: '/corrections',
+    dedupeKey: `correction_review:${r.id}:${bucket}`,
+    createdAt: now,
+  }));
+}
+
 /** Idempotent: safe to call on every list request. Generates due rows via
  * ON CONFLICT(dedupe_key) DO NOTHING, then purges/trims per retention rules. */
 export async function sweepNotifications(db: Db, userId: string, now: number = Date.now()) {
-  const [dueSoon, overdue, review, unfinished] = await Promise.all([
+  const [dueSoon, overdue, review, unfinished, correctionReview] = await Promise.all([
     collectAssessmentDue(db, userId, now),
     collectTaskOverdue(db, userId, now),
     collectKcReview(db, userId, now),
     collectSessionUnfinished(db, userId, now),
+    collectCorrectionReview(db, userId, now),
   ]);
 
-  const candidates = [...dueSoon, ...overdue, ...review, ...unfinished];
+  const candidates = [...dueSoon, ...overdue, ...review, ...unfinished, ...correctionReview];
   if (candidates.length > 0) {
     const inserts = candidates.map((row) =>
       db.insert(notifications).values(row).onConflictDoNothing({ target: notifications.dedupeKey }),
     );
     await db.batch(inserts as [(typeof inserts)[number], ...(typeof inserts)[number][]]);
+  }
+
+  // Two-pass write-back (same idiom as taskSweep's task_courses backfill):
+  // stamp last_reminded_at on every correction just (re-)evaluated as due,
+  // decoupled from whether the insert above actually landed a new row (an
+  // ON CONFLICT DO NOTHING within the same bucket is expected and harmless).
+  // Stamping now is what stops the *next* sweep within the same 14d window
+  // from re-selecting the same correction.
+  if (correctionReview.length > 0) {
+    const correctionIds = correctionReview.map((n) => n.dedupeKey.split(':')[1]);
+    await db
+      .update(userCorrections)
+      .set({ lastRemindedAt: now })
+      .where(and(eq(userCorrections.userId, userId), inArray(userCorrections.id, correctionIds)));
   }
 
   // Retention: purge read notifications older than 30d.

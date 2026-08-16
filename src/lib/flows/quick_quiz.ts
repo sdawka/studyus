@@ -41,6 +41,19 @@ type QuizBlob = {
 type TutorEnv = { OPENROUTER_API_KEY: string; OPENROUTER_MODEL: string };
 
 async function pickDueKcs(db: Db, userId: string, input: CreateQuickQuizInput, count: number) {
+  // v1.7: explicit KC targeting overrides the mastery heuristic entirely
+  // (and takes precedence over the singular kc_id too, since it's the more
+  // specific ask) — ownership-checked the same way, in the order given, so
+  // an absorb flow can quiz exactly the not-yet-ready prereqs a prior graph
+  // call flagged.
+  if (input.kc_ids && input.kc_ids.length > 0) {
+    const targetKcs = [];
+    for (const id of input.kc_ids) {
+      targetKcs.push(await requireOwnedKc(db, userId, id));
+    }
+    return targetKcs;
+  }
+
   if (input.kc_id) {
     const kc = await requireOwnedKc(db, userId, input.kc_id);
     return [kc];
@@ -204,12 +217,17 @@ export async function submitQuickQuizAnswers(db: Db, userId: string, sessionId: 
   // same KLI reasoning as tutor_session.
   const masteryDeltas = [];
   for (const r of results) {
-    const { masteryDeltas: deltas } = await createEvent(db, userId, {
-      type: 'retrieval_practice',
-      kc_id: r.kc_id,
-      course_id: session.courseId ?? undefined,
-      payload: { correct: r.correct, session_id: sessionId, channel: 'quick_quiz' },
-    });
+    const { masteryDeltas: deltas } = await createEvent(
+      db,
+      userId,
+      {
+        type: 'retrieval_practice',
+        kc_id: r.kc_id,
+        course_id: session.courseId ?? undefined,
+        payload: { correct: r.correct, session_id: sessionId, channel: 'quick_quiz' },
+      },
+      'tutor',
+    );
     masteryDeltas.push(...deltas);
   }
 

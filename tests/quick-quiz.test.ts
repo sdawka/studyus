@@ -126,3 +126,66 @@ describe('submitQuickQuizAnswers', () => {
     ).rejects.toThrow(QuizNotGradableError);
   });
 });
+
+describe('generateQuickQuiz — kc_ids explicit targeting (v1.7)', () => {
+  it('overrides the mastery heuristic entirely, building the quiz from exactly the given KCs in the given order', async () => {
+    // Give kcIds[2] the lowest mastery so the heuristic would normally favor
+    // it first; kc_ids must override that and use exactly the given
+    // subset/order regardless.
+    await db.update(kcs).set({ mastery: 5 }).where(eq(kcs.id, kcIds[2]));
+
+    mockJsonFetch({
+      items: [kcIds[1], kcIds[0]].map((kc_id, i) => ({
+        kc_id,
+        question: `Question ${i}?`,
+        options: ['A', 'B', 'C', 'D'],
+        correct_index: 0,
+        explanation: 'E',
+      })),
+    });
+
+    const quiz = await generateQuickQuiz(
+      db,
+      userId,
+      { kc_ids: [kcIds[1], kcIds[0]] },
+      { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' },
+    );
+
+    expect(quiz.questions.map((q) => q.kc_id)).toEqual([kcIds[1], kcIds[0]]);
+  });
+
+  it('ownership-checks every id in kc_ids the same way as the singular kc_id', async () => {
+    const otherUserId = crypto.randomUUID();
+    const otherCourseId = crypto.randomUUID();
+    const otherBranchId = crypto.randomUUID();
+    const otherKcId = crypto.randomUUID();
+    await db.insert(users).values({ id: otherUserId, email: `${otherUserId}@test.local`, passwordHash: 'x' });
+    await db.insert(courses).values({ id: otherCourseId, userId: otherUserId, code: 'X 1', slug: `other-${otherCourseId}`, title: 'Other' });
+    await db.insert(branches).values({ id: otherBranchId, courseId: otherCourseId, name: 'B' });
+    await db.insert(kcs).values({ id: otherKcId, branchId: otherBranchId, courseId: otherCourseId, name: 'Other KC', kcType: 'concept' });
+
+    await expect(
+      generateQuickQuiz(db, userId, { kc_ids: [otherKcId] }, { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' }),
+    ).rejects.toThrow();
+  });
+
+  it('falls back to the mastery heuristic unchanged when kc_ids is absent', async () => {
+    mockJsonFetch({
+      items: kcIds.map((kc_id, i) => ({ kc_id, question: `Q${i}?`, options: ['A', 'B', 'C', 'D'], correct_index: 0, explanation: 'E' })),
+    });
+    const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' });
+    expect(new Set(quiz.questions.map((q) => q.kc_id))).toEqual(new Set(kcIds));
+  });
+});
+
+describe('submitQuickQuizAnswers — event source (v1.7)', () => {
+  it('appends grading retrieval_practice events with source "tutor", not the createEvent default "manual"', async () => {
+    mockJsonFetch({ items: [{ kc_id: kcIds[0], question: 'Q?', options: ['A', 'B'], correct_index: 0, explanation: 'E' }] });
+    const quiz = await generateQuickQuiz(db, userId, { kc_id: kcIds[0] }, { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' });
+    await submitQuickQuizAnswers(db, userId, quiz.id, { answers: [{ question_index: 0, selected_index: 0 }] });
+
+    const kcEvents = await db.select().from(events).where(eq(events.kcId, kcIds[0]));
+    const graded = kcEvents.find((e) => e.type === 'retrieval_practice');
+    expect(graded?.source).toBe('tutor');
+  });
+});
