@@ -1,10 +1,20 @@
 ---
+// Course home (task-oriented overview): the server loads everything it
+// already owns — course/branches/KCs for UnderstandNext + MasteryCard, the
+// full task list to SSR-seed the shared store (dashboard.astro's idiom:
+// sweep once explicitly, then fetch without re-sweeping) — and CourseHome
+// composes the page client-side. Reference-only data (assessments, grade
+// summary, events) stays client-fetched inside the island.
 import CourseLayout from '../../../layouts/CourseLayout.astro';
 import { env } from 'cloudflare:workers';
 import { getDb } from '../../../db/client';
 import { getCourseBySlug } from '../../../lib/services/courses';
+import { listTasks } from '../../../lib/services/tasks';
+import { sweepTasks } from '../../../lib/services/taskSweep';
+import { toApi } from '../../../lib/serialize';
+import { hueFor } from '../../../lib/courseHue';
 import { NotFoundError, notFound } from '../../../lib/handleNotFound';
-import StandingTab from '../../../components/standing/StandingTab.svelte';
+import CourseHome from '../../../components/course/CourseHome.svelte';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
@@ -17,11 +27,36 @@ try {
   if (err instanceof NotFoundError) return notFound(Astro);
   throw err;
 }
+
+await sweepTasks(db, userId);
+const allTasks = await listTasks(db, userId, { sweep: false });
+
+// Slim island props: exactly what UnderstandNext/MasteryCard render, not
+// the full DB rows.
+const branches = course.branches.map((b) => ({
+  id: b.id,
+  name: b.name,
+  kcs: b.kcs.map((kc) => ({
+    id: kc.id,
+    name: kc.name,
+    mastery: kc.mastery ?? 0,
+    status: kc.status ?? null,
+    lastEventAt: kc.lastEventAt ?? null,
+  })),
+}));
 ---
 <CourseLayout course={course} active="overview">
-  {course.overview && <p class="overview">{course.overview}</p>}
-
-  <StandingTab client:load courseId={course.id} courseSlug={course.slug} />
+  <CourseHome
+    client:load
+    courseId={course.id}
+    courseSlug={course.slug}
+    courseCode={course.code}
+    courseHue={hueFor(course)}
+    meetingDays={course.meetingDays}
+    overview={course.overview}
+    {branches}
+    initialTasks={toApi(allTasks)}
+  />
 </CourseLayout>
 
 <script>
@@ -38,10 +73,10 @@ try {
     location.replace(`${location.pathname.replace(/\/$/, '')}/${target}`);
   } else if (hash) {
     // #standing (or anything else) just strips the hash — overview is home.
+    // (#assessments is real again — UpNextCard/GradeStatCard link to the
+    // in-page assessments slot — but that's an element id the browser
+    // handles natively, and it only ever appears on same-page clicks, not
+    // as a legacy inbound URL.)
     history.replaceState(null, '', location.pathname);
   }
 </script>
-
-<style>
-  .overview { margin: 0 0 22px; color: var(--text); max-width: 700px; }
-</style>
