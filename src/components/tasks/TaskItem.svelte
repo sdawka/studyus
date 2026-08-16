@@ -8,8 +8,9 @@
   // (or a side-effect hook to run) keep working unchanged.
   import TaskCheckbox from './TaskCheckbox.svelte';
   import TaskTypeIcon from './TaskTypeIcon.svelte';
+  import TaskQuickActions from './TaskQuickActions.svelte';
   import CompletionFlow from './CompletionFlow.svelte';
-  import { daysUntil, taskDueMeta } from '../../lib/plannerDates';
+  import { daysUntil, formatDueDate, taskDueMeta } from '../../lib/plannerDates';
   import { deleteTask, snoozeTask, tasksById, toggleTask, type ApiTask } from '../../lib/stores/tasks';
   import { TASK_TYPE_META, type TaskType } from '../../lib/taskTypeMeta';
 
@@ -100,6 +101,16 @@
   }
 
   let canSnooze = $derived(!compact && task.source === 'system' && !!task.due_date && !task.completed);
+
+  // Type-specific quick action: practice/revisit tasks deep-link into the
+  // same Record-event modal the header pill / mobile FAB open (HeaderActions
+  // listens for this window event on every AppShell page) — CompletionFlow's
+  // tip made this a spoken suggestion; here it's one click on the row.
+  let canLog = $derived(!compact && !task.completed && (task.type === 'practice_kc' || task.type === 'stale_kc'));
+
+  function logPractice() {
+    window.dispatchEvent(new CustomEvent('open-record-event'));
+  }
 </script>
 
 <div class="task-item" class:compact class:completed={task.completed}>
@@ -124,37 +135,41 @@
     <!-- Badges/pills live on their own wrapping line, never the title's —
          the title row (above) is icon+title only so nothing here can ever
          crush it down to a sliver, regardless of how many badges a system
-         task accumulates or how narrow the card column is. -->
+         task accumulates or how narrow the card column is. Scan order:
+         urgency first, then which course(s) — full course codes, not
+         anonymous dots — then provenance last. -->
     {#if task.source === 'system' || task.courses.length > 0 || due}
       <div class="task-meta-row">
+        {#if due}
+          <span
+            class="pill"
+            class:pill-danger={due.danger}
+            class:pill-idle={!due.danger}
+            title={formatDueDate(task.due_date ?? null)}
+          >{due.label}</span>
+        {/if}
+        {#each task.courses as c (c.id)}
+          <span
+            class="course-tag"
+            class:neutral={courseHues[c.id] === undefined}
+            style={courseHues[c.id] !== undefined ? `--course-h:${courseHues[c.id]}` : ''}
+          ><span class="tag-dot" aria-hidden="true"></span>{c.code}</span>
+        {/each}
         {#if task.source === 'system'}
           <span class="pill pill-idle auto-chip" title="Generated automatically">auto</span>
-        {/if}
-        {#if task.courses.length > 0}
-          <span class="course-dots">
-            {#each task.courses as c (c.id)}
-              <span
-                class="dot"
-                class:neutral={courseHues[c.id] === undefined}
-                style={courseHues[c.id] !== undefined ? `--course-h:${courseHues[c.id]}` : ''}
-                title={c.code}
-              ></span>
-            {/each}
-          </span>
-        {/if}
-        {#if due}
-          <span class="pill" class:pill-danger={due.danger} class:pill-idle={!due.danger}>{due.label}</span>
         {/if}
       </div>
     {/if}
   </div>
   {#if !compact}
-    <div class="task-actions">
-      {#if canSnooze}
-        <button type="button" class="btn-snooze" onclick={snooze} title="Push due date to tomorrow" disabled={busy || flowOpen}>Not today</button>
-      {/if}
-      <button type="button" class="btn-delete" onclick={del} title="Delete task" disabled={busy || flowOpen}>Delete</button>
-    </div>
+    <TaskQuickActions
+      {canSnooze}
+      {canLog}
+      busy={busy || flowOpen}
+      onsnooze={snooze}
+      ondelete={del}
+      onlog={logPractice}
+    />
   {/if}
 </div>
 
@@ -265,78 +280,49 @@
     color: var(--muted);
   }
 
-  .course-dots {
-    display: flex;
-    gap: 3px;
-    flex-shrink: 0;
+  /* Course identity as a readable code, not an anonymous dot — the hue dot
+     stays as the color anchor, --course-ink (theme-derived per scheme, so
+     dark stays legible) carries the code text. Neutral = no hue known. */
+  .course-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--course-ink, var(--muted));
+    white-space: nowrap;
   }
 
-  .dot {
-    width: 7px;
-    height: 7px;
+  .course-tag.neutral {
+    color: var(--muted);
+  }
+
+  .tag-dot {
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: var(--course, var(--muted));
+    flex-shrink: 0;
   }
 
-  .dot.neutral {
+  .course-tag.neutral .tag-dot {
     background: var(--muted);
-  }
-
-  .task-actions {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    flex-shrink: 0;
-  }
-
-  .btn-delete,
-  .btn-snooze {
-    background: none;
-    color: var(--muted);
-    font-size: 0.8rem;
-    padding: 0.3rem 0.4rem;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .btn-snooze:hover {
-    color: var(--accent-ink, var(--accent));
-  }
-
-  .btn-delete:hover {
-    color: var(--danger-ink, var(--danger));
   }
 
   /* TaskItem renders inside main in every consumer (TodayTasks, TasksCard,
      TodoDropdown, and now TasksView too) — @media (not @container) is
      deliberate here regardless, since this is a viewport-keyed touch-
-     ergonomics bump (bigger tap targets), not a layout reflow. Public
-     contract (props, classes, markup) is untouched. */
+     ergonomics bump (bigger tap targets), not a layout reflow. The old
+     actions-on-their-own-row wrap is gone with the text buttons: quick
+     actions live in TaskQuickActions' floating cluster now, which never
+     shares the title's flex line at any width. */
   @media (max-width: 767px) {
     .task-item:not(.compact) {
       padding: 0.85rem 0.75rem;
-      /* Actions drop to their own line below (flex-basis:100% on
-         .task-actions forces it, regardless of how much space is left) —
-         the 44px touch targets just below make Not-today/Delete wider
-         than they are on desktop, and phone card widths are exactly the
-         narrow end this component has to hold up at, so keeping them on
-         the title's row here would reopen the same crush. */
-      flex-wrap: wrap;
     }
     .task-checkbox-slot {
       transform: scale(1.25);
-    }
-    .task-actions {
-      flex: 0 0 100%;
-      justify-content: flex-end;
-      margin-top: 4px;
-    }
-    .btn-delete,
-    .btn-snooze {
-      min-height: 44px;
-      padding: 0.65rem 0.5rem;
-      display: inline-flex;
-      align-items: center;
     }
   }
 </style>

@@ -13,7 +13,9 @@
   import { fade } from 'svelte/transition';
   import TaskItem from './TaskItem.svelte';
   import TaskTypeIcon from './TaskTypeIcon.svelte';
+  import TaskQuickActions from './TaskQuickActions.svelte';
   import { masonryItem } from '../../lib/actions/masonry';
+  import { taskDepart } from '../../lib/completionMotion';
   import {
     addTask,
     bucketByDue,
@@ -270,6 +272,12 @@
     await snoozeTask(task.id);
   }
 
+  // Same type-specific quick action as TaskItem's: opens the Record-event
+  // modal via the window event HeaderActions already listens for.
+  function openRecordEvent() {
+    window.dispatchEvent(new CustomEvent('open-record-event'));
+  }
+
   // ---- inline add (per card) ---------------------------------------------
 
   let openAddFormKey = $state<string | null>(null);
@@ -381,24 +389,25 @@
       {/if}
       <!-- Badges/pills on their own wrapping line, never the title's row —
            same reasoning as TaskItem.svelte's task-meta-row: this row
-           already carries a chevron + checkbox + (up to) two action
-           buttons, so the title can't afford to also share its line with
-           an auto chip and the n/m subtask-progress pill. -->
+           already carries a chevron + checkbox, so the title can't afford
+           to also share its line with an auto chip and the n/m
+           subtask-progress pill. -->
       <div class="task-meta-row">
-        {#if task.source === 'system'}
-          <span class="pill pill-idle auto-chip" title="Generated automatically">auto</span>
-        {/if}
         <span class="pill" class:pill-ok={allDone && !task.completed} class:pill-idle={!(allDone && !task.completed)}>
           {doneCount}/{children.length}
         </span>
+        {#if task.source === 'system'}
+          <span class="pill pill-idle auto-chip" title="Generated automatically">auto</span>
+        {/if}
       </div>
     </div>
-    <div class="task-actions">
-      {#if task.source === 'system' && task.due_date && !task.completed}
-        <button type="button" class="btn-snooze" onclick={() => snoozeParent(task)} title="Push due date to tomorrow">Not today</button>
-      {/if}
-      <button type="button" class="btn-delete" onclick={() => removeTask(task)} title="Delete task">Delete</button>
-    </div>
+    <TaskQuickActions
+      canSnooze={task.source === 'system' && !!task.due_date && !task.completed}
+      canLog={!task.completed && (task.type === 'practice_kc' || task.type === 'stale_kc')}
+      onsnooze={() => snoozeParent(task)}
+      ondelete={() => removeTask(task)}
+      onlog={openRecordEvent}
+    />
   </div>
   {#if expanded}
     <div class="children">
@@ -472,13 +481,21 @@
           </div>
 
           <div class="card-body">
+            <!-- Depart wrapper: when the completion hold (COMPLETION_HOLD_MS)
+                 expires and a row reclassifies out of `open`, taskDepart
+                 collapses it (height + the 6px .card-body gap) instead of
+                 letting it blink out; following rows glide up. Local by
+                 default in Svelte 5, so tab switches / card removals don't
+                 replay it on every row. -->
             {#each card.open as task (task.id)}
               {@const kids = selectChildren(allTasks, task.id)}
-              {#if kids.length > 0}
-                {@render parentRow(task, kids)}
-              {:else}
-                <TaskItem {task} {courseHues} />
-              {/if}
+              <div class="depart-wrap" out:taskDepart={{ gap: 6 }}>
+                {#if kids.length > 0}
+                  {@render parentRow(task, kids)}
+                {:else}
+                  <TaskItem {task} {courseHues} />
+                {/if}
+              </div>
             {/each}
 
             {#if card.catchUp.length > 0}
@@ -486,11 +503,13 @@
                 <p class="kicker">Catch up</p>
                 {#each card.catchUp as task (task.id)}
                   {@const kids = selectChildren(allTasks, task.id)}
-                  {#if kids.length > 0}
-                    {@render parentRow(task, kids)}
-                  {:else}
-                    <TaskItem {task} {courseHues} />
-                  {/if}
+                  <div class="depart-wrap" out:taskDepart={{ gap: 6 }}>
+                    {#if kids.length > 0}
+                      {@render parentRow(task, kids)}
+                    {:else}
+                      <TaskItem {task} {courseHues} />
+                    {/if}
+                  </div>
                 {/each}
               </div>
             {/if}
@@ -853,27 +872,6 @@
     text-decoration: line-through;
     color: var(--muted);
   }
-  .task-actions {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    flex-shrink: 0;
-  }
-  .btn-delete,
-  .btn-snooze {
-    background: none;
-    color: var(--muted);
-    font-size: 0.8rem;
-    padding: 0.3rem 0.4rem;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  .btn-snooze:hover {
-    color: var(--accent-ink, var(--accent));
-  }
-  .btn-delete:hover {
-    color: var(--danger-ink, var(--danger));
-  }
 
   /* Subtasks: indented under the expanded parent with a hairline rule,
      per the plan's one-level-of-subtasks rule (children never nest). */
@@ -1077,28 +1075,6 @@
 
     .task-checkbox {
       transform: scale(1.25);
-    }
-
-    /* Same title-crush defense as TaskItem.svelte's mobile block: drop
-       actions to their own full-width row (flex-basis:100% forces it
-       unconditionally) rather than fighting the title for the row's width
-       — phone card widths are the narrow end this row has to hold up at,
-       and the touch-target bump just below makes Delete/Not-today wider
-       here than on desktop, not narrower. */
-    .task-row {
-      flex-wrap: wrap;
-    }
-    .task-actions {
-      flex: 0 0 100%;
-      justify-content: flex-end;
-      margin-top: 4px;
-    }
-    .btn-delete,
-    .btn-snooze {
-      min-height: 44px;
-      padding: 0.65rem 0.5rem;
-      display: inline-flex;
-      align-items: center;
     }
 
     .children {

@@ -5,7 +5,8 @@
   // or a wellness-chip add here is instantly visible to any other
   // task-consuming island mounted on the same page (e.g. TodoDropdown).
   import TaskItem from '../tasks/TaskItem.svelte';
-  import { addTask, bucketByDue, hydrateTasks, selectOpen, tasksList, type ApiTask } from '../../lib/stores/tasks';
+  import { addTask, bucketByDue, hydrateTasks, recentlyCompletedIds, selectOpen, tasksList, type ApiTask } from '../../lib/stores/tasks';
+  import { taskDepart } from '../../lib/completionMotion';
 
   interface CourseOption {
     id: string;
@@ -28,7 +29,23 @@
     return map;
   });
 
-  let openTasks = $derived(selectOpen($tasksList));
+  // A just-completed row holds its place for COMPLETION_HOLD_MS instead of
+  // vanishing on the optimistic flip, so the check, the strikethrough and
+  // the confetti are all watchable before the row bows out via taskDepart.
+  // Same mechanism TasksView uses: grace-held tasks are genuinely completed,
+  // so they're passed through the `open` classification with the flag faked
+  // off, then mapped back to the real (completed) objects that actually
+  // render — TaskItem needs the true flag to draw the struck-through state.
+  let graceIds = $derived($recentlyCompletedIds);
+  let openTasks = $derived.by(() => {
+    const all = $tasksList;
+    const graceHeld = (t: ApiTask) => t.completed && graceIds.has(t.id);
+    const candidates = all
+      .filter((t) => !t.completed || graceHeld(t))
+      .map((t) => (graceHeld(t) ? { ...t, completed: false } : t));
+    const byId = new Map(all.map((t) => [t.id, t]));
+    return selectOpen(candidates).map((t) => byId.get(t.id) ?? t);
+  });
   let buckets = $derived(bucketByDue(openTasks));
 
   // "Next" from the store is unbounded (everything after today, undated
@@ -89,10 +106,15 @@
   {:else}
     {#if buckets.overdue.length > 0}
       <div class="section">
-        <p class="kicker section-label">Overdue</p>
+        <p class="kicker section-label">Overdue <span class="count">· {buckets.overdue.length}</span></p>
+        <!-- Depart wrapper: when the completion hold expires and the row
+             leaves `open`, taskDepart collapses its height and one .rows gap
+             so the rows below glide up instead of snapping. -->
         <div class="rows">
           {#each buckets.overdue as task (task.id)}
-            <TaskItem {task} compact={false} {courseHues} />
+            <div class="depart-wrap" out:taskDepart={{ gap: 6 }}>
+              <TaskItem {task} compact={false} {courseHues} />
+            </div>
           {/each}
         </div>
       </div>
@@ -100,10 +122,12 @@
 
     {#if buckets.today.length > 0}
       <div class="section">
-        <p class="kicker section-label">Today</p>
+        <p class="kicker section-label">Today <span class="count">· {buckets.today.length}</span></p>
         <div class="rows">
           {#each buckets.today as task (task.id)}
-            <TaskItem {task} compact={false} {courseHues} />
+            <div class="depart-wrap" out:taskDepart={{ gap: 6 }}>
+              <TaskItem {task} compact={false} {courseHues} />
+            </div>
           {/each}
         </div>
       </div>
@@ -111,10 +135,12 @@
 
     {#if nextRows.length > 0}
       <div class="section">
-        <p class="kicker section-label">Next 7 days</p>
+        <p class="kicker section-label">Next 7 days <span class="count">· {nextInWindow.length}</span></p>
         <div class="rows">
           {#each nextRows as task (task.id)}
-            <TaskItem {task} compact={false} {courseHues} />
+            <div class="depart-wrap" out:taskDepart={{ gap: 6 }}>
+              <TaskItem {task} compact={false} {courseHues} />
+            </div>
           {/each}
         </div>
         {#if nextOverflow > 0}
@@ -128,7 +154,9 @@
         <summary>Catch up ({buckets.catchUp.length})</summary>
         <div class="rows">
           {#each buckets.catchUp as task (task.id)}
-            <TaskItem {task} compact={false} {courseHues} />
+            <div class="depart-wrap" out:taskDepart={{ gap: 6 }}>
+              <TaskItem {task} compact={false} {courseHues} />
+            </div>
           {/each}
         </div>
       </details>
@@ -168,6 +196,13 @@
   .section-label {
     margin-bottom: var(--space-2, 8px);
   }
+  /* Plate-size at a glance: same kicker voice, slightly recessed so the
+     word stays the label and the number stays an aside. */
+  .section-label .count {
+    font-weight: 500;
+    letter-spacing: 0;
+    opacity: 0.75;
+  }
   .rows {
     display: grid;
     /* minmax(0,1fr), not the implicit `auto` track: auto sizes to the widest
@@ -175,6 +210,12 @@
        page) wider than the card instead of letting .task-title ellipsize. */
     grid-template-columns: minmax(0, 1fr);
     gap: 6px;
+  }
+  /* The depart wrapper is now the grid item, so the minmax(0,1fr) chain has
+     to continue through it — without min-width:0 it takes its min-content
+     width and long task titles push the card (and the page) wide. */
+  .depart-wrap {
+    min-width: 0;
   }
   .more-link {
     display: inline-block;
@@ -222,15 +263,8 @@
     gap: 8px;
   }
 
-  /* main content-box ≤ 480px (phone): the Delete affordance costs ~55px of a
-     ~310px row and starves task titles down to ~10 characters; deletion keeps
-     its home on /tasks, where rows are the page's full width. Same call for
-     Not today (snooze) — it's a system-task-only extra action, and /tasks
-     (TasksView, full page width) is where it stays reachable at this size. */
-  @container (max-width: 480px) {
-    .rows :global(.btn-delete),
-    .rows :global(.btn-snooze) {
-      display: none;
-    }
-  }
+  /* The old ≤480 rule hiding Delete/Not-today is gone: quick actions moved
+     into TaskQuickActions' hover/disclosure cluster, which costs a row no
+     at-rest width — so phone-width dashboard rows keep every affordance
+     (via the ⋯ disclosure) instead of losing them to the title crush. */
 </style>
