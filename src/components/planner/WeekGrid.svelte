@@ -4,7 +4,6 @@
   import {
     addDays,
     addMinutes,
-    calendarItemTimeLabel,
     isSameLocalDay,
     localDateKey,
     localDateKeyFromIso,
@@ -13,6 +12,8 @@
     startOfDay,
     timeRangeLabel,
   } from '../../lib/plannerDates';
+  import EventHoverCard from './EventHoverCard.svelte';
+  import { createEventHoverCard } from './eventHoverCard.svelte.ts';
 
   interface CourseOption {
     id: string;
@@ -299,21 +300,6 @@
     return item.details?.done === true ? '●' : '○';
   }
 
-  function typeLabel(type: CalendarItem['type']): string {
-    switch (type) {
-      case 'assessment_due':
-        return 'Due';
-      case 'task_due':
-        return 'Task';
-      case 'study_session':
-        return 'Study session';
-      case 'event_logged':
-        return 'Logged';
-      case 'class_session':
-        return 'Class';
-    }
-  }
-
   // class_session's attendance glyph on the block itself (unmarked shows
   // nothing — an empty grid slot shouldn't imply "missed").
   function classStatusGlyph(item: CalendarItem): string {
@@ -333,48 +319,12 @@
 
   // Hover card (internal, presentational — distinct from the click-driven
   // EventPopover PlannerView owns; this is a lightweight 200ms hover peek).
-  let hoverItem = $state<CalendarItem | null>(null);
-  let hoverPos = $state({ x: 0, y: 0 });
-  let hoverTimer: ReturnType<typeof setTimeout> | undefined;
-
-  // Hover card's own footprint — used both to flip it to the anchor's left
-  // when it would overflow the right edge, and to clamp it vertically so it
-  // never overflows the bottom (neither existed before; the card just
-  // overflowed silently at the right edge of the viewport).
-  const HOVER_CARD_W = 220;
-  const HOVER_CARD_H_EST = 132;
-  const HOVER_MARGIN = 8;
-
-  function onBlockEnter(e: MouseEvent, item: CalendarItem) {
-    clearTimeout(hoverTimer);
-    const target = e.currentTarget as HTMLElement;
-    hoverTimer = setTimeout(() => {
-      const rect = target.getBoundingClientRect();
-      let x = rect.right + HOVER_MARGIN;
-      if (x + HOVER_CARD_W + HOVER_MARGIN > window.innerWidth) x = Math.max(HOVER_MARGIN, rect.left - HOVER_CARD_W - HOVER_MARGIN);
-      let y = rect.top;
-      if (y + HOVER_CARD_H_EST + HOVER_MARGIN > window.innerHeight) y = Math.max(HOVER_MARGIN, window.innerHeight - HOVER_CARD_H_EST - HOVER_MARGIN);
-      hoverPos = { x, y };
-      hoverItem = item;
-    }, 200);
-  }
-  function onBlockLeave() {
-    clearTimeout(hoverTimer);
-    hoverItem = null;
-  }
-
-  function detailsSnippet(item: CalendarItem): string | null {
-    const d = item.details ?? {};
-    if (item.type === 'assessment_due' && typeof d.weight_pct === 'number') return `Worth ${d.weight_pct}% of grade`;
-    if (item.type === 'study_session' && typeof d.planned_minutes === 'number') return `${d.planned_minutes} min planned`;
-    if (item.type === 'event_logged' && typeof d.kc_name === 'string' && d.kc_name) return d.kc_name;
-    if (item.type === 'class_session') {
-      const status = d.status === 'attended' ? 'Attended' : d.status === 'missed' ? 'Missed' : 'Not marked';
-      const note = typeof d.note === 'string' && d.note ? d.note : null;
-      return note ? `${status} — ${note}` : status;
-    }
-    return null;
-  }
+  // State/positioning lives in the shared hook (v1.6.1 extraction — see
+  // eventHoverCard.svelte.ts); this call takes no options, so behavior here
+  // is unchanged from before the extraction (same 200ms delay, same edge-flip
+  // math). dashboard/WeekView's collapsed chips use the same hook with a
+  // shorter delay + a popover-open suppression guard.
+  const hoverCard = createEventHoverCard();
 
   // Shared pixel->Date math for both the plain-click path and drag-create:
   // `clientY` relative to the day column's measured top, clamped to the
@@ -538,8 +488,8 @@
             data-event-id={item.id}
             style={`--course-h:${hueForItem(item)}`}
             onclick={() => onSelect?.(item)}
-            onmouseenter={(e) => onBlockEnter(e, item)}
-            onmouseleave={onBlockLeave}
+            onmouseenter={(e) => hoverCard.onEnter(e, item)}
+            onmouseleave={() => hoverCard.onLeave()}
           >
             {pillGlyph(item)} {item.title}
           </button>
@@ -604,8 +554,8 @@
               data-event-id={p.item.id}
               style={`--course-h:${hueForItem(p.item)}; top:${top}px; height:${height}px; left:calc(${leftPct}% + 2px); width:calc(${widthPct}% - 4px);`}
               onclick={() => onSelect?.(p.item)}
-              onmouseenter={(e) => onBlockEnter(e, p.item)}
-              onmouseleave={onBlockLeave}
+              onmouseenter={(e) => hoverCard.onEnter(e, p.item)}
+              onmouseleave={() => hoverCard.onLeave()}
             >
               <span class="evt-title">{#if statusGlyph}<span class="evt-status">{statusGlyph}</span>{/if}{blockTitle(p)}</span>
               {#if twoLine}
@@ -628,20 +578,9 @@
   </div>
 </div>
 
-{#if hoverItem}
-  {@const item = hoverItem}
-  {@const course = courseFor(item)}
-  <div class="hover-card" style={`left:${hoverPos.x}px; top:${hoverPos.y}px; --course-h:${hueForItem(item)}`}>
-    <p class="hc-title">{item.title}</p>
-    <p class="hc-time">{calendarItemTimeLabel(item)}</p>
-    {#if course}
-      <span class="chip hc-chip">{course.code}</span>
-    {/if}
-    <p class="hc-type">{typeLabel(item.type)}</p>
-    {#if detailsSnippet(item)}
-      <p class="hc-detail">{detailsSnippet(item)}</p>
-    {/if}
-  </div>
+{#if hoverCard.item}
+  {@const item = hoverCard.item}
+  <EventHoverCard {item} pos={hoverCard.pos} course={courseFor(item)} />
 {/if}
 
 <style>
@@ -916,55 +855,6 @@
     font-variant-numeric: tabular-nums;
     opacity: 0.85;
   }
-  .hover-card {
-    position: fixed;
-    z-index: 60;
-    width: 220px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-pop);
-    padding: 10px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    pointer-events: none;
-  }
-  /* Touch-affordance suppression, not layout: a hover card has no meaning
-     without a hover-capable pointer, and leaving it reachable on touch would
-     mean a stray long-press-adjacent event leaves a card stuck on screen
-     with no hover-leave to dismiss it (see docs/design/mobile-shell.md's
-     hover-vs-viewport-query rule). */
-  @media (hover: none) {
-    .hover-card {
-      display: none;
-    }
-  }
-  .hc-title {
-    font-size: 13px;
-    font-weight: 650;
-  }
-  .hc-time {
-    font-size: 11.5px;
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-  }
-  .hc-chip {
-    align-self: flex-start;
-    padding: 2px 8px;
-    font-size: 10.5px;
-    background: var(--course-soft);
-    color: var(--course-ink);
-    border: none;
-  }
-  .hc-type {
-    font-size: 11px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-  .hc-detail {
-    font-size: 11.5px;
-    color: var(--text);
-  }
+  /* Hover-card markup/styles live in EventHoverCard.svelte (v1.6.1
+     extraction) — rendered as a sibling component below, not inline here. */
 </style>

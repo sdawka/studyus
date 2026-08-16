@@ -4,6 +4,8 @@
   import WeekGrid from '../planner/WeekGrid.svelte';
   import EventPopover from '../planner/EventPopover.svelte';
   import CreateSessionPopover from '../planner/CreateSessionPopover.svelte';
+  import EventHoverCard from '../planner/EventHoverCard.svelte';
+  import { createEventHoverCard } from '../planner/eventHoverCard.svelte.ts';
   import { apiFetch } from '../../lib/apiClient';
   import { calendarItemStartLabel } from '../../lib/plannerDates';
   import type { CalendarItem } from '../../lib/types/calendar';
@@ -42,6 +44,11 @@
   let createSlotEnd = $state<Date | null>(null);
   let createAnchor = $state<{ x: number; y: number; width: number; height: number } | null>(null);
   let lastPointerPos = { x: 0, y: 0 };
+
+  // Collapsed-chip hover peek (v1.6.1) — same hook WeekGrid's own event
+  // blocks use (see eventHoverCard.svelte.ts), just a shorter delay and a
+  // suppression guard so it never fights the click-opened EventPopover below.
+  const chipHoverCard = createEventHoverCard({ delayMs: 150, suppressed: () => showPopover });
 
   function toggle() {
     expanded = !expanded;
@@ -151,6 +158,11 @@
   }
 
   async function selectItem(item: CalendarItem) {
+    // A hover card may already be showing on the exact chip being clicked
+    // (no guaranteed mouseleave before the popover covers it) — dismiss it
+    // immediately rather than relying on the suppressed() re-check, which
+    // only guards a hover that hasn't started rendering yet.
+    chipHoverCard.hide();
     selectedItem = item;
     await tick();
     const target = rootEl?.querySelector<HTMLElement>(`[data-event-id="${item.id}"]`);
@@ -232,15 +244,20 @@
               <div class="day-empty">—</div>
             {:else}
               {#each itemsByDay[i].slice(0, MAX_CHIPS) as item (item.id)}
-                <div
+                <button
+                  type="button"
                   class="chip-evt"
                   class:attend-chip={isAttendClassItem(item)}
+                  class:selected={selectedItem?.id === item.id}
                   style={`--course-h:${hueForItem(item)}`}
-                  title={shortTitle(item)}
+                  data-event-id={item.id}
+                  onclick={() => selectItem(item)}
+                  onmouseenter={(e) => chipHoverCard.onEnter(e, item)}
+                  onmouseleave={() => chipHoverCard.onLeave()}
                 >
                   <span class="t">{chipLabel(item)}</span>
                   {#if !item.all_day}<span class="time">{calendarItemStartLabel(item)}</span>{/if}
-                </div>
+                </button>
               {/each}
               {#if itemsByDay[i].length > MAX_CHIPS}
                 <div class="overflow">+{itemsByDay[i].length - MAX_CHIPS}</div>
@@ -267,6 +284,11 @@
     </div>
   </div>
 </section>
+
+{#if chipHoverCard.item}
+  {@const hoverItem = chipHoverCard.item}
+  <EventHoverCard item={hoverItem} pos={chipHoverCard.pos} course={courseFor(hoverItem)} />
+{/if}
 
 {#if showPopover && selectedItem && popoverAnchor}
   <!-- Keyed by item id — see PlannerView's identical comment: reuse of this
@@ -407,6 +429,15 @@
     color: var(--accent-ink);
   }
   .chip-evt {
+    /* Was a plain <div>; now an interactive <button> (v1.6.1, hover-card +
+       click-to-popover) — these reset the UA button chrome the markup
+       change would otherwise introduce. Every other declaration here is
+       unchanged from before the conversion. */
+    appearance: none;
+    width: 100%;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
     display: flex;
     align-items: center;
     gap: 4px;
@@ -418,6 +449,11 @@
     border: 1px solid var(--course);
     color: var(--course-ink);
     overflow: hidden;
+  }
+  .chip-evt.selected {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    box-shadow: var(--shadow-pop);
   }
   .chip-evt .t {
     font-weight: 560;
