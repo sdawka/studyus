@@ -1,0 +1,99 @@
+---
+// Opens with the thesis, not a features list. Also lays down the honesty
+// beat immediately — a Gen Z audience clocks a fake "we win everything"
+// sweep on sight, so we say so before the first competitor shows up.
+---
+<section class="hero mk-container">
+  <p class="hero-eyebrow reveal">The comparison page, not the sweep</p>
+
+  <h1 class="hero-title">
+    <span class="reveal">Planners tell you</span>
+    <span class="reveal" style="--reveal-delay: 60ms;"><em>when.</em></span>
+    <span class="reveal" style="--reveal-delay: 120ms;">Flashcard apps tell you</span>
+    <span class="reveal" style="--reveal-delay: 180ms;"><em>how.</em></span>
+    <span class="hero-title-line reveal" style="--reveal-delay: 260ms;">Nobody tells you what's next.</span>
+  </h1>
+
+  <p class="hero-sub reveal" style="--reveal-delay: 340ms;">
+    We looked at seven other apps students actually use. Below is what each one
+    is genuinely good at, where it stops, and why we built the thing that sits
+    in the gap.
+  </p>
+
+  <nav class="hero-index reveal" style="--reveal-delay: 400ms;" aria-label="On this page">
+    <a href="#map">The map</a>
+    <a href="#field">The field</a>
+    <a href="#glance">At a glance</a>
+    <a href="#honest">When not to pick us</a>
+  </nav>
+</section>
+
+<style>
+  .hero {
+    padding-block: clamp(56px, 10vw, 108px) clamp(48px, 8vw, 80px);
+  }
+
+  .hero-eyebrow {
+    font-family: var(--mk-font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mk-accent-ink);
+    margin-bottom: 20px;
+  }
+
+  .hero-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.28ch;
+    font-size: clamp(32px, 5.4vw, 58px);
+    max-width: 18ch;
+    font-weight: 560;
+  }
+
+  .hero-title em {
+    font-style: normal;
+    color: var(--mk-accent-ink);
+  }
+
+  .hero-title-line {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    color: var(--mk-muted);
+  }
+
+  .hero-sub {
+    margin-top: 28px;
+    max-width: 54ch;
+    font-size: clamp(16px, 1.6vw, 18.5px);
+    color: var(--mk-muted);
+  }
+
+  .hero-index {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--mk-hairline);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 24px;
+  }
+
+  .hero-index a {
+    font-family: var(--mk-font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    color: var(--mk-faint);
+    transition: color 150ms;
+  }
+
+  .hero-index a:hover {
+    color: var(--mk-ink);
+  }
+
+  .hero-index a::before {
+    content: '→ ';
+  }
+</style>

@@ -1,0 +1,74 @@
+---
+// Closes the page. Direct, no urgency tricks, and a real way back to /.
+---
+<section class="cta mk-container">
+  <div class="cta-box reveal reveal-scale">
+    <p class="cta-eyebrow">Ready when you are</p>
+    <h2 class="cta-title">Stop guessing what's next.</h2>
+    <p class="cta-sub">Free to start. No streak to break.</p>
+    <div class="cta-actions">
+      <a class="mk-btn mk-btn-primary" href="/login">Get started</a>
+      <a class="mk-btn mk-btn-ghost" href="/">Back to the overview</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cta {
+    padding-block: clamp(56px, 9vw, 96px) clamp(72px, 11vw, 120px);
+  }
+
+  .cta-box {
+    text-align: center;
+    padding: clamp(40px, 6vw, 64px) clamp(24px, 6vw, 48px);
+    border-radius: var(--mk-radius-lg);
+    background: var(--mk-ink);
+    color: var(--mk-bg);
+  }
+
+  .cta-eyebrow {
+    font-family: var(--mk-font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin-bottom: 16px;
+  }
+
+  .cta-title {
+    font-size: clamp(28px, 4.4vw, 46px);
+  }
+
+  .cta-sub {
+    margin-top: 14px;
+    font-size: 16px;
+    opacity: 0.75;
+  }
+
+  .cta-actions {
+    margin-top: 32px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .cta-box .mk-btn-primary {
+    background: var(--mk-bg);
+    color: var(--mk-ink);
+  }
+
+  .cta-box .mk-btn-primary:hover {
+    background: var(--mk-accent-soft);
+    color: var(--mk-accent-ink);
+  }
+
+  .cta-box .mk-btn-ghost {
+    border-color: color-mix(in oklch, var(--mk-bg) 30%, transparent);
+    color: var(--mk-bg);
+  }
+
+  .cta-box .mk-btn-ghost:hover {
+    border-color: var(--mk-bg);
+  }
+</style>

@@ -1,0 +1,226 @@
+---
+// Signature element: two families of study app converge on the one
+// question neither answers. This is the argument of the whole page,
+// drawn once so the field-guide entries below have somewhere to land.
+const whenApps = ['MyStudyLife', 'Shovel', 'Todoist', 'Motion', 'Notion'];
+const howApps = ['Anki', 'Quizlet'];
+---
+<section id="map" class="map mk-container">
+  <p class="map-eyebrow reveal">The map</p>
+  <h2 class="map-title reveal">Two families of app. One question neither one answers.</h2>
+
+  <div class="map-diagram">
+    <div class="map-lane map-lane-when reveal reveal-left">
+      <p class="map-lane-label">Answers <strong>when</strong></p>
+      <ul class="map-lane-list">
+        {whenApps.map((name) => <li>{name}</li>)}
+      </ul>
+    </div>
+
+    <div class="map-lane map-lane-how reveal reveal-left" style="--reveal-delay: 100ms;">
+      <p class="map-lane-label">Answers <strong>how</strong></p>
+      <ul class="map-lane-list">
+        {howApps.map((name) => <li>{name}</li>)}
+      </ul>
+    </div>
+
+    <div class="map-connector" aria-hidden="true">
+      <div class="map-connector-line map-connector-line-top"></div>
+      <div class="map-connector-line map-connector-line-bottom"></div>
+    </div>
+
+    <div class="map-node reveal reveal-scale" style="--reveal-delay: 180ms;">
+      <p class="map-node-label">Answers <strong>what's next</strong></p>
+      <p class="map-node-name">studyus</p>
+      <p class="map-node-copy">
+        Course-scoped planning, weighted deadlines, and spaced-retrieval
+        practice, reading each other instead of living in separate apps.
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .map {
+    padding-block: clamp(56px, 9vw, 96px);
+  }
+
+  .map-eyebrow {
+    font-family: var(--mk-font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mk-faint);
+    margin-bottom: 14px;
+  }
+
+  .map-title {
+    font-size: clamp(24px, 3.4vw, 36px);
+    max-width: 22ch;
+    margin-bottom: 48px;
+  }
+
+  .map-diagram {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 0;
+  }
+
+  .map-lane {
+    padding: 22px 28px;
+    border: 1px solid var(--mk-border);
+    background: var(--mk-surface);
+  }
+
+  .map-lane-when {
+    border-radius: var(--mk-radius-lg) 0 0 0;
+    border-right: none;
+  }
+
+  .map-lane-how {
+    border-radius: 0 var(--mk-radius-lg) 0 0;
+  }
+
+  .map-lane-label {
+    font-family: var(--mk-font-mono);
+    font-size: 13px;
+    color: var(--mk-muted);
+    margin-bottom: 14px;
+  }
+
+  .map-lane-label strong {
+    color: var(--mk-ink);
+    font-weight: 600;
+  }
+
+  .map-lane-list {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .map-lane-list li {
+    font-size: 14.5px;
+    padding: 6px 13px;
+    border: 1px solid var(--mk-border);
+    border-radius: 999px;
+    background: var(--mk-bg);
+    color: var(--mk-muted);
+  }
+
+  .map-connector {
+    grid-column: 1 / -1;
+    display: flex;
+    height: 56px;
+  }
+
+  .map-connector-line {
+    flex: 1;
+    position: relative;
+  }
+
+  .map-connector-line-top::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom right,
+      transparent calc(50% - 1px),
+      var(--mk-border) 50%,
+      transparent calc(50% + 1px)
+    );
+  }
+
+  .map-connector-line-bottom::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom left,
+      transparent calc(50% - 1px),
+      var(--mk-border) 50%,
+      transparent calc(50% + 1px)
+    );
+  }
+
+  .map-node {
+    grid-column: 1 / -1;
+    justify-self: center;
+    text-align: center;
+    max-width: 46ch;
+    padding: 26px 32px 30px;
+    border-radius: var(--mk-radius-lg);
+    background: var(--mk-accent-soft);
+    border: 1px solid color-mix(in oklch, var(--mk-accent) 40%, transparent);
+    box-shadow: var(--mk-shadow-pop);
+  }
+
+  .map-node-label {
+    font-family: var(--mk-font-mono);
+    font-size: 13px;
+    color: var(--mk-accent-ink);
+  }
+
+  .map-node-label strong {
+    font-weight: 600;
+  }
+
+  .map-node-name {
+    font-family: var(--mk-font-display);
+    font-size: clamp(22px, 2.6vw, 28px);
+    font-weight: 640;
+    letter-spacing: -0.02em;
+    margin-top: 6px;
+  }
+
+  .map-node-name::after {
+    content: '.';
+    color: var(--mk-accent);
+  }
+
+  .map-node-copy {
+    margin-top: 12px;
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--mk-muted);
+  }
+
+  @media (max-width: 720px) {
+    .map-diagram {
+      grid-template-columns: 1fr;
+    }
+
+    .map-lane-when,
+    .map-lane-how {
+      border-radius: var(--mk-radius-lg);
+      border-right: 1px solid var(--mk-border);
+    }
+
+    .map-lane-how {
+      margin-top: 12px;
+    }
+
+    .map-connector {
+      height: 40px;
+    }
+
+    .map-connector-line-top,
+    .map-connector-line-bottom {
+      flex: none;
+      width: 1px;
+      margin-inline: auto;
+      background: var(--mk-border);
+    }
+
+    .map-connector-line-top::after,
+    .map-connector-line-bottom::after {
+      display: none;
+    }
+
+    .map-connector {
+      justify-content: center;
+      gap: 0;
+    }
+  }
+</style>

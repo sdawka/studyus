@@ -1,0 +1,173 @@
+---
+// Compact spec-sheet table for people who just want the grid. Kept honest:
+// "Some" is a real value, not just yes/no, and studyus doesn't sweep every row.
+type Cell = 'yes' | 'some' | 'no';
+
+interface Row {
+  name: string;
+  courseAware: Cell;
+  weightedDeadlines: Cell;
+  whatsNext: Cell;
+  spacedPractice: Cell;
+  recovers: Cell;
+  price: string;
+  lead?: boolean;
+}
+
+const rows: Row[] = [
+  {
+    name: 'studyus',
+    courseAware: 'yes',
+    weightedDeadlines: 'yes',
+    whatsNext: 'yes',
+    spacedPractice: 'yes',
+    recovers: 'yes',
+    price: 'Start free',
+    lead: true,
+  },
+  { name: 'MyStudyLife', courseAware: 'yes', weightedDeadlines: 'yes', whatsNext: 'no', spacedPractice: 'no', recovers: 'no', price: 'Free · $4.99/mo' },
+  { name: 'Shovel', courseAware: 'yes', weightedDeadlines: 'yes', whatsNext: 'no', spacedPractice: 'no', recovers: 'no', price: 'Paid after trial' },
+  { name: 'Todoist', courseAware: 'no', weightedDeadlines: 'no', whatsNext: 'no', spacedPractice: 'no', recovers: 'no', price: 'Free · $4/mo' },
+  { name: 'Notion', courseAware: 'some', weightedDeadlines: 'some', whatsNext: 'no', spacedPractice: 'no', recovers: 'no', price: 'Free plan' },
+  { name: 'Motion', courseAware: 'no', weightedDeadlines: 'no', whatsNext: 'no', spacedPractice: 'no', recovers: 'yes', price: '~$19/mo' },
+  { name: 'Anki', courseAware: 'no', weightedDeadlines: 'no', whatsNext: 'some', spacedPractice: 'yes', recovers: 'no', price: 'Free' },
+  { name: 'Quizlet', courseAware: 'no', weightedDeadlines: 'no', whatsNext: 'no', spacedPractice: 'some', recovers: 'no', price: 'Free · $35.99/yr' },
+];
+
+const columns: Array<[keyof Row, string]> = [
+  ['courseAware', 'Course-aware planning'],
+  ['weightedDeadlines', 'Weighted deadlines'],
+  ['whatsNext', 'What to study next'],
+  ['spacedPractice', 'Spaced practice'],
+  ['recovers', 'Recovers after a bad week'],
+];
+
+const glyph: Record<Cell, string> = { yes: '✓', some: 'some', no: '–' };
+---
+<section id="glance" class="glance mk-container">
+  <p class="glance-eyebrow reveal">At a glance</p>
+  <h2 class="glance-title reveal">The spec sheet, if you just want the grid.</h2>
+
+  <div class="glance-table-wrap reveal" style="--reveal-delay: 80ms;">
+    <table class="glance-table">
+      <thead>
+        <tr>
+          <th scope="col">App</th>
+          {columns.map(([, label]) => <th scope="col">{label}</th>)}
+          <th scope="col">Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr class={row.lead ? 'glance-row-lead' : undefined}>
+            <th scope="row">{row.name}</th>
+            {columns.map(([key]) => (
+              <td class={`glance-cell glance-cell-${row[key] as Cell}`}>
+                <span aria-hidden="true">{glyph[row[key] as Cell]}</span>
+                <span class="glance-sr">
+                  {row[key] === 'yes' ? 'Yes' : row[key] === 'some' ? 'Partially' : 'No'}
+                </span>
+              </td>
+            ))}
+            <td class="glance-price">{row.price}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<style>
+  .glance {
+    padding-block: clamp(56px, 9vw, 96px);
+  }
+
+  .glance-eyebrow {
+    font-family: var(--mk-font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mk-faint);
+    margin-bottom: 14px;
+  }
+
+  .glance-title {
+    font-size: clamp(24px, 3.4vw, 36px);
+    max-width: 22ch;
+    margin-bottom: 36px;
+  }
+
+  .glance-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--mk-border);
+    border-radius: var(--mk-radius-md);
+  }
+
+  .glance-table {
+    width: 100%;
+    min-width: 780px;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  .glance-table th,
+  .glance-table td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--mk-hairline);
+    white-space: nowrap;
+  }
+
+  .glance-table thead th {
+    font-family: var(--mk-font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--mk-faint);
+    font-weight: 500;
+    white-space: normal;
+  }
+
+  .glance-table tbody th {
+    font-family: var(--mk-font-display);
+    font-weight: 600;
+    color: var(--mk-ink);
+  }
+
+  .glance-row-lead {
+    background: var(--mk-accent-soft);
+  }
+
+  .glance-row-lead th {
+    color: var(--mk-accent-ink);
+  }
+
+  .glance-table tbody tr:last-child td,
+  .glance-table tbody tr:last-child th {
+    border-bottom: none;
+  }
+
+  .glance-cell {
+    font-family: var(--mk-font-mono);
+    font-size: 13px;
+  }
+
+  .glance-cell-yes { color: var(--mk-accent-ink); }
+  .glance-cell-some { color: var(--mk-muted); }
+  .glance-cell-no { color: var(--mk-faint); }
+
+  .glance-price {
+    color: var(--mk-muted);
+    font-family: var(--mk-font-mono);
+    font-size: 13px;
+  }
+
+  .glance-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+</style>

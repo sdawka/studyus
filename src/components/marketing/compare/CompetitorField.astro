@@ -1,0 +1,230 @@
+---
+// The field guide: one honest entry per competitor, grouped into the same
+// two lanes as the map above so the structure keeps making the argument.
+interface Entry {
+  name: string;
+  tag: string;
+  price: string;
+  great: string;
+  different: string;
+}
+
+const planners: Entry[] = [
+  {
+    name: 'MyStudyLife',
+    tag: 'Academic planner',
+    price: 'Free · Premium $4.99/mo',
+    great:
+      "Free, well-rated (4.7★), and built for the actual shape of a term — rotating Week A/B timetables, class times, exam dates.",
+    different:
+      "It's a filing cabinet for what's due, not an advisor. No sense of what you're weak on, so nothing tells you what to open tonight.",
+  },
+  {
+    name: 'Shovel',
+    tag: 'Time-budgeting planner',
+    price: '7-day free trial, paid after',
+    great:
+      'Reads your syllabus and builds a real schedule from it, with Canvas and Brightspace sync so deadlines show up without data entry.',
+    different:
+      "Optimizes for when you have a free hour, not what you're shakiest on. Two topics can be equally scheduled and unequally understood.",
+  },
+  {
+    name: 'Todoist',
+    tag: 'Task manager',
+    price: 'Free · Pro $4/mo',
+    great:
+      "Fast, flexible, and works for everything in your life, not just school. If you already live in it, that's a real advantage.",
+    different:
+      "No concept of a course, a grade weight, or a flashcard. A problem set and a dentist appointment are the same kind of row.",
+  },
+  {
+    name: 'Motion',
+    tag: 'AI auto-scheduling calendar',
+    price: '~$19/mo (half off for students)',
+    great:
+      'Genuinely good at re-slotting your whole day when a class runs long or you sleep through an alarm — recovery is its whole pitch.',
+    different:
+      "Expensive, and it only ever moves time around. It has an opinion on your calendar, never on what you actually know.",
+  },
+  {
+    name: 'Notion',
+    tag: 'All-in-one workspace',
+    price: 'Free plan available',
+    great:
+      'Infinitely customizable — one place for notes, docs, and databases if you want to build it. Great for group projects and shared wikis.',
+    different:
+      "Gives you a blank page and calls it a study system. Building the perfect Notion setup is its own, very effective procrastination.",
+  },
+];
+
+const memory: Entry[] = [
+  {
+    name: 'Anki',
+    tag: 'Spaced repetition engine',
+    price: 'Free (≈$25 on iOS)',
+    great:
+      "The engine everyone else is approximating. If you want maximum control over the algorithm, nothing else comes close.",
+    different:
+      "No planner, no deadlines, no course structure — and you're building every card yourself. Miss a week and the queue just piles up.",
+  },
+  {
+    name: 'Quizlet',
+    tag: 'Flashcards & study sets',
+    price: 'Free · Plus $35.99/yr',
+    great:
+      "500M+ sets already made. Odds are good someone in your exact class already built the deck you need.",
+    different:
+      "The study modes that actually work best sit behind the paywall, and there's still no plan telling you when to use them.",
+  },
+];
+---
+<section id="field" class="field mk-container">
+  <p class="field-eyebrow reveal">The field</p>
+  <h2 class="field-title reveal">Great at their job. A different job.</h2>
+  <p class="field-sub reveal" style="--reveal-delay: 60ms;">
+    No app here is bad. Each one is honestly good at something — we just
+    checked whether that something was "what should I study tonight."
+  </p>
+
+  <div class="field-group">
+    <p class="field-group-label reveal">Answers when — planners &amp; schedulers</p>
+    <div class="field-list">
+      {planners.map((c, i) => (
+        <article class="field-card reveal" style={`--reveal-delay: ${i * 60}ms;`}>
+          <header class="field-card-head">
+            <h3>{c.name}</h3>
+            <span class="field-card-tag">{c.tag}</span>
+          </header>
+          <p class="field-card-price">{c.price}</p>
+          <p class="field-card-line"><span>Great at</span>{c.great}</p>
+          <p class="field-card-line field-card-line-different"><span>Different job</span>{c.different}</p>
+        </article>
+      ))}
+    </div>
+  </div>
+
+  <div class="field-group">
+    <p class="field-group-label reveal">Answers how — memorization tools</p>
+    <div class="field-list">
+      {memory.map((c, i) => (
+        <article class="field-card reveal" style={`--reveal-delay: ${i * 60}ms;`}>
+          <header class="field-card-head">
+            <h3>{c.name}</h3>
+            <span class="field-card-tag">{c.tag}</span>
+          </header>
+          <p class="field-card-price">{c.price}</p>
+          <p class="field-card-line"><span>Great at</span>{c.great}</p>
+          <p class="field-card-line field-card-line-different"><span>Different job</span>{c.different}</p>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .field {
+    padding-block: clamp(56px, 9vw, 96px);
+  }
+
+  .field-eyebrow {
+    font-family: var(--mk-font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mk-faint);
+    margin-bottom: 14px;
+  }
+
+  .field-title {
+    font-size: clamp(24px, 3.4vw, 36px);
+    max-width: 20ch;
+  }
+
+  .field-sub {
+    margin-top: 14px;
+    max-width: 56ch;
+    color: var(--mk-muted);
+    font-size: 16px;
+  }
+
+  .field-group {
+    margin-top: 48px;
+  }
+
+  .field-group-label {
+    font-family: var(--mk-font-mono);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    color: var(--mk-muted);
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--mk-hairline);
+  }
+
+  .field-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .field-card {
+    padding: 22px 24px 24px;
+    border: 1px solid var(--mk-border);
+    border-radius: var(--mk-radius-md);
+    background: var(--mk-surface);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .field-card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .field-card-head h3 {
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .field-card-tag {
+    font-family: var(--mk-font-mono);
+    font-size: 11.5px;
+    color: var(--mk-faint);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .field-card-price {
+    font-family: var(--mk-font-mono);
+    font-size: 12.5px;
+    color: var(--mk-faint);
+    margin-top: 6px;
+  }
+
+  .field-card-line {
+    margin-top: 16px;
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--mk-ink);
+  }
+
+  .field-card-line span {
+    display: block;
+    font-family: var(--mk-font-mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--mk-accent-ink);
+    margin-bottom: 4px;
+  }
+
+  .field-card-line-different {
+    color: var(--mk-muted);
+  }
+
+  .field-card-line-different span {
+    color: var(--mk-faint);
+  }
+</style>

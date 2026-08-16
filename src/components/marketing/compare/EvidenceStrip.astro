@@ -1,0 +1,91 @@
+---
+// Secondary stance (no streaks) + the one evidence beat, kept to a single
+// stat rather than a wall of citations — it only needs to be credible once.
+---
+<section class="evidence">
+  <div class="evidence-inner mk-container">
+    <div class="evidence-copy reveal reveal-left">
+      <p class="evidence-eyebrow">No streaks</p>
+      <p class="evidence-lead">
+        Miss a week and studyus doesn't reset you to zero or guilt you back in.
+        It re-reads what's now most at risk and puts that first. The plan
+        recovers so you don't have to perform having never fallen behind.
+      </p>
+    </div>
+
+    <div class="evidence-stat reveal reveal-scale" style="--reveal-delay: 100ms;">
+      <p class="evidence-stat-number">~25%</p>
+      <p class="evidence-stat-label">better recall from spaced retrieval vs. cramming</p>
+      <p class="evidence-stat-cite">Pan &amp; Rickard, 2018 · meta-analysis effect size d = 0.78</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .evidence {
+    border-top: 1px solid var(--mk-hairline);
+    border-bottom: 1px solid var(--mk-hairline);
+    background: var(--mk-surface);
+  }
+
+  .evidence-inner {
+    padding-block: clamp(48px, 8vw, 80px);
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+
+  .evidence-eyebrow {
+    font-family: var(--mk-font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mk-accent-ink);
+    margin-bottom: 14px;
+  }
+
+  .evidence-lead {
+    font-size: clamp(18px, 2.2vw, 23px);
+    line-height: 1.5;
+    max-width: 44ch;
+    font-family: var(--mk-font-display);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  .evidence-stat {
+    padding: 28px 30px;
+    border-radius: var(--mk-radius-lg);
+    border: 1px solid var(--mk-border);
+    background: var(--mk-bg);
+  }
+
+  .evidence-stat-number {
+    font-family: var(--mk-font-display);
+    font-size: clamp(40px, 5vw, 56px);
+    font-weight: 640;
+    color: var(--mk-accent-ink);
+    letter-spacing: -0.02em;
+  }
+
+  .evidence-stat-label {
+    margin-top: 6px;
+    font-size: 14.5px;
+    color: var(--mk-muted);
+    max-width: 28ch;
+  }
+
+  .evidence-stat-cite {
+    margin-top: 14px;
+    font-family: var(--mk-font-mono);
+    font-size: 11.5px;
+    color: var(--mk-faint);
+  }
+
+  @media (max-width: 720px) {
+    .evidence-inner {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
