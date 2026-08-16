@@ -1,0 +1,764 @@
+{
+  "schema_version": 1,
+  "course_slug": "chee-380-materials-science",
+  "branches": [
+    {
+      "slug": "atomic-electronic-structure",
+      "name": "Atomic & Electronic Structure",
+      "sort_order": 1,
+      "kcs": [
+        {
+          "slug": "atomic-structure-and-periodic-trends",
+          "name": "Atomic structure and periodic trends",
+          "kc_type": "fact",
+          "description": "Recall electron configuration basics (shells, subshells, valence electrons) and the periodic trends (electronegativity, atomic radius, ionization energy) that set up bonding behavior.",
+          "practice_notes": "Drill with spaced retrieval: given an element's position in the periodic table, state its valence electron count and whether electronegativity/atomic radius increases or decreases moving across/down. Don't re-derive from the full quantum-number rules each time — the goal is fast recall of the trends.",
+          "sort_order": 1,
+          "prereqs": [],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "retrieval_prompt",
+              "level": 1,
+              "title": "Cold recall: valence electrons and periodic trends",
+              "body": "Without looking anything up, answer: (1) How many valence electrons does silicon have, based on its group in the periodic table? (2) Moving left to right across a period, does electronegativity generally increase or decrease? (3) Moving down a group, does atomic radius generally increase or decrease? (4) Why do these trends matter for predicting whether two elements will form an ionic, covalent, or metallic bond?"
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "bond-type-classification",
+          "name": "Primary and secondary bond classification",
+          "kc_type": "concept",
+          "description": "Classify a given bonding situation as ionic, covalent, metallic, or secondary (van der Waals / hydrogen bonding) from clues like electronegativity difference, electron sharing/delocalization, and the resulting property profile (melting point, conductivity, brittleness).",
+          "practice_notes": "Practice by working from properties backward to bond type (e.g., 'high melting point, brittle, insulator when solid but conducts when molten' → ionic) rather than only memorizing definitions — this is the induction/classification skill that actually gets tested.",
+          "sort_order": 2,
+          "prereqs": ["#atomic-structure-and-periodic-trends"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify the bond type from properties",
+              "body": "Classify the primary or secondary bond type responsible for each material's cohesion, and justify from the clues given:\n\n1. **NaCl**: melting point 801°C, hard but brittle, insulator as a solid, conducts electricity when molten or dissolved in water.\n2. **Diamond (carbon)**: melting point >3500°C, extremely hard, electrical insulator, every atom covalently bonded to four neighbors in a rigid 3-D network.\n3. **Copper**: melting point 1085°C, ductile (can be drawn into wire), excellent electrical and thermal conductor even as a solid.\n4. **Solid argon** (frozen at very low temperature): melting point -189°C, extremely soft, no directional bonding, held together only when thermal energy is very low.\n\nAnswers: (1) ionic — large electronegativity difference, ions held by electrostatic attraction, only mobile (conducting) once the ions can move (molten/dissolved). (2) covalent network — small electronegativity difference between identical atoms, directional shared-electron-pair bonds, no free electrons. (3) metallic — delocalized 'electron sea' allows conduction and ductility even as a solid, since ion cores can slide past each other without breaking directional bonds. (4) secondary/van der Waals — no electron sharing or transfer at all; only weak, non-directional induced-dipole attraction, so it holds together only near absolute zero."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "band-theory-classification",
+          "name": "Band theory: metal vs. semiconductor vs. insulator",
+          "kc_type": "concept",
+          "description": "Classify a solid as a metal, semiconductor, or insulator using its band structure (overlapping bands vs. a band gap) and, for non-metals, the size of that gap.",
+          "practice_notes": "Anchor each classification to an actual band-gap number rather than a vague 'big gap vs. small gap' — the practice value is in placing a material on the same numeric scale (eV) you'll use in the carrier-concentration calculations.",
+          "sort_order": 3,
+          "prereqs": ["#bond-type-classification"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify from band gap values",
+              "body": "Given the band gap (Eg) of each material at room temperature, classify it as a metal, semiconductor, or insulator, and explain what happens to conductivity as temperature rises:\n\n1. Copper: no gap — valence and conduction bands overlap.\n2. Germanium: Eg = 0.67 eV.\n3. Silicon: Eg = 1.12 eV.\n4. Diamond: Eg = 5.5 eV.\n\nAnswers: (1) Metal — overlapping bands mean electrons are already in partially filled states at 0 K; conductivity is high and actually *decreases* slightly with rising temperature (more phonon scattering). (2) and (3) Semiconductors — a modest gap (roughly 0.5–1.5 eV) means very few electrons are thermally promoted across it at room temperature, but conductivity rises sharply (exponentially) with temperature as more carriers are excited across the gap. (4) Insulator — the gap is too large for meaningful thermal excitation at ordinary temperatures, so diamond stays effectively non-conducting even when hot."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "semiconductor-carrier-concentration",
+          "name": "Semiconductor carrier concentration",
+          "kc_type": "rule",
+          "description": "Apply the mass-action law (n·p = ni²) to compute majority and minority carrier concentrations in an intrinsic or extrinsically doped semiconductor.",
+          "practice_notes": "Always identify whether you're in the extrinsic regime first (dopant concentration ≫ ni, so majority carrier ≈ dopant concentration) before reaching for the mass-action law to get the minority carrier concentration — that ordering is the whole procedure.",
+          "sort_order": 4,
+          "prereqs": ["#band-theory-classification"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Doped silicon carrier concentrations — fully worked",
+              "body": "Silicon is doped with Nd = 1×10¹⁶ cm⁻³ of phosphorus (a donor), fully ionized at 300 K. Given ni(Si, 300 K) ≈ 1.5×10¹⁰ cm⁻³, find the majority and minority carrier concentrations.\n\nStep 1 — identify the regime: Nd = 1×10¹⁶ ≫ ni = 1.5×10¹⁰, so this is firmly extrinsic (n-type).\nStep 2 — majority carriers (electrons): n ≈ Nd = 1×10¹⁶ cm⁻³ (every donor contributes one free electron at room temperature).\nStep 3 — minority carriers (holes), from the mass-action law n·p = ni²: p = ni²/n = (1.5×10¹⁰)² / (1×10¹⁶) = 2.25×10²⁰ / 1×10¹⁶ = 2.25×10⁴ cm⁻³.\n\nResult: n = 1×10¹⁶ cm⁻³ (majority electrons), p = 2.25×10⁴ cm⁻³ (minority holes) — doping has suppressed the minority carrier population by 12 orders of magnitude relative to n."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Doped silicon carrier concentrations — you finish the algebra",
+              "body": "The same silicon is instead doped with Na = 5×10¹⁵ cm⁻³ of boron (an acceptor), fully ionized at 300 K. ni(Si, 300 K) ≈ 1.5×10¹⁰ cm⁻³.\n\nGiven: this is extrinsic (p-type) because Na ≫ ni, so the majority carrier (holes) concentration is p ≈ Na = 5×10¹⁵ cm⁻³.\n\nYour turn: use the mass-action law n·p = ni² to find the minority carrier (electron) concentration n. Set up the equation, substitute the numbers, and solve.\n\n(Check your answer: n = ni²/p = (1.5×10¹⁰)²/(5×10¹⁵) = 2.25×10²⁰/5×10¹⁵ = 4.5×10⁴ cm⁻³.)"
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Doped silicon carrier concentrations — solve independently",
+              "body": "A silicon wafer is doped with Nd = 2×10¹⁷ cm⁻³. Using ni(Si, 300 K) ≈ 1.5×10¹⁰ cm⁻³, determine the majority and minority carrier concentrations at 300 K. State which regime you're in before you compute anything, and show the full mass-action law step."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "polymer-chain-structure",
+          "name": "Polymer molecular structure",
+          "kc_type": "concept",
+          "description": "Classify a polymer's chain architecture (linear, branched, crosslinked/thermoset) and stereoregularity (isotactic, syndiotactic, atactic), and predict how that architecture affects crystallinity and mechanical/thermal behavior.",
+          "practice_notes": "Practice tying structure directly to a property consequence (branching lowers crystallinity and density; crosslinking prevents melting) rather than memorizing the architecture names in isolation.",
+          "sort_order": 5,
+          "prereqs": ["#bond-type-classification"],
+          "resources": [
+            {
+              "label": "DoITPoMS — Crystallinity in Polymers (TLP)",
+              "url": "https://www.doitpoms.ac.uk/tlplib/polymers/index.php",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify polymer chain architecture and predict behavior",
+              "body": "Classify each polymer's chain architecture and predict a resulting property:\n\n1. **HDPE (high-density polyethylene)**: mostly linear, unbranched chains that pack efficiently.\n2. **LDPE (low-density polyethylene)**: same repeat unit as HDPE, but with significant long- and short-chain branching.\n3. **Cured epoxy resin**: chains are chemically bonded to neighboring chains at many points along their length, forming a single 3-D network.\n4. **Isotactic polypropylene**: methyl side groups all point to the same side of the extended chain, vs. **atactic polypropylene**, where they're randomly oriented.\n\nAnswers: (1) Linear, high-density — chains pack closely into an efficient, more crystalline structure, giving higher density, stiffness, and melting point than LDPE. (2) Branched — branches disrupt regular chain packing, lowering crystallinity, density, and stiffness relative to HDPE. (3) Crosslinked (thermoset) — the covalent network between chains means the material cannot melt and reflow when heated (it will degrade instead); it's a network, not a collection of independent chains. (4) Stereoregularity — the isotactic version's regular, repeatable geometry allows chains to pack into a semicrystalline structure (higher strength/stiffness), while the atactic version's randomness prevents crystallization, leaving it amorphous and rubbery/tacky."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "amorphous-equals-no-order",
+              "name": "Amorphous materials have no structural order at all",
+              "description": "The learner believes 'amorphous' means completely random/disordered at every length scale, rather than understanding that most amorphous solids (glasses, amorphous polymers) retain short-range order (consistent local bonding geometry/coordination) while lacking the long-range, periodic order of a crystal.",
+              "root_cause": "The word 'amorphous' is popularly used to mean 'shapeless' or 'without structure,' and introductory bonding/structure instruction emphasizes the crystalline/amorphous dichotomy as a binary (ordered vs. disordered) without clarifying that the relevant distinction is specifically about the RANGE over which order persists, not whether any order exists at all.",
+              "diagnostic_probe": "Both silica glass and quartz are made of the same SiO4 tetrahedral building block, with nearly identical Si-O bond lengths and O-Si-O bond angles at the local level. A student claims silica glass 'has no structure' because it's amorphous, while quartz 'has structure' because it's crystalline. What's wrong with this framing?",
+              "correction": "Amorphous solids lack long-range, periodic order — there's no repeating unit cell extending indefinitely through the material — but most amorphous materials, including silica glass and many amorphous polymers, retain well-defined short-range order: consistent local bonding distances, angles, and coordination numbers around each atom or repeat unit. The crystalline/amorphous distinction is about how far that local order extends, not whether structural order exists at all."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "crystal-structure-and-defects",
+      "name": "Crystal Structure & Defects",
+      "sort_order": 2,
+      "kcs": [
+        {
+          "slug": "crystal-systems-and-bravais-lattices",
+          "name": "Crystal systems and Bravais lattices",
+          "kc_type": "fact",
+          "description": "Recall the 7 crystal systems and 14 Bravais lattices and the lattice-parameter constraints (a, b, c, α, β, γ) that define each.",
+          "practice_notes": "Use spaced retrieval on the full list (cubic, tetragonal, orthorhombic, rhombohedral/trigonal, hexagonal, monoclinic, triclinic) until you can state each system's axis/angle constraints without hesitation — everything downstream (unit cells, Miller indices) assumes this is fluent.",
+          "sort_order": 1,
+          "prereqs": [],
+          "resources": [
+            {
+              "label": "DoITPoMS — Crystallography (TLP)",
+              "url": "https://www.doitpoms.ac.uk/tlplib/crystallography3/index.php",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "mnemonic",
+              "level": 1,
+              "title": "Remembering the 7 crystal systems",
+              "body": "Mnemonic sentence for the 7 crystal systems in order of decreasing symmetry — Cubic, Tetragonal, Orthorhombic, Rhombohedral (trigonal), Hexagonal, Monoclinic, Triclinic: **\"Careful Turtles Often Race Home Monday Tired\"**. For each, recall the defining constraint: Cubic (a=b=c, all angles 90°), Tetragonal (a=b≠c, all angles 90°), Orthorhombic (a≠b≠c, all angles 90°), Rhombohedral/trigonal (a=b=c, all angles equal but ≠90°), Hexagonal (a=b≠c, angles 90°/90°/120°), Monoclinic (a≠b≠c, two angles 90° one ≠90°), Triclinic (a≠b≠c, no angles equal or 90°) — least symmetric, most degrees of freedom."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "unit-cell-calculations",
+          "name": "Unit cell density and packing factor calculations",
+          "kc_type": "rule",
+          "description": "Compute atomic packing factor (APF) and theoretical density from unit cell geometry (atoms per cell, lattice parameter, atomic radius, atomic mass).",
+          "practice_notes": "Keep a running mental checklist: atoms per cell (n), lattice parameter relation to atomic radius (structure-specific), and the density formula ρ = nA/(VcNA) — most errors come from mixing up the r-to-a relation for the wrong structure (FCC ≠ BCC ≠ HCP).",
+          "sort_order": 2,
+          "prereqs": ["#crystal-systems-and-bravais-lattices"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "FCC copper — packing factor and density, fully worked",
+              "body": "Copper is FCC with lattice parameter a = 0.3615 nm, atomic radius r = 0.1278 nm (FCC relation: r = a√2/4), 4 atoms per unit cell, atomic mass A = 63.55 g/mol.\n\n**Packing factor:** APF = (n · (4/3)πr³) / a³\n(4/3)π(0.1278)³ = (4/3)π(0.002087) = 0.008743 nm³ per atom\n× 4 atoms = 0.034973 nm³\na³ = (0.3615)³ = 0.04725 nm³\nAPF = 0.034973 / 0.04725 ≈ **0.740** (74% — the maximum possible for spheres, as expected for FCC).\n\n**Density:** convert a to cm: 0.3615 nm = 3.615×10⁻⁸ cm, so a³ = 4.725×10⁻²³ cm³.\nρ = nA / (Vc·NA) = (4 × 63.55) / (4.725×10⁻²³ × 6.022×10²³) = 254.2 / 28.45 ≈ **8.94 g/cm³** — matches copper's known density (8.96 g/cm³) almost exactly."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "BCC iron — you complete the calculation",
+              "body": "Iron (α-Fe) is BCC with a = 0.2866 nm, r = a√3/4 = 0.1241 nm (BCC relation), 2 atoms per unit cell, atomic mass A = 55.85 g/mol.\n\nFormulas: APF = (n·(4/3)πr³)/a³, and ρ = nA/(Vc·NA) with Vc = a³ (convert nm to cm before the density step).\n\nYour turn: compute APF and ρ. (Check: APF ≈ 0.68; ρ ≈ 7.87 g/cm³, matching real iron's density.)"
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "HCP magnesium — solve independently",
+              "body": "Magnesium is HCP with a = 0.3209 nm, c = 0.5211 nm, 6 atoms per unit cell, atomic mass A = 24.31 g/mol. The HCP unit cell volume is Vc = (3√3/2)·a²·c. Determine the theoretical density of magnesium. (Real Mg density is about 1.74 g/cm³ — use it to sanity-check your answer.)"
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "miller-indices",
+          "name": "Miller indices for planes and directions",
+          "kc_type": "rule",
+          "description": "Determine the Miller indices of a crystallographic plane (from axis intercepts) or direction (from a coordinate vector), including clearing fractions to the smallest integer set.",
+          "practice_notes": "For planes: take reciprocals of the intercepts, then clear fractions. For directions: clear fractions on the coordinates directly (no reciprocal step) — mixing up these two procedures is the single most common error.",
+          "sort_order": 3,
+          "prereqs": ["#crystal-systems-and-bravais-lattices"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Plane indices — fully worked",
+              "body": "A plane intercepts the axes at a = 1, b = 1, c = ∞ (parallel to the c-axis). Find its Miller indices.\n\nStep 1 — take reciprocals of the intercepts: 1/1, 1/1, 1/∞ = 1, 1, 0.\nStep 2 — clear fractions if needed: already integers.\n\nMiller indices: **(110)**."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Plane indices — you finish clearing fractions",
+              "body": "A plane intercepts the axes at a = 1/2, b = 1, c = 1.\n\nStep 1 (given): take reciprocals of the intercepts: 1/(1/2), 1/1, 1/1 = 2, 1, 1.\n\nYour turn: are any further steps needed to clear fractions? State the final Miller indices in (hkl) notation.\n\n(Check: 2, 1, 1 are already integers, so the indices are (211).)"
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Plane and direction indices — solve independently",
+              "body": "(a) A plane intercepts the axes at a = 1, b = 1/3, c = 1/2. Determine its Miller indices (hkl).\n(b) Determine the Miller indices [uvw] of the direction from the origin to the point (1, 1/2, 0). Remember: directions use the coordinates directly (clear fractions, no reciprocal step) — do not apply the plane procedure here."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "crystal-defect-classification",
+          "name": "Point defect and dislocation classification",
+          "kc_type": "concept",
+          "description": "Classify a described crystal imperfection as a point defect (vacancy, self-interstitial, substitutional, interstitial impurity) or a line defect (edge or screw dislocation), and relate each to a property consequence (diffusion pathway, plastic deformation via slip).",
+          "practice_notes": "Practice from a scenario description rather than a diagram alone — being told 'an extra half-plane of atoms terminates within the crystal' should immediately cue 'edge dislocation' the way a picture would.",
+          "sort_order": 4,
+          "prereqs": ["#unit-cell-calculations"],
+          "resources": [
+            {
+              "label": "DoITPoMS — Introduction to Dislocations (TLP)",
+              "url": "https://www.doitpoms.ac.uk/tlplib/dislocations/index.php",
+              "kind": "canonical"
+            },
+            {
+              "label": "DoITPoMS — Slip in Single Crystals (TLP)",
+              "url": "https://www.doitpoms.ac.uk/tlplib/slip/index.php",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify the crystal defect",
+              "body": "Classify each described imperfection:\n\n1. A lattice site in FCC nickel where an atom is simply missing.\n2. A carbon atom sitting in an octahedral gap between iron atoms in BCC iron, too small to occupy a regular lattice site.\n3. A zinc atom occupying a regular copper lattice site in brass (Cu-Zn alloy), similar in size to copper.\n4. An extra half-plane of atoms that terminates partway through the crystal, creating a line of distorted bonding along its edge.\n\nAnswers: (1) Vacancy — a point defect that is simply an unoccupied lattice site; increases with temperature and provides a pathway for diffusion. (2) Interstitial impurity — a foreign atom small enough to fit in the space between regular lattice sites, rather than replacing one. (3) Substitutional impurity — a foreign atom of comparable size directly replacing a host atom on a regular lattice site. (4) Edge dislocation — a line defect; its motion (glide) under stress is the microscopic mechanism of plastic deformation (slip) in crystalline metals."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "diffusion-ficks-laws",
+          "name": "Fick's laws and Arrhenius diffusion",
+          "kc_type": "rule",
+          "description": "Apply Fick's first law (steady-state flux) and second law (transient concentration profile, via the error-function solution for a semi-infinite solid) together with the Arrhenius temperature dependence of the diffusion coefficient D.",
+          "practice_notes": "For transient (Fick's second law) problems, the recurring procedure is: compute 2√(Dt), then the similarity variable x/(2√(Dt)), then look up erf of that value, then solve for the unknown concentration or position. Always check the units of D against t and x (SI: m²/s with seconds and meters).",
+          "sort_order": 5,
+          "prereqs": ["#crystal-defect-classification", "math-264-advanced-calculus-for-engineers#partial-derivatives"],
+          "resources": [
+            {
+              "label": "DoITPoMS — Diffusion (TLP)",
+              "url": "https://www.doitpoms.ac.uk/tlplib/diffusion/index.php",
+              "kind": "canonical",
+              "pinned": true
+            },
+            {
+              "label": "DoITPoMS — Fick's first law",
+              "url": "https://www.doitpoms.ac.uk/tlplib/diffusion/fick1.php",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Carburizing depth — fully worked",
+              "body": "A steel part is carburized at a temperature where D = 1.6×10⁻¹¹ m²/s. Surface carbon concentration is held at Cs = 1.2 wt%, initial bulk concentration C0 = 0.15 wt%. Find the carbon concentration at depth x = 0.5 mm after t = 10 h (36,000 s).\n\nFick's second law solution (semi-infinite solid): (Cs − Cx)/(Cs − C0) = erf[x / (2√(Dt))]\n\nStep 1: 2√(Dt) = 2√(1.6×10⁻¹¹ × 36,000) = 2√(5.76×10⁻⁷) = 2 × 7.589×10⁻⁴ = 1.518×10⁻³ m = 1.518 mm.\nStep 2: x/(2√(Dt)) = 0.5/1.518 = 0.329.\nStep 3: from an error-function table, erf(0.329) ≈ 0.36.\nStep 4: (Cs − Cx)/(Cs − C0) = 0.36 → Cx = Cs − 0.36(Cs − C0) = 1.2 − 0.36(1.05) = 1.2 − 0.378 = **0.82 wt% carbon** at 0.5 mm depth after 10 h."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Carburizing depth — you finish from the erf value",
+              "body": "Same process, D = 1.6×10⁻¹¹ m²/s, Cs = 1.0 wt%, C0 = 0.2 wt%, x = 0.3 mm, t = 8 h (28,800 s).\n\nGiven (steps 1–2 done for you): 2√(Dt) = 2√(1.6×10⁻¹¹ × 28,800) = 2√(4.608×10⁻⁷) = 1.358×10⁻³ m = 1.358 mm. x/(2√(Dt)) = 0.3/1.358 = 0.221, and erf(0.221) ≈ 0.246.\n\nYour turn: use (Cs − Cx)/(Cs − C0) = 0.246 to solve for Cx.\n\n(Check: Cx = 1.0 − 0.246×(1.0−0.2) = 1.0 − 0.197 = 0.80 wt%.)"
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Nitriding time — solve independently",
+              "body": "A steel component is gas-nitrided with surface concentration Cs = 0.9 wt% N, initial C0 ≈ 0 wt% N, and D = 1.2×10⁻¹¹ m²/s at the process temperature. Determine the time required to reach a nitrogen concentration of 0.35 wt% at a depth of 0.4 mm. You will need to invert the error function (use a table or the approximation erf(z) ≈ 1 − exp(−1.128z − 0.79z²) for a rough estimate) — set up the full procedure yourself."
+            },
+            {
+              "kind": "interactive_model",
+              "level": 2,
+              "title": "Arrhenius diffusion coefficient explorer",
+              "body": "Explore how strongly the diffusion coefficient D depends on temperature T through the Arrhenius relation D = D0·exp(−Q/(RT)). Move the temperature slider and watch D — and its natural log — change. Notice how much D changes for even a modest change in T, and that ln(D) plotted against 1/T would give a straight line of slope −Q/R.",
+              "details": {
+                "title": "Arrhenius diffusion coefficient explorer",
+                "parameters": [
+                  { "id": "D0", "label": "Pre-exponential factor D0", "min": 0.00001, "max": 0.001, "step": 0.00001, "default": 0.0001, "unit": "m²/s" },
+                  { "id": "Q", "label": "Activation energy Q", "min": 50, "max": 300, "step": 5, "default": 200, "unit": "kJ/mol" },
+                  { "id": "T", "label": "Temperature T", "min": 300, "max": 1500, "step": 10, "default": 800, "unit": "K" }
+                ],
+                "expressions": [
+                  { "id": "D", "label": "Diffusion coefficient D (m²/s)", "formula": "D0 * exp(-(Q * 1000) / (8.314 * T))" },
+                  { "id": "lnD", "label": "ln(D)", "formula": "log(D0) - (Q * 1000) / (8.314 * T)" }
+                ],
+                "notes": "Increase T and watch D change by orders of magnitude — this is why diffusion-controlled processes (carburizing, sintering, homogenization) are so temperature-sensitive. ln(D) vs. 1/T is a straight line of slope -Q/R."
+              }
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "diffusion-rate-scales-linearly-with-temperature",
+              "name": "Diffusion coefficient scales roughly linearly with temperature",
+              "description": "The learner assumes that raising the temperature increases the diffusion coefficient D by a modest, roughly proportional amount, rather than recognizing the Arrhenius exponential dependence D = D0·exp(−Q/RT), where D can change by many orders of magnitude over a practical temperature range.",
+              "root_cause": "Most everyday intuitions about 'heating something up speeds it up' come from linear or mild rate laws, and the exponential form of the Arrhenius factor is rarely encountered outside kinetics courses, so learners default to a linear mental model unless explicitly shown the exponential's magnitude.",
+              "diagnostic_probe": "A furnace carburizing process at 900°C takes 10 hours to reach a target case depth. A technician suggests running it at 950°C — 'just a bit hotter, so maybe an hour or two less.' Using D = D0·exp(−Q/RT) with Q ≈ 148 kJ/mol for carbon in austenite, roughly how much faster is diffusion actually at 950°C compared to 900°C, and why does the technician's estimate badly underestimate the effect?",
+              "correction": "The diffusion coefficient depends on temperature through the Arrhenius relation D = D0·exp(−Q/RT), an exponential — not linear — dependence. A 50°C increase near 900–950°C can more than double D, because a fixed change in T produces a fixed change in the exponent, not in D itself. Small, achievable temperature increases in a diffusion-controlled process can therefore produce large reductions in required processing time, which is exactly why industrial heat-treating processes are so sensitive to furnace temperature control."
+            }
+          ]
+        },
+        {
+          "slug": "phase-diagram-reading",
+          "name": "Reading binary phase diagrams",
+          "kc_type": "concept",
+          "description": "Read a binary phase diagram to identify which phase(s) are present at a given temperature and overall composition, locate phase boundaries (solidus/liquidus), and recognize invariant reactions (eutectic, eutectoid).",
+          "practice_notes": "Always start by drawing (or imagining) a vertical line at the given overall composition and reading straight up/down through the temperature axis — most reading errors come from skipping this and guessing which region a point is in.",
+          "sort_order": 6,
+          "prereqs": ["#bond-type-classification"],
+          "resources": [
+            {
+              "label": "DoITPoMS — Phase Diagrams and Solidification (TLP)",
+              "url": "https://www.doitpoms.ac.uk/tlplib/phase-diagrams/index.php",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Identify the phase field",
+              "body": "In the Cu-Ni isomorphous binary system (complete solid solubility, no eutectic), the liquidus at an overall composition of 35 wt% Ni is at about 1320°C and the solidus is at about 1270°C.\n\nFor an alloy of this composition, classify the phase(s) present at: (1) 1350°C, (2) 1300°C, (3) 1250°C.\n\nAnswers: (1) Above the liquidus → fully liquid (L). (2) Between solidus and liquidus → two-phase region, liquid + solid solution (L + α) coexisting — this is where the lever rule applies. (3) Below the solidus → fully solid solution (α), a single homogeneous solid phase since Cu and Ni are completely miscible in the solid state."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "lever-rule",
+          "name": "The lever rule",
+          "kc_type": "rule",
+          "description": "Apply the lever rule to compute the mass fraction of each phase present at a given temperature and overall composition within a two-phase field.",
+          "practice_notes": "The lever rule always divides by the FULL tie-line length (Cright − Cleft), and the fraction of a phase is proportional to the segment of the tie-line on the OPPOSITE side from that phase (the 'far arm' of the lever) — write the tie-line out numerically every time rather than trying to do it from memory.",
+          "sort_order": 7,
+          "prereqs": ["#phase-diagram-reading"],
+          "resources": [
+            {
+              "label": "DoITPoMS — The lever rule",
+              "url": "https://www.doitpoms.ac.uk/tlplib/phase-diagrams/lever.php",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Cu-Ni lever rule — fully worked",
+              "body": "A Cu-Ni alloy of overall composition C0 = 35 wt% Ni is held at a temperature where the tie line gives solidus composition Cα = 42.5 wt% Ni and liquidus composition CL = 31.5 wt% Ni.\n\nMass fraction liquid: WL = (Cα − C0)/(Cα − CL) = (42.5 − 35)/(42.5 − 31.5) = 7.5/11 = **0.68** (68%).\nMass fraction solid: Wα = (C0 − CL)/(Cα − CL) = (35 − 31.5)/11 = 3.5/11 = **0.32** (32%).\nCheck: 0.68 + 0.32 = 1.00 ✓.\n\nNote what this means: 68% of the alloy's mass is liquid of composition 31.5 wt% Ni, and 32% is solid of composition 42.5 wt% Ni — the lever rule gives amounts, while the tie-line endpoints (already given) are what give you each phase's composition."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Cu-Ni lever rule — you complete the check",
+              "body": "Same system, overall composition C0 = 32 wt% Ni, tie line at a lower temperature gives Cα = 40 wt% Ni, CL = 24 wt% Ni.\n\nGiven: WL = (Cα − C0)/(Cα − CL) = (40 − 32)/(40 − 24) = 8/16 = 0.5.\n\nYour turn: compute Wα two ways — first as 1 − WL, then independently as (C0 − CL)/(Cα − CL) — and confirm they agree.\n\n(Check: Wα = 1 − 0.5 = 0.5, and (32−24)/16 = 8/16 = 0.5 ✓.)"
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Pb-Sn lever rule — solve independently",
+              "body": "A Pb-Sn alloy of overall composition C0 = 40 wt% Sn is held at a temperature just below the eutectic, where the phase diagram gives Cα = 18 wt% Sn and Cβ = 97 wt% Sn (the α + β two-phase region). Compute the mass fractions of α and β. Set up the lever rule yourself — no formula is given."
+            },
+            {
+              "kind": "interactive_model",
+              "level": 2,
+              "title": "Lever rule explorer",
+              "body": "Explore how the mass fraction of each phase changes as the overall alloy composition moves between two fixed tie-line endpoints. Fix the phase compositions (Cα, CL) and slide the overall composition C0 between them — watch the liquid and solid fractions shift.",
+              "details": {
+                "title": "Lever rule explorer",
+                "parameters": [
+                  { "id": "C_alpha", "label": "Solid composition Cα", "min": 0, "max": 100, "step": 1, "default": 42, "unit": "wt%" },
+                  { "id": "C_L", "label": "Liquid composition CL", "min": 0, "max": 100, "step": 1, "default": 31, "unit": "wt%" },
+                  { "id": "C0", "label": "Overall composition C0", "min": 0, "max": 100, "step": 1, "default": 35, "unit": "wt%" }
+                ],
+                "expressions": [
+                  { "id": "W_L", "label": "Mass fraction liquid", "formula": "(C_alpha - C0) / (C_alpha - C_L)" },
+                  { "id": "W_alpha", "label": "Mass fraction solid", "formula": "(C0 - C_L) / (C_alpha - C_L)" }
+                ],
+                "notes": "Move C0 toward C_alpha and watch W_alpha approach 1 (almost all solid); move it toward C_L and watch W_L approach 1 (almost all liquid). The phase compositions themselves (C_alpha, C_L) don't change as C0 moves — only the amounts do."
+              }
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "lever-rule-gives-phase-composition",
+              "name": "Lever rule arm lengths give phase composition",
+              "description": "The learner believes the lever-rule tie-line segment lengths directly give the composition (wt% solute) of each phase, rather than the relative amount (mass fraction) of each phase — treating 'how much of each phase' and 'what's in each phase' as the same question.",
+              "root_cause": "Both quantities are read off the same tie-line diagram using similar-looking segment measurements, and intro treatments often show composition and amount calculations back-to-back without enough contrast, so the visual procedure blurs the conceptual distinction between where the phase boundaries sit (composition) and how far the overall composition point sits from each boundary (amount).",
+              "diagnostic_probe": "For a Cu-Ni alloy at 35 wt% Ni held at a temperature where the tie line gives Cα = 42.5 wt% Ni and CL = 31.5 wt% Ni, a student says 'the liquid phase is 68% Ni.' What did they actually compute, and what does 68% represent instead?",
+              "correction": "The compositions of the two phases (Cα = 42.5 wt% Ni, CL = 31.5 wt% Ni) are read directly from where the tie-line ends touch the phase-boundary curves — they don't depend on the overall alloy composition. The lever rule instead uses those same tie-line segments to compute the mass fraction of each phase present: WL = (Cα−C0)/(Cα−CL) = 68%, meaning 68% of the alloy's mass is liquid of composition 31.5 wt% Ni — not that the liquid itself is 68% Ni."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "mechanical-properties-and-fracture",
+      "name": "Mechanical Properties & Fracture",
+      "sort_order": 3,
+      "kcs": [
+        {
+          "slug": "stress-strain-curve-quantities",
+          "name": "Stress, strain, and elastic modulus from tensile data",
+          "kc_type": "rule",
+          "description": "Compute engineering stress, strain, and elastic modulus from tensile-test load/elongation data, and locate the yield strength using the 0.2% offset method.",
+          "practice_notes": "Compute stress and strain from the raw data first (σ = F/A0, ε = Δl/l0), then take the ratio for E — don't try to shortcut by guessing E from material 'type,' since the whole point of the calculation is to verify it against the raw data.",
+          "sort_order": 1,
+          "prereqs": ["#bond-type-classification"],
+          "resources": [
+            {
+              "label": "DoITPoMS — Mechanical Testing of Metals (TLP)",
+              "url": "https://www.doitpoms.ac.uk/tlplib/mechanical_testing_metals/index.php",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "1020 steel tensile test — fully worked",
+              "body": "A 1020 steel tensile specimen has original diameter d0 = 12.8 mm, so A0 = π(d0/2)² = π(6.4)² = 128.7 mm². Gauge length l0 = 50 mm. In the elastic region, at F = 30,000 N the measured elongation is Δl = 0.0555 mm.\n\nStress: σ = F/A0 = 30,000/128.7 = 233.1 MPa (N/mm² = MPa).\nStrain: ε = Δl/l0 = 0.0555/50 = 0.00111.\nElastic modulus: E = σ/ε = 233.1/0.00111 ≈ **210,000 MPa = 210 GPa** — matches steel's known modulus (≈200–210 GPa).\n\nFor yield strength, the 0.2% offset method: draw a line parallel to the elastic slope (E) starting at ε = 0.002 (0.2% strain) instead of the origin; where that offset line intersects the actual stress-strain curve is the yield strength. For this specimen, that intersection is at σy ≈ 345 MPa."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "6061-T6 aluminum tensile test — you finish the calculation",
+              "body": "An aluminum 6061-T6 rod has d0 = 10 mm, so A0 = π(5)² = 78.54 mm². Gauge length l0 = 50 mm. At F = 10,839 N the elongation is Δl = 0.10 mm.\n\nGiven: σ = F/A0 = 10,839/78.54 = 138.0 MPa.\n\nYour turn: compute ε = Δl/l0, then E = σ/ε.\n\n(Check: ε = 0.10/50 = 0.002; E = 138.0/0.002 = 69,000 MPa = 69 GPa — matches aluminum's known modulus.)"
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Ti-6Al-4V tensile test — solve independently",
+              "body": "A Ti-6Al-4V rod has d0 = 8 mm and l0 = 100 mm. At F = 5,630 N, the elongation is Δl = 0.098 mm. Compute the stress, strain, and elastic modulus, and compare your computed E to the known value for Ti-6Al-4V (≈114 GPa)."
+            },
+            {
+              "kind": "interactive_model",
+              "level": 2,
+              "title": "Elastic stress-strain explorer (Hooke's law)",
+              "body": "Explore how stress, strain, and elastic modulus relate in the elastic region of a tensile test. Adjust the modulus and strain sliders and watch the resulting stress and elongation. Remember this relationship only holds below the yield point — beyond yield, stress no longer scales linearly with strain.",
+              "details": {
+                "title": "Elastic stress-strain explorer",
+                "parameters": [
+                  { "id": "E", "label": "Elastic modulus E", "min": 50, "max": 400, "step": 1, "default": 200, "unit": "GPa" },
+                  { "id": "strain", "label": "Engineering strain", "min": 0, "max": 0.02, "step": 0.0005, "default": 0.002, "unit": "" },
+                  { "id": "L0", "label": "Gauge length L0", "min": 10, "max": 500, "step": 5, "default": 50, "unit": "mm" }
+                ],
+                "expressions": [
+                  { "id": "stress", "label": "Stress (MPa)", "formula": "E * 1000 * strain" },
+                  { "id": "elongation", "label": "Elongation (mm)", "formula": "strain * L0" }
+                ],
+                "notes": "This only holds in the elastic region (below yield). Beyond yield, stress no longer scales linearly with strain — relate the slope here to the modulus you calculated in the worked examples."
+              }
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "yield-point-is-fracture-point",
+              "name": "The yield point on a stress-strain curve is where the material fails",
+              "description": "The learner interprets the yield point (onset of plastic/permanent deformation) as the point of fracture or failure, rather than understanding that a ductile material continues to carry increasing load well past yielding — through strain hardening, up to the ultimate tensile strength, and then through necking — before it finally fractures.",
+              "root_cause": "In everyday language, 'yield' and 'give way' suggest failure, and many non-technical treatments of material strength report only a single 'strength' number without distinguishing where on the curve it's measured from; students who haven't plotted a full ductile stress-strain curve themselves have no visual anchor for the large amount of curve (and real, useful load capacity) that exists beyond yield.",
+              "diagnostic_probe": "A steel rod with a yield strength of 250 MPa is loaded to 280 MPa in a tensile test and does not break. A student says 'that's impossible — 280 MPa is past the material's strength.' What is the student conflating, and what does the stress-strain curve actually show happening at 280 MPa for a ductile steel?",
+              "correction": "Yield strength marks the onset of permanent (plastic) deformation, not fracture — the material has 'yielded' in the sense of starting to deform plastically, but for a ductile metal it continues to carry increasing stress beyond this point due to strain hardening, up to the ultimate tensile strength, and only fractures after further deformation (often after visible necking). A rod loaded to 280 MPa above a 250 MPa yield strength is permanently, plastically deformed but very much intact; fracture typically occurs at a distinctly higher stress (the UTS) and only after substantially more strain."
+            }
+          ]
+        },
+        {
+          "slug": "hardness-toughness-strength-distinction",
+          "name": "Hardness vs. toughness vs. strength",
+          "kc_type": "concept",
+          "description": "Distinguish hardness (resistance to localized indentation), strength (resistance to onset of bulk yielding), and toughness (energy absorbed before fracture) as independent, sometimes trading-off, mechanical properties.",
+          "practice_notes": "For any material comparison, ask all three questions separately — 'how hard,' 'how strong,' 'how tough' — instead of using one adjective ('good material') to stand in for all of them.",
+          "sort_order": 2,
+          "prereqs": ["#stress-strain-curve-quantities"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify by property, not by vibe",
+              "body": "For each material, state its hardness, strength, and toughness qualitatively (high/moderate/low):\n\n1. Alumina ceramic: hardness very high (HV ≈ 1500+), strength high in compression, toughness very low (KIC ≈ 3–4 MPa√m, shatters with little warning).\n2. Tempered spring steel: hardness moderate (HRC ≈ 45–50), strength high, toughness high (large plastic deformation and energy absorption before fracture — this is exactly why it's chosen for springs and other cyclically-loaded parts).\n3. Natural rubber: hardness very low, strength (yield-equivalent) low, toughness moderate-to-high (absorbs a lot of energy through very large elastic/viscoelastic strain before tearing).\n\nWhat this shows: high hardness (alumina) does not imply high toughness — in fact hardness and toughness often trade off against each other, because the same restriction on plastic deformation that resists indentation also removes the crack-tip plasticity that would otherwise absorb energy and blunt a crack."
+            },
+            {
+              "kind": "contrast_examples",
+              "level": 2,
+              "title": "Alumina vs. spring steel — contrasting hardness and toughness directly",
+              "body": "Alumina ceramic (HV ≈ 1500+, KIC ≈ 3–4 MPa√m) and tempered 4340 spring steel (HRC ≈ 45–50, KIC ≈ 50–80 MPa√m) sit at opposite ends of the hardness-toughness tradeoff: the ceramic is far harder but shatters with a fracture toughness roughly 15–20× lower than the steel. If 'harder = tougher' were true, alumina would be the obviously better choice for an impact-loaded part — in reality, the steel is chosen precisely because its lower hardness comes with dramatically higher toughness, letting it survive impact and overload without catastrophic brittle fracture."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "hardness-implies-toughness",
+              "name": "A harder material is automatically tougher and stronger",
+              "description": "The learner treats hardness, strength, and toughness as if they were the same underlying property (or all move together), assuming that increasing one — e.g. through heat treatment or alloying — always increases the others, rather than recognizing that hardness/strength typically trade off against toughness.",
+              "root_cause": "In casual/consumer usage, 'hard,' 'strong,' and 'tough' are near-synonyms for 'doesn't break,' and many everyday hard objects (rocks, hardened tools) are also perceived as rugged; without an explicit stress-strain-curve-and-energy framing, learners don't have a mechanism to see why resistance to surface indentation, resistance to yielding, and energy absorption before fracture are measuring genuinely different things.",
+              "diagnostic_probe": "Fully hardened tool steel (very high hardness, HRC ≈ 62) and a tempered spring steel (lower hardness, HRC ≈ 45) are both used in industry, but for very different applications. A student assumes the tool steel is 'better' in every mechanical sense because it's harder. Comparing their fracture toughness (tool steel: low, often <20 MPa√m; tempered spring steel: much higher), what has the student's assumption gotten wrong?",
+              "correction": "Hardness (resistance to localized surface deformation/indentation), strength (resistance to the onset of bulk plastic deformation, i.e. yield strength), and toughness (total energy absorbed before fracture, including plastic deformation capacity) are three distinct, independently measurable properties. Increasing hardness by heat treatment commonly reduces toughness, because the same mechanism that resists indentation also resists the crack-tip plasticity that would otherwise blunt a crack and absorb energy. Material selection must weigh hardness, strength, and toughness separately against the application's actual failure mode."
+            }
+          ]
+        },
+        {
+          "slug": "griffith-fracture-principle",
+          "name": "Griffith's fracture criterion",
+          "kc_type": "principle",
+          "description": "Explain, from an energy-balance argument, why the stress required to fracture a brittle material depends on the size of its largest flaw, and why this makes small, undetectable flaws the dominant cause of brittle failure.",
+          "practice_notes": "Focus on WHY the criterion has the form it does (competition between released elastic strain energy and created surface energy) rather than just plugging into the final formula — that's what lets you predict how the failure stress responds to a change in flaw size or material.",
+          "sort_order": 3,
+          "prereqs": ["#hardness-toughness-strength-distinction"],
+          "resources": [
+            {
+              "label": "DoITPoMS — Mechanical Properties: Fracture (toughness)",
+              "url": "https://www.doitpoms.ac.uk/tlplib/mechanical_properties/fracture.php",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "derivation_walkthrough",
+              "level": 1,
+              "title": "Deriving Griffith's criterion",
+              "body": "Griffith's insight: for a crack of length 2c in an infinite brittle plate under remote stress σ, growing the crack a little releases elastic strain energy (from the material relaxing near the crack) but costs surface energy (from creating two new crack faces). The crack only grows spontaneously once the released strain energy per unit crack extension exceeds the surface energy cost per unit crack extension. Balancing these two energy terms and solving for the stress at which growth becomes favorable gives:\n\nσf = √(2Eγs / (πc))\n\nwhere E is the elastic modulus and γs is the surface energy per unit area.\n\n**Worked number:** soda-lime glass, E = 69 GPa, γs = 0.3 J/m², with a small pre-existing surface flaw c = 1×10⁻⁵ m (10 μm).\n\nσf = √(2 × 69×10⁹ × 0.3 / (π × 1×10⁻⁵)) = √(4.14×10¹⁰ / 3.1416×10⁻⁵) = √(1.318×10¹⁵) ≈ 3.63×10⁷ Pa = **36.3 MPa**.\n\nThis matches reality: ordinary glass with micron-scale surface flaws typically fails in the tens-of-MPa range, far below its theoretical (flaw-free) strength — because it is essentially never flaw-free."
+            },
+            {
+              "kind": "self_explanation_prompt",
+              "level": 3,
+              "title": "Why doesn't doubling the flaw size double the failure stress?",
+              "body": "Using σf = √(2Eγs/(πc)), explain in your own words why doubling the flaw size c does NOT halve the failure stress — it only reduces it by a factor of √2. Then explain why this square-root dependence, combined with the fact that flaws of very different sizes are essentially always present in real brittle materials (and the smallest ones are often undetectable by inspection), means brittle fracture strength is inherently statistical rather than a single fixed material number."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "fatigue-and-creep-classification",
+          "name": "Fatigue vs. creep failure classification",
+          "kc_type": "concept",
+          "description": "Classify a described failure scenario as fatigue (cyclic loading, time/temperature-independent mechanism dominated by cycle count) or creep (sustained load at elevated temperature, time-dependent mechanism), or neither.",
+          "practice_notes": "The two questions that separate these: is the load cyclic or sustained? Is the temperature elevated relative to the material's melting point (roughly >0.4·Tm)? Answer both before classifying.",
+          "sort_order": 4,
+          "prereqs": ["#stress-strain-curve-quantities", "#crystal-defect-classification"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify the failure mechanism",
+              "body": "Classify the dominant failure mechanism in each scenario:\n\n1. A turbine blade operating continuously at 700°C under a constant centrifugal stress gradually elongates over thousands of hours until it fails.\n2. A car axle experiences millions of small load reversals over its service life at ambient temperature and eventually fails at a stress well below its yield strength.\n3. A pressure vessel is subjected to a single, unexpected overload well above its design pressure and ruptures immediately.\n\nAnswers: (1) Creep — sustained (not cyclic) stress at a temperature well above 0.4·Tm for a nickel superalloy, producing slow, time-dependent plastic deformation (elongation) that eventually leads to rupture. (2) Fatigue — cyclic loading at room temperature causing failure at a stress below the static yield strength, driven by cumulative cycle count rather than time or temperature. (3) Neither creep nor fatigue — this is ordinary monotonic overload fracture, a single-application failure unrelated to cycling or sustained high-temperature exposure."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    },
+    {
+      "slug": "material-classes-and-design",
+      "name": "Material Classes & Design",
+      "sort_order": 4,
+      "kcs": [
+        {
+          "slug": "material-class-property-profiles",
+          "name": "Material class property profiles",
+          "kc_type": "concept",
+          "description": "Classify a material as a metal, ceramic, polymer, or composite from its characteristic property profile (modulus, ductility, density, conductivity, high-temperature performance).",
+          "practice_notes": "Practice going both directions: from a property profile to a class, and from a class to the profile you'd expect — real selection problems give you one and ask for the other.",
+          "sort_order": 1,
+          "prereqs": ["#bond-type-classification", "#hardness-toughness-strength-distinction"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify by property profile",
+              "body": "Classify the material class from each property profile:\n\n1. High elastic modulus, good ductility, moderate density, excellent electrical/thermal conductivity.\n2. Very high hardness and compressive strength, very low toughness, very high melting point, poor electrical conductivity.\n3. Low elastic modulus, low density, viscoelastic (time-dependent) behavior, poor performance at elevated temperature.\n4. Highly anisotropic (direction-dependent) stiffness and strength, high specific strength (strength-to-weight), properties set by a reinforcement + matrix combination rather than a single material.\n\nAnswers: (1) Metal. (2) Ceramic. (3) Polymer. (4) Composite."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "composite-rule-of-mixtures",
+          "name": "Rule of mixtures for composite modulus",
+          "kc_type": "rule",
+          "description": "Apply the rule of mixtures (iso-strain, longitudinal) and inverse rule of mixtures (iso-stress, transverse) to predict the elastic modulus of a continuous-fiber composite from constituent moduli and fiber volume fraction.",
+          "practice_notes": "Longitudinal (fibers aligned with load): simple weighted average, Ec = VfEf + VmEm. Transverse (load perpendicular to fibers): weighted HARMONIC average, 1/Ec = Vf/Ef + Vm/Em — mixing these two up is the most common error, and the result is always Ec,longitudinal ≫ Ec,transverse.",
+          "sort_order": 2,
+          "prereqs": ["#material-class-property-profiles", "#stress-strain-curve-quantities"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Glass fiber-epoxy composite — fully worked",
+              "body": "Glass fiber-epoxy composite, fiber volume fraction Vf = 0.6, Ef = 72.5 GPa (E-glass), Em = 3.4 GPa (epoxy matrix).\n\nLongitudinal modulus (rule of mixtures): Ec,L = VfEf + (1−Vf)Em = 0.6(72.5) + 0.4(3.4) = 43.5 + 1.36 = **44.86 GPa**.\n\nTransverse modulus (inverse rule of mixtures): 1/Ec,T = Vf/Ef + (1−Vf)/Em = 0.6/72.5 + 0.4/3.4 = 0.008276 + 0.117647 = 0.125923 → Ec,T = 1/0.125923 = **7.94 GPa**.\n\nNotice the anisotropy: 44.9 GPa along the fibers vs. 7.9 GPa across them — nearly a 6× difference, which is exactly why fiber orientation is a first-order design decision in composite parts."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Carbon fiber-epoxy composite — you finish the transverse calculation",
+              "body": "Carbon fiber-epoxy composite, Vf = 0.5, Ef = 230 GPa (carbon fiber), Em = 3.0 GPa (epoxy).\n\nGiven: Ec,L = 0.5(230) + 0.5(3.0) = 115 + 1.5 = 116.5 GPa.\n\nYour turn: compute the transverse modulus Ec,T using the inverse rule of mixtures.\n\n(Check: 1/Ec,T = 0.5/230 + 0.5/3.0 = 0.002174 + 0.166667 = 0.168841 → Ec,T ≈ 5.92 GPa.)"
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Aramid fiber-epoxy composite — solve independently",
+              "body": "Aramid (Kevlar 49) fiber-epoxy composite, Vf = 0.45, Ef = 124 GPa, Em = 3.2 GPa. Compute both the longitudinal and transverse elastic modulus. Set up both formulas yourself."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "materials-selection-principle",
+          "name": "Materials selection tradeoffs",
+          "kc_type": "principle",
+          "description": "Explain why materials selection is a multi-criteria tradeoff problem (property indices like specific stiffness, cost, formability, joining compatibility) rather than a search for a single 'best' material, and why bonding/structure/processing jointly determine whether a material fits a given application.",
+          "practice_notes": "Practice by picking a design constraint (e.g., 'minimize weight for a given stiffness') and computing the relevant property INDEX (like E/ρ) for two or more candidate materials, rather than comparing absolute property values directly.",
+          "sort_order": 3,
+          "prereqs": ["#material-class-property-profiles", "#composite-rule-of-mixtures", "#griffith-fracture-principle"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "self_explanation_prompt",
+              "level": 2,
+              "title": "Specific stiffness: why aluminum competes with steel",
+              "body": "A bicycle frame needs high specific stiffness (E/ρ) and reasonable cost. Steel has a higher absolute elastic modulus (E ≈ 200 GPa) than aluminum 6061 (E ≈ 69 GPa), so a student assumes steel must always win on stiffness-per-weight too. Using ρsteel ≈ 7850 kg/m³ and ρAl ≈ 2700 kg/m³, compute E/ρ for both materials, and explain what the result implies about why an engineer might choose aluminum for a weight-sensitive, stiffness-critical part despite its lower absolute modulus.\n\n(Compute: E/ρ)steel = 200×10⁹/7850 ≈ 2.55×10⁷; (E/ρ)Al = 69×10⁹/2700 ≈ 2.56×10⁷ — nearly identical specific stiffness. The real driver for choosing aluminum here is often weight savings for a GIVEN stiffness, since both materials deliver almost the same stiffness per unit mass; the final decision then turns on cost, formability, fatigue behavior, and joining method.)"
+            },
+            {
+              "kind": "analogy",
+              "level": 1,
+              "title": "Materials selection is like choosing running shoes",
+              "body": "There's no single 'best' running shoe — the right choice depends on how you weight competing criteria (cushioning vs. grip vs. weight vs. durability) against the terrain and the runner. Materials selection works the same way: an Ashby chart doesn't have one 'winning' material at the top; it shows which materials sit on the best tradeoff frontier for the SPECIFIC combination of criteria (stiffness per weight, cost, corrosion resistance, formability) that your particular design actually needs."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    },
+    {
+      "slug": "materials-laboratory",
+      "name": "Materials Laboratory",
+      "sort_order": 5,
+      "kcs": [
+        {
+          "slug": "materials-characterization-techniques",
+          "name": "Matching characterization techniques to what they reveal",
+          "kc_type": "association",
+          "description": "Match a materials characterization technique to the property or feature it reveals (microstructure, crystal structure/phase identity, high-resolution surface morphology, mechanical response, local hardness).",
+          "practice_notes": "Drill this as fast matching, not reasoning-from-first-principles — recognizing 'X-ray diffraction → crystal structure/phase ID' should be as automatic as recognizing a word.",
+          "sort_order": 1,
+          "prereqs": ["#crystal-defect-classification", "#stress-strain-curve-quantities"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "matching_drill",
+              "level": 1,
+              "title": "Match technique to what it reveals",
+              "body": "Match each technique to what it primarily reveals:\n\nTechniques: (a) Optical microscopy, (b) X-ray diffraction (XRD), (c) Scanning electron microscopy (SEM) with EDS, (d) Tensile testing machine, (e) Vickers hardness tester.\n\nWhat they reveal: (1) Grain size and overall microstructure at low-to-moderate magnification. (2) Crystal structure and phase identity, from characteristic diffraction peak positions. (3) High-resolution surface/fracture morphology plus elemental composition at a point. (4) The full stress-strain curve, including modulus, yield strength, and ductility. (5) A single localized hardness number from an indentation.\n\nAnswers: a-1, b-2, c-3, d-4, e-5."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    }
+  ],
+  "course_resources": [
+    {
+      "label": "MIT OCW — 3.091 Introduction to Solid-State Chemistry (Fall 2018)",
+      "url": "https://ocw.mit.edu/courses/3-091-introduction-to-solid-state-chemistry-fall-2018/",
+      "kind": "canonical",
+      "pinned": true
+    },
+    {
+      "label": "NPTEL — Introduction to Materials Science and Engineering",
+      "url": "https://onlinecourses.nptel.ac.in/noc24_mm12/preview",
+      "kind": "canonical"
+    },
+    {
+      "label": "DoITPoMS TLP Library — full index of materials science teaching packages",
+      "url": "https://www.doitpoms.ac.uk/tlplib/index.php",
+      "kind": "feed"
+    }
+  ],
+  "assessments": [
+    {
+      "title": "Problem Sets (4 combined)",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 20,
+      "kc_slugs": ["#unit-cell-calculations", "#miller-indices", "#diffusion-ficks-laws", "#lever-rule", "#stress-strain-curve-quantities", "#composite-rule-of-mixtures"]
+    },
+    {
+      "title": "Midterm Exam",
+      "type": "midterm",
+      "kind": "official",
+      "weight_pct": 25,
+      "due_date": "2024-10-22",
+      "kc_slugs": ["#bond-type-classification", "#band-theory-classification", "#crystal-systems-and-bravais-lattices", "#unit-cell-calculations", "#miller-indices", "#crystal-defect-classification", "#diffusion-ficks-laws", "#phase-diagram-reading", "#lever-rule"]
+    },
+    {
+      "title": "Lab Reports",
+      "type": "lab",
+      "kind": "official",
+      "weight_pct": 15,
+      "due_date": "2024-11-15",
+      "kc_slugs": ["#materials-characterization-techniques", "#stress-strain-curve-quantities"]
+    },
+    {
+      "title": "Final Exam",
+      "type": "final",
+      "kind": "official",
+      "weight_pct": 40,
+      "due_date": "2024-12-09",
+      "kc_slugs": ["#semiconductor-carrier-concentration", "#polymer-chain-structure", "#hardness-toughness-strength-distinction", "#griffith-fracture-principle", "#fatigue-and-creep-classification", "#material-class-property-profiles", "#composite-rule-of-mixtures", "#materials-selection-principle"]
+    },
+    {
+      "title": "Practice quiz: bonding & crystal structure fundamentals",
+      "type": "quiz",
+      "kind": "practice",
+      "kc_slugs": ["#bond-type-classification", "#band-theory-classification", "#crystal-systems-and-bravais-lattices", "#unit-cell-calculations", "#miller-indices"]
+    },
+    {
+      "title": "Practice set: phase diagrams, defects & diffusion",
+      "type": "assignment",
+      "kind": "practice",
+      "kc_slugs": ["#phase-diagram-reading", "#lever-rule", "#crystal-defect-classification", "#diffusion-ficks-laws"]
+    },
+    {
+      "title": "Practice exam: mechanical properties & fracture",
+      "type": "quiz",
+      "kind": "practice",
+      "kc_slugs": ["#stress-strain-curve-quantities", "#hardness-toughness-strength-distinction", "#griffith-fracture-principle", "#fatigue-and-creep-classification"]
+    },
+    {
+      "title": "Practice set: materials selection & composites",
+      "type": "assignment",
+      "kind": "practice",
+      "kc_slugs": ["#material-class-property-profiles", "#composite-rule-of-mixtures", "#materials-selection-principle"]
+    }
+  ]
+}

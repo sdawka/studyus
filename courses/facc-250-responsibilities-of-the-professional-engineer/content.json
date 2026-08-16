@@ -1,0 +1,584 @@
+{
+  "schema_version": 1,
+  "course_slug": "facc-250-responsibilities-of-the-professional-engineer",
+  "branches": [
+    {
+      "slug": "professionalism",
+      "name": "Professionalism",
+      "sort_order": 1,
+      "kcs": [
+        {
+          "slug": "engineer-definition-and-licensure",
+          "name": "Legal definition of \"engineer\" and licensure",
+          "kc_type": "fact",
+          "description": "Recall what legally constitutes the reserved title and practice of \"engineer\" in Quebec — membership in the Ordre des ingénieurs du Québec (OIQ) — and the legal consequence of using the title or practicing without it.",
+          "practice_notes": "Drill this as a fast fact: which professional order, what the reserved title/practice actually covers, and what happens if someone claims it without membership — don't over-derive, just recall it.",
+          "sort_order": 1,
+          "prereqs": [],
+          "resources": [
+            {
+              "label": "OIQ — The Engineer's Role",
+              "url": "https://www.oiq.qc.ca/en/general-public/the-engineering-profession/the-engineers-role/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "retrieval_prompt",
+              "level": 1,
+              "title": "Cold recall: title, order, and consequences",
+              "body": "Without looking it up: (1) In Quebec, which professional order grants the legal right to use the title \"engineer\" and to practice engineering? (2) Is \"engineer\" a reserved title, meaning only members may use it, or can anyone use it informally? (3) What happens, legally, if someone uses the title or practices engineering (e.g. signs and seals engineering documents) without being a member of that order?"
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "code-of-ethics-vs-law-distinction",
+          "name": "Code of ethics vs. the law",
+          "kc_type": "concept",
+          "description": "Classify whether a scenario is primarily a legal/regulatory matter, a professional Code-of-Ethics matter that goes beyond the law, or both — recognizing that the two overlap substantially but are not identical.",
+          "practice_notes": "For each scenario, ask two separate questions — 'is this legal?' and 'does this meet the Code's paramount-safety/competence/integrity obligations?' — before classifying; don't collapse them into one question.",
+          "sort_order": 2,
+          "prereqs": ["#engineer-definition-and-licensure"],
+          "resources": [
+            {
+              "label": "NSPE Code of Ethics for Engineers",
+              "url": "https://www.nspe.org/career-growth/ethics/nspe-code-ethics-engineers",
+              "kind": "canonical",
+              "pinned": true
+            },
+            {
+              "label": "OIQ — Code of Ethics of Engineers (official text, PDF)",
+              "url": "https://www.oiq.qc.ca/wp-content/uploads/documents/DAJ/Lois/TheCodeofEthicsofEngineers.pdf",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Legal, ethical, or both?",
+              "body": "Classify each scenario as (a) primarily a legal/regulatory matter, (b) primarily a Code-of-Ethics matter beyond the law, or (c) both:\n\n1. An engineer signs and seals a drawing they did not actually design or adequately review themselves.\n2. An engineer privately disagrees with a client's business model but performs the assigned work competently and safely.\n3. A design meets every applicable building code minimum, but the engineer knows a modestly more conservative, still-affordable design choice would meaningfully improve safety margin for an unusually vulnerable occupant group (e.g. a daycare), and says nothing because \"the code doesn't require it.\"\n4. An engineer fails to carry professional liability insurance required by their jurisdiction.\n\nAnswers: (1) Both — misrepresenting authorship/review is both a false-certification legal violation and a direct breach of the Code's competence and integrity provisions. (2) Neither — personal opinion about a client's business is outside the scope of professional ethics obligations, as long as the work itself is competent and safe. (3) Primarily a Code-of-Ethics matter — the legal minimum is met, but the Code's duty to hold paramount the safety and welfare of the public, especially for vulnerable populations, arguably calls for more than the bare code minimum. (4) Primarily legal/regulatory — a specific statutory/regulatory requirement, not itself a Code-of-Ethics provision."
+            },
+            {
+              "kind": "contrast_examples",
+              "level": 2,
+              "title": "Legal-but-arguably-not-fully-ethical vs. illegal-and-unethical",
+              "body": "Contrast scenario 3 above (meets every legal code minimum, but arguably falls short of the Code's 'hold paramount' obligation for a vulnerable population) against a case where a design explicitly VIOLATES a building code requirement (clearly both illegal and a Code breach). The first case sharpens the point that being legal is necessary but not automatically sufficient for being fully ethical — the two circles overlap heavily but are not identical, and the gap between them is exactly where professional judgment is required."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "ethics-equals-law",
+              "name": "If it's legal, it's ethical (and vice versa)",
+              "description": "The learner treats legal compliance and ethical adequacy as the same thing — assuming that meeting every applicable law/regulation automatically satisfies the professional Code of Ethics, and that anything not explicitly illegal must therefore be ethically acceptable.",
+              "root_cause": "Law and professional ethics codes overlap heavily and reinforce each other in most everyday practice (both prohibit obviously harmful conduct), so learners rarely encounter a clean case where the two diverge until they're shown one explicitly; without that contrast, 'follow the rules' becomes a single undifferentiated category in the learner's mind.",
+              "diagnostic_probe": "An engineer's design meets every applicable building code minimum for a public daycare, but the engineer privately knows a modestly more conservative (and still affordable) design choice would meaningfully improve safety margin for this unusually vulnerable occupant population, and says nothing because 'the code doesn't require it.' Is this engineer in the clear? Why or why not?",
+              "correction": "A professional Code of Ethics — such as the OIQ Code of Ethics of Engineers or the NSPE Code — imposes obligations that go beyond the legal minimum, including the duty to hold paramount the safety, health, and welfare of the public. Meeting a building code's numeric minimum satisfies the legal requirement but does not automatically satisfy the ethical obligation to exercise professional judgment about risks the code doesn't fully anticipate, especially for vulnerable populations. Law and ethics overlap substantially but are not identical: something can be legal and still fall short of the professional standard of ethical practice."
+            }
+          ]
+        },
+        {
+          "slug": "duty-of-competence-and-scope-of-practice",
+          "name": "Duty of competence and scope of practice",
+          "kc_type": "rule",
+          "description": "Apply the accept/decline/refer decision procedure to determine whether an engineer may ethically take on a mandate, based on whether it falls within their actual training and practice experience.",
+          "practice_notes": "Always work the procedure in order: (1) identify the specific expertise the mandate actually requires, (2) compare honestly against your own training/practice experience, (3) decide to accept, accept-with-collaboration/supervision, decline, or refer — don't skip straight to a gut-feel answer.",
+          "sort_order": 3,
+          "prereqs": ["#code-of-ethics-vs-law-distinction"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Accept/decline/refer — fully worked",
+              "body": "A structural engineer, licensed and experienced in building structural design, is asked by a client to also design the building's electrical system, because \"you're an engineer, you can figure it out.\"\n\nStep 1 — identify the required expertise: electrical system design, including code-compliant load calculations and safety systems — a distinct engineering discipline.\nStep 2 — compare to the engineer's actual background: structural design training and practice experience only; no electrical engineering coursework or supervised practice.\nStep 3 — decide: the engineer must DECLINE the electrical portion of the mandate and refer the client to a licensed electrical engineer. Accepting it would breach the Code's obligation to practice only within one's actual area of competence, regardless of general engineering credentials."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Accept/decline/refer — you complete the decision",
+              "body": "A geotechnical engineer with 15 years of foundation-design experience is asked to certify the seismic retrofit design of an existing building — a specialty they've attended one continuing-education seminar on, but never practiced.\n\nGiven (steps 1–2): required expertise = current seismic-retrofit engineering practice, an active specialty; the engineer's background = one seminar, no supervised practice experience in this specific area.\n\nYour turn: complete step 3 — decide whether to accept, accept only with direct collaboration/supervision from a seismic specialist, decline, or refer, and justify your choice using the competence obligation."
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Accept/decline/refer — solve independently",
+              "body": "A newly licensed junior engineer at a firm is assigned, without additional training or supervision, to sign off on a pressure-vessel design for a chemical plant — normally handled by the firm's senior pressure-vessel specialist, currently on leave. Apply the full three-step competence procedure independently and justify your conclusion."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "accountability-and-supervision-principle",
+          "name": "Accountability for supervised work",
+          "kc_type": "principle",
+          "description": "Explain why an engineer remains professionally responsible for work performed under their direction or supervision even when specific tasks were delegated, and why this rule protects the public rather than merely assigning individual blame.",
+          "practice_notes": "Focus on the WHY: the public relies on the licensed engineer's credential and certification, not on tracking exactly which team member did which sub-task — that's the reasoning that generalizes to any delegation scenario.",
+          "sort_order": 4,
+          "prereqs": ["#duty-of-competence-and-scope-of-practice"],
+          "resources": [
+            {
+              "label": "OIQ — Your Obligations: Ethics",
+              "url": "https://www.oiq.qc.ca/en/membres/your-obligations/ethics/",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "self_explanation_prompt",
+              "level": 2,
+              "title": "Why does the supervising engineer bear responsibility?",
+              "body": "A senior engineer stamps and takes professional responsibility for a set of drawings that were mostly produced by a junior engineer under their direction. If an error is later found, explain why the senior (supervising) engineer bears professional responsibility for that error even though they did not personally draft the flawed detail — and why this rule exists rather than each individual contributor being separately and solely liable for only the parts they personally drew."
+            },
+            {
+              "kind": "analogy",
+              "level": 1,
+              "title": "Like a surgeon responsible for their team's procedure",
+              "body": "A supervising surgeon is ultimately responsible for a procedure performed with a surgical team, even when a resident makes a specific cut — because the public relies on the credentialed, licensed professional who is authorized to practice independently and who certifies the work, not on tracking who did which sub-task. Engineering accountability for supervised work rests on the same logic: the stamp/seal is a public-facing guarantee from the person legally accountable for the whole deliverable."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    },
+    {
+      "slug": "ethics-and-equity",
+      "name": "Ethics and Equity",
+      "sort_order": 2,
+      "kcs": [
+        {
+          "slug": "paramountcy-of-public-safety-principle",
+          "name": "Paramountcy of public safety",
+          "kc_type": "principle",
+          "description": "Explain why the obligation to hold paramount the safety, health, and welfare of the public overrides ordinary deference to an employer's or client's instructions, and derive the implication for a conflicting-instruction scenario.",
+          "practice_notes": "Practice stating the priority ORDER explicitly (public safety, then client/employer, then profession, then self) rather than just asserting 'safety matters' — the ordering is what resolves real conflicts.",
+          "sort_order": 1,
+          "prereqs": ["#code-of-ethics-vs-law-distinction"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "self_explanation_prompt",
+              "level": 2,
+              "title": "Why the employer's instruction doesn't win by default",
+              "body": "An engineer's employer instructs them to fast-track a project by skipping an independent design check that the engineer believes is necessary given the project's complexity and consequence of failure. Explain, using the principle of holding paramount the safety, health, and welfare of the public, why the engineer's obligation here does not simply defer to the employer's instruction — and state what the engineer should actually do."
+            },
+            {
+              "kind": "analogy",
+              "level": 1,
+              "title": "Like a pilot refusing to fly in unsafe conditions",
+              "body": "A pilot's obligation to refuse to fly in conditions they judge unsafe holds even when the airline pressures them to stay on schedule — the license holder's paramount duty (passenger/public safety) overrides ordinary employer-employee deference specifically on matters of safety. An engineer's obligation to public safety works the same way: it is the one consideration that is explicitly ranked above employer or client instructions in the Code of Ethics."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "negligence-and-safety-factor",
+          "name": "Negligence vs. meeting a numeric safety factor",
+          "kc_type": "concept",
+          "description": "Classify a design decision as meeting the professional standard of care, or as negligent despite (or because of) meeting a code-mandated numeric safety factor — recognizing that the safety factor addresses specific failure modes, not the full standard-of-care obligation.",
+          "practice_notes": "Ask: does the numeric safety factor actually cover the failure mode that occurred? A design can pass its static safety factor and still be negligent if a different, foreseeable failure mode (fatigue, corrosion, a known defect pattern) was never checked.",
+          "sort_order": 2,
+          "prereqs": ["#paramountcy-of-public-safety-principle"],
+          "resources": [
+            {
+              "label": "Texas A&M — Negligence, Risk and the Professional Debate Over Responsibility for Design",
+              "url": "http://ethics.tamu.edu/wp-content/uploads/sites/7/2017/04/ethics.tamu_.edu_ethics_essays_negligen.pdf",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Negligent, or not, despite the numeric safety factor",
+              "body": "Classify each scenario as (a) meets the standard of care / not negligent, (b) negligent despite meeting a numeric safety factor, or (c) negligent AND fails the code-required minimum:\n\n1. An engineer applies the code-mandated safety factor of 2.0 to a lifting fixture, but does not check a well-documented, foreseeable fatigue-failure mode specific to this loading pattern that any competent specialist in this area would be expected to check. The fixture later fails by fatigue within the static safety factor's load range.\n2. An engineer applies the required safety factor, follows all applicable design checks for this specialty, and the part fails only because of an unforeseeable material defect from the manufacturer.\n3. An engineer deliberately uses a safety factor of 1.2 against a code-required minimum of 2.0 to save on material cost.\n\nAnswers: (1) Negligent, despite meeting the numeric safety factor — negligence is judged against the standard of care a reasonably prudent engineer in the specialty would exercise, including checking foreseeable failure modes the safety factor doesn't cover. (2) Not negligent — no breach of the standard of care occurred; an unforeseeable defect is outside what due diligence could have caught. (3) Both — this is a clear code violation and a deliberate departure from the required standard of care."
+            },
+            {
+              "kind": "contrast_examples",
+              "level": 2,
+              "title": "Met the number but negligent, vs. met the number and genuinely wasn't",
+              "body": "Scenario 1 (met the numeric safety factor but ignored a foreseeable, checkable fatigue mode) is negligent; scenario 2 (met the numeric safety factor, performed all standard checks, failure came from a genuinely unforeseeable defect) is not. The only difference is whether a foreseeable risk was reasonably checkable and went unchecked — the numeric safety factor itself is identical in both cases. This is exactly why 'I met the required safety factor' is not, by itself, a complete defense against a negligence finding."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "safety-factor-covers-negligence",
+              "name": "Meeting the required safety factor means you can't be found negligent",
+              "description": "The learner believes that as long as a design meets or exceeds the code-mandated numeric safety factor, the engineer is automatically shielded from a finding of negligence, regardless of whether other foreseeable risks specific to the situation were reasonably addressed.",
+              "root_cause": "The safety factor is presented early in engineering education as THE quantitative safeguard against failure, and its clean numeric form (a single required ratio to check off) makes it feel like a complete compliance checklist item, obscuring that negligence is a broader legal/professional standard-of-care test rather than a single-number pass/fail gate.",
+              "diagnostic_probe": "An engineer applies the code-required safety factor of 2.0 to a lifting fixture design, but does not check for a well-documented, foreseeable fatigue-failure mode specific to this loading pattern that any competent specialist in this area would be expected to check. The fixture later fails by fatigue within the code-required safety factor's static load range. Was this engineer negligent? Why might 'I met the safety factor' not be a complete defense?",
+              "correction": "Negligence is assessed against the standard of care a reasonably prudent engineer in the same specialty would have exercised given everything reasonably foreseeable — not against a single numeric safety factor. Meeting the code-required safety factor addresses the specific failure mode(s) that factor was designed to cover (typically static overload), but does not automatically address other foreseeable failure modes (fatigue, corrosion, foreseeable misuse) that due diligence in that specialty would be expected to identify and address separately. A design can satisfy its numeric safety factor and still constitute negligent practice if a foreseeable, checkable risk was overlooked."
+            }
+          ]
+        },
+        {
+          "slug": "conflict-of-interest-classification",
+          "name": "Conflict of interest classification",
+          "kc_type": "concept",
+          "description": "Classify scenarios as an acceptable, properly managed conflict of interest, or a live/unresolved conflict of interest, recognizing that disclosure alone does not automatically resolve a conflict if the other party cannot meaningfully evaluate the engineer's judgment despite the disclosure.",
+          "practice_notes": "After disclosure, always ask a second question: can the client/employer actually evaluate or counterbalance the engineer's judgment on this specific point? If not, disclosure alone hasn't resolved anything.",
+          "sort_order": 3,
+          "prereqs": ["#code-of-ethics-vs-law-distinction"],
+          "resources": [
+            {
+              "label": "NSPE — Engineer's Disclosure of Potential Conflict of Interest (Board of Ethical Review case)",
+              "url": "https://www.nspe.org/career-growth/ethics/board-ethical-review-cases/engineers-disclosure-potential-conflict-interest",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Resolved, or still a live conflict?",
+              "body": "Classify each scenario:\n\n1. An engineer discloses a financial stake in a supplier's product to the client, then continues to independently and objectively evaluate that supplier against competitors on equal footing, with the client able to review the comparison.\n2. An engineer discloses the same financial stake, but the client has no realistic way to evaluate or replace the engineer's judgment on this highly technical, niche point, and the engineer proceeds to recommend the supplier anyway.\n3. An engineer has no financial stake but has a close personal friendship with a bidder's owner, and does not disclose it while scoring that bid.\n\nAnswers: (1) Acceptable — disclosed and genuinely managed, since the client retains a real ability to check the engineer's judgment. (2) Still a live conflict of interest — disclosure alone was not sufficient, because the client cannot meaningfully counterbalance the engineer's influence on this specific technical point. (3) Undisclosed conflict of interest — the relationship, even without a financial stake, should have been disclosed before scoring the bid."
+            },
+            {
+              "kind": "contrast_examples",
+              "level": 2,
+              "title": "Disclosure that's sufficient vs. disclosure that isn't",
+              "body": "Scenario 1 (disclosure plus a client genuinely able to independently evaluate the recommendation) contrasts directly with scenario 2 (identical disclosure, but the client has no real ability to check the engineer's judgment on this specific point). The disclosure itself is the same in both — what differs is whether the client can actually act on it. This is exactly why 'I disclosed it' does not, by itself, resolve a conflict of interest."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "disclosure-alone-resolves-conflict-of-interest",
+              "name": "Disclosing a conflict of interest fully resolves it",
+              "description": "The learner believes that simply informing the client or employer of a conflict of interest discharges the engineer's ethical obligation completely, regardless of whether the engineer continues to act on the matter or whether the client is actually in a position to independently evaluate the engineer's judgment despite the disclosure.",
+              "root_cause": "Disclosure is genuinely the necessary first step in managing a conflict of interest, and many simplified case presentations stop right there, so learners generalize disclosure as the complete answer rather than as one step in an ongoing management obligation.",
+              "diagnostic_probe": "An engineer discloses to a client that they hold a financial stake in a materials supplier, then goes on to recommend that supplier's product over more suitable, better-priced alternatives, on a highly technical point the client has no independent way to evaluate. The engineer says 'I disclosed it, so I'm covered.' Are they?",
+              "correction": "Disclosure is necessary but not automatically sufficient. Under codes such as the NSPE Code of Ethics and OIQ's Code of Ethics of Engineers, an engineer's disclosure of a conflict of interest is the first step in an ongoing obligation to ensure the conflict does not actually compromise the engineer's objectivity and the client's interests — including recusing from the specific decision, involving independent review, or declining to proceed, particularly when the client has no realistic way to independently verify the engineer's technical judgment on the matter at hand. 'I told them' does not, by itself, neutralize the influence of the conflict on the actual recommendation made."
+            }
+          ]
+        },
+        {
+          "slug": "whistleblowing-and-duty-to-report",
+          "name": "Whistleblowing and the duty to report",
+          "kc_type": "rule",
+          "description": "Apply the escalation procedure an engineer follows on discovering a danger to public safety: document the finding, raise it internally first, then escalate to the professional order or relevant authority if internal channels fail and the danger persists.",
+          "practice_notes": "Follow the order every time: document with evidence/calculations → raise internally with the responsible party → escalate externally (order/regulator) only if internal escalation fails and the risk to public safety remains — skipping straight to external reporting, or never escalating past the internal step, are both common errors.",
+          "sort_order": 4,
+          "prereqs": ["#paramountcy-of-public-safety-principle", "#negligence-and-safety-factor"],
+          "resources": [
+            {
+              "label": "NSPE — Whistleblowing: City Engineer (Board of Ethical Review case)",
+              "url": "https://www.nspe.org/career-growth/ethics/board-ethical-review-cases/whistleblowing-city-engineer",
+              "kind": "canonical",
+              "pinned": true
+            },
+            {
+              "label": "NSPE — Whistleblowing: Industrial Design (Board of Ethical Review case)",
+              "url": "https://www.nspe.org/career-growth/ethics/board-ethical-review-cases/whistleblowing-industrial-design",
+              "kind": "canonical"
+            },
+            {
+              "label": "Engineers Canada — Guideline on the Duty to Report",
+              "url": "https://engineerscanada.ca/guidelines-and-papers/guideline-on-the-duty-to-report",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Escalation procedure — fully worked",
+              "body": "An engineer discovers during a routine inspection that a structural beam was substituted with an under-rated alternative during construction, creating a real risk of collapse under expected loads.\n\nStep 1 — document: record the finding with supporting calculations showing the deficiency, not just a verbal impression.\nStep 2 — escalate internally first: raise it with the responsible engineer/employer, giving them the opportunity to address it.\nStep 3 — escalate externally only if internal escalation fails and danger to public safety persists: report to the professional order (e.g. the OIQ) and/or the relevant safety authority.\n\nWhat the engineer should NOT do: quietly resign, stay silent, or go straight to external authorities without first giving the responsible party a documented chance to correct it (unless the danger is so immediate that internal escalation alone would be reckless to wait on). The duty-to-report obligation exists specifically because public safety is at risk, and it supersedes ordinary loyalty to the employer or contractor relationship."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Escalation procedure — you complete steps 2–3",
+              "body": "An engineer at a manufacturing plant learns a colleague signed off on quality tests for pressure-relief valves that were never actually run, on equipment now in service at a client's facility.\n\nGiven (step 1): document what is actually known — which valves, which tests were skipped, and the evidence for that — without accusing anyone based on rumor alone.\n\nYour turn: lay out steps 2 and 3 (internal escalation, then external duty-to-report if internal escalation fails and the danger persists), and explain why 'it's not my project, not my responsibility' is not compatible with the duty-to-report obligation here."
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Escalation procedure — solve independently",
+              "body": "An environmental engineer discovers that discharge monitoring data submitted to a regulator by their employer was altered to hide occasional past permit exceedances, although current discharge levels are within limits. Determine whether and how the duty-to-report applies here (data integrity and regulatory compliance, even without an acute imminent-danger event), and lay out the full escalation procedure independently."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "whistleblowing-is-disloyalty",
+              "name": "Reporting a safety concern is disloyal to your employer/team",
+              "description": "The learner frames escalating or externally reporting a safety concern as a betrayal of loyalty to an employer, manager, or team, rather than recognizing it as a professional obligation that specifically takes precedence over ordinary workplace loyalty when public safety is genuinely at risk.",
+              "root_cause": "Workplace socialization strongly rewards team loyalty and not 'making waves' above one's manager, so the interpersonal and career costs of reporting are vivid and immediate, while the professional-obligation framework (paramountcy of public safety over employer loyalty) is comparatively abstract and rarely modeled in a learner's actual work experience before they encounter a real case.",
+              "diagnostic_probe": "An engineer reports a safety-critical design deficiency to their professional order after their employer refuses to address it internally. A colleague calls this 'going behind the company's back' and 'throwing the team under the bus.' Is the colleague's framing consistent with the engineer's professional obligations?",
+              "correction": "A professional engineer's Code of Ethics establishes that the safety, health, and welfare of the public is paramount — meaning it takes precedence over loyalty to an employer, client, or colleagues specifically when those interests conflict with public safety. Escalating an unaddressed, genuine safety concern (first internally, then to the relevant professional order or authority if internal channels fail) is not a breach of professional loyalty; it is the professional obligation the Code establishes, and failing to report a known danger to public safety is itself an ethical failure, not a neutral act of 'staying loyal.'"
+            }
+          ]
+        },
+        {
+          "slug": "equitable-behaviour-and-bias-recognition",
+          "name": "Equitable behaviour and bias recognition",
+          "kc_type": "concept",
+          "description": "Classify instances of inequitable treatment or bias in engineering practice (design decisions, hiring, risk communication) as distinct from neutral technical decisions.",
+          "practice_notes": "Look past the technical framing of a decision to ask who bears the consequence disproportionately — that's usually where an equity issue is hiding inside what looks like an ordinary technical or cost tradeoff.",
+          "sort_order": 5,
+          "prereqs": ["#code-of-ethics-vs-law-distinction"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify the equity issue",
+              "body": "Classify each scenario:\n\n1. An accessibility ramp is value-engineered out of a public building design to cut cost, meeting only the bare legal minimum accessible-route requirement elsewhere in the building.\n2. A hiring engineer declines a candidate solely because they lack a specific credential unrelated to the actual work being hired for.\n3. An engineer designs a public safety information sign only in one language, in a community where a large share of residents primarily use another language, reducing effective risk communication for that group.\n\nAnswers: (1) An inequitable design decision worth flagging even though it may be technically code-compliant elsewhere — it disproportionately reduces access for people with disabilities. (2) A potential bias in professional conduct, worth examining even if it isn't a core engineering-practice/public-safety equity issue. (3) An equity issue that also overlaps with the risk-communication obligation — a meaningful share of the public effectively receives no safety information at all."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    },
+    {
+      "slug": "societal-environmental-impact",
+      "name": "Societal & Environmental Impact",
+      "sort_order": 3,
+      "kcs": [
+        {
+          "slug": "sustainability-tradeoff-analysis",
+          "name": "Sustainability tradeoff analysis",
+          "kc_type": "rule",
+          "description": "Apply a tradeoff framework (cost, service life/lifecycle cost, embodied environmental impact, end-of-life, safety/reliability) to evaluate competing design options rather than judging sustainability from a single criterion in isolation.",
+          "practice_notes": "Always normalize per unit of service life (e.g., embodied-impact-per-service-year, annualized cost) before comparing two options with different lifespans — comparing raw totals without normalizing is the most common error.",
+          "sort_order": 1,
+          "prereqs": ["#paramountcy-of-public-safety-principle"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Pipe material tradeoff — fully worked",
+              "body": "Choosing between PVC (lower embodied carbon and cost, ~50-year service life, recyclable but petroleum-based) and ductile iron (higher embodied carbon and cost, ~100-year service life, fully recyclable, heavier so higher transport emissions) for a water distribution project.\n\nStep 1 — list criteria: cost, lifecycle cost, embodied carbon, end-of-life, safety/reliability.\nStep 2 — normalize by service life: annualized cost = purchase cost / service life; embodied-carbon-per-service-year = total embodied carbon / service life.\nStep 3 — compare the normalized numbers, not the raw totals: if ductile iron's embodied carbon is roughly 1.6× PVC's but its service life is 2× PVC's, its embodied-carbon-per-service-year is actually LOWER than PVC's (1.6/2 = 0.8× PVC's rate), despite having the larger upfront footprint.\n\nConclusion: 'lower embodied carbon today' is not automatically 'more sustainable over the project life' — the answer depends on normalizing both options against how long each one actually lasts."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Backup power tradeoff — you complete the comparison",
+              "body": "A remote facility is choosing between a diesel backup generator (lower capital cost, ongoing fuel emissions per hour of runtime, known reliability) and a battery energy storage system (higher capital cost, embodied emissions concentrated in manufacturing rather than operation, no direct combustion emissions in use).\n\nGiven: for the diesel option, annualized cost and lifecycle emissions per year of expected use are worked out (capital cost / expected life + fuel cost × expected annual runtime hours; embodied emissions / expected life + combustion emissions × expected annual runtime hours).\n\nYour turn: work out the equivalent annualized cost and lifecycle emissions per year for the battery system (capital cost / expected life + embodied emissions / expected life, with no ongoing combustion term), and state which option comes out ahead on cost, on emissions, or whether the two criteria point in different directions."
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Concrete mix tradeoff — solve independently",
+              "body": "Compare conventional Portland cement concrete to a fly-ash-blended concrete mix for a bridge foundation, given only raw data on cost per m³, compressive strength, embodied CO2 per m³, and expected service life for each mix. Build the full tradeoff framework (criteria list, normalization by service life, comparison) and state a recommendation, independently."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "environmental-responsibility-principle",
+          "name": "Environmental responsibility beyond code compliance",
+          "kc_type": "principle",
+          "description": "Explain why an engineer's professional ethical obligation regarding environmental protection extends beyond the minimum applicable regulatory or permit requirement, and why meeting a permit's numeric limits does not automatically satisfy that broader obligation.",
+          "practice_notes": "When a design meets every applicable permit/code number, practice asking the follow-up question anyway: 'does the engineer have specific knowledge that the permit's assumptions don't hold right now?' — that's where the ethical obligation can exceed the legal one.",
+          "sort_order": 2,
+          "prereqs": ["#sustainability-tradeoff-analysis"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "self_explanation_prompt",
+              "level": 2,
+              "title": "Why doesn't the permit limit settle the ethical question?",
+              "body": "A proposed industrial discharge meets every numeric limit in its environmental permit. Explain why an engineer might still have a professional obligation to raise a concern about cumulative or long-term environmental effects that the current permit doesn't fully capture — i.e. why 'the permit allows it' doesn't automatically mean 'the Code of Ethics is satisfied.'"
+            },
+            {
+              "kind": "contrast_examples",
+              "level": 2,
+              "title": "Compliant-but-arguably-not-enough vs. proactively going beyond compliance",
+              "body": "Contrast a facility that meets every permit limit but knowingly discharges immediately upstream of a sensitive wetland during a drought, when the receiving water's actual capacity to safely assimilate that discharge is well below what the permit assumed (technically compliant, arguably not meeting the spirit of environmental responsibility), against a facility that proactively reduces its discharge below its permitted limit during known sensitive periods (goes beyond minimum compliance). The permit's numeric limit is identical in both cases — what differs is whether the engineer treats the regulatory limit as the full extent of the obligation or as a floor beneath a broader professional judgment."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "code-compliance-equals-ethical-adequacy",
+              "name": "Meeting the permit/code minimum means the ethical obligation is satisfied",
+              "description": "The learner assumes that satisfying every applicable regulatory or environmental permit limit automatically and completely discharges the engineer's professional ethical obligation regarding environmental and public-welfare impact, treating the regulatory minimum as the full extent of the duty rather than a floor.",
+              "root_cause": "Regulatory limits are the most concrete, checkable standard available, and engineering education emphasizes designing to meet code/permit requirements as the primary deliverable, so the ethical 'hold paramount the public welfare and environment' language can feel redundant with, rather than broader than, the regulatory requirement unless a case explicitly shows the gap between the two.",
+              "diagnostic_probe": "A facility's discharge meets every numeric limit in its environmental permit, but the engineer knows the discharge occurs immediately upstream of a sensitive wetland during the driest part of the year, when the receiving water's actual capacity to safely assimilate that discharge is well below what the permit assumed. Does meeting the permit's numeric limits fully satisfy the engineer's professional ethical obligation here?",
+              "correction": "Regulatory and permit limits establish a legal floor, not a ceiling, for professional ethical practice. Codes of ethics that direct engineers to hold paramount public safety, health, welfare, and the environment impose a broader, ongoing professional judgment obligation that can require going beyond the numeric permit minimum when an engineer has specific knowledge that the permit's assumptions don't hold for current conditions. Meeting the applicable code or permit is necessary but does not, by itself, complete the ethical obligation."
+            }
+          ]
+        },
+        {
+          "slug": "risk-communication-to-public",
+          "name": "Risk communication to the public",
+          "kc_type": "rule",
+          "description": "Apply plain-language, honest risk-communication practice when disclosing engineering risk to non-expert stakeholders or the public, including stating likelihood and consequence without minimizing or overstating either.",
+          "practice_notes": "Every risk communication should hit four elements in order: plain-language finding, honest likelihood/consequence framing, what's being done and by when, and a channel for follow-up questions — missing any one of these is the most common gap.",
+          "sort_order": 3,
+          "prereqs": ["#paramountcy-of-public-safety-principle"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Dam inspection risk communication — fully worked",
+              "body": "A dam inspection reveals a moderate but non-imminent risk of spillway erosion under a 1-in-200-year flood event.\n\n1. **Plain language**: \"Under an extremely rare, very large flood — one expected on average once every 200 years — part of the dam's spillway could erode faster than it was designed to handle.\"\n2. **Honest likelihood/consequence framing**: \"This is not an emergency and does not affect normal day-to-day operation of the dam, but it should be repaired within the recommended timeline to keep that very-low-probability risk from growing.\"\n3. **What's being done**: \"An engineering assessment is underway, and repairs are planned within [timeframe].\"\n4. **Follow-up channel**: \"Questions can be directed to [contact/process] for more detail on the assessment and repair plan.\"\n\nEvery element avoids both minimizing (never implying there's zero risk) and overstating (never implying imminent failure) — matching the actual, moderate-but-rare risk level."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Bridge load-rating communication — you finish the message",
+              "body": "A bridge load-rating study finds the bridge should be restricted to lighter vehicles pending repairs.\n\nGiven (elements 1–2): \"An inspection found that this bridge should not carry vehicles heavier than [weight limit] until repairs are completed. This restriction is a precaution — the bridge remains safe for vehicles within the new limit — and does not indicate an immediate danger for compliant traffic.\"\n\nYour turn: draft elements 3 and 4 — what's being done about the repair, on what timeline, and how the public can get more information or ask questions."
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Water quality risk communication — solve independently",
+              "body": "A water utility's testing finds a contaminant slightly above the aesthetic (non-health-based) guideline but well below the health-based limit. Draft the full four-element public risk communication independently, taking care to accurately distinguish an aesthetic guideline exceedance from a health-based one."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    },
+    {
+      "slug": "case-classification-and-professional-practice",
+      "name": "Case Classification & Professional Practice",
+      "sort_order": 4,
+      "kcs": [
+        {
+          "slug": "ethics-case-classification-method",
+          "name": "Ethics case classification method",
+          "kc_type": "rule",
+          "description": "Apply a four-step method — identify the facts, identify stakeholders, identify applicable Code/law provisions, identify where obligations compete and which takes precedence — to classify a novel ethics case by its dominant issue and likely resolution.",
+          "practice_notes": "Always work all four steps in order for a new case, even when the answer feels obvious after step one — the value of the method is catching competing obligations (step 4) that a snap judgment would miss.",
+          "sort_order": 1,
+          "prereqs": ["#duty-of-competence-and-scope-of-practice", "#conflict-of-interest-classification", "#whistleblowing-and-duty-to-report"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "procedure_outline",
+              "level": 1,
+              "title": "The four-step case classification method",
+              "body": "1. **Identify the facts**: who did what, what's actually known vs. assumed.\n2. **Identify all stakeholders**: who is affected and what's at stake for each — the public, the client/employer, colleagues, the profession, the engineer themselves.\n3. **Identify applicable provisions**: which Code-of-Ethics clauses and/or laws are implicated.\n4. **Identify competing obligations and resolve the priority**: where do obligations conflict (e.g., loyalty to employer vs. paramountcy of public safety), and which takes precedence per the Code's hierarchy — public safety first, then client/employer, then the profession, then self."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Applying the method — fully worked case",
+              "body": "Case: a junior engineer is told by their manager to approve a supplier's material substitution to save cost and stay on schedule, but the substitute material's certification doesn't quite cover the actual service conditions.\n\n1. **Facts**: substitution proposed for cost/schedule reasons; certification gap identified by the junior engineer; manager pressure to approve anyway.\n2. **Stakeholders**: end users relying on the part's performance (public safety), the employer (cost/schedule), the junior engineer (career pressure, professional accountability).\n3. **Provisions**: competence (does the substitute material actually meet the required service conditions?), public safety (paramount), integrity of professional judgment.\n4. **Competing obligations**: employer pressure to approve vs. the engineer's obligation not to approve something outside its certified conditions — public safety and professional integrity take precedence over schedule/cost pressure.\n\nClassification: primarily a competence + public-safety issue, with a secondary conflict-of-loyalty dimension. Likely resolution: do not approve the substitution without the correct certification for the actual service conditions; escalate internally (and beyond, if pressured further) rather than sign off under pressure."
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Applying the method — solve independently",
+              "body": "New case: an engineer designing a consumer product discovers late in the project that a required safety test was skipped due to schedule pressure. Apply the full four-step method independently — facts, stakeholders, applicable provisions, competing obligations and resolution — with no steps shown."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "disciplinary-process-and-consequences",
+          "name": "Disciplinary process and consequences",
+          "kc_type": "fact",
+          "description": "Recall the procedural path a complaint against a Quebec engineer follows within the professional order (syndic investigation, discipline committee, sanction), as distinct from a separate civil lawsuit or criminal proceeding.",
+          "practice_notes": "Drill the three-stage order and keep it distinct from civil/criminal court processes, which run on entirely separate tracks and can happen alongside (not instead of) the disciplinary process.",
+          "sort_order": 2,
+          "prereqs": ["#code-of-ethics-vs-law-distinction"],
+          "resources": [
+            {
+              "label": "OIQ — Your Obligations: Ethics",
+              "url": "https://www.oiq.qc.ca/en/membres/your-obligations/ethics/",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "retrieval_prompt",
+              "level": 1,
+              "title": "Cold recall: the disciplinary path",
+              "body": "Without looking it up: recall the three-stage path a complaint against a Quebec engineer follows within the professional order — (1) an initial investigation by whom? (2) a hearing before what body? (3) what range of sanctions can result? Then state how this disciplinary process differs from a civil lawsuit or a criminal charge, which follow separate, court-based processes and can proceed independently of (and alongside) the disciplinary process."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    }
+  ],
+  "course_resources": [
+    {
+      "label": "NSPE Code of Ethics for Engineers",
+      "url": "https://www.nspe.org/career-growth/ethics/nspe-code-ethics-engineers",
+      "kind": "canonical",
+      "pinned": true
+    },
+    {
+      "label": "OIQ — Code of Ethics of Engineers (official text, PDF)",
+      "url": "https://www.oiq.qc.ca/wp-content/uploads/documents/DAJ/Lois/TheCodeofEthicsofEngineers.pdf",
+      "kind": "canonical",
+      "pinned": true
+    },
+    {
+      "label": "NSPE — Board of Ethical Review Cases (index)",
+      "url": "https://www.nspe.org/career-growth/ethics/board-ethical-review-cases",
+      "kind": "canonical"
+    },
+    {
+      "label": "Engineers Canada — Ethics and Engineering",
+      "url": "https://engineerscanada.ca/news-and-events/news/ethics-and-engineering",
+      "kind": "feed"
+    }
+  ],
+  "assessments": [
+    {
+      "title": "Case Study Assignments (3 combined)",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 40,
+      "due_date": "2024-11-01",
+      "kc_slugs": ["#duty-of-competence-and-scope-of-practice", "#conflict-of-interest-classification", "#whistleblowing-and-duty-to-report", "#sustainability-tradeoff-analysis"]
+    },
+    {
+      "title": "Class Participation & Case Discussions",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 15,
+      "kc_slugs": ["#code-of-ethics-vs-law-distinction", "#equitable-behaviour-and-bias-recognition"]
+    },
+    {
+      "title": "Midterm Case Exam",
+      "type": "midterm",
+      "kind": "official",
+      "weight_pct": 20,
+      "due_date": "2024-12-05",
+      "kc_slugs": ["#engineer-definition-and-licensure", "#code-of-ethics-vs-law-distinction", "#duty-of-competence-and-scope-of-practice", "#accountability-and-supervision-principle", "#paramountcy-of-public-safety-principle", "#negligence-and-safety-factor"]
+    },
+    {
+      "title": "Final Exam / Reflective Case Paper",
+      "type": "final",
+      "kind": "official",
+      "weight_pct": 25,
+      "due_date": "2025-04-10",
+      "kc_slugs": ["#conflict-of-interest-classification", "#whistleblowing-and-duty-to-report", "#sustainability-tradeoff-analysis", "#environmental-responsibility-principle", "#risk-communication-to-public", "#ethics-case-classification-method", "#disciplinary-process-and-consequences"]
+    },
+    {
+      "title": "Practice case set: professionalism & competence",
+      "type": "quiz",
+      "kind": "practice",
+      "kc_slugs": ["#engineer-definition-and-licensure", "#code-of-ethics-vs-law-distinction", "#duty-of-competence-and-scope-of-practice"]
+    },
+    {
+      "title": "Practice case set: safety, negligence & whistleblowing",
+      "type": "quiz",
+      "kind": "practice",
+      "kc_slugs": ["#paramountcy-of-public-safety-principle", "#negligence-and-safety-factor", "#whistleblowing-and-duty-to-report"]
+    },
+    {
+      "title": "Practice case set: conflict of interest & equity",
+      "type": "quiz",
+      "kind": "practice",
+      "kc_slugs": ["#conflict-of-interest-classification", "#equitable-behaviour-and-bias-recognition"]
+    },
+    {
+      "title": "Practice case set: sustainability & risk communication",
+      "type": "quiz",
+      "kind": "practice",
+      "kc_slugs": ["#sustainability-tradeoff-analysis", "#environmental-responsibility-principle", "#risk-communication-to-public"]
+    }
+  ]
+}

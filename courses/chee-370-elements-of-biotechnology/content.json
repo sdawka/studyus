@@ -1,0 +1,798 @@
+{
+  "schema_version": 1,
+  "course_slug": "chee-370-elements-of-biotechnology",
+  "branches": [
+    {
+      "slug": "cell-and-molecular-foundations",
+      "name": "Cell and molecular foundations",
+      "sort_order": 1,
+      "kcs": [
+        {
+          "slug": "biological-macromolecules",
+          "name": "Biological macromolecules",
+          "kc_type": "concept",
+          "description": "Classify a given biomolecule as a protein, carbohydrate, lipid, or nucleic acid from its structural features (monomer type, linking bond — peptide, glycosidic, ester, or phosphodiester), and relate that structure to its primary biological role.",
+          "practice_notes": "Practice on unlabeled structural diagrams: cover the label, identify the monomer and bond type, name the macromolecule class, then check. Vary examples across all four classes so induction targets the discriminating features rather than one memorized picture.",
+          "sort_order": 1,
+          "prereqs": [],
+          "resources": [
+            {
+              "label": "OpenStax Biology 2e — 3.1 Synthesis of Biological Macromolecules",
+              "url": "https://openstax.org/books/biology-2e/pages/3-1-synthesis-of-biological-macromolecules",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify four unlabeled structures",
+              "body": "Classify each structure by macromolecule class and name the bond type linking its monomers:\n\n1. A chain of amino acids linked by amide bonds between a carboxyl and an amino group.\n2. Two glucose rings joined by an oxygen bridge between C1 of one ring and C4 of the other.\n3. A long hydrocarbon chain attached to glycerol via three ester linkages.\n4. A chain of alternating sugar-phosphate units with nitrogenous bases attached, linked by phosphodiester bonds.\n\n**Key**: (1) protein — peptide (amide) bond. (2) carbohydrate (a disaccharide, e.g. maltose) — glycosidic bond. (3) lipid (a triglyceride) — ester bonds. (4) nucleic acid — phosphodiester bond."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Dehydration synthesis, cold",
+              "body": "What small molecule is released every time two monomers are joined into a polymer by dehydration synthesis, and what is added back during hydrolysis to break that bond?"
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "prokaryote-vs-eukaryote-cell-structure",
+          "name": "Prokaryotic vs. eukaryotic cell structure",
+          "kc_type": "concept",
+          "description": "Distinguish prokaryotic from eukaryotic cell structure — presence or absence of a membrane-bound nucleus and organelles, genome organization (a single circular chromosome plus plasmids vs. multiple linear chromosomes), and ribosome size (70S vs. 80S) — and classify a described organism or micrograph accordingly.",
+          "practice_notes": "Contrast a specific pair (E. coli vs. baker's yeast) on each structural axis in turn, then generalize to new organisms — the goal is recognizing the discriminating features, not memorizing one pair.",
+          "sort_order": 2,
+          "prereqs": [
+            "#biological-macromolecules"
+          ],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "contrast_examples",
+              "level": 2,
+              "title": "E. coli vs. Saccharomyces cerevisiae",
+              "body": "**E. coli** (prokaryote): no nucleus — DNA is free in the cytoplasm as a single circular chromosome, often with additional small circular plasmids; 70S ribosomes; no membrane-bound organelles; cell wall of peptidoglycan.\n\n**S. cerevisiae** (eukaryote): DNA enclosed in a membrane-bound nucleus, organized into multiple linear chromosomes; 80S ribosomes; membrane-bound organelles (mitochondria, ER, Golgi); cell wall of chitin/glucan, not peptidoglycan.\n\nGiven a new organism description, look for these same markers (nucleus present?, chromosome shape and number, ribosome size, organelles) to classify it."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Four discriminating features",
+              "body": "List four structural features you would check to decide whether an unfamiliar cell is prokaryotic or eukaryotic."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "central-dogma-of-molecular-biology",
+          "name": "Central dogma of molecular biology",
+          "kc_type": "principle",
+          "description": "Explain the directional flow of genetic information — DNA replication, transcription of DNA to RNA, and translation of RNA to protein — and explain why the dogma specifically forbids information flowing back out of protein into a nucleic acid, even though RNA can flow back into DNA via reverse transcription (as in retroviruses).",
+          "practice_notes": "Self-explain the flow by tracing a single gene end to end (promoter recognition → mRNA synthesis → ribosome binding → codon-by-codon translation) rather than reciting 'DNA makes RNA makes protein' as a slogan — the slogan is exactly what hides the intermediate steps that misconceptions live in.",
+          "sort_order": 3,
+          "prereqs": [
+            "#biological-macromolecules",
+            "#prokaryote-vs-eukaryote-cell-structure"
+          ],
+          "resources": [
+            {
+              "label": "Khan Academy — Intro to gene expression (central dogma)",
+              "url": "https://www.khanacademy.org/science/biology/gene-expression-central-dogma/central-dogma-transcription/a/intro-to-gene-expression-central-dogma",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "analogy",
+              "level": 1,
+              "title": "Blueprint, photocopy, product",
+              "body": "DNA is the master blueprint kept safely in the archive (the nucleus, in eukaryotes). RNA is a disposable photocopy of one page of that blueprint, carried out to the factory floor (the ribosome). Protein is the finished product built from that photocopy. The factory never ships a finished product back to the archive to create a new blueprint — information flows outward from archive to photocopy to product, never backward from product to blueprint. (Reverse transcription is a copier that can make a new blueprint page *from a photocopy*, in certain viruses — but never from the finished product itself.)"
+            },
+            {
+              "kind": "self_explanation_prompt",
+              "level": 2,
+              "title": "Trace one gene end to end",
+              "body": "Pick a hypothetical gene. In your own words, describe every step from the DNA sequence existing in the nucleus to a finished, folded protein existing in the cytoplasm, naming which enzyme or machine performs each step (RNA polymerase, ribosome, etc.) and what molecule exists at each stage in between."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "What can never happen?",
+              "body": "According to the central dogma, which single directional flow of information is forbidden — not just less common, but structurally impossible under the dogma as originally stated?"
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "genes-encode-proteins-directly",
+              "name": "Genes are translated straight into protein, with no RNA step",
+              "description": "The learner believes DNA is converted directly into protein, skipping the RNA intermediate (transcription) and the associated regulatory steps, effectively collapsing 'DNA → RNA → protein' into 'DNA → protein.'",
+              "root_cause": "Simplified diagrams and everyday language ('this gene makes this protein') draw a single arrow from a gene box to a protein box, and the RNA intermediate and the regulatory machinery controlling when/how much is transcribed are easy to omit without noticing.",
+              "diagnostic_probe": "A student is asked why a mutation in a gene's promoter region (which never becomes part of the protein-coding sequence) can still eliminate that protein's production entirely. They struggle to explain how a DNA change outside the coding region could matter. What are they missing?",
+              "correction": "Gene expression proceeds DNA → RNA (transcription) → protein (translation), each step independently regulated; a promoter mutation can block transcription entirely, preventing any mRNA — and therefore any protein — from being made, even though the promoter sequence itself is never translated. Treating 'gene' and 'protein' as directly interchangeable skips the RNA intermediate where most regulation actually happens."
+            }
+          ]
+        },
+        {
+          "slug": "cell-metabolism-and-energy-pathways",
+          "name": "Cell metabolism and energy pathways",
+          "kc_type": "concept",
+          "description": "Classify a given metabolic scenario (glycolysis, aerobic respiration via the TCA cycle, or fermentation) by its oxygen requirement and its approximate ATP yield per glucose, while recognizing that commonly quoted ATP-yield numbers (such as 36-38 ATP per glucose) are theoretical maxima that vary with organism, shuttle mechanism, and conditions rather than fixed universal constants.",
+          "practice_notes": "Practice classifying short scenario descriptions (yeast in a sealed anaerobic fermenter; muscle cells during a sprint; aerobic bacteria in a well-aerated bioreactor) by pathway and oxygen dependence before worrying about exact ATP numbers.",
+          "sort_order": 4,
+          "prereqs": [
+            "#biological-macromolecules"
+          ],
+          "resources": [
+            {
+              "label": "OpenStax Biology 2e — 6.1 Energy and Metabolism",
+              "url": "https://openstax.org/books/biology-2e/pages/6-1-energy-and-metabolism",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify three metabolic scenarios",
+              "body": "Classify each scenario as primarily glycolysis-only/fermentation or full aerobic respiration, and state the oxygen requirement:\n\n1. Yeast growing in a sealed fermenter producing ethanol and CO2, with dissolved oxygen near zero.\n2. Aerobic bacteria growing in a sparged, well-mixed bioreactor with continuous air supply.\n3. Human skeletal muscle during a 100 m sprint, when oxygen delivery can't keep pace with ATP demand.\n\n**Key**: (1) fermentation — anaerobic, low net ATP per glucose (~2), regenerating NAD+ without oxygen. (2) full aerobic respiration — oxygen as terminal electron acceptor, much higher ATP yield. (3) largely anaerobic glycolysis/lactic acid fermentation despite the organism being aerobic overall — a temporary, localized oxygen-supply mismatch, not a property of the organism itself."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Why isn't 36-38 a universal number?",
+              "body": "Name two reasons the textbook figure of 36-38 ATP per glucose from aerobic respiration is a theoretical maximum rather than a number every cell actually achieves."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "atp-yield-numbers-are-fixed-universal-constants",
+              "name": "Respiration always yields exactly 36 (or 38) ATP per glucose",
+              "description": "The learner treats the textbook ATP-per-glucose figure for aerobic respiration as a fixed constant true of every cell and every condition, rather than a theoretical maximum that depends on the shuttle system moving electrons into the mitochondrion and on the specific organism and conditions.",
+              "root_cause": "Introductory textbooks present one idealized number to teach the concept of energy yield, without the caveat that the malate-aspartate vs. glycerol-3-phosphate shuttle choice, P/O ratios, and 'proton leak' all make the real number lower and variable.",
+              "diagnostic_probe": "A student calculates the exact same 38 ATP/glucose figure for a liver cell and a muscle cell and concludes their respiration efficiency must be identical. What variable factor are they overlooking?",
+              "correction": "The commonly quoted 36-38 ATP per glucose is a theoretical maximum computed under idealized stoichiometric assumptions; the actual yield varies with the electron-shuttle mechanism used to move cytosolic NADH into the mitochondrion, the specific organism, and physiological conditions, and is generally somewhat lower in practice."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "microbial-biotechnology",
+      "name": "Microbial biotechnology",
+      "sort_order": 2,
+      "kcs": [
+        {
+          "slug": "industrially-significant-microbes",
+          "name": "Industrially significant microbes",
+          "kc_type": "fact",
+          "description": "Recall key industrially significant microorganisms and their primary industrial application: Saccharomyces cerevisiae (brewing, baking, bioethanol), Escherichia coli (recombinant protein/insulin production), Bacillus subtilis (industrial enzyme production), and Penicillium chrysogenum (antibiotic production).",
+          "practice_notes": "Spaced flashcard-style drill: organism name on one side, primary industrial application on the other, cycling in both directions (name→application and application→name).",
+          "sort_order": 1,
+          "prereqs": [
+            "#prokaryote-vs-eukaryote-cell-structure"
+          ],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "retrieval_prompt",
+              "level": 1,
+              "title": "Organism → application, cold",
+              "body": "For each organism, recall its primary industrial biotechnology application: (a) Saccharomyces cerevisiae, (b) Escherichia coli, (c) Bacillus subtilis, (d) Penicillium chrysogenum."
+            },
+            {
+              "kind": "mnemonic",
+              "level": 1,
+              "title": "Four workhorses, four industries",
+              "body": "**S**accharomyces → **S**pirits & bread (fermentation). **E. coli** → **E**ngineered proteins (recombinant insulin, the classic biotech workhorse). **B**acillus → **B**ulk enzymes (industrial detergent enzymes). **P**enicillium → **P**harmaceuticals (the original antibiotic producer)."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "bacterial-growth-curve-phases",
+          "name": "Bacterial growth curve phases",
+          "kc_type": "concept",
+          "description": "Classify a point on a batch bacterial growth curve (log cell count or optical density vs. time) into lag, exponential (log), stationary, or death phase from its shape and slope, and relate each phase to its underlying physiological cause (adaptation to new medium, unrestricted growth, nutrient/space limitation, loss of viability).",
+          "practice_notes": "Practice reading unlabeled growth-curve sketches and identifying the phase from slope alone (flat-then-rising = lag→log transition; rising-then-flattening = log→stationary; falling = death), before attaching the physiological explanation.",
+          "sort_order": 2,
+          "prereqs": [
+            "#industrially-significant-microbes",
+            "#cell-metabolism-and-energy-pathways"
+          ],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Name the phase from the curve segment",
+              "body": "For each described segment of a log(cell count) vs. time growth curve, name the phase and its physiological cause:\n\n1. Nearly flat for the first two hours after inoculation into fresh medium.\n2. A straight line of steep positive slope on the semi-log plot for the next four hours.\n3. The slope flattens to zero as nutrients are depleted and waste accumulates.\n4. The count begins declining as cells lose viability faster than new cells are produced.\n\n**Key**: (1) lag phase — cells synthesizing enzymes/adapting to the new medium, not yet dividing. (2) exponential (log) phase — nutrients non-limiting, growth rate at its maximum, constant doubling time (hence the straight line on semi-log axes). (3) stationary phase — growth rate balances death rate as a limiting nutrient runs out or inhibitory products accumulate. (4) death phase — nutrient exhaustion/toxic buildup now outpaces any remaining growth."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Why is log phase a straight line on semi-log axes?",
+              "body": "Why does exponential-phase growth appear as a straight line when cell count is plotted on a log axis against linear time, rather than a curve?"
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "monod-growth-kinetics",
+          "name": "Monod growth kinetics",
+          "kc_type": "rule",
+          "description": "Apply the Monod equation μ = μ_max·S/(K_S + S) to compute a microbial culture's specific growth rate from its limiting-substrate concentration, and recognize μ as a saturating function of S — not a fixed property of the organism — that approaches μ_max only at high substrate concentration and falls toward zero as S becomes scarce.",
+          "practice_notes": "Compute μ at several different S values for the same organism (same μ_max, K_S) to see the saturation curve directly, rather than treating μ_max as 'the' growth rate — this is the fluency step that heads off treating μ as a constant.",
+          "sort_order": 3,
+          "prereqs": [
+            "#bacterial-growth-curve-phases"
+          ],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Specific growth rate, fully worked",
+              "body": "An organism has μ_max = 0.80 /h and K_S = 0.20 g/L for its limiting substrate. At S = 1.0 g/L:\n\nμ = μ_max·S/(K_S+S) = 0.80×1.0/(0.20+1.0) = 0.80/1.20 = **0.667 /h**.\n\nThe corresponding doubling time is t_d = ln(2)/μ = 0.693/0.667 ≈ **1.04 h**.\n\nNote this is already noticeably below μ_max (0.80 /h) even at S=1.0 g/L — five times K_S — because the Monod curve approaches its asymptote gradually, not sharply."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Same organism, three substrate levels",
+              "body": "Same organism (μ_max=0.80 /h, K_S=0.20 g/L). Compute μ at S=0.05 g/L, S=0.20 g/L, and S=2.0 g/L, and state what fraction of μ_max each represents.\n\n(At S=K_S=0.20 g/L, by definition μ=μ_max/2=0.40/h — this is the operational meaning of K_S: the substrate concentration at which growth proceeds at half its maximum rate.)"
+            },
+            {
+              "kind": "interactive_model",
+              "level": 3,
+              "title": "Monod growth-rate explorer",
+              "body": "Adjust the substrate concentration S, the maximum specific growth rate μ_max, and the half-saturation constant K_S below to see how the specific growth rate μ and the resulting doubling time respond. Notice that μ never actually reaches μ_max for any finite S — it only approaches it asymptotically — and that K_S is exactly the S value at which μ has fallen to half of μ_max.",
+              "details": {
+                "title": "Monod growth kinetics",
+                "parameters": [
+                  {
+                    "id": "S",
+                    "label": "Substrate concentration",
+                    "min": 0.01,
+                    "max": 5,
+                    "step": 0.01,
+                    "default": 1.0,
+                    "unit": "g/L"
+                  },
+                  {
+                    "id": "mu_max",
+                    "label": "Maximum specific growth rate (μmax)",
+                    "min": 0.1,
+                    "max": 1.5,
+                    "step": 0.01,
+                    "default": 0.8,
+                    "unit": "1/h"
+                  },
+                  {
+                    "id": "Ks",
+                    "label": "Half-saturation constant (Ks)",
+                    "min": 0.01,
+                    "max": 2,
+                    "step": 0.01,
+                    "default": 0.2,
+                    "unit": "g/L"
+                  }
+                ],
+                "expressions": [
+                  {
+                    "id": "mu",
+                    "label": "Specific growth rate μ",
+                    "formula": "mu_max*S/(Ks+S)"
+                  },
+                  {
+                    "id": "fraction_of_max",
+                    "label": "μ as a fraction of μmax",
+                    "formula": "S/(Ks+S)"
+                  },
+                  {
+                    "id": "doubling_time",
+                    "label": "Doubling time",
+                    "formula": "log(2)/(mu_max*S/(Ks+S))"
+                  }
+                ],
+                "notes": "Slide S down toward 0 and watch μ fall toward 0, not toward some floor — growth rate is not a fixed trait of the organism, it is set jointly by the organism's kinetic parameters AND the substrate concentration it currently experiences. Set S equal to Ks and confirm fraction_of_max lands at exactly 0.5."
+              }
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "What does K_S mean operationally?",
+              "body": "In one sentence, what does the half-saturation constant K_S represent operationally in terms of μ and μ_max?"
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "specific-growth-rate-is-a-fixed-organism-trait",
+              "name": "Specific growth rate is a fixed property of the organism",
+              "description": "The learner treats an organism's specific growth rate μ as a single fixed number characteristic of that species (like a fact to memorize), rather than as a variable that depends on the current limiting-substrate concentration according to the Monod relationship.",
+              "root_cause": "Papers and textbooks often report a single 'growth rate' number for an organism (usually μ_max, measured under substrate-excess conditions) without always restating that actual μ at any given moment depends on S, so the qualifier gets dropped and μ becomes conflated with μ_max.",
+              "diagnostic_probe": "A student is given μ_max=0.9/h for an organism and uses 0.9/h to predict growth in a bioreactor where the substrate concentration is nearly depleted (S << K_S). Why will their prediction be far too optimistic?",
+              "correction": "An organism's specific growth rate μ is not a fixed trait — it is a function of the current substrate concentration, μ = μ_max·S/(K_S+S). μ_max is only the ceiling value approached at high (non-limiting) substrate concentration; at low S, the actual growth rate can be far below μ_max, and using μ_max alone will overestimate real performance whenever substrate is scarce."
+            }
+          ]
+        },
+        {
+          "slug": "bioreactor-mass-balances-and-dilution-rate",
+          "name": "Bioreactor mass balances and dilution rate",
+          "kc_type": "rule",
+          "description": "Set up and solve steady-state mass balances for a continuous stirred-tank bioreactor (chemostat), including biomass and substrate balances, and apply the dilution rate D=F/V to predict steady-state biomass and substrate concentrations, including the washout condition that occurs when D exceeds μ_max.",
+          "practice_notes": "Work the chemostat steady-state result both directions: given D, find the steady-state S (by setting μ(S)=D and solving the Monod equation for S); given a target S, find the D that produces it. Recognizing that at steady state μ must exactly equal D is the key insight that unlocks both directions.",
+          "sort_order": 4,
+          "prereqs": [
+            "#monod-growth-kinetics"
+          ],
+          "resources": [
+            {
+              "label": "NPTEL — Bioreactor Design and Analysis",
+              "url": "https://nptel.ac.in/courses/102106086",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Chemostat steady state, fully worked",
+              "body": "A chemostat runs at dilution rate D=0.30 /h with an organism whose μ_max=0.80/h, K_S=0.20 g/L.\n\n**Key steady-state condition**: at steady state, biomass balance dX/dt = (μ−D)X = 0 forces μ = D (the culture's actual growth rate locks to the dilution rate, whatever S has to be to make that happen).\n\nSolve μ(S)=D for S: D = μ_max·S/(K_S+S) → S = D·K_S/(μ_max−D) = 0.30×0.20/(0.80−0.30) = 0.06/0.50 = **0.12 g/L** steady-state substrate concentration.\n\nSince D (0.30/h) is comfortably below μ_max (0.80/h), the culture is stable — well away from washout."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Approaching washout, partially faded",
+              "body": "Same organism (μ_max=0.80/h, K_S=0.20 g/L), but now D=0.75/h.\n\n1. Solve for the steady-state substrate concentration S using S=D·K_S/(μ_max−D).\n2. Compare this S to the feed substrate concentration S_0=2.0 g/L — is a physically valid (S below S_0, biomass concentration positive) steady state possible?\n3. What happens if D is increased further to D=0.80/h or beyond?\n\n(As D→μ_max, S→∞ in the formula, meaning no finite feed concentration can sustain that dilution rate — the culture washes out, since cells are removed from the vessel faster than they can grow.)"
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    },
+    {
+      "slug": "biocatalysis",
+      "name": "Biocatalysis",
+      "sort_order": 3,
+      "kcs": [
+        {
+          "slug": "michaelis-menten-kinetics",
+          "name": "Michaelis-Menten enzyme kinetics",
+          "kc_type": "rule",
+          "description": "Apply the Michaelis-Menten equation v = V_max·[S]/(K_m+[S]) to compute initial reaction velocity from substrate concentration and kinetic parameters, and explain that V_max is approached asymptotically as [S]→∞ and is never actually reached at any finite substrate concentration.",
+          "practice_notes": "Compute v at [S] values spanning far below, at, and far above K_m for the same enzyme to see the saturation curve directly — this heads off treating V_max as a value the reaction 'reaches' at some particular concentration.",
+          "sort_order": 1,
+          "prereqs": [
+            "#cell-metabolism-and-energy-pathways"
+          ],
+          "resources": [
+            {
+              "label": "OpenStax Biology 2e — 6.5 Enzymes",
+              "url": "https://openstax.org/books/biology-2e/pages/6-5-enzymes",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Initial velocity, fully worked",
+              "body": "An enzyme has V_max=10 μmol/min and K_m=2.0 mM. At [S]=1.0 mM:\n\nv = V_max·[S]/(K_m+[S]) = 10×1.0/(2.0+1.0) = 10/3.0 = **3.33 μmol/min**, about a third of V_max even though [S] is only half of K_m below it."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Three substrate levels, partially faded",
+              "body": "Same enzyme (V_max=10 μmol/min, K_m=2.0 mM). Compute v at [S]=2.0 mM, [S]=8.0 mM, and [S]=100 mM, and express each as a percentage of V_max.\n\n(At [S]=K_m=2.0 mM, v should come out to exactly half of V_max — this is K_m's operational definition. At [S]=100 mM, v should be very close to, but never exactly equal to, V_max.)"
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "New enzyme, bare prompt",
+              "body": "An enzyme has V_max=25 μmol/min and K_m=5.0 mM. Compute v at [S]=1, 5, 20, and 200 mM, and state what value v is approaching as [S] grows very large — and whether it ever actually gets there."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "vmax-is-reached-at-a-finite-substrate-concentration",
+              "name": "V_max is actually reached at some finite substrate concentration",
+              "description": "The learner believes there is some specific, finite substrate concentration at which the reaction rate literally equals V_max, rather than understanding that V_max is a horizontal asymptote the rate approaches but never reaches for any finite [S].",
+              "root_cause": "The Michaelis-Menten curve visually flattens out and looks like it 'reaches' a plateau on a typical graph, and K_m is sometimes miscast in casual explanation as 'the point where the reaction maxes out' rather than its actual definition (the [S] at which v = V_max/2).",
+              "diagnostic_probe": "A student is asked at what substrate concentration the reaction rate equals V_max exactly, and answers with a specific number rather than 'never, at any finite concentration.' What are they confusing V_max with?",
+              "correction": "V_max is the asymptotic limit of reaction rate as [S] approaches infinity — it is never exactly attained at any finite substrate concentration, only approached arbitrarily closely. K_m is a separate, well-defined quantity: the substrate concentration at which the rate equals exactly half of V_max, not the concentration at which the reaction 'maxes out.'"
+            }
+          ]
+        },
+        {
+          "slug": "enzyme-kinetics-data-linearization",
+          "name": "Enzyme kinetics data linearization (Lineweaver-Burk)",
+          "kc_type": "rule",
+          "description": "Transform Michaelis-Menten rate data into a Lineweaver-Burk double-reciprocal plot (1/v vs. 1/[S]) to extract V_max and K_m from the line's slope and intercepts, and recognize that this linearization distorts experimental error, weighting low-[S] (high 1/[S]) data points disproportionately.",
+          "practice_notes": "Practice the full pipeline on a small data table: invert both v and [S] for each point, plot or fit the line, read off the y-intercept (1/V_max) and x-intercept (−1/K_m), then convert back to V_max and K_m in the original units.",
+          "sort_order": 2,
+          "prereqs": [
+            "#michaelis-menten-kinetics"
+          ],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Lineweaver-Burk fit, fully worked",
+              "body": "Rate data: [S]=1,2,5,10 mM gives v=2.0,3.3,5.0,6.7 μmol/min.\n\nInvert: 1/[S] = 1.0, 0.5, 0.2, 0.1 (mM⁻¹); 1/v = 0.50, 0.303, 0.20, 0.149 (min/μmol).\n\nA linear fit of 1/v vs. 1/[S] through these points gives slope ≈ 0.40 and y-intercept ≈ 0.10.\n\n**Lineweaver-Burk equation**: 1/v = (K_m/V_max)·(1/[S]) + 1/V_max.\n\nSo 1/V_max = 0.10 → V_max = **10 μmol/min**; K_m/V_max = 0.40 → K_m = 0.40×10 = **4.0 mM**."
+            },
+            {
+              "kind": "procedure_outline",
+              "level": 2,
+              "title": "Four-step linearization procedure",
+              "body": "1. Invert every ([S], v) data pair to (1/[S], 1/v).\n2. Fit a straight line to the inverted data.\n3. Read the y-intercept as 1/V_max and the slope as K_m/V_max (equivalently, the x-intercept is −1/K_m).\n4. Convert back to V_max and K_m in their original units, and note that low-[S] points (large 1/[S], far right on this plot) get compressed while high-error, low-v points near the y-axis get stretched — a known distortion of this particular linearization."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "enzyme-inhibition-types",
+          "name": "Enzyme inhibition types",
+          "kc_type": "concept",
+          "description": "Classify an inhibitor as competitive, noncompetitive, or uncompetitive from how it changes the apparent K_m and V_max on a Lineweaver-Burk plot: competitive inhibition raises apparent K_m while leaving V_max unchanged; noncompetitive inhibition lowers V_max while leaving K_m unchanged; uncompetitive inhibition lowers both K_m and V_max proportionally.",
+          "practice_notes": "Practice reading three Lineweaver-Burk plot descriptions (lines that share a y-intercept, lines that share an x-intercept, and parallel lines) and classifying the inhibition type from the geometric pattern alone, before attaching the mechanistic story (binding site location).",
+          "sort_order": 3,
+          "prereqs": [
+            "#michaelis-menten-kinetics"
+          ],
+          "resources": [
+            {
+              "label": "OpenStax Biology 2e — 6.5 Enzymes",
+              "url": "https://openstax.org/books/biology-2e/pages/6-5-enzymes",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "contrast_examples",
+              "level": 2,
+              "title": "Three inhibition patterns on a Lineweaver-Burk plot",
+              "body": "**Competitive**: inhibitor and substrate compete for the same active site. On a Lineweaver-Burk plot, the inhibited line shares the same y-intercept (1/V_max unchanged) but has a steeper slope and a less-negative x-intercept (apparent K_m increases) — more substrate can still out-compete the inhibitor and reach the same V_max.\n\n**Noncompetitive**: inhibitor binds an allosteric site on either the free enzyme or the ES complex, not blocking substrate binding but blocking catalysis. The line shares the same x-intercept (K_m unchanged) but has a larger y-intercept (V_max decreases) — no amount of substrate can outrun this inhibitor's effect on turnover.\n\n**Uncompetitive**: inhibitor binds only the ES complex. Both K_m and V_max decrease by the same factor, producing a line parallel to the uninhibited one on the Lineweaver-Burk plot."
+            },
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify from the plot pattern",
+              "body": "An inhibitor's Lineweaver-Burk line intersects the uninhibited line exactly on the y-axis. Which type of inhibition is this, and is it more consistent with the inhibitor competing for the active site, or acting elsewhere?\n\n**Key**: sharing the y-intercept means V_max is unchanged — this is competitive inhibition, consistent with the inhibitor competing directly for the active site (enough substrate can always still saturate the enzyme)."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Which parameter moves, cold",
+              "body": "For each of competitive, noncompetitive, and uncompetitive inhibition, state which of K_m and V_max changes and which stays the same."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "any-reversible-inhibitor-is-competitive",
+              "name": "Any reversible inhibitor must be competitive",
+              "description": "The learner conflates 'competitive inhibition' with 'reversible inhibition' generally, assuming that because an inhibitor's effect can be reversed (e.g. by dilution or washout), it must be competing directly at the active site — when noncompetitive and uncompetitive inhibitors are also commonly reversible but bind at an allosteric site or only to the enzyme-substrate complex.",
+              "root_cause": "Competitive inhibition is usually taught first and most memorably (with the intuitive 'competing for the same seat' story), so 'reversible' and 'competitive' get bundled together as if they were the same axis of classification, when reversibility and inhibition-type (competitive/noncompetitive/uncompetitive) are actually independent classification axes.",
+              "diagnostic_probe": "A student is told an inhibitor's effect can be fully reversed by adding excess substrate is a hallmark of competitive inhibition — but is then shown Lineweaver-Burk data where V_max is depressed and K_m is unchanged, and still calls it competitive because they know the inhibitor is reversible. What are they mixing up?",
+              "correction": "Reversibility and inhibition mechanism (competitive vs. noncompetitive vs. uncompetitive) are independent properties of an inhibitor. The mechanism is determined by which kinetic parameters shift on a Lineweaver-Burk plot — competitive inhibition specifically means adding excess substrate can fully overcome the inhibition (V_max unchanged), which is a stronger and more specific claim than mere reversibility."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "genetic-engineering",
+      "name": "Genetic engineering",
+      "sort_order": 4,
+      "kcs": [
+        {
+          "slug": "genetic-engineering-tools-and-vectors",
+          "name": "Genetic engineering tools and vectors",
+          "kc_type": "concept",
+          "description": "Identify the appropriate molecular tool — restriction enzyme, DNA ligase, plasmid vector, or PCR — for a given genetic-engineering goal: cutting DNA at a specific recognition sequence, joining DNA fragments, propagating a construct inside a host cell, or amplifying a target sequence.",
+          "practice_notes": "Practice matching a stated goal ('I need many copies of this 500 bp fragment before I can work with it') to the single best-fit tool (PCR) before considering the others — the discrimination is goal-to-tool, not tool-to-definition.",
+          "sort_order": 1,
+          "prereqs": [
+            "#central-dogma-of-molecular-biology"
+          ],
+          "resources": [
+            {
+              "label": "Addgene Blog — molecular biology & CRISPR explainers",
+              "url": "https://blog.addgene.org/",
+              "kind": "feed"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Match the tool to the goal",
+              "body": "For each goal, name the single best-fit tool:\n\n1. Cut a plasmid and an insert at the same specific 6-base-pair sequence so their ends are compatible.\n2. Join a cut insert into a cut plasmid backbone permanently.\n3. Make millions of copies of a specific 500 bp DNA region from a small starting sample before sequencing it.\n4. Maintain and replicate a foreign gene stably inside a bacterial host cell.\n\n**Key**: (1) restriction enzyme. (2) DNA ligase. (3) PCR (polymerase chain reaction). (4) plasmid vector."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Sticky ends, cold",
+              "body": "Why do many restriction enzymes cut DNA in a staggered pattern that leaves single-stranded overhangs ('sticky ends'), and how does this help in constructing a recombinant plasmid?"
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "recombinant-dna-workflow",
+          "name": "Recombinant DNA construction workflow",
+          "kc_type": "rule",
+          "description": "Apply the standard recombinant DNA construction workflow — cut the insert and vector with compatible restriction enzymes, ligate them together, transform the ligated construct into a host cell, and select successful transformants using a selectable marker (e.g. antibiotic resistance) — to design a cloning strategy for a given gene of interest.",
+          "practice_notes": "Walk the four-step workflow (cut → ligate → transform → select) as a fixed procedure for a specific worked gene before generalizing to a novel one — the sequencing and the selection-marker logic are what typically trip up a first attempt.",
+          "sort_order": 2,
+          "prereqs": [
+            "#genetic-engineering-tools-and-vectors"
+          ],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "procedure_outline",
+              "level": 1,
+              "title": "Four-step cloning workflow",
+              "body": "1. **Cut**: digest both the gene-of-interest fragment and the plasmid vector with the same (or compatible) restriction enzyme(s), producing matching sticky ends.\n2. **Ligate**: mix the cut insert and cut vector with DNA ligase, which seals the sugar-phosphate backbone at each sticky-end junction, forming a closed recombinant plasmid.\n3. **Transform**: introduce the ligated plasmid into a host cell (commonly E. coli) made temporarily permeable to DNA (heat shock or electroporation).\n4. **Select**: plate transformed cells on a selective medium (e.g. an antibiotic the plasmid's resistance gene protects against) so only cells that actually took up the plasmid survive and form colonies."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Cloning a GFP gene, worked",
+              "body": "Goal: clone a green fluorescent protein (GFP) gene into a bacterial expression plasmid.\n\n1. Cut the GFP gene fragment and the plasmid both with EcoRI and BamHI (a double digest gives directional, non-reversible sticky ends so the insert can only go in one orientation).\n2. Ligate the cut GFP fragment into the cut plasmid backbone with T4 DNA ligase.\n3. Transform the ligation mix into competent E. coli by heat shock.\n4. Plate on LB agar containing ampicillin (the plasmid carries an ampicillin-resistance gene) — only cells that took up the plasmid (recombinant or not) survive; colonies can then be screened further (e.g. green fluorescence under UV) to confirm the GFP insert is present and in-frame."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "crispr-gene-editing-mechanism",
+          "name": "CRISPR-Cas9 gene editing mechanism",
+          "kc_type": "principle",
+          "description": "Explain the mechanism by which CRISPR-Cas9 achieves sequence-specific gene editing — a guide RNA's sequence complementarity directs Cas9 to a matching genomic site next to a PAM sequence, Cas9 cuts both DNA strands there, and the cell's own repair machinery (error-prone NHEJ for disruption, or template-directed HDR for a precise edit) completes the change — and why this gives far greater targeting precision than earlier gene-editing methods.",
+          "practice_notes": "Self-explain each step in sequence (guide RNA design → target recognition → PAM check → double-strand cut → cellular repair choice) and connect each step to why it contributes to precision, rather than treating 'CRISPR edits genes' as a black box.",
+          "sort_order": 3,
+          "prereqs": [
+            "#recombinant-dna-workflow"
+          ],
+          "resources": [
+            {
+              "label": "Nobel Prize — 2020 Chemistry Prize press release (CRISPR/Cas9)",
+              "url": "https://www.nobelprize.org/prizes/chemistry/2020/press-release/",
+              "kind": "canonical"
+            },
+            {
+              "label": "Addgene Blog — molecular biology & CRISPR explainers",
+              "url": "https://blog.addgene.org/",
+              "kind": "feed"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "analogy",
+              "level": 1,
+              "title": "Molecular scissors with a GPS",
+              "body": "Think of Cas9 as a pair of molecular scissors that, on its own, could cut almost anywhere. The guide RNA is a GPS coordinate loaded into those scissors — a short RNA sequence that base-pairs with one specific matching site in the genome. Cas9 only cuts once the guide RNA has locked onto its complementary target *and* a short PAM 'landing marker' sequence is present right next to it — this double-check (sequence match plus PAM) is what gives CRISPR its precision compared to older tools that could only target a handful of fixed sites."
+            },
+            {
+              "kind": "self_explanation_prompt",
+              "level": 2,
+              "title": "Trace the editing mechanism step by step",
+              "body": "In your own words, describe what happens at each stage: (1) how a guide RNA is designed to match a target sequence, (2) what role the PAM sequence plays in target recognition, (3) what Cas9 physically does once bound, and (4) how the outcome differs between NHEJ repair and HDR repair of the resulting double-strand break."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "NHEJ vs. HDR, cold",
+              "body": "Which DNA repair pathway (NHEJ or HDR) is used to make a precise, specific sequence edit at the cut site, and which one is more commonly used simply to disrupt (knock out) a gene? Why does one need a repair template and the other doesn't?"
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    },
+    {
+      "slug": "bioprocessing-and-lab",
+      "name": "Bioprocessing and laboratory practice",
+      "sort_order": 5,
+      "kcs": [
+        {
+          "slug": "bioprocessing-scale-up-considerations",
+          "name": "Bioprocessing scale-up considerations",
+          "kc_type": "principle",
+          "description": "Explain why scaling a fermentation process from bench scale (liters) to industrial scale (thousands of liters) introduces engineering challenges that don't appear at lab scale — oxygen mass-transfer limitation, mixing time and shear stress, heat removal, and sterility maintenance — and why simple geometric similarity between the small and large vessel does not guarantee equivalent performance.",
+          "practice_notes": "Self-explain by picking one challenge (oxygen transfer) and tracing why it gets *harder*, not easier, as vessel volume grows: surface-area-to-volume ratio for gas-liquid mass transfer scales unfavorably, even though impeller power per unit volume is often what's actually held constant during scale-up.",
+          "sort_order": 1,
+          "prereqs": [
+            "#bioreactor-mass-balances-and-dilution-rate",
+            "chee-315-heat-and-mass-transfer#convective-mass-transfer-coefficient"
+          ],
+          "resources": [
+            {
+              "label": "NPTEL — Bioreactor Design and Analysis",
+              "url": "https://nptel.ac.in/courses/102106086",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "self_explanation_prompt",
+              "level": 2,
+              "title": "Why doesn't scale-up just multiply everything?",
+              "body": "A process works perfectly in a 5 L bench fermenter. Explain why simply building a 5000 L version at the same proportions (geometric similarity) does not guarantee the same growth rate and product yield, focusing on what happens to oxygen transfer to the culture as vessel volume increases 1000-fold."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Name the scale-up bottleneck",
+              "body": "Name two physical quantities engineers commonly choose to hold constant during fermentation scale-up (e.g. power per unit volume, impeller tip speed, oxygen transfer coefficient) and explain why it's normally impossible to hold all of them constant simultaneously."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "aseptic-technique-and-experimental-design",
+          "name": "Aseptic technique and experimental design",
+          "kc_type": "rule",
+          "description": "Apply aseptic technique procedures — sterile transfer near a flame or in a laminar-flow hood, flame-sterilizing inoculation loops, proper handling of sterile media and plates — together with sound experimental design (appropriate controls and replicates) in a biotechnology laboratory exercise to avoid contamination and produce interpretable results.",
+          "practice_notes": "Rehearse the aseptic-transfer sequence as a fixed procedure (sterilize loop → open culture briefly near flame → transfer → reseal → resterilize loop) and separately rehearse the experimental-design checklist (positive control, negative control, replicates) — these are two related but distinct rule-skills for the same lab exercise.",
+          "sort_order": 2,
+          "prereqs": [
+            "#industrially-significant-microbes"
+          ],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "procedure_outline",
+              "level": 1,
+              "title": "Aseptic transfer procedure",
+              "body": "1. Flame-sterilize the inoculation loop until it glows, then let it cool briefly in the air (touching it to the medium while still hot kills the culture).\n2. Work near an open flame or inside a laminar-flow hood to create a zone of rising sterile air that carries contaminants away from the open vessel.\n3. Open the source culture tube/plate for the minimum time needed, angle the cap to avoid airborne contamination settling in, and never set the cap down on a non-sterile surface.\n4. Transfer the sample with the loop, reseal both containers immediately, and re-flame the loop before setting it down."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Troubleshooting a contaminated plate",
+              "body": "A student plates a pure bacterial culture on selective agar and, after incubation, sees an unexpected second colony morphology growing alongside the expected one. Diagnosing the likely cause: was the loop insufficiently cooled after flaming (killing/mutating the intended culture rather than introducing a new one — less likely explanation here, since a *second* morphology appeared), or was there a lapse in aseptic technique during transfer (opening the plate too long, or setting a cap on the bench) that let an airborne or bench contaminant land on the medium? The second explanation fits a genuinely new colony type better — the fix is to repeat the transfer with stricter adherence to the sequence above, and to include an uninoculated (blank) plate as a negative control to catch contamination in the medium or environment itself, separate from technique errors during transfer."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    }
+  ],
+  "course_resources": [
+    {
+      "label": "McGill eCalendar official description",
+      "url": "https://www.mcgill.ca/study/2024-2025/courses/chee-370",
+      "kind": "canonical",
+      "pinned": true
+    },
+    {
+      "label": "OpenStax Biology 2e (full textbook)",
+      "url": "https://openstax.org/details/books/biology-2e",
+      "kind": "canonical"
+    },
+    {
+      "label": "Khan Academy — Biology library",
+      "url": "https://www.khanacademy.org/science/biology",
+      "kind": "feed"
+    },
+    {
+      "label": "Addgene Blog — molecular biology & genetic engineering explainers",
+      "url": "https://blog.addgene.org/",
+      "kind": "feed"
+    }
+  ],
+  "assessments": [
+    {
+      "title": "Assignment 1",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 5,
+      "due_date": "2024-09-20",
+      "kc_slugs": [
+        "#biological-macromolecules",
+        "#prokaryote-vs-eukaryote-cell-structure",
+        "#central-dogma-of-molecular-biology"
+      ]
+    },
+    {
+      "title": "Assignment 2",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 5,
+      "due_date": "2024-10-11",
+      "kc_slugs": [
+        "#cell-metabolism-and-energy-pathways",
+        "#bacterial-growth-curve-phases",
+        "#monod-growth-kinetics"
+      ]
+    },
+    {
+      "title": "Assignment 3",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 5,
+      "due_date": "2024-11-08",
+      "kc_slugs": [
+        "#michaelis-menten-kinetics",
+        "#enzyme-kinetics-data-linearization",
+        "#enzyme-inhibition-types"
+      ]
+    },
+    {
+      "title": "Biotechnology Laboratory Reports",
+      "type": "lab",
+      "kind": "official",
+      "weight_pct": 15,
+      "due_date": "2024-11-22",
+      "kc_slugs": [
+        "#aseptic-technique-and-experimental-design",
+        "#bacterial-growth-curve-phases",
+        "#bioreactor-mass-balances-and-dilution-rate"
+      ]
+    },
+    {
+      "title": "Midterm Exam",
+      "type": "midterm",
+      "kind": "official",
+      "weight_pct": 25,
+      "due_date": "2024-10-25",
+      "kc_slugs": [
+        "#biological-macromolecules",
+        "#prokaryote-vs-eukaryote-cell-structure",
+        "#central-dogma-of-molecular-biology",
+        "#cell-metabolism-and-energy-pathways",
+        "#industrially-significant-microbes",
+        "#bacterial-growth-curve-phases"
+      ]
+    },
+    {
+      "title": "Final Exam",
+      "type": "final",
+      "kind": "official",
+      "weight_pct": 45,
+      "due_date": "2024-12-12",
+      "kc_slugs": [
+        "#monod-growth-kinetics",
+        "#bioreactor-mass-balances-and-dilution-rate",
+        "#michaelis-menten-kinetics",
+        "#enzyme-kinetics-data-linearization",
+        "#enzyme-inhibition-types",
+        "#genetic-engineering-tools-and-vectors",
+        "#recombinant-dna-workflow",
+        "#crispr-gene-editing-mechanism",
+        "#bioprocessing-scale-up-considerations"
+      ]
+    },
+    {
+      "title": "Practice Quiz — Central Dogma & Cell Metabolism",
+      "type": "quiz",
+      "kind": "practice",
+      "kc_slugs": [
+        "#central-dogma-of-molecular-biology",
+        "#cell-metabolism-and-energy-pathways"
+      ]
+    },
+    {
+      "title": "Practice Problem Set — Monod Kinetics & Chemostat Design",
+      "type": "assignment",
+      "kind": "practice",
+      "kc_slugs": [
+        "#monod-growth-kinetics",
+        "#bioreactor-mass-balances-and-dilution-rate"
+      ]
+    },
+    {
+      "title": "Practice Problem Set — Enzyme Kinetics & Inhibition",
+      "type": "assignment",
+      "kind": "practice",
+      "kc_slugs": [
+        "#michaelis-menten-kinetics",
+        "#enzyme-kinetics-data-linearization",
+        "#enzyme-inhibition-types"
+      ]
+    }
+  ]
+}

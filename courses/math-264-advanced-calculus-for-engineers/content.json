@@ -1,0 +1,948 @@
+{
+  "schema_version": 1,
+  "course_slug": "math-264-advanced-calculus-for-engineers",
+  "branches": [
+    {
+      "slug": "partial-differentiation-foundations",
+      "name": "Partial differentiation foundations",
+      "sort_order": 1,
+      "kcs": [
+        {
+          "slug": "partial-derivatives",
+          "name": "Partial derivatives",
+          "kc_type": "rule",
+          "description": "Compute first- and higher-order partial derivatives of multivariable functions, including mixed partial derivatives, and apply the multivariable chain rule to composite functions.",
+          "practice_notes": "Practice differentiating with respect to one variable while explicitly treating every other variable as a constant — say this step out loud each time at first, since silently forgetting which variables are frozen is the single most common execution error here.",
+          "sort_order": 1,
+          "prereqs": [],
+          "resources": [
+            {
+              "label": "Paul's Notes — Calculus III (Ch. 13: Partial Derivatives)",
+              "url": "https://tutorial.math.lamar.edu/classes/calciii/calciii.aspx",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "First and mixed partials, fully worked",
+              "body": "Let f(x,y) = x²y³ + e^(xy).\n\n∂f/∂x = 2xy³ + y·e^(xy) (treat y as constant; differentiate x² → 2x, and use the chain rule on e^(xy) with respect to x, bringing down the coefficient of x, which is y).\n\n∂f/∂y = 3x²y² + x·e^(xy) (treat x as constant).\n\nMixed partial ∂²f/∂x∂y = ∂/∂y[2xy³ + y·e^(xy)] = 6xy² + e^(xy) + xy·e^(xy) = 6xy² + (1+xy)e^(xy).\n\n(Clairaut's theorem guarantees ∂²f/∂x∂y = ∂²f/∂y∂x for this smooth f — differentiating ∂f/∂y with respect to x instead should give the same result, and is a good self-check.)"
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Partial derivatives, partially faded",
+              "body": "Let g(x,y) = x³/y + sin(xy).\n\n1. Find ∂g/∂x, treating y as constant.\n2. Find ∂g/∂y, treating x as constant.\n3. Compute the mixed partial ∂²g/∂x∂y from your answer to (1), and separately from your answer to (2) — confirm they match."
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Bare prompt",
+              "body": "For h(x,y,z) = x²yz + ln(y+z), compute ∂h/∂x, ∂h/∂y, ∂h/∂z, and the mixed partial ∂²h/∂y∂z."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Chain rule for two intermediate variables, cold",
+              "body": "If z = f(x,y) where x=g(t) and y=h(t), write the multivariable chain rule formula for dz/dt."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "directional-derivatives",
+          "name": "Directional derivatives",
+          "kc_type": "rule",
+          "description": "Compute the directional derivative of a scalar function f in a given direction using D_u f = ∇f · u (with u a unit vector), and use it to find the rate of change of f along any specified direction, not just along the coordinate axes.",
+          "practice_notes": "Always normalize the direction vector to a unit vector *before* dotting with the gradient — using a non-unit vector is the most common execution slip, since the dot product with a non-unit vector gives a scaled (and physically meaningless) rate of change.",
+          "sort_order": 2,
+          "prereqs": [
+            "#partial-derivatives"
+          ],
+          "resources": [
+            {
+              "label": "Paul's Notes — Directional Derivatives & the Gradient Vector",
+              "url": "https://tutorial.math.lamar.edu/classes/calciii/directionalderiv.aspx",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Directional derivative, fully worked",
+              "body": "Let f(x,y) = x²+y² and find the directional derivative at (1,2) in the direction of v=(3,4).\n\n∇f = (2x, 2y), so ∇f(1,2) = (2,4).\n\nNormalize v: |v| = √(3²+4²)=5, so u = (3/5, 4/5).\n\nD_u f(1,2) = ∇f(1,2)·u = (2)(3/5)+(4)(4/5) = 6/5+16/5 = 22/5 = **4.4**."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Directional derivative, partially faded",
+              "body": "Let f(x,y) = x·e^y and find the directional derivative at (2,0) in the direction from (2,0) toward (5,4).\n\n1. Compute ∇f and evaluate it at (2,0).\n2. Find the direction vector from (2,0) to (5,4), then normalize it to a unit vector.\n3. Dot the two to get D_u f(2,0)."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Why normalize?",
+              "body": "If you compute ∇f·v using a direction vector v that is NOT a unit vector, what physical quantity have you actually computed instead of the directional derivative?"
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "gradient-as-steepest-ascent",
+          "name": "The gradient as the direction of steepest ascent",
+          "kc_type": "principle",
+          "description": "Explain why the gradient vector ∇f points in the direction of the maximum rate of increase of f, why its magnitude |∇f| equals that maximum directional derivative, and why ∇f is always orthogonal to the level curve (or level surface) passing through that point.",
+          "practice_notes": "Self-explain by connecting the algebra (D_u f = ∇f·u = |∇f|cos θ, maximized when θ=0, i.e. u parallel to ∇f) to the geometric picture (walking along a level curve keeps f constant, so the direction of *no* change must be perpendicular to the direction of *steepest* change) — the sense-making is in seeing these as the same fact stated two ways.",
+          "sort_order": 3,
+          "prereqs": [
+            "#directional-derivatives"
+          ],
+          "resources": [
+            {
+              "label": "Paul's Notes — Directional Derivatives & the Gradient Vector",
+              "url": "https://tutorial.math.lamar.edu/classes/calciii/directionalderiv.aspx",
+              "kind": "canonical"
+            },
+            {
+              "label": "MIT OCW — 18.02SC Multivariable Calculus",
+              "url": "https://ocw.mit.edu/courses/18-02sc-multivariable-calculus-fall-2010/",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "derivation_walkthrough",
+              "level": 1,
+              "title": "Why the gradient maximizes the directional derivative",
+              "body": "D_u f = ∇f·u = |∇f||u|cos θ = |∇f|cos θ (since u is a unit vector), where θ is the angle between u and ∇f.\n\ncos θ is maximized (equal to 1) exactly when θ=0, i.e. when u points in the same direction as ∇f. At that angle, D_u f = |∇f| — so the gradient's own direction is the direction of steepest increase, and its magnitude is the value of that maximum rate.\n\nSimilarly, cos θ = −1 when u points opposite to ∇f, giving the direction of steepest *decrease*, with rate −|∇f|. And cos θ = 0 (θ=90°) gives D_u f = 0 — the direction along which f doesn't change at all to first order, which is exactly the direction tangent to the level curve through that point. This is why ∇f is always perpendicular to level curves."
+            },
+            {
+              "kind": "interactive_model",
+              "level": 2,
+              "title": "Steepest-ascent explorer",
+              "body": "Set the two partial derivatives ∂f/∂x and ∂f/∂y at a point (these define ∇f at that point), then sweep the direction angle θ. Watch the directional derivative rise to a maximum exactly equal to the gradient's magnitude when θ aligns with the gradient, and fall to its negative on the opposite side.",
+              "details": {
+                "title": "Directional derivative vs. direction angle",
+                "parameters": [
+                  {
+                    "id": "fx",
+                    "label": "∂f/∂x at the point",
+                    "min": -10,
+                    "max": 10,
+                    "step": 0.5,
+                    "default": 3
+                  },
+                  {
+                    "id": "fy",
+                    "label": "∂f/∂y at the point",
+                    "min": -10,
+                    "max": 10,
+                    "step": 0.5,
+                    "default": 4
+                  },
+                  {
+                    "id": "theta",
+                    "label": "Direction angle θ (radians)",
+                    "min": 0,
+                    "max": 6.283,
+                    "step": 0.05,
+                    "default": 0.5
+                  }
+                ],
+                "expressions": [
+                  {
+                    "id": "directional_derivative",
+                    "label": "D_u f = ∇f·u",
+                    "formula": "fx*cos(theta) + fy*sin(theta)"
+                  },
+                  {
+                    "id": "gradient_magnitude",
+                    "label": "|∇f| (the ceiling)",
+                    "formula": "sqrt(fx^2 + fy^2)"
+                  }
+                ],
+                "notes": "The directional derivative can never exceed gradient_magnitude in absolute value, whatever theta you pick — slide theta around a full circle and confirm it peaks at gradient_magnitude once and bottoms out at −gradient_magnitude exactly halfway around."
+              }
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Level curve orthogonality, cold",
+              "body": "Why must the gradient vector at a point be perpendicular to the level curve of f passing through that point? Answer in terms of the directional derivative along the level curve's tangent direction."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "extrema-and-lagrange-multipliers",
+          "name": "Local extrema and Lagrange multipliers",
+          "kc_type": "rule",
+          "description": "Locate and classify critical points of a two-variable function using the second-derivative (Hessian/discriminant) test, and apply the method of Lagrange multipliers to find extrema of a function subject to an equality constraint.",
+          "practice_notes": "Practice the discriminant test's three-way branch (D>0 & fxx>0 → local min; D>0 & fxx<0 → local max; D<0 → saddle point; D=0 → inconclusive) on several critical points until the branching is automatic, then move to constrained problems where the same critical-point logic applies to the Lagrangian system instead.",
+          "sort_order": 4,
+          "prereqs": [
+            "#partial-derivatives",
+            "#gradient-as-steepest-ascent"
+          ],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Second-derivative test, fully worked",
+              "body": "Let f(x,y) = x² + y² − 4x − 2y + 1.\n\n**Critical points**: ∂f/∂x = 2x−4=0 → x=2; ∂f/∂y=2y−2=0 → y=1. Critical point: (2,1).\n\n**Discriminant**: fxx=2, fyy=2, fxy=0. D = fxx·fyy − (fxy)² = 2·2−0 = 4 > 0, and fxx=2>0, so (2,1) is a **local minimum**.\n\nf(2,1) = 4+1−8−2+1 = −4, the minimum value."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Lagrange multipliers, partially faded",
+              "body": "Maximize f(x,y)=xy subject to the constraint g(x,y)=x+y−10=0 (x+y=10).\n\n1. Set up the Lagrange condition ∇f = λ∇g: (y, x) = λ(1,1), giving y=λ and x=λ, so x=y.\n2. Substitute into the constraint x+y=10 to solve for x and y.\n3. Evaluate f at that point to find the maximum value.\n\n(x=y=5, giving f(5,5)=25 as the maximum product of two numbers summing to 10.)"
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Why does D<0 mean a saddle?",
+              "body": "In one or two sentences, what does D = fxx·fyy − (fxy)² < 0 tell you about how f curves in different directions near that critical point, and why does that make it neither a max nor a min?"
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "partial-derivative-is-slope-of-the-full-graph",
+              "name": "A partial derivative is 'the slope' of the whole 3D graph at a point",
+              "description": "The learner treats ∂f/∂x (or ∂f/∂y) at a point as if it described a single, unambiguous 'slope of the surface' there, rather than specifically the slope of the trace curve obtained by holding every other variable fixed and slicing the surface along that one direction.",
+              "root_cause": "Single-variable calculus builds strong intuition that 'the derivative at a point' is one number describing the slope at that point — carrying that intuition forward without updating it to 'slope in which direction, along which slice' is a well-documented difficulty in multivariable calculus education (students who explicitly think in terms of 3D directional slope perform better than those who don't).",
+              "diagnostic_probe": "A student is shown a saddle-shaped surface at a point where ∂f/∂x = 0 and ∂f/∂y = 0, and concludes the surface must be 'flat' there in every direction, since 'the slope is zero.' Where does this reasoning break down?",
+              "correction": "A partial derivative measures the rate of change along one specific coordinate direction only, holding all other variables fixed — it is the slope of one particular trace curve, not a single overall 'slope of the surface.' At a saddle point, both ∂f/∂x=0 and ∂f/∂y=0 (it is a critical point), but the surface is far from flat: it curves upward in some directions and downward in others, which is exactly what the directional derivative in intermediate directions (and the second-derivative/discriminant test) is needed to reveal."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "multivariable-integration",
+      "name": "Multivariable integration",
+      "sort_order": 2,
+      "kcs": [
+        {
+          "slug": "multiple-integrals",
+          "name": "Multiple integrals",
+          "kc_type": "rule",
+          "description": "Set up and evaluate double and triple integrals over both rectangular and general (non-rectangular) regions as iterated integrals, choosing and, when convenient, reversing the order of integration.",
+          "practice_notes": "Sketch the region of integration before writing any iterated integral — most order-of-integration errors come from writing bounds without a picture of what x-range or y-range is actually valid at each cross-section.",
+          "sort_order": 1,
+          "prereqs": [
+            "#partial-derivatives"
+          ],
+          "resources": [
+            {
+              "label": "Paul's Notes — Double Integrals over General Regions",
+              "url": "https://tutorial.math.lamar.edu/classes/calciii/digeneralregion.aspx",
+              "kind": "canonical"
+            },
+            {
+              "label": "Paul's Notes — Triple Integrals",
+              "url": "https://tutorial.math.lamar.edu/classes/calciii/tripleintegrals.aspx",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Double integral over a triangular region, fully worked",
+              "body": "Evaluate ∬_D (x+y) dA where D is the triangle with vertices (0,0), (1,0), (0,1), i.e. 0≤x≤1, 0≤y≤1−x.\n\n∫₀¹ ∫₀^(1−x) (x+y) dy dx = ∫₀¹ [xy + y²/2]₀^(1−x) dx = ∫₀¹ [x(1−x) + (1−x)²/2] dx\n\n= ∫₀¹ [x−x² + (1−2x+x²)/2] dx = ∫₀¹ [x−x²+1/2−x+x²/2] dx = ∫₀¹ [1/2 − x²/2] dx\n\n= [x/2 − x³/6]₀¹ = 1/2 − 1/6 = **1/3**."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Reversing the order of integration, partially faded",
+              "body": "Evaluate ∫₀¹ ∫_y¹ e^(x²) dx dy by reversing the order of integration (the inner integral has no elementary antiderivative in x, but reversing the order fixes this).\n\n1. Sketch the region 0≤y≤1, y≤x≤1, and rewrite it as a region described by bounds on y in terms of x instead.\n2. Rewrite the integral with dy dx in the new order.\n3. Evaluate the now-elementary inner integral with respect to y, then the outer integral with respect to x.\n\n(Region becomes 0≤x≤1, 0≤y≤x; inner integral ∫₀ˣ e^(x²) dy = x·e^(x²); outer integral ∫₀¹ x·e^(x²) dx = [e^(x²)/2]₀¹ = (e−1)/2.)"
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Bare prompt",
+              "body": "Set up and evaluate ∭_E (2x+z) dV where E is the solid bounded below by z=0, above by z=4−x²−y², over the disk x²+y²≤4 (do not convert to polar/cylindrical yet — set up in Cartesian first, then note where the region description gets awkward)."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "When to reverse the order, cold",
+              "body": "Name one situation where you would reverse the order of integration of an iterated double integral even though the original order was set up correctly."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "coordinate-changes-for-integration",
+          "name": "Coordinate changes for integration (polar, cylindrical, spherical)",
+          "kc_type": "rule",
+          "description": "Convert double and triple integrals to polar, cylindrical, or spherical coordinates using the correct Jacobian factor (r for polar/cylindrical, ρ²sin φ for spherical), and recognize which coordinate system best simplifies a given region or integrand based on its symmetry.",
+          "practice_notes": "Rehearse the Jacobian factor as an inseparable part of the substitution — write 'dA = r dr dθ' and 'dV = ρ²sin φ dρ dφ dθ' as single units you never split apart, since dropping the extra factor (treating the substitution like ordinary single-variable u-substitution) is the single most common error here.",
+          "sort_order": 2,
+          "prereqs": [
+            "#multiple-integrals"
+          ],
+          "resources": [
+            {
+              "label": "Paul's Notes — Triple Integrals",
+              "url": "https://tutorial.math.lamar.edu/classes/calciii/tripleintegrals.aspx",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Polar conversion, fully worked",
+              "body": "Evaluate ∬_D e^(−(x²+y²)) dA where D is the disk x²+y²≤4.\n\nConvert: x=r cos θ, y=r sin θ, dA = r dr dθ, region becomes 0≤r≤2, 0≤θ≤2π.\n\n∫₀^(2π) ∫₀² e^(−r²)·r dr dθ. Inner integral (substitute u=r², du=2r dr): ∫₀² r·e^(−r²) dr = [−e^(−r²)/2]₀² = (1−e^(−4))/2.\n\nOuter integral: ∫₀^(2π) (1−e^(−4))/2 dθ = 2π·(1−e^(−4))/2 = **π(1−e^(−4))**."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Spherical conversion, partially faded",
+              "body": "Evaluate ∭_E z dV where E is the solid ball x²+y²+z²≤9 with z≥0 (the upper half-ball).\n\n1. Write x, y, z, and dV in spherical coordinates (ρ, φ, θ), including the ρ²sin φ factor.\n2. State the bounds on ρ, φ, and θ for the upper half of a ball of radius 3.\n3. Set up and evaluate the resulting triple integral."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Symmetry → coordinate system, cold",
+              "body": "For a region that is a full sphere centered at the origin, which coordinate system (cylindrical or spherical) is the better choice, and why? What about a tall cylindrical tank?"
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "forgetting-the-jacobian-factor",
+              "name": "Coordinate substitution needs no extra area/volume factor",
+              "description": "The learner substitutes polar, cylindrical, or spherical coordinates into an integral by renaming variables only (e.g. treating dx dy as simply becoming dr dθ), omitting the Jacobian factor (r, or ρ²sin φ) that accounts for how the coordinate grid's cell size changes across the region.",
+              "root_cause": "Single-variable u-substitution only ever needs a single derivative factor (du = u'(x)dx) with no geometric area/volume distortion to account for; overgeneralizing 'just substitute and adjust the differential' from that one-dimensional case misses that area and volume elements in curved coordinate systems scale nonlinearly with position.",
+              "diagnostic_probe": "A student converts ∬_D f(x,y) dA to polar coordinates and writes the integral as ∫∫ f(r cos θ, r sin θ) dr dθ, without an extra factor of r. What will go wrong numerically, and where does the missing factor need to be inserted?",
+              "correction": "Converting to polar coordinates requires dA = r dr dθ (not just dr dθ); converting to spherical coordinates requires dV = ρ²sin φ dρ dφ dθ. These Jacobian factors account for the fact that a small coordinate-grid cell's actual area or volume grows with distance from the origin (in polar/cylindrical) or from the pole (in spherical) — omitting them gives a numerically wrong answer even when every other step of the substitution is correct."
+            }
+          ]
+        },
+        {
+          "slug": "applications-of-multiple-integrals",
+          "name": "Engineering applications of multiple integrals",
+          "kc_type": "rule",
+          "description": "Set up multiple integrals to compute physical quantities relevant to engineering components — total mass and center of mass from a density function, and moment of inertia about an axis — over two- and three-dimensional regions.",
+          "practice_notes": "Always write the general formula (e.g. mass = ∬_D ρ(x,y) dA) before substituting a specific density function and region — separating 'which formula applies' from 'evaluating this particular integral' keeps the two skills from being confused when errors occur.",
+          "sort_order": 3,
+          "prereqs": [
+            "#coordinate-changes-for-integration"
+          ],
+          "resources": [
+            {
+              "label": "Paul's Notes — Triple Integrals",
+              "url": "https://tutorial.math.lamar.edu/classes/calciii/tripleintegrals.aspx",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Mass and centroid of a variable-density lamina",
+              "body": "A triangular lamina occupies 0≤x≤1, 0≤y≤1−x, with density ρ(x,y) = 1+x+y (kg/m²).\n\n**Mass**: M = ∬_D ρ dA = ∫₀¹∫₀^(1−x) (1+x+y) dy dx.\n\nInner integral: ∫₀^(1−x) (1+x+y) dy = (1+x)(1−x) + (1−x)²/2 = (1−x²) + (1−x)²/2.\n\nExpanding and integrating over x from 0 to 1 gives M = **5/6 kg** (carry through the algebra as in the multiple-integrals worked example above).\n\n**Center of mass x̄** = (1/M)∬_D x·ρ dA — set up the same way, with an extra factor of x in the integrand, then divide by the mass just computed."
+            },
+            {
+              "kind": "procedure_outline",
+              "level": 2,
+              "title": "Three-step physical-quantity setup",
+              "body": "1. Identify which physical formula applies: mass = ∬ρ dA (or dV); center of mass coordinate x̄ = (1/M)∬x·ρ dA; moment of inertia about the z-axis I_z = ∬(x²+y²)·ρ dA.\n2. Choose the coordinate system (Cartesian, polar, cylindrical, spherical) that best matches the region's symmetry.\n3. Evaluate the resulting iterated integral using the same techniques as any other multiple integral."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    },
+    {
+      "slug": "vector-fields-and-operators",
+      "name": "Vector fields and operators",
+      "sort_order": 3,
+      "kcs": [
+        {
+          "slug": "vector-calculus",
+          "name": "Vector fields: visualization and parametrization",
+          "kc_type": "concept",
+          "description": "Recognize and interpret vector fields in the plane and in space — visualize flow direction and magnitude from a field's formula, distinguish a gradient-like (conservative-looking) field from a rotational one at a glance — and parametrize curves and surfaces in preparation for line and surface integrals.",
+          "practice_notes": "Practice sketching a handful of sample vectors from a field's formula at scattered points before doing any calculus with it — the goal is building a mental picture of 'what this field looks like' (radial, rotational, uniform, source/sink) that later calculations should never contradict.",
+          "sort_order": 1,
+          "prereqs": [
+            "#partial-derivatives"
+          ],
+          "resources": [
+            {
+              "label": "MIT OCW — 18.02SC Multivariable Calculus",
+              "url": "https://ocw.mit.edu/courses/18-02sc-multivariable-calculus-fall-2010/",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify three vector fields by appearance",
+              "body": "Classify each vector field's overall visual pattern (radially outward/inward, purely rotational, or roughly uniform):\n\n1. F(x,y) = (x,y) — every vector points directly away from the origin, with magnitude growing with distance.\n2. F(x,y) = (−y,x) — every vector is perpendicular to the position vector, same magnitude at a given radius.\n3. F(x,y) = (3,1) — every vector is identical regardless of position.\n\n**Key**: (1) radially outward (a 'source'-like field, and in fact conservative — it's the gradient of x²/2+y²/2). (2) purely rotational (this field has nonzero curl and circulates counterclockwise around the origin — it is NOT conservative). (3) uniform (constant field, trivially conservative — it's the gradient of 3x+y)."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Parametrizing a curve, cold",
+              "body": "Write a parametrization r(t) for the circle of radius 3 centered at the origin, traversed counterclockwise starting at (3,0), and state the natural parameter range for one full loop."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "gradient-divergence-curl",
+          "name": "Gradient, divergence, and curl",
+          "kc_type": "rule",
+          "description": "Compute the gradient of a scalar field, and the divergence and curl of a vector field, and apply the standard vector-calculus identities relating them (e.g. div(curl F) = 0 always; curl(∇f) = 0 always).",
+          "practice_notes": "Practice computing div F and curl F on the same field back to back so the two formulas (a sum of matched partials for divergence; a determinant-style cross-product pattern for curl) don't blur together — they use the same partial derivatives but combine them completely differently.",
+          "sort_order": 2,
+          "prereqs": [
+            "#vector-calculus",
+            "#partial-derivatives"
+          ],
+          "resources": [
+            {
+              "label": "Paul's Notes — Curl and Divergence",
+              "url": "https://tutorial.math.lamar.edu/classes/calciii/curldivergence.aspx",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Divergence and curl, fully worked",
+              "body": "Let F(x,y,z) = (xy, yz, xz) = (P,Q,R).\n\n**Divergence**: div F = ∂P/∂x + ∂Q/∂y + ∂R/∂z = y + z + x = **x+y+z**.\n\n**Curl**: curl F = (∂R/∂y − ∂Q/∂z, ∂P/∂z − ∂R/∂x, ∂Q/∂x − ∂P/∂y) = (0−y, 0−z, 0−x) = **(−y, −z, −x)**.\n\nCheck the identity div(curl F) = 0: ∂(−y)/∂x + ∂(−z)/∂y + ∂(−x)/∂z = 0+0+0 = 0 ✓ (this identity holds for any smooth F, so it's a good self-check on your curl computation)."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Gradient and its curl, partially faded",
+              "body": "Let f(x,y,z) = x²y + yz².\n\n1. Compute ∇f = (f_x, f_y, f_z).\n2. Compute curl(∇f) directly from your answer to (1).\n3. Confirm it comes out to (0,0,0), and explain why this identity (curl of any gradient is always zero) must hold using Clairaut's theorem (equality of mixed partials)."
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Bare prompt",
+              "body": "Let F(x,y,z) = (x²−z, 2xy+y, xz−z²). Compute div F and curl F."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Two identities, cold",
+              "body": "State the two standard identities relating curl and divergence to the gradient (one says curl of a gradient is always ___; the other says divergence of a curl is always ___)."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "line-and-surface-integrals",
+          "name": "Line and surface integrals",
+          "kc_type": "rule",
+          "description": "Set up and evaluate line integrals of scalar and vector fields along a parametrized curve, and surface integrals (including flux integrals) of scalar and vector fields over a parametrized surface.",
+          "practice_notes": "Practice the parametrize-substitute-simplify pipeline explicitly as three separate written steps every time (write r(t) or r(u,v); substitute into the field and compute the relevant derivative — r'(t), or r_u × r_v; simplify the resulting single-variable or double integral) rather than trying to shortcut any one of the three.",
+          "sort_order": 3,
+          "prereqs": [
+            "#gradient-divergence-curl"
+          ],
+          "resources": [
+            {
+              "label": "Paul's Notes — Line Integrals of Vector Fields",
+              "url": "https://tutorial.math.lamar.edu/classes/calciii/lineintegralsvectorfields.aspx",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Line integral of a vector field, fully worked",
+              "body": "Evaluate ∫_C F·dr where F(x,y) = (y, x) and C is the curve r(t) = (t, t²) for 0≤t≤1.\n\nr'(t) = (1, 2t).\n\nF(r(t)) = (t², t) (substituting x=t, y=t² into F=(y,x)).\n\nF(r(t))·r'(t) = t²(1) + t(2t) = t² + 2t² = 3t².\n\n∫_C F·dr = ∫₀¹ 3t² dt = [t³]₀¹ = **1**."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Flux integral over a surface, partially faded",
+              "body": "Evaluate the flux ∬_S F·dS where F(x,y,z) = (0,0,z) and S is the part of the plane z=4 lying over the disk x²+y²≤1, oriented upward.\n\n1. Parametrize S as r(x,y) = (x, y, 4) for x²+y²≤1.\n2. Compute r_x × r_y and confirm it points in the upward-oriented direction (0,0,1) up to a positive scalar.\n3. Substitute F(r(x,y)) and dot with r_x × r_y, then integrate over the disk."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "conservative-fields-and-path-independence",
+          "name": "Conservative vector fields and path independence",
+          "kc_type": "principle",
+          "description": "Explain why a conservative vector field (one possessing a scalar potential function f such that F=∇f) makes line integrals path-independent, and apply the Fundamental Theorem for Line Integrals to evaluate ∫_C F·dr directly from the potential function's values at the curve's endpoints, without doing any parametrization.",
+          "practice_notes": "Self-explain the logic before using the shortcut: if F=∇f, then ∫_C F·dr = f(endpoint) − f(startpoint) by the same reasoning as the single-variable Fundamental Theorem of Calculus — the potential function does for line integrals exactly what an antiderivative does for ordinary definite integrals.",
+          "sort_order": 4,
+          "prereqs": [
+            "#line-and-surface-integrals"
+          ],
+          "resources": [
+            {
+              "label": "Paul's Notes — Conservative Vector Fields",
+              "url": "https://tutorial.math.lamar.edu/classes/calciii/ConservativeVectorField.aspx",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "derivation_walkthrough",
+              "level": 1,
+              "title": "Fundamental Theorem for Line Integrals",
+              "body": "If F = ∇f and C is parametrized by r(t) for a≤t≤b, then by the chain rule:\n\nd/dt [f(r(t))] = ∇f(r(t))·r'(t) = F(r(t))·r'(t).\n\nSo ∫_C F·dr = ∫ₐᵇ F(r(t))·r'(t) dt = ∫ₐᵇ d/dt[f(r(t))] dt = f(r(b)) − f(r(a))\n\nby the single-variable Fundamental Theorem of Calculus applied to the composite function f(r(t)). The line integral collapses to just the potential function's value at the end minus its value at the start — the specific path taken never enters the answer, which is exactly why the integral is called path-independent."
+            },
+            {
+              "kind": "self_explanation_prompt",
+              "level": 2,
+              "title": "Test for conservativeness and find the potential",
+              "body": "For F(x,y) = (2xy+1, x²−3), first check whether ∂P/∂y = ∂Q/∂x (the standard 2D test for conservativeness) to confirm F is conservative, then find a potential function f with ∇f=F by integrating P with respect to x, differentiating the result with respect to y, and matching against Q to fix the remaining constant-of-integration function. Explain each step in your own words as you go."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Loop integral of a conservative field, cold",
+              "body": "If F is conservative on a domain and C is any closed loop entirely within that domain, what is ∮_C F·dr always equal to, and why does the Fundamental Theorem for Line Integrals make this immediate?"
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "curl-zero-always-implies-conservative-globally",
+              "name": "curl F = 0 always means F is conservative everywhere",
+              "description": "The learner believes that curl F = 0 (or, in 2D, ∂P/∂y=∂Q/∂x) at every point of a field's domain is by itself sufficient to guarantee F is conservative and every closed-loop integral of F is zero, without checking whether the domain is simply connected (has no 'holes').",
+              "root_cause": "In every worked example with a domain that has no holes (all of R² or R³, or a simply connected region), curl F=0 genuinely does imply conservative — so the simply-connected qualifier, easy to state but easy to forget, silently drops out of the remembered rule.",
+              "diagnostic_probe": "For F(x,y) = (−y/(x²+y²), x/(x²+y²)), a student verifies ∂P/∂y=∂Q/∂x everywhere F is defined (everywhere except the origin) and concludes F must be conservative, so any closed loop integral of F is zero. But a loop encircling the origin gives ∮F·dr = 2π ≠ 0. What did the student's test miss?",
+              "correction": "curl F = 0 (equivalently ∂P/∂y=∂Q/∂x in 2D) guarantees F is conservative only on a simply connected domain — one with no holes that a loop could enclose. F's domain here excludes the origin, which punches a hole in the plane; a loop encircling that hole can have a nonzero integral even though curl F is zero at every point the loop passes through. Always check that the domain is simply connected before concluding conservativeness from curl F=0 alone."
+            }
+          ]
+        },
+        {
+          "slug": "divergence-and-stokes-theorems",
+          "name": "Green's, Divergence, and Stokes' theorems",
+          "kc_type": "principle",
+          "description": "Explain and apply Green's theorem, the Divergence (Gauss) theorem, and Stokes' theorem to convert between line, surface, and volume integrals, and interpret each physically: net flux through a closed surface equals the integral of divergence over the enclosed volume (sources/sinks accumulate to give net outflow); net circulation around a closed curve equals the integral of curl over any surface bounded by that curve (rotational sources accumulate to give net circulation).",
+          "practice_notes": "Self-explain each theorem as a instance of the same underlying idea — a boundary integral equals an integral of a derivative-like quantity over the interior — rather than three unrelated formulas: Green's theorem is the 2D case, the divergence theorem generalizes it to a closed surface bounding a volume, and Stokes' theorem generalizes the curl version to a curved surface bounded by a curve in 3D.",
+          "sort_order": 5,
+          "prereqs": [
+            "#conservative-fields-and-path-independence"
+          ],
+          "resources": [
+            {
+              "label": "Paul's Notes — Green's Theorem",
+              "url": "https://tutorial.math.lamar.edu/classes/calciii/greenstheorem.aspx",
+              "kind": "canonical"
+            },
+            {
+              "label": "Paul's Notes — Divergence Theorem",
+              "url": "https://tutorial.math.lamar.edu/classes/calciii/divergencetheorem.aspx",
+              "kind": "canonical"
+            },
+            {
+              "label": "Paul's Notes — Stokes' Theorem",
+              "url": "https://tutorial.math.lamar.edu/classes/calciii/StokesTheorem.aspx",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "derivation_walkthrough",
+              "level": 1,
+              "title": "The unifying idea across all three theorems",
+              "body": "**Green's theorem**: ∮_C (P dx + Q dy) = ∬_D (∂Q/∂x − ∂P/∂y) dA — a line integral around a closed 2D curve equals a double integral of the 'curl-like' quantity (∂Q/∂x−∂P/∂y) over the enclosed region.\n\n**Divergence theorem**: ∬_S F·dS = ∭_E div F dV — a flux integral over a closed surface equals a triple integral of divergence over the enclosed solid.\n\n**Stokes' theorem**: ∮_C F·dr = ∬_S curl F·dS — a line integral around a closed 3D curve equals a flux integral of curl F over ANY surface S bounded by that curve.\n\nAll three say the same kind of thing: what happens on a boundary (net circulation, or net flux) is completely determined by accumulating a derivative-like local quantity (curl or divergence) over everything enclosed by that boundary."
+            },
+            {
+              "kind": "self_explanation_prompt",
+              "level": 2,
+              "title": "Physical interpretation, in your own words",
+              "body": "A vector field F represents the velocity of a fluid. Explain, in your own words: (a) what it means physically for div F > 0 at a point (in terms of fluid flowing outward from a tiny volume around that point), and how the divergence theorem connects that to net flux through an enclosing surface; (b) what it means physically for curl F ≠ 0 at a point (in terms of local rotation), and how Stokes' theorem connects that to net circulation around a bounding curve."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Surface independence in Stokes' theorem, cold",
+              "body": "Stokes' theorem lets you compute ∮_C F·dr using ANY surface bounded by C, not just one specific one. Why does it not matter which such surface you pick, as long as the orientation matches?"
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "stokes-theorem-surface-choice-is-unique",
+              "name": "Stokes' theorem requires the one specific surface bounded by the curve",
+              "description": "The learner believes that applying Stokes' theorem to a given closed curve C requires identifying THE particular surface the problem 'intends' (e.g. the flat disk if C is a circle), rather than recognizing that any surface sharing that boundary curve (with matching orientation) gives the identical flux integral — so a different, more convenient surface can always be substituted.",
+              "root_cause": "The first worked examples of Stokes' theorem typically use the 'obvious' flat surface bounded by a planar curve, so the freedom to choose ANY bounding surface — including a much more convenient one — is never exercised and so never noticed as a real degree of freedom.",
+              "diagnostic_probe": "A student is asked to compute ∮_C F·dr where C is the unit circle in the xy-plane, and the vector field F makes the flat-disk flux integral very messy. Told they could instead use the upper half of the unit sphere as their bounding surface, they object that 'the curve doesn't bound the sphere, it bounds the disk.' What are they missing?",
+              "correction": "Stokes' theorem holds for ANY orientable surface S whose boundary is the given curve C, with the surface's orientation matched to the curve's via the right-hand rule — it is not tied to one 'correct' surface. When the obvious surface gives a hard integral, choosing a different surface with the same boundary curve (as long as curl F is well-behaved on it) gives the exact same value, often with far less computation."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "pde-foundations",
+      "name": "PDE foundations",
+      "sort_order": 4,
+      "kcs": [
+        {
+          "slug": "pde-classification-and-setup",
+          "name": "PDE classification and problem setup",
+          "kc_type": "concept",
+          "description": "Classify a given partial differential equation (heat/diffusion equation, wave equation, Laplace's/steady-state equation) by its physical type and order, and translate a physical problem description into the correct PDE together with appropriate boundary and initial conditions.",
+          "practice_notes": "Practice going from a short physical description (a rod with insulated ends losing heat over time; a vibrating string fixed at both ends; a steady-state temperature distribution on a plate) directly to the correct PDE name and its natural boundary/initial conditions, before attempting to solve anything.",
+          "sort_order": 1,
+          "prereqs": [
+            "#partial-derivatives"
+          ],
+          "resources": [
+            {
+              "label": "Paul's Notes — Boundary Value Problems & Fourier Series (intro)",
+              "url": "https://tutorial.math.lamar.edu/classes/de/introbvp.aspx",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify three physical scenarios",
+              "body": "Classify each scenario by PDE type (heat, wave, or Laplace) and state whether it needs an initial condition, boundary conditions, or both:\n\n1. A metal rod's temperature evolving over time from a known initial profile, with both ends held at fixed temperatures.\n2. A guitar string's displacement evolving over time from a known initial pluck shape and initial velocity, with both ends fixed.\n3. The steady-state (time-independent) temperature distribution on a rectangular metal plate given fixed temperatures on all four edges.\n\n**Key**: (1) heat equation (first order in time, second order in space) — needs one initial condition (initial temperature profile) plus boundary conditions at both ends. (2) wave equation (second order in time AND space) — needs TWO initial conditions (initial shape and initial velocity) plus boundary conditions. (3) Laplace's equation (no time dependence at all) — needs only boundary conditions, no initial condition, since there is no time variable to specify an initial state for."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Order in time, cold",
+              "body": "How many initial conditions does the wave equation need compared to the heat equation, and why does that match the number of time-derivatives appearing in each equation?"
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "separation-of-variables",
+          "name": "Separation of variables for PDEs",
+          "kc_type": "rule",
+          "description": "Apply the separation-of-variables technique to a linear PDE — assuming a product solution u(x,t)=φ(x)G(t), substituting into the PDE, and separating it into two ordinary differential equations (a boundary-value problem in x and an initial-value problem in t) connected by a separation constant.",
+          "practice_notes": "Practice the substitution-and-separation algebra as a fixed sequence: substitute the product form, divide through so all x-dependence lands on one side and all t-dependence on the other, set both sides equal to the same constant (traditionally called −λ), and solve the resulting boundary-value problem in x first (since its eigenvalues determine which λ values are even allowed).",
+          "sort_order": 2,
+          "prereqs": [
+            "#pde-classification-and-setup"
+          ],
+          "resources": [
+            {
+              "label": "Paul's Notes — Solving the Heat Equation (separation of variables)",
+              "url": "https://tutorial.math.lamar.edu/classes/de/SolvingHeatEquation.aspx",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Heat equation on a rod, fully worked",
+              "body": "Solve u_t = α²u_xx for 0<x<L, t>0, with u(0,t)=u(L,t)=0 (zero-temperature ends) and u(x,0)=f(x).\n\n**Assume** u(x,t)=φ(x)G(t). Substituting: φ(x)G'(t) = α²φ''(x)G(t).\n\n**Separate**: G'(t)/(α²G(t)) = φ''(x)/φ(x) = −λ (a constant, since the left side depends only on t and the right only on x, so both must equal the same constant).\n\nThis gives two ODEs: φ''(x) + λφ(x) = 0 with φ(0)=φ(L)=0 (a boundary-value problem), and G'(t) + λα²G(t) = 0.\n\nSolving the boundary-value problem in x gives eigenvalues λ_n = (nπ/L)², n=1,2,3,..., with eigenfunctions φ_n(x)=sin(nπx/L). Then G_n(t) = e^(−λ_n α²t) solves the time equation for each n.\n\nThe full solution is a superposition: u(x,t) = Σ B_n sin(nπx/L) e^(−(nπ/L)²α²t), with B_n chosen (via Fourier sine series) to match the initial condition u(x,0)=f(x)."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Insulated-ends variant, partially faded",
+              "body": "Solve the same heat equation u_t=α²u_xx on 0<x<L, but now with insulated ends: u_x(0,t)=u_x(L,t)=0.\n\n1. Assume u(x,t)=φ(x)G(t) and separate variables the same way as before — what are the two resulting ODEs?\n2. Solve the boundary-value problem φ''+λφ=0 with φ'(0)=φ'(L)=0 instead of φ(0)=φ(L)=0 — what eigenfunctions result this time (cosine instead of sine)?\n3. Write the general superposition solution, noting that this time you'll need a Fourier COSINE series (including a constant n=0 term) to match the initial condition."
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Bare prompt",
+              "body": "Separate variables for the wave equation u_tt = c²u_xx on 0<x<L with u(0,t)=u(L,t)=0, and state the two resulting ODEs (note: the time equation here is second-order, unlike the heat equation's first-order time equation — how many initial conditions on G(t) will you need as a result?)."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Why does the separation constant have to be the SAME on both sides?",
+              "body": "In the separation-of-variables step, why must the x-dependent side and the t-dependent side of the separated equation both equal the same constant, rather than two different (possibly x- or t-dependent) expressions?"
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "sturm-liouville-eigenproblems",
+          "name": "Sturm-Liouville eigenproblems and orthogonality",
+          "kc_type": "principle",
+          "description": "Recognize the boundary-value eigenvalue problem produced by separation of variables as a Sturm-Liouville problem, and explain why its eigenfunctions are mutually orthogonal — the property that makes it possible to expand an arbitrary initial condition in a convergent series of those eigenfunctions.",
+          "practice_notes": "Self-explain by working through why the sign of the separation constant λ isn't obvious in advance — systematically checking λ<0, λ=0, and λ>0 cases against the boundary conditions (rather than assuming λ>0 because 'the answer should be sinusoidal') is exactly the discipline that avoids missing valid eigenvalues.",
+          "sort_order": 3,
+          "prereqs": [
+            "#separation-of-variables"
+          ],
+          "resources": [
+            {
+              "label": "Paul's Notes — Boundary Value Problems: Eigenvalues and Eigenfunctions",
+              "url": "https://tutorial.math.lamar.edu/classes/de/bvpevals.aspx",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "derivation_walkthrough",
+              "level": 1,
+              "title": "Why eigenfunctions of a Sturm-Liouville problem are orthogonal",
+              "body": "For eigenfunctions φ_m, φ_n of φ''+λφ=0 with φ(0)=φ(L)=0, and eigenvalues λ_m≠λ_n:\n\nφ_m''φ_n − φ_n''φ_m = −λ_mφ_mφ_n + λ_nφ_nφ_m = (λ_n−λ_m)φ_mφ_n.\n\nBut the left side is d/dx[φ_m'φ_n − φ_n'φ_m] (a total derivative). Integrating both sides from 0 to L:\n\n[φ_m'φ_n − φ_n'φ_m]₀^L = (λ_n−λ_m)∫₀^L φ_mφ_n dx.\n\nThe left side vanishes because both φ_m and φ_n satisfy the same homogeneous boundary conditions (they're both zero at x=0 and x=L), so the boundary terms cancel. Since λ_n≠λ_m, this forces ∫₀^L φ_mφ_n dx = 0 — the eigenfunctions are orthogonal. This orthogonality is exactly what lets the Fourier-coefficient formula (multiply by φ_n and integrate) isolate a single coefficient out of an infinite sum."
+            },
+            {
+              "kind": "self_explanation_prompt",
+              "level": 2,
+              "title": "Why check all three sign cases for λ?",
+              "body": "When solving φ''+λφ=0 with φ(0)=φ(L)=0, explain in your own words why a careful solution checks λ<0, λ=0, and λ>0 separately (each gives a different family of general solutions — exponential, linear, or sinusoidal) rather than assuming λ>0 from the start because the eventual answer 'looks like it should involve sines.' What would you miss by skipping the λ≤0 cases?"
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Orthogonality's payoff, cold",
+              "body": "Once you know a set of eigenfunctions is mutually orthogonal on an interval, what practical technique does that unlock for finding the coefficients B_n in a series expansion Σ B_n φ_n(x) that matches a given initial condition?"
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "eigenvalues-of-bvp-must-be-positive",
+              "name": "The separation constant λ must always be positive",
+              "description": "The learner assumes, without checking, that the separation constant λ in a Sturm-Liouville boundary-value problem must be positive (because the 'expected' eigenfunctions are sinusoidal), and skips checking the λ=0 and λ<0 cases, potentially missing valid eigenvalues or wrongly declaring a problem has no solution.",
+              "root_cause": "The most commonly taught boundary conditions (φ(0)=φ(L)=0) happen to have only positive eigenvalues, so students pattern-match 'boundary value problem in this course → λ is positive' without seeing that other boundary conditions (e.g. periodic conditions, or certain mixed conditions) can admit λ=0 or even negative eigenvalues.",
+              "diagnostic_probe": "A student solves φ'' + λφ = 0 with the periodic boundary conditions φ(−π)=φ(π), φ'(−π)=φ'(π), and only checks λ>0, concluding the eigenfunctions are sin(nx) and cos(nx) for n=1,2,3,.... They report no λ=0 solution exists. What did they miss, and does it matter for the completeness of the eigenfunction set?",
+              "correction": "The sign of the separation constant λ must be checked systematically (λ<0, λ=0, and λ>0), not assumed, because the correct set of eigenvalues depends on the specific boundary conditions. For the periodic boundary conditions above, λ=0 IS an eigenvalue (with constant eigenfunction φ=1) and must be included alongside the positive eigenvalues for the eigenfunction set to be complete."
+            }
+          ]
+        },
+        {
+          "slug": "fourier-series-expansion",
+          "name": "Fourier series expansion",
+          "kc_type": "rule",
+          "description": "Compute the Fourier sine series, cosine series, or full Fourier series coefficients of a given function on an interval, matched to the eigenfunctions produced by the relevant boundary conditions, and use the resulting series to write the complete series solution of a separated PDE.",
+          "practice_notes": "Compute the coefficient integral ∫f(x)sin(nπx/L)dx (or the cosine/full-series analogue) for a couple of small n values by hand before trusting a general formula — integration by parts on f(x)·sin(nπx/L) is the routine execution step that most often goes wrong here.",
+          "sort_order": 4,
+          "prereqs": [
+            "#sturm-liouville-eigenproblems"
+          ],
+          "resources": [
+            {
+              "label": "Paul's Notes — Fourier Series",
+              "url": "https://tutorial.math.lamar.edu/classes/de/FourierSeries.aspx",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Fourier sine series of a constant, fully worked",
+              "body": "Find the Fourier sine series of f(x)=1 on [0,L] (needed, for example, to match a rod suddenly heated to a uniform temperature of 1 at t=0 with zero-temperature ends).\n\nB_n = (2/L)∫₀^L f(x)sin(nπx/L) dx = (2/L)∫₀^L sin(nπx/L) dx = (2/L)·[−L/(nπ)·cos(nπx/L)]₀^L\n\n= (2/L)·(−L/(nπ))·[cos(nπ)−cos(0)] = (−2/(nπ))·[(−1)^n − 1].\n\nFor even n, (−1)^n−1=0, so B_n=0. For odd n, (−1)^n−1=−2, so B_n = (−2/(nπ))·(−2) = **4/(nπ)**.\n\nSo f(x)=1 ~ Σ (over odd n) [4/(nπ)]·sin(nπx/L) — only odd harmonics appear, a direct consequence of f(x)=1 being 'symmetric' in a way that makes even-n contributions cancel."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Fourier sine series of a linear ramp, partially faded",
+              "body": "Find the Fourier sine series of f(x)=x on [0,L].\n\n1. Write the coefficient integral B_n = (2/L)∫₀^L x·sin(nπx/L) dx.\n2. Evaluate it using integration by parts (u=x, dv=sin(nπx/L)dx).\n3. Simplify using cos(nπ)=(−1)^n, and express B_n as a function of n.\n\n(You should find B_n = (2L/(nπ))·(−1)^(n+1), alternating sign with n and decaying as 1/n — unlike the constant-function case, every n contributes here, not just the odd ones.)"
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Sine vs. cosine series, cold",
+              "body": "Given a rod with zero-temperature ends (φ(0)=φ(L)=0), you use a Fourier SINE series to match the initial condition. If instead the rod has insulated ends (φ'(0)=φ'(L)=0), which series do you use instead, and why does the boundary condition dictate that choice?"
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "fourier-series-convergence-and-applications",
+          "name": "Fourier series convergence and engineering interpretation",
+          "kc_type": "principle",
+          "description": "Explain the convergence behavior of a Fourier series at points of continuity (converges to the function's value) versus at jump discontinuities (converges to the midpoint average of the left- and right-hand limits, producing the Gibbs phenomenon overshoot nearby), and interpret a truncated series solution's physical meaning in an engineering transient — e.g. how a rod's temperature profile smooths out over time as higher-frequency Fourier modes decay faster than lower ones.",
+          "practice_notes": "Self-explain by connecting the math to the physics: in the heat-equation solution u(x,t)=ΣB_n sin(nπx/L)e^(−(nπ/L)²α²t), the exponent's (nπ/L)² grows with n, so higher-n terms decay much faster in time — this is WHY an initially sharp or jagged temperature profile smooths into something close to a single sine hump as t grows, without needing to track every term.",
+          "sort_order": 5,
+          "prereqs": [
+            "#fourier-series-expansion"
+          ],
+          "resources": [
+            {
+              "label": "3Blue1Brown — Differential equations playlist",
+              "url": "https://www.3blue1brown.com/topics/differential-equations",
+              "kind": "feed"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "self_explanation_prompt",
+              "level": 2,
+              "title": "Why do higher modes decay faster?",
+              "body": "In the heat-equation series solution u(x,t) = Σ B_n sin(nπx/L) e^(−(nπ/L)²α²t), explain in your own words why the n=5 term decays much faster in time than the n=1 term, and what this implies about the shape of the temperature profile after a long time has passed compared to right after t=0 — even without computing any of the B_n coefficients."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Convergence at a jump, cold",
+              "body": "At a jump discontinuity of f(x), what value does its Fourier series converge to — the left-hand limit, the right-hand limit, or something else? And what is the Gibbs phenomenon a description of?"
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    }
+  ],
+  "course_resources": [
+    {
+      "label": "McGill eCalendar official description",
+      "url": "https://www.mcgill.ca/study/2024-2025/courses/math-264",
+      "kind": "canonical",
+      "pinned": true
+    },
+    {
+      "label": "Paul's Online Math Notes — Calculus III (index)",
+      "url": "https://tutorial.math.lamar.edu/classes/calciii/calciii.aspx",
+      "kind": "canonical",
+      "pinned": true
+    },
+    {
+      "label": "Paul's Online Math Notes — Differential Equations (index)",
+      "url": "https://tutorial.math.lamar.edu/classes/de/de.aspx",
+      "kind": "canonical"
+    },
+    {
+      "label": "MIT OCW — 18.02SC Multivariable Calculus (Fall 2010)",
+      "url": "https://ocw.mit.edu/courses/18-02sc-multivariable-calculus-fall-2010/",
+      "kind": "canonical"
+    },
+    {
+      "label": "3Blue1Brown — Differential equations playlist",
+      "url": "https://www.3blue1brown.com/topics/differential-equations",
+      "kind": "feed"
+    }
+  ],
+  "assessments": [
+    {
+      "title": "WeBWorK Assignment Set 1 — Partial Derivatives & Extrema",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 2,
+      "due_date": "2025-01-21",
+      "kc_slugs": [
+        "#partial-derivatives",
+        "#directional-derivatives",
+        "#gradient-as-steepest-ascent"
+      ]
+    },
+    {
+      "title": "WeBWorK Assignment Set 2 — Optimization & Multiple Integrals",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 2,
+      "due_date": "2025-02-04",
+      "kc_slugs": [
+        "#extrema-and-lagrange-multipliers",
+        "#multiple-integrals",
+        "#coordinate-changes-for-integration"
+      ]
+    },
+    {
+      "title": "WeBWorK Assignment Set 3 — Applications & Vector Fields",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 2,
+      "due_date": "2025-02-25",
+      "kc_slugs": [
+        "#applications-of-multiple-integrals",
+        "#vector-calculus",
+        "#gradient-divergence-curl"
+      ]
+    },
+    {
+      "title": "WeBWorK Assignment Set 4 — Line/Surface Integrals & Theorems",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 2,
+      "due_date": "2025-03-11",
+      "kc_slugs": [
+        "#line-and-surface-integrals",
+        "#conservative-fields-and-path-independence",
+        "#divergence-and-stokes-theorems"
+      ]
+    },
+    {
+      "title": "WeBWorK Assignment Set 5 — PDEs & Fourier Series",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 2,
+      "due_date": "2025-04-01",
+      "kc_slugs": [
+        "#pde-classification-and-setup",
+        "#separation-of-variables",
+        "#sturm-liouville-eigenproblems",
+        "#fourier-series-expansion"
+      ]
+    },
+    {
+      "title": "Midterm Exam",
+      "type": "midterm",
+      "kind": "official",
+      "weight_pct": 30,
+      "due_date": "2025-03-05",
+      "kc_slugs": [
+        "#partial-derivatives",
+        "#directional-derivatives",
+        "#gradient-as-steepest-ascent",
+        "#extrema-and-lagrange-multipliers",
+        "#multiple-integrals",
+        "#coordinate-changes-for-integration",
+        "#applications-of-multiple-integrals"
+      ]
+    },
+    {
+      "title": "Final Exam",
+      "type": "final",
+      "kind": "official",
+      "weight_pct": 60,
+      "due_date": "2025-04-24",
+      "kc_slugs": [
+        "#vector-calculus",
+        "#gradient-divergence-curl",
+        "#line-and-surface-integrals",
+        "#conservative-fields-and-path-independence",
+        "#divergence-and-stokes-theorems",
+        "#pde-classification-and-setup",
+        "#separation-of-variables",
+        "#sturm-liouville-eigenproblems",
+        "#fourier-series-expansion",
+        "#fourier-series-convergence-and-applications"
+      ]
+    },
+    {
+      "title": "Practice Problem Set — Gradient, Directional Derivatives & Optimization",
+      "type": "assignment",
+      "kind": "practice",
+      "kc_slugs": [
+        "#directional-derivatives",
+        "#gradient-as-steepest-ascent",
+        "#extrema-and-lagrange-multipliers"
+      ]
+    },
+    {
+      "title": "Practice Problem Set — Green's, Divergence & Stokes' Theorems",
+      "type": "assignment",
+      "kind": "practice",
+      "kc_slugs": [
+        "#divergence-and-stokes-theorems",
+        "#conservative-fields-and-path-independence"
+      ]
+    },
+    {
+      "title": "Practice Past-Exam Set — Separation of Variables & Fourier Series",
+      "type": "assignment",
+      "kind": "practice",
+      "kc_slugs": [
+        "#separation-of-variables",
+        "#sturm-liouville-eigenproblems",
+        "#fourier-series-expansion"
+      ]
+    }
+  ]
+}
