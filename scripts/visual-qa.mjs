@@ -32,6 +32,12 @@ const SINGLE_PAGES = {
   tasks: '/tasks',
   notes: '/notes',
   profile: '/profile',
+  // v1.7 absorb experience. The learn page uses the CHEE 314 Navier-Stokes KC
+  // (deterministic seed id, stable across reseeds) — flagship because it has
+  // mixed-readiness prereqs across 4 depth levels after the verify phase's
+  // demo readiness events.
+  learn: '/learn/c1eb4cbf-7e99-760d-c1eb-4cbf7e99760d',
+  corrections: '/corrections',
 };
 // Dashboard-with-expanded-week is per-theme×scheme but overkill for the full
 // matrix — just the 3 themes in light + compass dark.

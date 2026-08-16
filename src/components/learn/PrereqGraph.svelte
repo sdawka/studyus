@@ -125,7 +125,10 @@
 
   .node-body { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; flex: 1; }
   .node-title-row { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
-  .node-name { font-size: 0.92rem; font-weight: 550; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Two-line clamp, not single-line ellipsis (repo convention, see
+     TaskItem.svelte): 390px shots crushed prereq names to "Conservative
+     vector fields an…". */
+  .node-name { font-size: 0.92rem; font-weight: 550; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
   .kc-type {
     flex: none;
     font-size: 0.66rem;

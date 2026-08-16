@@ -73,9 +73,14 @@ try {
   .kc-name {
     font-size: 0.92rem;
     min-width: 0;
+    /* Two-line clamp, not single-line ellipsis (repo convention, see
+       TaskItem.svelte): at phone widths nowrap crushed every KC name to
+       "Navier-Stokes equati…". */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
   .kc-bar { width: 140px; flex-shrink: 0; }
   .understand-link {

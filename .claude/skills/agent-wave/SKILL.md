@@ -45,5 +45,12 @@ How this repo runs multi-agent implementation waves (used for v1 M0–M5 and v1.
 - **Subagents may go idle without delivering their final report** — nudge with a SendMessage asking them to send the report to "main"; treat an idle notification with no report as undelivered, not as empty.
 - **Verify visual-qa captures actually captured**: byte-identical file sizes between an interaction shot and its base page mean the interaction silently failed (the expand-gate existence-check bug). The harness now gates on `aria-expanded`.
 
+## Lessons from the v1.7 wave (2026-08-16)
+
+- **Task-board owner strings collide with cross-session agent names**: the board is shared across local Claude sessions. Setting a task's `owner` to a generic name ("foundation") that happens to be another session's live agent makes that agent adopt the task as its own. Use wave-unique owner names, and verify the spawn-returned agent name matches the owner string you set (a taken name gets auto-suffixed, e.g. "foundation-2").
+- **Sandbox blocks teammate-instructed destruction, and tunneling it through the orchestrator is also blocked**: `rm -rf` of git-tracked files (the migrations/ single-baseline regen) requires the actual user's fresh authorization even when a standing convention documents it. Don't work around it — ship the additive equivalent, flag the deviation for the user, move on.
+- **Idempotent upsert seeds need explicit purge logic when a new source format supersedes an old one**: the content.json path left all 123 legacy-namespace KC/branch/resource rows coexisting with the 147 new ones (and legacy demo assessments broke weight sums). Delete by computing the exact legacy deterministic ids; verify with row-count queries after any seed-source migration, not just "seed ran clean".
+- **All 3 Haiku vqa reviewers went idle without delivering reports** (3/3, worse than v1.6) — budget a nudge round into every review fan-out. They also passed shots containing a single-line-ellipsis convention violation the orchestrator caught by eye — the "spot-check flagship shots yourself" rule is load-bearing.
+
 ## TODO
 - Consider worktree isolation per agent if track ownership ever must overlap.
