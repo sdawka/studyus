@@ -7,7 +7,7 @@
     {
       "binding": "DB",
       "database_name": "studyus",
-      "database_id": "local-placeholder",
+      "database_id": "e98f7951-5b81-43a1-a8f4-4ace7bf56778",
       "migrations_dir": "migrations"
     }
   ],
