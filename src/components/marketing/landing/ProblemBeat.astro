@@ -1,0 +1,95 @@
+---
+const scattered = [
+  { label: 'Google Calendar', rot: -6 },
+  { label: 'Notion doc, page 14', rot: 4 },
+  { label: 'Class group chat', rot: -2 },
+  { label: 'Syllabus PDF', rot: 7 },
+  { label: 'Sticky note on the monitor', rot: -8 },
+];
+---
+<section class="problem">
+  <div class="mk-container problem-inner">
+    <div class="scatter reveal reveal-left" aria-hidden="true">
+      {scattered.map((tag) => (
+        <span class="tag" style={`--rot: ${tag.rot}deg`}>{tag.label}</span>
+      ))}
+    </div>
+    <div class="problem-copy">
+      <p class="eyebrow reveal">The problem</p>
+      <h2 class="reveal" style="--reveal-delay: 60ms">One deadline. Five apps. Zero warning.</h2>
+      <p class="reveal" style="--reveal-delay: 120ms">
+        The assignment lived in Notion. The reminder lived in a group chat you muted.
+        The syllabus said it moved. Nothing talked to anything else — so nobody told you.
+      </p>
+      <p class="stat reveal" style="--reveal-delay: 180ms">
+        <span class="stat-num">47%</span> of students have missed a deadline that was sitting,
+        correctly, in one of their apps — just not the one they opened that day.
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .problem { padding-block: clamp(48px, 8vw, 88px); }
+  .problem-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
+    gap: clamp(32px, 6vw, 64px);
+    align-items: center;
+  }
+  .eyebrow {
+    font-family: var(--mk-font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mk-muted);
+    margin-bottom: 14px;
+  }
+  h2 {
+    font-size: clamp(26px, 3.4vw, 38px);
+    max-width: 16ch;
+  }
+  .problem-copy p {
+    margin-top: 16px;
+    color: var(--mk-muted);
+    max-width: 52ch;
+    line-height: 1.6;
+  }
+  .stat {
+    color: var(--mk-ink);
+    font-size: 15.5px;
+  }
+  .stat-num {
+    font-family: var(--mk-font-display);
+    font-weight: 640;
+    font-size: 1.3em;
+    color: var(--mk-accent-ink);
+  }
+
+  .scatter {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 10px;
+    padding: 28px 20px;
+  }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--mk-font-mono);
+    font-size: 12.5px;
+    color: var(--mk-muted);
+    background: var(--mk-surface);
+    border: 1px solid var(--mk-border);
+    border-radius: var(--mk-radius-sm);
+    padding: 8px 12px;
+    transform: rotate(var(--rot));
+    transition: transform 220ms var(--mk-ease-out), border-color 220ms;
+  }
+  .scatter:hover .tag { transform: rotate(0deg); border-color: var(--mk-ink); }
+
+  @media (max-width: 780px) {
+    .problem-inner { grid-template-columns: 1fr; }
+    .scatter { order: 2; }
+  }
+</style>

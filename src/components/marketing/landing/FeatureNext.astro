@@ -1,0 +1,140 @@
+---
+import StatusPill from './StatusPill.astro';
+
+const pct = 38;
+const r = 42;
+const c = 2 * Math.PI * r;
+const offset = c * (1 - pct / 100);
+---
+<section class="feature">
+  <div class="mk-container feature-inner">
+    <div class="feature-copy">
+      <p class="eyebrow reveal">What to study</p>
+      <h2 class="reveal" style="--reveal-delay: 60ms">
+        It picks the next concept, not just the next slot.
+      </h2>
+      <p class="reveal" style="--reveal-delay: 120ms">
+        Every course breaks down into knowledge components — the actual ideas you're
+        graded on. Studyus tracks mastery on each one and surfaces whichever is weakest
+        or going stale first, weighted against what's due soon.
+      </p>
+      <p class="reveal" style="--reveal-delay: 180ms">
+        No generic "study 2 hours today." Just: open this, because you're 38% here
+        and the exam isn't waiting.
+      </p>
+    </div>
+
+    <div class="feature-vignette reveal reveal-scale" style="--reveal-delay: 160ms" aria-hidden="true">
+      <div class="card">
+        <p class="card-label">Understand next</p>
+        <div class="card-body">
+          <svg class="ring" width="104" height="104" viewBox="0 0 104 104">
+            <circle class="ring-bg" cx="52" cy="52" r={r} fill="none" stroke-width="8" />
+            <circle
+              class="ring-fg"
+              cx="52"
+              cy="52"
+              r={r}
+              fill="none"
+              stroke-width="8"
+              stroke-linecap="round"
+              stroke-dasharray={c}
+              stroke-dashoffset={offset}
+              style={`--ring-offset: ${offset}; --ring-empty: ${c}`}
+              transform="rotate(-90 52 52)"
+            />
+            <text x="52" y="58" text-anchor="middle" class="ring-num">{pct}%</text>
+          </svg>
+          <div class="card-detail">
+            <span class="card-course">CHEM 220</span>
+            <span class="card-topic">Resonance structures</span>
+            <StatusPill kind="weak">Weakest in course</StatusPill>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .feature { padding-block: clamp(48px, 8vw, 88px); }
+  .feature-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
+    gap: clamp(32px, 6vw, 72px);
+    align-items: center;
+  }
+  .eyebrow {
+    font-family: var(--mk-font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mk-muted);
+    margin-bottom: 14px;
+  }
+  h2 {
+    font-size: clamp(26px, 3.4vw, 38px);
+    max-width: 17ch;
+  }
+  .feature-copy p:not(.eyebrow) {
+    margin-top: 14px;
+    color: var(--mk-muted);
+    max-width: 50ch;
+    line-height: 1.6;
+  }
+
+  .card {
+    background: var(--mk-surface);
+    border: 1px solid var(--mk-border);
+    border-radius: var(--mk-radius-lg);
+    box-shadow: var(--mk-shadow-pop);
+    padding: 24px;
+  }
+  .card-label {
+    font-family: var(--mk-font-mono);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--mk-faint);
+    margin-bottom: 18px;
+  }
+  .card-body {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .ring-bg { stroke: var(--mk-hairline); }
+  .ring-fg { stroke: var(--mk-accent); }
+  @media (prefers-reduced-motion: no-preference) {
+    .js .reveal .ring-fg { stroke-dashoffset: var(--ring-empty); }
+    .js .reveal.is-in .ring-fg {
+      stroke-dashoffset: var(--ring-offset);
+      transition: stroke-dashoffset 1100ms var(--mk-ease-out) 200ms;
+    }
+  }
+  .ring-num {
+    font-family: var(--mk-font-display);
+    font-size: 20px;
+    font-weight: 600;
+    fill: var(--mk-ink);
+  }
+  .card-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .card-course {
+    font-family: var(--mk-font-mono);
+    font-size: 11px;
+    color: var(--mk-faint);
+  }
+  .card-topic {
+    font-size: 16px;
+    font-weight: 560;
+  }
+
+  @media (max-width: 860px) {
+    .feature-inner { grid-template-columns: 1fr; }
+    .feature-vignette { max-width: 380px; }
+  }
+</style>

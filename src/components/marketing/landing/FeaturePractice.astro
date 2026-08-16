@@ -1,0 +1,121 @@
+---
+---
+<section class="feature">
+  <div class="mk-container feature-inner">
+    <div class="feature-copy">
+      <p class="eyebrow reveal">Why it works</p>
+      <h2 class="reveal" style="--reveal-delay: 60ms">Practice that's actually spaced.</h2>
+      <p class="reveal" style="--reveal-delay: 120ms">
+        Cramming feels productive and mostly isn't. Retrieval spread out over days beats
+        one long session — it's one of the few study techniques with real evidence behind it,
+        not just a study-influencer opinion.
+      </p>
+      <p class="reveal" style="--reveal-delay: 180ms">
+        Studyus schedules short recall checks automatically, timed to when you're about
+        to forget — not when it's convenient for an app to remind you.
+      </p>
+    </div>
+
+    <div class="feature-vignette reveal reveal-scale" style="--reveal-delay: 160ms" aria-hidden="true">
+      <div class="flip-card">
+        <div class="flip-inner">
+          <div class="face front">
+            <p class="face-label">Recall check</p>
+            <p class="face-topic">Light-dependent reactions</p>
+            <p class="face-hint">What's produced besides ATP?</p>
+          </div>
+          <div class="face back">
+            <p class="face-label">Recalled</p>
+            <p class="face-topic">NADPH ✓</p>
+            <p class="face-hint">Next check in 4 days</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .feature { padding-block: clamp(48px, 8vw, 88px); }
+  .feature-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
+    gap: clamp(32px, 6vw, 72px);
+    align-items: center;
+  }
+  .eyebrow {
+    font-family: var(--mk-font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mk-muted);
+    margin-bottom: 14px;
+  }
+  h2 {
+    font-size: clamp(26px, 3.4vw, 38px);
+    max-width: 17ch;
+  }
+  .feature-copy p:not(.eyebrow) {
+    margin-top: 14px;
+    color: var(--mk-muted);
+    max-width: 50ch;
+    line-height: 1.6;
+  }
+
+  .flip-card {
+    perspective: 1400px;
+    height: 190px;
+  }
+  .flip-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transform: rotateY(180deg);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .js .reveal .flip-inner { transform: rotateY(0deg); }
+    .js .reveal.is-in .flip-inner {
+      transition: transform 900ms var(--mk-ease-out) 450ms;
+      transform: rotateY(180deg);
+    }
+  }
+  .face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    background: var(--mk-surface);
+    border: 1px solid var(--mk-border);
+    border-radius: var(--mk-radius-lg);
+    box-shadow: var(--mk-shadow-pop);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+  }
+  .back { transform: rotateY(180deg); }
+  .face-label {
+    font-family: var(--mk-font-mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--mk-faint);
+  }
+  .face-topic {
+    font-family: var(--mk-font-display);
+    font-size: 20px;
+    font-weight: 600;
+  }
+  .back .face-topic { color: var(--mk-accent-ink); }
+  .face-hint {
+    font-size: 13.5px;
+    color: var(--mk-muted);
+  }
+
+  @media (max-width: 860px) {
+    .feature-inner { grid-template-columns: 1fr; }
+    .feature-vignette { max-width: 380px; }
+  }
+</style>

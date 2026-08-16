@@ -1,0 +1,80 @@
+---
+const stats = [
+  { num: '+25%', label: 'better retention from spaced retrieval vs. cramming the night before' },
+  { num: 'd = 0.78', label: 'effect size, meta-analysis of spaced vs. massed practice' },
+  { num: '1', label: 'study technique on this list with consistent evidence behind it' },
+];
+---
+<section class="evidence">
+  <div class="mk-container">
+    <p class="eyebrow reveal">Built on the one technique that holds up</p>
+    <div class="ledger">
+      {stats.map((s, i) => (
+        <div class="ledger-item reveal" style={`--reveal-delay: ${i * 100}ms`}>
+          <span class="ledger-num">{s.num}</span>
+          <span class="ledger-label">{s.label}</span>
+        </div>
+      ))}
+    </div>
+    <p class="citation reveal" style="--reveal-delay: 300ms">
+      Pan, S. C., &amp; Rickard, T. C. (2018), <em>Journal of Educational Psychology</em> — spaced
+      retrieval practice, not massed study.
+    </p>
+  </div>
+</section>
+
+<style>
+  .evidence { padding-block: clamp(48px, 8vw, 88px); }
+  .eyebrow {
+    font-family: var(--mk-font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mk-muted);
+    margin-bottom: 24px;
+  }
+  .ledger {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--mk-hairline);
+    border-bottom: 1px solid var(--mk-hairline);
+  }
+  .ledger-item {
+    padding: 28px clamp(16px, 3vw, 32px);
+    border-left: 1px solid var(--mk-hairline);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ledger-item:first-child { border-left: none; }
+  .ledger-num {
+    font-family: var(--mk-font-mono);
+    font-size: clamp(28px, 3.6vw, 40px);
+    font-weight: 500;
+    color: var(--mk-accent-ink);
+    letter-spacing: -0.01em;
+  }
+  .ledger-label {
+    font-size: 14px;
+    color: var(--mk-muted);
+    line-height: 1.5;
+    max-width: 28ch;
+  }
+  .citation {
+    margin-top: 16px;
+    font-family: var(--mk-font-mono);
+    font-size: 12px;
+    color: var(--mk-faint);
+  }
+  .citation em { font-style: italic; }
+
+  @media (max-width: 720px) {
+    .ledger { grid-template-columns: 1fr; }
+    .ledger-item {
+      border-left: none;
+      border-top: 1px solid var(--mk-hairline);
+      padding-inline: 4px;
+    }
+    .ledger-item:first-child { border-top: none; }
+  }
+</style>

@@ -1,0 +1,226 @@
+---
+import StatusPill from './StatusPill.astro';
+---
+<section class="hero">
+  <div class="mk-container hero-inner">
+    <div class="hero-copy">
+      <p class="eyebrow reveal">For students running five apps and one calendar</p>
+      <h1 class="reveal" style="--reveal-delay: 60ms">
+        Stop asking <em>when</em> to study.<br />
+        Start knowing <span class="mk-highlight">what.</span>
+      </h1>
+      <p class="dek reveal" style="--reveal-delay: 140ms">
+        Studyus ranks your weakest, stalest concepts against what's actually due —
+        then tells you exactly what to open. No streaks to keep. No guilt if the week falls apart.
+      </p>
+      <div class="hero-ctas reveal" style="--reveal-delay: 220ms">
+        <a class="mk-btn mk-btn-primary" href="/login">Get started</a>
+        <a class="mk-btn mk-btn-ghost" href="/compare">See how it compares →</a>
+      </div>
+    </div>
+
+    <div class="hero-vignette reveal reveal-scale" style="--reveal-delay: 200ms" aria-hidden="true">
+      <div class="vignette-frame">
+        <p class="vignette-ticker">
+          <span>Recalculating priority…</span>
+          <span>Resonance structures ↑ weak</span>
+          <span>B-trees flagged stale · 9d</span>
+        </p>
+        <ol class="queue">
+          <li class="queue-card is-top">
+            <span class="queue-course">CHEM 220</span>
+            <span class="queue-topic">Resonance structures</span>
+            <span class="queue-meta">
+              <StatusPill kind="weak">Weak · 38%</StatusPill>
+            </span>
+            <span class="queue-bar"><span style="--fill: 38%"></span></span>
+          </li>
+          <li class="queue-card">
+            <span class="queue-course">CS 301</span>
+            <span class="queue-topic">B-tree balancing</span>
+            <span class="queue-meta">
+              <StatusPill kind="stale">Stale · 9d</StatusPill>
+            </span>
+            <span class="queue-bar"><span style="--fill: 61%"></span></span>
+          </li>
+          <li class="queue-card">
+            <span class="queue-course">ECON 210</span>
+            <span class="queue-topic">Price elasticity</span>
+            <span class="queue-meta">
+              <StatusPill kind="due">Due Thu</StatusPill>
+            </span>
+            <span class="queue-bar"><span style="--fill: 74%"></span></span>
+          </li>
+          <li class="queue-card">
+            <span class="queue-course">PSYC 110</span>
+            <span class="queue-topic">Operant conditioning</span>
+            <span class="queue-meta">
+              <StatusPill kind="ontrack">On track</StatusPill>
+            </span>
+            <span class="queue-bar"><span style="--fill: 88%"></span></span>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    padding-block: clamp(56px, 9vw, 108px) clamp(48px, 7vw, 80px);
+  }
+  .hero-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 460px);
+    gap: clamp(32px, 6vw, 72px);
+    align-items: center;
+  }
+  .eyebrow {
+    font-family: var(--mk-font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mk-muted);
+    margin-bottom: 18px;
+  }
+  .hero-copy h1 {
+    font-size: clamp(38px, 5.4vw, 68px);
+    max-width: 13ch;
+    font-style: normal;
+  }
+  .hero-copy h1 em {
+    font-style: italic;
+    color: var(--mk-muted);
+  }
+  .mk-highlight {
+    background: var(--mk-accent-soft);
+    color: var(--mk-accent-ink);
+    padding: 0 0.14em;
+    border-radius: 4px;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+  .dek {
+    margin-top: 22px;
+    font-size: clamp(16px, 1.6vw, 19px);
+    color: var(--mk-muted);
+    max-width: 46ch;
+    line-height: 1.55;
+  }
+  .hero-ctas {
+    margin-top: 34px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  /* ---------- vignette ---------- */
+  .vignette-frame {
+    background: var(--mk-surface);
+    border: 1px solid var(--mk-border);
+    border-radius: var(--mk-radius-lg);
+    box-shadow: var(--mk-shadow-pop);
+    padding: 20px;
+  }
+  .vignette-ticker {
+    position: relative;
+    height: 16px;
+    margin-bottom: 16px;
+    font-family: var(--mk-font-mono);
+    font-size: 12px;
+    color: var(--mk-faint);
+  }
+  .vignette-ticker span {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    white-space: nowrap;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .js .vignette-ticker span {
+      animation: tickerFade 9s var(--mk-ease-out) infinite;
+    }
+    .js .vignette-ticker span:nth-child(1) { animation-delay: 0s; }
+    .js .vignette-ticker span:nth-child(2) { animation-delay: 3s; }
+    .js .vignette-ticker span:nth-child(3) { animation-delay: 6s; }
+  }
+  .vignette-ticker span:not(:first-child) { opacity: 0; }
+  .vignette-ticker span:first-child { opacity: 1; }
+  @keyframes tickerFade {
+    0%, 3% { opacity: 0; transform: translateY(4px); }
+    8%, 28% { opacity: 1; transform: translateY(0); }
+    33%, 100% { opacity: 0; transform: translateY(-4px); }
+  }
+
+  .queue {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .queue-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 6px;
+    padding: 12px 14px;
+    border-radius: var(--mk-radius-md);
+    border: 1px solid var(--mk-hairline);
+    background: var(--mk-bg);
+  }
+  .queue-card.is-top {
+    border-color: var(--mk-accent);
+    background: color-mix(in oklch, var(--mk-accent-soft) 55%, var(--mk-bg));
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .js .queue-card.is-top {
+      animation: pulseRing 2.6s var(--mk-ease-out) infinite;
+    }
+  }
+  @keyframes pulseRing {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--mk-accent) 35%, transparent); }
+    50% { box-shadow: 0 0 0 6px color-mix(in oklch, var(--mk-accent) 0%, transparent); }
+  }
+  .queue-course {
+    grid-row: 1;
+    font-family: var(--mk-font-mono);
+    font-size: 11px;
+    color: var(--mk-faint);
+    letter-spacing: 0.04em;
+  }
+  .queue-topic {
+    grid-row: 1;
+    font-size: 14.5px;
+    font-weight: 560;
+  }
+  .queue-meta { grid-row: 1; }
+  .queue-bar {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: block;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--mk-hairline);
+    overflow: hidden;
+  }
+  .queue-bar span {
+    display: block;
+    height: 100%;
+    width: var(--fill);
+    background: var(--mk-accent);
+    border-radius: inherit;
+  }
+
+  @media (max-width: 860px) {
+    .hero-inner {
+      grid-template-columns: 1fr;
+    }
+    .hero-vignette { order: -1; max-width: 460px; }
+  }
+  @media (max-width: 480px) {
+    .queue-card { grid-template-columns: 1fr auto; }
+    .queue-course { display: none; }
+  }
+</style>

@@ -1,0 +1,44 @@
+---
+// Small mono-type diagnostic tag — the recurring "system status" motif
+// used across the hero queue, the feature vignettes, and nowhere else,
+// so it reads as one consistent language for "why this concept, now."
+interface Props {
+  kind: 'weak' | 'stale' | 'due' | 'ontrack';
+  class?: string;
+}
+const { kind, class: className } = Astro.props;
+---
+<span class:list={['pill', kind, className]}><slot /></span>
+
+<style>
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--mk-font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1;
+    padding: 5px 8px;
+    border-radius: var(--mk-radius-sm);
+    white-space: nowrap;
+  }
+  .weak {
+    color: var(--mk-danger);
+    background: color-mix(in oklch, var(--mk-danger) 14%, var(--mk-surface));
+  }
+  .stale {
+    color: var(--mk-warn);
+    background: color-mix(in oklch, var(--mk-warn) 18%, var(--mk-surface));
+  }
+  .due {
+    color: var(--mk-accent-ink);
+    background: var(--mk-accent-soft);
+  }
+  .ontrack {
+    color: var(--mk-muted);
+    background: var(--mk-surface);
+    border: 1px solid var(--mk-border);
+  }
+</style>

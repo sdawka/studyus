@@ -1,0 +1,148 @@
+---
+const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+---
+<section class="feature">
+  <div class="mk-container feature-inner">
+    <div class="feature-vignette reveal reveal-scale" style="--reveal-delay: 160ms" aria-hidden="true">
+      <div class="card">
+        <p class="card-label">This week</p>
+        <div class="week">
+          {days.map((d, i) => (
+            <div class:list={['day', { missed: i === 2 }]}>
+              <span class="day-label">{d}</span>
+              {i === 2 && <span class="day-flag">Sick day</span>}
+            </div>
+          ))}
+        </div>
+        <div class="chip-track">
+          <div class="task-chip">Problem set 4</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-copy">
+      <p class="eyebrow reveal">When it slips</p>
+      <h2 class="reveal" style="--reveal-delay: 60ms">Your week replans itself.</h2>
+      <p class="reveal" style="--reveal-delay: 120ms">
+        Miss a day and a rigid planner just sits there, red and judgmental. Studyus
+        moves what didn't happen to where it still fits — before the deadline, not after.
+      </p>
+      <p class="reveal" style="--reveal-delay: 180ms">
+        No streaks to lose. No "you broke your chain." Just a plan that assumes,
+        correctly, that some weeks go sideways.
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .feature { padding-block: clamp(48px, 8vw, 88px); }
+  .feature-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
+    gap: clamp(32px, 6vw, 72px);
+    align-items: center;
+  }
+  .eyebrow {
+    font-family: var(--mk-font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--mk-muted);
+    margin-bottom: 14px;
+  }
+  h2 {
+    font-size: clamp(26px, 3.4vw, 38px);
+    max-width: 17ch;
+  }
+  .feature-copy p:not(.eyebrow) {
+    margin-top: 14px;
+    color: var(--mk-muted);
+    max-width: 50ch;
+    line-height: 1.6;
+  }
+
+  .card {
+    background: var(--mk-surface);
+    border: 1px solid var(--mk-border);
+    border-radius: var(--mk-radius-lg);
+    box-shadow: var(--mk-shadow-pop);
+    padding: 24px;
+  }
+  .card-label {
+    font-family: var(--mk-font-mono);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--mk-faint);
+    margin-bottom: 18px;
+  }
+  .week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  .day {
+    aspect-ratio: 1;
+    border-radius: var(--mk-radius-sm);
+    border: 1px solid var(--mk-hairline);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+  .day-label {
+    font-family: var(--mk-font-mono);
+    font-size: 13px;
+    color: var(--mk-muted);
+  }
+  .day.missed {
+    border-style: dashed;
+    border-color: var(--mk-danger);
+    background: color-mix(in oklch, var(--mk-danger) 8%, var(--mk-surface));
+  }
+  .day.missed .day-label { color: var(--mk-danger); text-decoration: line-through; }
+  .day-flag {
+    font-family: var(--mk-font-mono);
+    font-size: 8px;
+    color: var(--mk-danger);
+    letter-spacing: 0.03em;
+  }
+
+  .chip-track {
+    position: relative;
+    margin-top: 14px;
+    height: 34px;
+  }
+  .task-chip {
+    position: absolute;
+    top: 0;
+    width: calc(100% / 7 - 6px);
+    padding: 7px 8px;
+    font-size: 11.5px;
+    font-weight: 560;
+    text-align: center;
+    border-radius: var(--mk-radius-sm);
+    background: var(--mk-accent);
+    color: var(--mk-accent-contrast);
+    transform: translateX(calc(3 * (100% / 7)));
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .js .reveal .task-chip { transform: translateX(calc(2 * (100% / 7))); }
+    .js .reveal.is-in .task-chip {
+      animation: replan 1200ms var(--mk-ease-out) 500ms forwards;
+    }
+  }
+  @keyframes replan {
+    0% { transform: translateX(calc(2 * (100% / 7))) translateY(0); }
+    45% { transform: translateX(calc(2 * (100% / 7))) translateY(-10px); }
+    100% { transform: translateX(calc(3 * (100% / 7))) translateY(0); }
+  }
+
+  @media (max-width: 860px) {
+    .feature-inner { grid-template-columns: 1fr; }
+    .feature-vignette { max-width: 380px; order: -1; }
+  }
+</style>
