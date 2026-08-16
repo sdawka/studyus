@@ -641,3 +641,88 @@ Two prop interfaces landed frozen, ahead of their real implementations — neith
 - `ApiTask` gains `completion_note?: string | null`.
 - `toggleTask(id, opts?: { cascadeChildren?: boolean; completionNote?: string })` — `completionNote` only applies on the false→true edge (toggling back to incomplete ignores it); when set, the PATCH body includes `completion_note`.
 - NEW `selectCompleted(tasks: ApiTask[]): ApiTask[]` — completed tasks sorted by `completed_at` descending; the "Ta-Da" tab's data source.
+
+---
+
+## v1.7 Additions — Knowledge graph, scaffolds, misconceptions, corrections, absorb
+
+**Status**: FROZEN contract, ahead of implementation — parallel tracks build the services/routes/UI below against this section; no existing field or endpoint shape changed. Schema landed as another regenerated single-baseline migration (see ADR-003's pre-v0.1 workflow) adding `kc_edges`, `misconceptions`, `scaffolds`, `user_corrections`, plus `kcs.slug`, `tutor_conversations.details`, `tutor_conversations.mode`'s `absorb` value, and `notifications.type`'s `correction_review` value. Content (KCs, edges, scaffolds, misconceptions) originates from `courses/<slug>/content.json` — the frozen contract in `courses/content-schema.md` — seeded by `scripts/seed.ts`; courses without a `content.json` keep the legacy `courses.json`-derived KC set (no graph/scaffolds/misconceptions for those).
+
+### GET /kcs/:id/graph
+
+Traverses `kc_edges` from the target KC to build its full prerequisite graph.
+
+**Response** (200):
+```json
+{
+  "data": {
+    "kc": { "id": "uuid", "name": "string", "kc_type": "...", "mastery": 0, "status": "..." },
+    "prereqs": [
+      { "kc_id": "uuid", "slug": "string|null", "name": "string", "kc_type": "fact|association|concept|rule|principle", "mastery": 0, "status": "not-started|learning|review|mastered", "ready": true, "depth": 1, "prereq_kc_ids": ["uuid"] }
+    ],
+    "warnings": ["string"]
+  }
+}
+```
+
+- **Traversal**: transitive closure over `kc_edges` starting from `:id` (the target KC), following `kc_id → prereq_kc_id` edges outward (i.e. every KC the target depends on, directly or transitively, and everything *those* depend on). Cycle-safe — a visited-set guards against re-entering a node, so a data anomaly (a cycle that slipped past seed-time validation) can't infinite-loop the traversal; a defensively-detected cycle is reported as a string in `warnings` rather than thrown.
+- `depth`: shortest number of hops from the target KC to this prereq node (BFS distance, not DFS-first-seen).
+- `prereq_kc_ids`: this node's own direct prerequisites (one more hop out), so a client can render nested tree structure without a second call.
+- **`ready` rule**: `ready = status !== 'not-started' && mastery >= 40` (the `REVIEW_THRESHOLD` mastery constant, `src/lib/services/mastery.ts::MASTERY_CONSTANTS` — read that file for the authoritative current value if it's changed since this was written). A prereq is "ready" once the learner has engaged with it at all and cleared the review threshold — it does not require `status === 'mastered'`.
+- `warnings`: unresolvable states surfaced non-fatally (e.g. a defensively-caught cycle, or a `prereq_kc_id` pointing at a KC the traversal couldn't load) — empty array in the normal case.
+- Ownership: `:id` must belong to the caller (`requireOwnedKc`); a cross-course prereq edge (content.json's cross-course refs) is followed regardless of which course it lands in, since KC-level ownership is transitively the same user's data once any course is owned — the route does not re-check ownership per traversed node.
+
+### GET /kcs/:id/scaffolds
+
+**Query**: `kind=<scaffold kind>?`, `max_level=1|2|3?` (inclusive upper bound — `max_level=2` returns level 1 and 2 scaffolds, not just level 2).
+
+**Response** (200): `{ "data": [{ "id", "kc_id", "kind", "level", "title", "body", "details", "source", "created_at" }, ...] }` — serialized rows, ordered `sort_order` ascending. `details` is opaque JSON (e.g. an `interactive_model` spec matching `src/lib/services/tutor/modelSpec.ts`, see the AI Tutor section above) — passed through unvalidated at this boundary.
+
+### GET /kcs/:id/misconceptions
+
+**Response** (200): `{ "data": [{ "id", "kc_id", "slug", "name", "description", "root_cause", "diagnostic_probe", "correction", "source", "created_at" }, ...] }`.
+
+### Corrections (the accepted-correction ledger)
+
+### GET /corrections
+**Query**: `status=active|internalized?` (omit for both).
+
+**Response** (200): `{ "data": [Correction, ...] }`, newest (`accepted_at` desc) first. `Correction` shape: all `user_corrections` columns (snake_case, ISO timestamps) plus joined `kc_name` (`string|null`) and `course_slug` (`string|null`) — both populated only when `kc_id` is non-null, `null` otherwise (a freeform correction with no specific KC).
+
+### POST /corrections
+**Request**: `{ "kc_id": "uuid"?, "misconception_id": "uuid"?, "prior_belief": "string?", "correction": "string", "source_conversation_id": "uuid"? }` (`src/lib/schemas/corrections.ts::createCorrectionSchema`). `accepted_at` is stamped server-side with the current time — never client-settable. `status` always starts `active`. Any provided id is ownership-checked (`kc_id` via `requireOwnedKc`, `source_conversation_id` via the caller's own `tutor_conversations`); `misconception_id` is validated to exist but has no direct owner of its own (misconceptions are seed content, not user-scoped).
+
+**Response** (201): the created `Correction` (same shape as the list above).
+
+### PATCH /corrections/:id
+**Request**: `{ "status": "active"|"internalized"? }` (`updateCorrectionSchema`). Ownership-checked (cross-user id → `404 not_found`).
+
+**Response** (200): the updated `Correction`.
+
+### Flows — quick_quiz explicit KC targeting
+
+`POST /flows/quick_quiz` gains an optional `kc_ids: string[]` (`src/lib/schemas/quickQuiz.ts::createQuickQuizSchema`). When present, it **overrides** the existing mastery-heuristic KC selection entirely — the quiz is built from exactly these KCs (ownership-checked the same way as the existing `kc_id` field), in the order given. Intended for prereq verification ahead of an absorb session (e.g. quiz the KCs a `graph` call flagged as not-yet-`ready`) — `kc_id` (singular) and `kc_ids` (plural) are independent optional fields; if both are omitted, the existing lowest-mastery heuristic applies unchanged.
+
+### Tutor conversations — `absorb` mode
+
+`mode` gains `absorb` (`TUTOR_MODES` in `src/lib/schemas/tutor.ts`) alongside the existing five. `POST /tutor/conversations` gains an optional `details` object:
+
+```json
+{ "kc_id": "uuid", "mode": "absorb"?, "details": { "flow": "absorb"?, "focus_order": ["uuid", ...] }? }
+```
+
+`details` is stored verbatim on `tutor_conversations.details` (JSON, default `{}`) and echoed back on `GET /tutor/conversations/:id`. For an absorb conversation, `focus_order` is the ordered list of KC ids the flow intends to walk through (typically the not-yet-`ready` prereqs from a prior `GET /kcs/:id/graph` call, target KC last).
+
+**Absorb context assembly**: an absorb conversation's system-prompt context assembly (`conversations.ts`) is a superset of the standard context (documented in the AI Tutor section above) — it additionally includes: the full prereq graph for the target KC (`GET /kcs/:id/graph`'s traversal, inlined), each prereq's readiness, the target KC's `misconceptions`, and its `scaffolds` (all levels). This lets the tutor open with a prereq check when a dependency isn't `ready`, and reach for a matched scaffold or a known misconception's `diagnostic_probe` instead of improvising.
+
+**Correction proposals**: during an absorb conversation, the assistant may emit at most one additional fenced ` ```json ` block per message (independent of, and in addition to, the existing `interactive_model` block — a message could in principle carry both, though in practice a given turn emits one or the other):
+
+```json
+{ "type": "correction_proposal", "misconception_slug": "string?", "prior_belief": "string", "correction": "string" }
+```
+
+`misconception_slug` is set when the proposal matches a known `misconceptions` row for the KC (client can look up its full record via `GET /kcs/:id/misconceptions`); omitted for a freeform correction the tutor identified that isn't one of the seeded misconceptions. This block is **client-interpreted only** — unlike `interactive_model`, the server does not parse or validate it server-side; the client renders an accept/dismiss affordance and, on accept, calls `POST /corrections` with `{ correction, prior_belief, misconception_id (resolved from the slug via a KC-scoped misconceptions lookup, if present), source_conversation_id }`. Dismissing does nothing server-side (no row is ever created for a dismissed proposal).
+
+### Notifications — `correction_review`
+
+`type` gains `correction_review` (`NOTIFICATION_TYPES` in `src/lib/schemas/notifications.ts`). Swept (same idempotent-sweep idiom as the other five families, `services/notifications.ts`) from `user_corrections` where `status = 'active'` **and** (`last_reminded_at is null and accepted_at < now - 14d`) **or** (`last_reminded_at < now - 14d`) — i.e. an active, not-yet-internalized correction gets a spaced-repetition-style nudge starting 14 days after acceptance, then every 14 days again as long as it stays `active`. Dedupe key: `correction_review:<user_correction_id>:<bucket>` where `bucket = floor(now / 14d)` (a 14-day epoch bucket, not tied to `accepted_at` or `last_reminded_at`) — so at most one `correction_review` notification per correction per 14-day bucket, re-firing in the next bucket if the correction is still active and unreminded-within-window. The sweep is expected to stamp `last_reminded_at = now` on the `user_corrections` row when it inserts the notification (same "sweep writes back to its source row" pattern as `attend_class`'s two-way sync), so a correction that gets `internalized` between sweeps stops generating new notifications immediately (the `status = 'active'` filter excludes it on the next run).

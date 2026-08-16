@@ -5,7 +5,7 @@
 import { and, desc, eq, gte, inArray, lte, ne } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { events, kcs } from '../../db/schema';
-import type { CreateEventInput, ListEventsQuery, UpdateEventInput } from '../schemas/events';
+import type { CreateEventInput, EventSource, ListEventsQuery, UpdateEventInput } from '../schemas/events';
 import { EVENT_ROLE_FLAGS } from '../schemas/events';
 import { toEpochMs } from '../schemas/common';
 import { foldMastery } from './mastery';
@@ -32,7 +32,11 @@ async function foldedKcUpdate(db: Db, kcId: string, eventsForFold: Array<Pick<Ev
   return { updateStmt, delta };
 }
 
-export async function createEvent(db: Db, userId: string, input: CreateEventInput) {
+// `source` defaults to 'manual' (the only source POST /events itself ever
+// creates — that route's caller never passes it); tutor/quiz flows pass
+// 'tutor'/'seed' explicitly. PATCH /events/:id keeps gating on
+// `source === 'manual'` regardless of what this created the row with.
+export async function createEvent(db: Db, userId: string, input: CreateEventInput, source: EventSource = 'manual') {
   if (input.course_id) await requireOwnedCourse(db, userId, input.course_id);
   if (input.kc_id) await requireOwnedKc(db, userId, input.kc_id);
 
@@ -49,7 +53,7 @@ export async function createEvent(db: Db, userId: string, input: CreateEventInpu
     courseId: input.course_id ?? null,
     sessionId: null as string | null,
     payload: input.payload ?? {},
-    source: 'manual' as const,
+    source,
     createdAt: now,
   };
 

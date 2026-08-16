@@ -8,10 +8,13 @@ import { getDb } from '../src/db/client';
 import { branches, courses, kcs, users } from '../src/db/schema';
 import { createAssessmentSchema, updateAssessmentSchema } from '../src/lib/schemas/assessments';
 import { createCourseSchema, updateCourseSchema } from '../src/lib/schemas/courses';
+import { createCorrectionSchema } from '../src/lib/schemas/corrections';
 import { kcEventsQuerySchema } from '../src/lib/schemas/events';
 import { createNoteSchema, updateNoteSchema } from '../src/lib/schemas/notes';
+import { createQuickQuizSchema } from '../src/lib/schemas/quickQuiz';
 import { createStudySessionSchema } from '../src/lib/schemas/sessions';
 import { createTaskSchema, updateTaskSchema } from '../src/lib/schemas/tasks';
+import { createConversationSchema } from '../src/lib/schemas/tutor';
 import { GET as kcEventsRoute } from '../src/pages/api/v1/kcs/[id]/events';
 
 const db = getDb(env.DB);
@@ -95,6 +98,54 @@ describe('kcs/:id/events query — limit/offset validation', () => {
 
   it('accepts omitted limit/offset (both optional)', () => {
     expect(() => kcEventsQuerySchema.parse({})).not.toThrow();
+  });
+});
+
+describe('corrections — prior_belief/correction caps (v1.7)', () => {
+  it('rejects prior_belief over 2000 chars and correction over 2000', () => {
+    expect(() => createCorrectionSchema.parse({ correction: 'x'.repeat(2001) })).toThrow();
+    expect(() => createCorrectionSchema.parse({ prior_belief: 'x'.repeat(2001), correction: 'ok' })).toThrow();
+  });
+
+  it('accepts values at the cap', () => {
+    expect(() =>
+      createCorrectionSchema.parse({ prior_belief: 'x'.repeat(2000), correction: 'y'.repeat(2000) }),
+    ).not.toThrow();
+  });
+
+  it('requires a non-empty correction', () => {
+    expect(() => createCorrectionSchema.parse({ correction: '' })).toThrow();
+  });
+});
+
+describe('quick_quiz — kc_ids explicit targeting (v1.7)', () => {
+  it('rejects a malformed id in kc_ids', () => {
+    expect(() => createQuickQuizSchema.parse({ kc_ids: ['not-a-valid-id'] })).toThrow();
+  });
+
+  it('accepts a well-formed kc_ids array', () => {
+    expect(() => createQuickQuizSchema.parse({ kc_ids: ['12345678-1234-1234-1234-123456789012'] })).not.toThrow();
+  });
+});
+
+describe('tutor conversations — absorb mode + details (v1.7)', () => {
+  it('accepts mode "absorb" with a details.focus_order array', () => {
+    expect(() =>
+      createConversationSchema.parse({
+        kc_id: '12345678-1234-1234-1234-123456789012',
+        mode: 'absorb',
+        details: { flow: 'absorb', focus_order: ['12345678-1234-1234-1234-123456789012'] },
+      }),
+    ).not.toThrow();
+  });
+
+  it('rejects a malformed id inside details.focus_order', () => {
+    expect(() =>
+      createConversationSchema.parse({
+        kc_id: '12345678-1234-1234-1234-123456789012',
+        details: { focus_order: ['not-an-id'] },
+      }),
+    ).toThrow();
   });
 });
 

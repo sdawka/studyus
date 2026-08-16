@@ -2,14 +2,24 @@ import { z } from 'zod';
 import { idSchema } from './common';
 
 // Mirrors the `tutor_conversations.mode` enum in db/schema.ts.
-export const TUTOR_MODES = ['recall', 'classify', 'worked_example', 'self_explain', 'interactive_model'] as const;
+export const TUTOR_MODES = ['recall', 'classify', 'worked_example', 'self_explain', 'interactive_model', 'absorb'] as const;
 export type TutorMode = (typeof TUTOR_MODES)[number];
+
+// v1.7: absorb-flow extras carried on tutor_conversations.details —
+// { flow: 'absorb', focus_order: [kcId, ...] }. Loose/optional throughout so
+// non-absorb conversations can omit `details` entirely.
+export const conversationDetailsSchema = z.strictObject({
+  flow: z.literal('absorb').optional(),
+  focus_order: z.array(idSchema).optional(),
+});
+export type ConversationDetailsInput = z.infer<typeof conversationDetailsSchema>;
 
 export const createConversationSchema = z.strictObject({
   kc_id: idSchema,
   // Optional override of the kc_type-derived default (e.g. a principle KC
   // defaulting to interactive_model can be started as self_explain instead).
   mode: z.enum(TUTOR_MODES).optional(),
+  details: conversationDetailsSchema.optional(),
 });
 export type CreateConversationInput = z.infer<typeof createConversationSchema>;
 

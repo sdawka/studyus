@@ -69,9 +69,73 @@ No `updated_at`. Not user-scoped by a `user_id` FK (it's the root of the ownersh
 - `mastery` (integer, 0–100, default `0`) — **derived cache**, recomputed on every event write via `foldMastery` (see `events-and-mastery.md`)
 - `status` (text, default `'not-started'`) — one of `not-started | learning | review | mastered` (`KC_STATUSES` in `src/lib/services/mastery.ts`; **not** `not_started`/`in_progress` as a prior draft of this doc claimed)
 - `last_event_at` (integer, nullable) — most recent event timestamp for this KC, used as the idle-decay anchor
+- `slug` (text, nullable) — **v1.7**: stable kebab-case slug from `courses/<slug>/content.json` (e.g. `"bernoulli-equation"`); `null` for legacy (non-content.json) KCs
 - `created_at`
 
-**No `user_id` column** (ownership is via `course_id`). Index: `kcs_course_id_idx` on (`course_id`).
+**No `user_id` column** (ownership is via `course_id`). Indexes: `kcs_course_id_idx` on (`course_id`); `kcs_course_slug_unique` (unique, v1.7) on (`course_id`, `slug`) — SQLite's multi-NULL unique semantics let every legacy `NULL` slug coexist fine.
+
+### kc_edges (v1.7 — knowledge graph)
+
+Prerequisite edges between KCs: `(kc_id)` depends on `(prereq_kc_id)`.
+
+- `id` (text, pk)
+- `kc_id` → `kcs.id`, **ON DELETE CASCADE** — the dependent KC
+- `prereq_kc_id` → `kcs.id`, **ON DELETE CASCADE** — the prerequisite KC
+- `relation` (text enum: `prerequisite`, default `'prerequisite'`)
+- `source` (text enum: `seed | user`, default `'seed'`)
+- `created_at`
+
+**No `user_id` column** (ownership flows `kc_id` → `kcs.course_id` → `courses.user_id`, same as `assessment_kcs`). May cross courses (a cross-course prereq ref in `content.json`), so there's no single `course_id` column either. Indexes: `kc_edges_kc_prereq_unique` (unique) on (`kc_id`, `prereq_kc_id`); `kc_edges_prereq_kc_id_idx` on (`prereq_kc_id`).
+
+### misconceptions (v1.7)
+
+- `id` (text, pk)
+- `kc_id` → `kcs.id`, **ON DELETE CASCADE**
+- `slug` (text) — unique within the KC
+- `name` (text)
+- `description` (text) — the wrong belief, stated in the learner's voice/logic
+- `root_cause` (text) — where the belief comes from (prior intuition, overgeneralized rule, surface-feature pattern)
+- `diagnostic_probe` (text) — a question whose answer reveals whether the learner holds the misconception
+- `correction` (text) — the canonical corrected statement; this exact text becomes a `user_corrections.correction` ledger entry when accepted in the tutor
+- `source` (text enum: `seed | tutor`, default `'seed'`)
+- `created_at`
+
+**No `user_id` column** (ownership via `kc_id`). Index: `misconceptions_kc_slug_unique` (unique) on (`kc_id`, `slug`).
+
+### scaffolds (v1.7)
+
+KLI-matched instructional scaffolds for a KC (worked examples, retrieval prompts, etc. — see `courses/content-schema.md`'s `kc_type` → scaffold-kind mapping table, grounded in `events-and-mastery.md`'s KLI taxonomy).
+
+- `id` (text, pk)
+- `kc_id` → `kcs.id`, **ON DELETE CASCADE**
+- `kind` (text enum: `retrieval_prompt | mnemonic | matching_drill | classification_task | contrast_examples | worked_example | procedure_outline | self_explanation_prompt | derivation_walkthrough | interactive_model | analogy`)
+- `level` (integer, default `1`) — support level: `1` = high support (fully worked/heavily cued), `2` = medium (partially faded/hinted), `3` = low (independent/bare prompt); used for fading ladders on `rule` KCs
+- `title` (text)
+- `body` (text) — markdown; the actual scaffold content a tutor or the UI presents verbatim
+- `details` (text, JSON mode, default `'{}'`) — opaque JSON; for `interactive_model` a model spec matching `src/lib/services/tutor/modelSpec.ts` (see `docs/api.md`'s AI Tutor section)
+- `sort_order` (integer, default `0`)
+- `source` (text enum: `seed | user`, default `'seed'`)
+- `created_at`
+
+**No `user_id` column** (ownership via `kc_id`). Index: `scaffolds_kc_id_idx` on (`kc_id`).
+
+### user_corrections (v1.7 — the accepted-correction ledger)
+
+Entries created when a tutor's fenced `correction_proposal` (absorb flow) is accepted by the client, or manually via `POST /corrections`.
+
+- `id` (text, pk)
+- `user_id` → `users.id`, **ON DELETE CASCADE**
+- `kc_id` → `kcs.id`, nullable, **ON DELETE SET NULL**
+- `misconception_id` → `misconceptions.id`, nullable, **ON DELETE SET NULL**
+- `prior_belief` (text, nullable)
+- `correction` (text) — not nullable; the canonical corrected statement (often copied verbatim from `misconceptions.correction`)
+- `status` (text enum: `active | internalized`, default `'active'`)
+- `accepted_at` (integer) — not nullable; stamped server-side, never client-settable
+- `source_conversation_id` → `tutor_conversations.id`, nullable, **ON DELETE SET NULL**
+- `last_reminded_at` (integer, nullable) — last time the `correction_review` notification fired for this entry
+- `created_at`
+
+Index: `user_corrections_user_status_idx` on (`user_id`, `status`).
 
 ### events — the source of truth for mastery
 
@@ -218,7 +282,8 @@ No additional index beyond the implicit primary key.
 - `id` (text, pk)
 - `user_id` → `users.id`, **ON DELETE CASCADE**
 - `kc_id` → `kcs.id`, **ON DELETE CASCADE**
-- `mode` (text enum: `recall | classify | worked_example | self_explain | interactive_model`)
+- `mode` (text enum: `recall | classify | worked_example | self_explain | interactive_model | absorb`) — **v1.7** adds `absorb`
+- `details` (text, JSON mode, default `'{}'`) — **v1.7**: flow-specific extras, e.g. `{flow: 'absorb', focus_order: [kcId, ...]}` for an absorb conversation's prereq traversal order
 - `created_at`
 
 ### tutor_messages
@@ -233,7 +298,7 @@ No additional index beyond the implicit primary key.
 
 - `id` (text, pk)
 - `user_id` → `users.id`, **ON DELETE CASCADE**
-- `type` (text enum: `assessment_due | task_overdue | kc_review | session_unfinished | grade_recorded`)
+- `type` (text enum: `assessment_due | task_overdue | kc_review | session_unfinished | grade_recorded | correction_review`) — **v1.7** adds `correction_review`
 - `title` (text)
 - `body` (text, nullable)
 - `course_id` → `courses.id`, nullable, **ON DELETE SET NULL**
@@ -272,6 +337,12 @@ Every non-PK index currently in the schema:
 | `events_kc_id_idx` | events | kc_id | |
 | `events_user_ts_idx` | events | user_id, ts | |
 | `kcs_course_id_idx` | kcs | course_id | |
+| `kcs_course_slug_unique` | kcs | course_id, slug | ✓ |
+| `kc_edges_kc_prereq_unique` | kc_edges | kc_id, prereq_kc_id | ✓ |
+| `kc_edges_prereq_kc_id_idx` | kc_edges | prereq_kc_id | |
+| `misconceptions_kc_slug_unique` | misconceptions | kc_id, slug | ✓ |
+| `scaffolds_kc_id_idx` | scaffolds | kc_id | |
+| `user_corrections_user_status_idx` | user_corrections | user_id, status | |
 | `notifications_dedupe_key_unique` | notifications | dedupe_key | ✓ |
 | `notifications_user_read_created_idx` | notifications | user_id, read_at, created_at | |
 | `study_sessions_user_scheduled_idx` | study_sessions | user_id, scheduled_at | |
@@ -295,6 +366,14 @@ All FKs below are real SQL `FOREIGN KEY ... ON DELETE ...` constraints emitted i
 | branches.course_id | courses.id | cascade |
 | kcs.branch_id | branches.id | cascade |
 | kcs.course_id | courses.id | cascade |
+| kc_edges.kc_id | kcs.id | cascade |
+| kc_edges.prereq_kc_id | kcs.id | cascade |
+| misconceptions.kc_id | kcs.id | cascade |
+| scaffolds.kc_id | kcs.id | cascade |
+| user_corrections.user_id | users.id | cascade |
+| user_corrections.kc_id | kcs.id | set null |
+| user_corrections.misconception_id | misconceptions.id | set null |
+| user_corrections.source_conversation_id | tutor_conversations.id | set null |
 | events.user_id | users.id | cascade |
 | events.kc_id | kcs.id | set null |
 | events.course_id | courses.id | set null |
@@ -354,7 +433,7 @@ This is NOT stored — it's computed server-side on every request from `courses`
 
 ## TODO
 
-- Knowledge map table design (concept graph, prerequisite edges, transitive mastery closure).
+- ~~Knowledge map table design (concept graph, prerequisite edges, transitive mastery closure).~~ **Done, v1.7**: `kc_edges` models prerequisite edges; `GET /api/v1/kcs/:id/graph` (`docs/api.md`'s v1.7 section) computes the transitive-closure traversal + readiness at request time — there is still no persisted mastery-closure cache, just the edge table and a pure traversal.
 - Versioning strategy for qmatrix and KC taxonomy (how to migrate existing mappings).
 - Archival & data retention policy (how long do we keep old events?).
 - `attachments.note_id` is schema-ready (nullable FK, `ON DELETE SET NULL`) but has no writer yet — either wire a note-scoped upload route or drop the column if it stays unused.

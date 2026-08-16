@@ -7,6 +7,7 @@ export const NOTIFICATION_TYPES = [
   'kc_review',
   'session_unfinished',
   'grade_recorded',
+  'correction_review',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

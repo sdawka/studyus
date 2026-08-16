@@ -2,14 +2,19 @@
 // courses -> branches -> kcs (concepts), canonical/feed links -> resources,
 // and a single seeded user from SEED_USER_EMAIL/SEED_USER_PASSWORD.
 //
+// v1.7: for any course with a courses/<slug>/content.json (see
+// courses/content-schema.md), that file supersedes the course's legacy
+// branches/canonical/feed keys — see the content.json pipeline block below.
+//
 // Runs outside the Workers runtime (plain Node + tsx), so it shells out to
 // `wrangler d1 execute --local` with generated SQL rather than importing the
 // Workers-only `cloudflare:workers` module or drizzle's D1 driver directly.
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { EVENT_ROLE_FLAGS } from '../src/lib/schemas/events';
+import { type CourseContent, courseContentSchema, resolveContentGraph } from '../src/lib/content/courseContent';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -91,6 +96,54 @@ async function main() {
   const coursesPath = join(process.cwd(), 'courses', 'courses.json');
   const coursesData: CourseJson[] = JSON.parse(readFileSync(coursesPath, 'utf-8'));
 
+  // ---------------------------------------------------------------------
+  // content.json pipeline (v1.7): load + validate any real
+  // courses/<slug>/content.json files before touching statements. Missing
+  // file = fallback to the legacy courses.json path for that course below,
+  // no error; a present-but-invalid file aborts the whole seed with the
+  // file path (thrown here, surfaced by main().catch at the bottom).
+  // Cross-course resolution (prereqs, assessment kc_slugs) needs every file
+  // loaded first, hence this pass runs ahead of the main per-course loop —
+  // zero, some, or all nine files may exist at any given run.
+  // ---------------------------------------------------------------------
+  const contentBySlug = new Map<string, CourseContent>();
+  for (const course of coursesData) {
+    const contentPath = join(process.cwd(), 'courses', course.slug, 'content.json');
+    if (!existsSync(contentPath)) continue;
+    let raw: unknown;
+    try {
+      raw = JSON.parse(readFileSync(contentPath, 'utf-8'));
+    } catch (err) {
+      throw new Error(`Failed to read/parse ${contentPath}: ${(err as Error).message}`);
+    }
+    const result = courseContentSchema.safeParse(raw);
+    if (!result.success) {
+      const issues = result.error.issues.map((i) => `  ${i.path.join('.') || '(root)'}: ${i.message}`).join('\n');
+      throw new Error(`Content validation failed for ${contentPath}:\n${issues}`);
+    }
+    contentBySlug.set(course.slug, result.data);
+  }
+  const contentFiles = [...contentBySlug.values()];
+  // Throws (aborting the seed) on an unresolvable cycle, including through
+  // cross-course edges — see courses/content-schema.md's prereqs section.
+  const contentGraph = resolveContentGraph(contentFiles);
+  // kcKey (`${courseSlug}#${kcSlug}`) -> deterministic kcs.id, computed once
+  // up front so cross-course prereq edges and assessment links resolve to
+  // the same id used when that KC's own INSERT is emitted below.
+  const contentKcIdByKey = new Map<string, string>();
+  for (const key of contentGraph.kcCatalog.keys()) {
+    contentKcIdByKey.set(key, deterministicId('kc', key));
+  }
+  // `${courseSlug}:${assessmentIndex}` -> deterministic assessments.id,
+  // filled in per-course in the main loop below as each content-driven
+  // assessment is inserted; read back afterward to link assessment_kcs.
+  const contentAssessmentIdByIndex = new Map<string, string>();
+  // courseSlug -> per-course stats, printed in the summary at the end.
+  const contentStatsBySlug = new Map<
+    string,
+    { kcCount: number; kcTypeCounts: Record<string, number>; scaffoldCount: number; misconceptionCount: number }
+  >();
+
   const seedEmail = process.env.SEED_USER_EMAIL || 'student@example.com';
   const seedPassword = process.env.SEED_USER_PASSWORD || 'studyus';
   const passwordHash = await pbkdf2Hash(seedPassword);
@@ -152,49 +205,171 @@ async function main() {
     );
 
     const courseKcs: { id: string; name: string }[] = [];
+    const contentFile = contentBySlug.get(course.slug);
 
-    (course.branches || []).forEach((branch, branchIdx) => {
-      const branchId = deterministicId('branch', `${course.slug}:${branch.branch}`);
-      statements.push(
-        `INSERT INTO branches (id, course_id, name, sort_order, created_at)
-         VALUES (${sqlStr(branchId)}, ${sqlStr(courseId)}, ${sqlStr(branch.branch)}, ${branchIdx}, ${Date.now()})
-         ON CONFLICT(id) DO UPDATE SET name=excluded.name, sort_order=excluded.sort_order;`,
-      );
+    if (contentFile) {
+      // --- content.json path (v1.7): supersedes this course's legacy
+      // branches/canonical/feed keys entirely — see
+      // courses/content-schema.md's "Relationship to courses.json". ---
+      const stats = { kcCount: 0, kcTypeCounts: {} as Record<string, number>, scaffoldCount: 0, misconceptionCount: 0 };
+      contentStatsBySlug.set(course.slug, stats);
 
-      (branch.concepts || []).forEach((concept, conceptIdx) => {
-        const kcId = deterministicId('kc', `${course.slug}:${branch.branch}:${concept.name}`);
-        const kcType = kcTypeFor(concept.name);
+      contentFile.branches.forEach((branch) => {
+        const branchId = deterministicId('branch', `${course.slug}#${branch.slug}`);
         statements.push(
-          `INSERT INTO kcs (id, branch_id, course_id, name, kc_type, description, practice_notes, sort_order, mastery, status, last_event_at, created_at)
-           VALUES (${sqlStr(kcId)}, ${sqlStr(branchId)}, ${sqlStr(courseId)}, ${sqlStr(concept.name)}, ${sqlStr(kcType)}, NULL, ${sqlStr(concept.practice || null)}, ${conceptIdx}, ${sqlStr(concept.confidence || 0)}, ${sqlStr(concept.status || 'not-started')}, NULL, ${Date.now()})
-           ON CONFLICT(id) DO UPDATE SET
-             name=excluded.name, kc_type=excluded.kc_type, practice_notes=excluded.practice_notes, sort_order=excluded.sort_order;`,
+          `INSERT INTO branches (id, course_id, name, sort_order, created_at)
+           VALUES (${sqlStr(branchId)}, ${sqlStr(courseId)}, ${sqlStr(branch.name)}, ${branch.sort_order}, ${Date.now()})
+           ON CONFLICT(id) DO UPDATE SET name=excluded.name, sort_order=excluded.sort_order;`,
         );
-        courseKcs.push({ id: kcId, name: concept.name });
+
+        branch.kcs.forEach((kc) => {
+          const kcKey = `${course.slug}#${kc.slug}`;
+          const kcId = contentKcIdByKey.get(kcKey)!;
+          stats.kcCount += 1;
+          stats.kcTypeCounts[kc.kc_type] = (stats.kcTypeCounts[kc.kc_type] ?? 0) + 1;
+
+          // KC upsert (v1.7): reseeding refreshes kc_type/description/
+          // practice_notes/slug/sort_order but NEVER mastery/status/
+          // last_event_at — those are user-derived caches, recomputed only
+          // by the events service (see db/schema.ts's kcs doc comment).
+          statements.push(
+            `INSERT INTO kcs (id, branch_id, course_id, name, kc_type, description, practice_notes, slug, sort_order, mastery, status, last_event_at, created_at)
+             VALUES (${sqlStr(kcId)}, ${sqlStr(branchId)}, ${sqlStr(courseId)}, ${sqlStr(kc.name)}, ${sqlStr(kc.kc_type)}, ${sqlStr(kc.description)}, ${sqlStr(kc.practice_notes)}, ${sqlStr(kc.slug)}, ${kc.sort_order}, 0, 'not-started', NULL, ${Date.now()})
+             ON CONFLICT(id) DO UPDATE SET
+               name=excluded.name, kc_type=excluded.kc_type, description=excluded.description,
+               practice_notes=excluded.practice_notes, slug=excluded.slug, sort_order=excluded.sort_order;`,
+          );
+          courseKcs.push({ id: kcId, name: kc.name });
+
+          kc.resources.forEach((resource) => {
+            const resourceId = deterministicId('resource', `${resource.kind}:${course.slug}:${kc.slug}:${resource.url}`);
+            statements.push(
+              `INSERT INTO resources (id, user_id, url, label, kind, course_id, kc_id, pinned, added_by, created_at)
+               VALUES (${sqlStr(resourceId)}, ${sqlStr(userId)}, ${sqlStr(resource.url)}, ${sqlStr(resource.label)}, ${sqlStr(resource.kind)}, ${sqlStr(courseId)}, ${sqlStr(kcId)}, ${sqlStr(resource.pinned)}, ${sqlStr('seed')}, ${Date.now()})
+               ON CONFLICT(id) DO UPDATE SET label=excluded.label, pinned=excluded.pinned;`,
+            );
+          });
+
+          kc.scaffolds.forEach((scaffold, scaffoldIdx) => {
+            stats.scaffoldCount += 1;
+            const scaffoldId = deterministicId('scaffold', `${kcId}:${scaffoldIdx}`);
+            statements.push(
+              `INSERT INTO scaffolds (id, kc_id, kind, level, title, body, details, sort_order, source, created_at)
+               VALUES (${sqlStr(scaffoldId)}, ${sqlStr(kcId)}, ${sqlStr(scaffold.kind)}, ${scaffold.level}, ${sqlStr(scaffold.title)}, ${sqlStr(scaffold.body)}, ${sqlStr(JSON.stringify(scaffold.details ?? {}))}, ${scaffoldIdx}, 'seed', ${Date.now()})
+               ON CONFLICT(id) DO UPDATE SET
+                 kind=excluded.kind, level=excluded.level, title=excluded.title, body=excluded.body,
+                 details=excluded.details, sort_order=excluded.sort_order;`,
+            );
+          });
+
+          kc.misconceptions.forEach((misconception) => {
+            stats.misconceptionCount += 1;
+            const misconceptionId = deterministicId('misconception', `${kcId}:${misconception.slug}`);
+            statements.push(
+              `INSERT INTO misconceptions (id, kc_id, slug, name, description, root_cause, diagnostic_probe, correction, source, created_at)
+               VALUES (${sqlStr(misconceptionId)}, ${sqlStr(kcId)}, ${sqlStr(misconception.slug)}, ${sqlStr(misconception.name)}, ${sqlStr(misconception.description)}, ${sqlStr(misconception.root_cause)}, ${sqlStr(misconception.diagnostic_probe)}, ${sqlStr(misconception.correction)}, 'seed', ${Date.now()})
+               ON CONFLICT(id) DO UPDATE SET
+                 name=excluded.name, description=excluded.description, root_cause=excluded.root_cause,
+                 diagnostic_probe=excluded.diagnostic_probe, correction=excluded.correction;`,
+            );
+          });
+        });
       });
-    });
 
-    (course.canonical || []).forEach((link) => {
-      const resourceId = deterministicId('resource', `canonical:${course.slug}:${link.url}`);
-      statements.push(
-        `INSERT INTO resources (id, user_id, url, label, kind, course_id, kc_id, pinned, added_by, created_at)
-         VALUES (${sqlStr(resourceId)}, ${sqlStr(userId)}, ${sqlStr(link.url)}, ${sqlStr(link.label)}, 'canonical', ${sqlStr(courseId)}, NULL, 0, ${sqlStr('seed')}, ${Date.now()})
-         ON CONFLICT(id) DO UPDATE SET label=excluded.label;`,
-      );
-    });
+      contentFile.course_resources.forEach((resource) => {
+        const resourceId = deterministicId('resource', `${resource.kind}:${course.slug}:course:${resource.url}`);
+        statements.push(
+          `INSERT INTO resources (id, user_id, url, label, kind, course_id, kc_id, pinned, added_by, created_at)
+           VALUES (${sqlStr(resourceId)}, ${sqlStr(userId)}, ${sqlStr(resource.url)}, ${sqlStr(resource.label)}, ${sqlStr(resource.kind)}, ${sqlStr(courseId)}, NULL, ${sqlStr(resource.pinned)}, ${sqlStr('seed')}, ${Date.now()})
+           ON CONFLICT(id) DO UPDATE SET label=excluded.label, pinned=excluded.pinned;`,
+        );
+      });
 
-    (course.feed || []).forEach((link) => {
-      const resourceId = deterministicId('resource', `feed:${course.slug}:${link.url}`);
-      statements.push(
-        `INSERT INTO resources (id, user_id, url, label, kind, course_id, kc_id, pinned, added_by, created_at)
-         VALUES (${sqlStr(resourceId)}, ${sqlStr(userId)}, ${sqlStr(link.url)}, ${sqlStr(link.label)}, 'feed', ${sqlStr(courseId)}, NULL, 0, ${sqlStr('seed')}, ${Date.now()})
-         ON CONFLICT(id) DO UPDATE SET label=excluded.label;`,
-      );
-    });
+      contentFile.assessments.forEach((assessment, assessmentIdx) => {
+        const assessmentId = deterministicId('assessment', `content:${course.slug}:${assessment.title}`);
+        contentAssessmentIdByIndex.set(`${course.slug}:${assessmentIdx}`, assessmentId);
+        const dueDateMs = assessment.due_date ? localNoonFromIsoDate(assessment.due_date) : null;
+        statements.push(
+          `INSERT INTO assessments (id, course_id, title, type, due_date, weight_pct, grade_received, grade_max, kind, created_at)
+           VALUES (${sqlStr(assessmentId)}, ${sqlStr(courseId)}, ${sqlStr(assessment.title)}, ${sqlStr(assessment.type)}, ${sqlStr(dueDateMs)}, ${sqlStr(assessment.weight_pct ?? null)}, NULL, 100, ${sqlStr(assessment.kind)}, ${Date.now()})
+           ON CONFLICT(id) DO UPDATE SET due_date=excluded.due_date, weight_pct=excluded.weight_pct, kind=excluded.kind;`,
+        );
+      });
+    } else {
+      // --- legacy courses.json path (unchanged) ---
+      (course.branches || []).forEach((branch, branchIdx) => {
+        const branchId = deterministicId('branch', `${course.slug}:${branch.branch}`);
+        statements.push(
+          `INSERT INTO branches (id, course_id, name, sort_order, created_at)
+           VALUES (${sqlStr(branchId)}, ${sqlStr(courseId)}, ${sqlStr(branch.branch)}, ${branchIdx}, ${Date.now()})
+           ON CONFLICT(id) DO UPDATE SET name=excluded.name, sort_order=excluded.sort_order;`,
+        );
+
+        (branch.concepts || []).forEach((concept, conceptIdx) => {
+          const kcId = deterministicId('kc', `${course.slug}:${branch.branch}:${concept.name}`);
+          const kcType = kcTypeFor(concept.name);
+          statements.push(
+            `INSERT INTO kcs (id, branch_id, course_id, name, kc_type, description, practice_notes, slug, sort_order, mastery, status, last_event_at, created_at)
+             VALUES (${sqlStr(kcId)}, ${sqlStr(branchId)}, ${sqlStr(courseId)}, ${sqlStr(concept.name)}, ${sqlStr(kcType)}, NULL, ${sqlStr(concept.practice || null)}, NULL, ${conceptIdx}, ${sqlStr(concept.confidence || 0)}, ${sqlStr(concept.status || 'not-started')}, NULL, ${Date.now()})
+             ON CONFLICT(id) DO UPDATE SET
+               name=excluded.name, kc_type=excluded.kc_type, description=excluded.description,
+               practice_notes=excluded.practice_notes, slug=excluded.slug, sort_order=excluded.sort_order;`,
+          );
+          courseKcs.push({ id: kcId, name: concept.name });
+        });
+      });
+
+      (course.canonical || []).forEach((link) => {
+        const resourceId = deterministicId('resource', `canonical:${course.slug}:${link.url}`);
+        statements.push(
+          `INSERT INTO resources (id, user_id, url, label, kind, course_id, kc_id, pinned, added_by, created_at)
+           VALUES (${sqlStr(resourceId)}, ${sqlStr(userId)}, ${sqlStr(link.url)}, ${sqlStr(link.label)}, 'canonical', ${sqlStr(courseId)}, NULL, 0, ${sqlStr('seed')}, ${Date.now()})
+           ON CONFLICT(id) DO UPDATE SET label=excluded.label;`,
+        );
+      });
+
+      (course.feed || []).forEach((link) => {
+        const resourceId = deterministicId('resource', `feed:${course.slug}:${link.url}`);
+        statements.push(
+          `INSERT INTO resources (id, user_id, url, label, kind, course_id, kc_id, pinned, added_by, created_at)
+           VALUES (${sqlStr(resourceId)}, ${sqlStr(userId)}, ${sqlStr(link.url)}, ${sqlStr(link.label)}, 'feed', ${sqlStr(courseId)}, NULL, 0, ${sqlStr('seed')}, ${Date.now()})
+           ON CONFLICT(id) DO UPDATE SET label=excluded.label;`,
+        );
+      });
+    }
 
     if (isCurrentTerm) {
       currentTermCourses.push({ id: courseId, slug: course.slug, meetingDays, timeSlot, kcs: courseKcs });
     }
+  }
+
+  // kc_edges (v1.7) — a global pass since edges are resolved across all
+  // content files (including cross-course prereqs), independent of any
+  // single course's loop iteration above.
+  for (const edge of contentGraph.edges) {
+    const kcId = contentKcIdByKey.get(edge.kcKey);
+    const prereqKcId = contentKcIdByKey.get(edge.prereqKcKey);
+    if (!kcId || !prereqKcId) continue; // defensive; resolveContentGraph only emits resolvable edges
+    const edgeId = deterministicId('kcedge', `${kcId}:${prereqKcId}`);
+    statements.push(
+      `INSERT INTO kc_edges (id, kc_id, prereq_kc_id, relation, source, created_at)
+       VALUES (${sqlStr(edgeId)}, ${sqlStr(kcId)}, ${sqlStr(prereqKcId)}, 'prerequisite', 'seed', ${now})
+       ON CONFLICT(id) DO NOTHING;`,
+    );
+  }
+
+  // assessment_kcs from content.json's kc_slugs (v1.7) — same idea; needs
+  // the assessment ids assigned during the per-course loop above.
+  for (const link of contentGraph.assessmentLinks) {
+    const assessmentId = contentAssessmentIdByIndex.get(`${link.courseSlug}:${link.assessmentIndex}`);
+    const kcId = contentKcIdByKey.get(link.kcKey);
+    if (!assessmentId || !kcId) continue;
+    const linkId = deterministicId('assessmentkc', `${assessmentId}:${kcId}`);
+    statements.push(
+      `INSERT INTO assessment_kcs (id, assessment_id, kc_id, qmatrix_version, created_at)
+       VALUES (${sqlStr(linkId)}, ${sqlStr(assessmentId)}, ${sqlStr(kcId)}, 1, ${now})
+       ON CONFLICT(id) DO NOTHING;`,
+    );
   }
 
   // ---------------------------------------------------------------------
@@ -547,6 +722,28 @@ async function main() {
   );
 
   console.log(`Seeded ${coursesData.length} courses (user: ${seedEmail}).`);
+
+  console.log('\n--- Content pipeline summary ---');
+  for (const course of coursesData) {
+    const stats = contentStatsBySlug.get(course.slug);
+    if (!stats) {
+      console.log(`  ${course.slug}: legacy courses.json path (no content.json)`);
+      continue;
+    }
+    const typeSummary = Object.entries(stats.kcTypeCounts)
+      .map(([type, count]) => `${type}:${count}`)
+      .join(', ');
+    const edgeCount = contentGraph.edges.filter((e) => e.kcKey.startsWith(`${course.slug}#`)).length;
+    console.log(
+      `  ${course.slug}: content.json — KCs ${stats.kcCount} (${typeSummary}), edges ${edgeCount}, scaffolds ${stats.scaffoldCount}, misconceptions ${stats.misconceptionCount}`,
+    );
+  }
+  if (contentGraph.warnings.length) {
+    console.log(`\n${contentGraph.warnings.length} content graph warning(s):`);
+    contentGraph.warnings.forEach((w) => console.log(`  - ${w}`));
+  } else if (contentFiles.length) {
+    console.log('\nNo content graph warnings.');
+  }
 }
 
 // Deterministic UUID-shaped id derived from a stable key, so re-running the
@@ -567,6 +764,16 @@ function deterministicId(namespace: string, key: string): string {
   const hex = h1.toString(16).padStart(8, '0') + h2.toString(16).padStart(8, '0');
   const padded = (hex + hex).slice(0, 32);
   return `${padded.slice(0, 8)}-${padded.slice(8, 12)}-${padded.slice(12, 16)}-${padded.slice(16, 20)}-${padded.slice(20, 32)}`;
+}
+
+// Converts a plain ISO date string ("YYYY-MM-DD", as content.json's
+// assessment.due_date carries) to epoch ms at UTC noon of that day — same
+// "local noon" convention as class_sessions.date (see this script's own
+// localNoonDaysAgo and services/classSessions.ts), which avoids a TZ
+// day-shift at the API boundary.
+function localNoonFromIsoDate(isoDate: string): number {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  return Date.UTC(year, month - 1, day, 12, 0, 0, 0);
 }
 
 main().catch((err) => {

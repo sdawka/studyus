@@ -96,6 +96,11 @@ export const kcs = sqliteTable(
       .default('concept'),
     description: text('description'),
     practiceNotes: text('practice_notes'),
+    // v1.7: stable kebab-case slug from courses/<slug>/content.json (e.g.
+    // "bernoulli-equation"), nullable for legacy (non-content.json) KCs.
+    // Unique per course (see kcsCourseSlugUnique below) — SQLite's multi-NULL
+    // unique semantics let every legacy NULL slug coexist fine.
+    slug: text('slug'),
     sortOrder: integer('sort_order').notNull().default(0),
     // Derived caches, recomputed on every event write.
     mastery: integer('mastery').notNull().default(0), // 0-100
@@ -103,7 +108,98 @@ export const kcs = sqliteTable(
     lastEventAt: integer('last_event_at'),
     createdAt: createdAt(),
   },
-  (table) => [index('kcs_course_id_idx').on(table.courseId)],
+  (table) => [
+    index('kcs_course_id_idx').on(table.courseId),
+    uniqueIndex('kcs_course_slug_unique').on(table.courseId, table.slug),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// Knowledge graph, scaffolds, misconceptions (v1.7 — courses/<slug>/content.json)
+// ---------------------------------------------------------------------------
+
+// Prerequisite edges between KCs: (kcId) depends on (prereqKcId). No
+// user_id — ownership flows through kcId -> kcs.courseId -> courses.userId,
+// same as assessment_kcs. May cross courses (a cross-course prereq ref in
+// content.json), so no single course_id column either.
+export const kcEdges = sqliteTable(
+  'kc_edges',
+  {
+    id: id(),
+    kcId: text('kc_id')
+      .notNull()
+      .references(() => kcs.id, { onDelete: 'cascade' }),
+    prereqKcId: text('prereq_kc_id')
+      .notNull()
+      .references(() => kcs.id, { onDelete: 'cascade' }),
+    relation: text('relation', { enum: ['prerequisite'] }).notNull().default('prerequisite'),
+    source: text('source', { enum: ['seed', 'user'] }).notNull().default('seed'),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex('kc_edges_kc_prereq_unique').on(table.kcId, table.prereqKcId),
+    index('kc_edges_prereq_kc_id_idx').on(table.prereqKcId),
+  ],
+);
+
+export const misconceptions = sqliteTable(
+  'misconceptions',
+  {
+    id: id(),
+    kcId: text('kc_id')
+      .notNull()
+      .references(() => kcs.id, { onDelete: 'cascade' }),
+    slug: text('slug').notNull(),
+    name: text('name').notNull(),
+    description: text('description').notNull(),
+    rootCause: text('root_cause').notNull(),
+    diagnosticProbe: text('diagnostic_probe').notNull(),
+    correction: text('correction').notNull(),
+    source: text('source', { enum: ['seed', 'tutor'] }).notNull().default('seed'),
+    createdAt: createdAt(),
+  },
+  (table) => [uniqueIndex('misconceptions_kc_slug_unique').on(table.kcId, table.slug)],
+);
+
+// KLI-matched instructional scaffolds for a KC (worked examples, retrieval
+// prompts, etc. — see courses/content-schema.md's kc_type -> scaffold kind
+// mapping table). `level` = support level: 1 = high support, 2 = medium,
+// 3 = low/independent — used for fading ladders on `rule` KCs.
+export const scaffolds = sqliteTable(
+  'scaffolds',
+  {
+    id: id(),
+    kcId: text('kc_id')
+      .notNull()
+      .references(() => kcs.id, { onDelete: 'cascade' }),
+    kind: text('kind', {
+      enum: [
+        'retrieval_prompt',
+        'mnemonic',
+        'matching_drill',
+        'classification_task',
+        'contrast_examples',
+        'worked_example',
+        'procedure_outline',
+        'self_explanation_prompt',
+        'derivation_walkthrough',
+        'interactive_model',
+        'analogy',
+      ],
+    }).notNull(),
+    level: integer('level').notNull().default(1),
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    // Opaque JSON — e.g. an interactive_model spec matching
+    // src/lib/services/tutor/modelSpec.ts (see docs/api.md AI Tutor section).
+    details: text('details', { mode: 'json' })
+      .notNull()
+      .default(sql`'{}'`),
+    sortOrder: integer('sort_order').notNull().default(0),
+    source: text('source', { enum: ['seed', 'user'] }).notNull().default('seed'),
+    createdAt: createdAt(),
+  },
+  (table) => [index('scaffolds_kc_id_idx').on(table.kcId)],
 );
 
 // ---------------------------------------------------------------------------
@@ -358,8 +454,13 @@ export const tutorConversations = sqliteTable('tutor_conversations', {
     .notNull()
     .references(() => kcs.id, { onDelete: 'cascade' }),
   mode: text('mode', {
-    enum: ['recall', 'classify', 'worked_example', 'self_explain', 'interactive_model'],
+    enum: ['recall', 'classify', 'worked_example', 'self_explain', 'interactive_model', 'absorb'],
   }).notNull(),
+  // v1.7: carries flow-specific extras, e.g. { flow: 'absorb', focus_order:
+  // [kcId, ...] } for an absorb conversation's prereq traversal order.
+  details: text('details', { mode: 'json' })
+    .notNull()
+    .default(sql`'{}'`),
   createdAt: createdAt(),
 });
 
@@ -373,6 +474,30 @@ export const tutorMessages = sqliteTable('tutor_messages', {
   createdAt: createdAt(),
 });
 
+// v1.7: a user's accepted-correction ledger — entries created when a tutor's
+// correction_proposal (absorb flow) is accepted, or manually. No FK-required
+// kc_id/misconception_id (both nullable, set-null) since a correction can be
+// freeform (no specific misconception matched).
+export const userCorrections = sqliteTable(
+  'user_corrections',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    kcId: text('kc_id').references(() => kcs.id, { onDelete: 'set null' }),
+    misconceptionId: text('misconception_id').references(() => misconceptions.id, { onDelete: 'set null' }),
+    priorBelief: text('prior_belief'),
+    correction: text('correction').notNull(),
+    status: text('status', { enum: ['active', 'internalized'] }).notNull().default('active'),
+    acceptedAt: integer('accepted_at').notNull(),
+    sourceConversationId: text('source_conversation_id').references(() => tutorConversations.id, { onDelete: 'set null' }),
+    lastRemindedAt: integer('last_reminded_at'),
+    createdAt: createdAt(),
+  },
+  (table) => [index('user_corrections_user_status_idx').on(table.userId, table.status)],
+);
+
 // ---------------------------------------------------------------------------
 // Notifications (v1.1)
 // ---------------------------------------------------------------------------
@@ -385,7 +510,7 @@ export const notifications = sqliteTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     type: text('type', {
-      enum: ['assessment_due', 'task_overdue', 'kc_review', 'session_unfinished', 'grade_recorded'],
+      enum: ['assessment_due', 'task_overdue', 'kc_review', 'session_unfinished', 'grade_recorded', 'correction_review'],
     }).notNull(),
     title: text('title').notNull(),
     body: text('body'),
