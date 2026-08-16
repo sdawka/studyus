@@ -1,9 +1,17 @@
 ---
-if (!Astro.locals.user) {
-  return Astro.redirect('/login');
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+import Landing from '../components/marketing/landing/Landing.astro';
+
+if (Astro.locals.user) {
+  if (!Astro.locals.user.onboardedAt) {
+    return Astro.redirect('/onboarding');
+  }
+  return Astro.redirect('/dashboard');
 }
-if (!Astro.locals.user.onboardedAt) {
-  return Astro.redirect('/onboarding');
-}
-return Astro.redirect('/dashboard');
 ---
+<MarketingLayout
+  title="studyus — know what to study next"
+  description="The study planner for university students that doesn't just track deadlines — it tells you what to study next, and proves you're learning."
+>
+  <Landing />
+</MarketingLayout>

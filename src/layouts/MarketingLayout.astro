@@ -1,0 +1,150 @@
+---
+import '@fontsource-variable/space-grotesk';
+import '@fontsource-variable/inter';
+import '../styles/marketing.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+const isCompare = Astro.url.pathname.startsWith('/compare');
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+    <script>
+      // Marks JS availability so .reveal's hidden initial state only ever
+      // applies when the observer below is guaranteed to run.
+      document.documentElement.classList.add('js');
+    </script>
+  </head>
+  <body>
+    <header class="mk-nav">
+      <div class="mk-container mk-nav-inner">
+        <a class="mk-wordmark" href="/">studyus</a>
+        <nav class="mk-nav-links" aria-label="Site">
+          <a href="/compare" aria-current={isCompare ? 'page' : undefined}>Compare</a>
+          <a href="/login">Log in</a>
+          <a class="mk-btn mk-btn-primary mk-nav-cta" href="/login">Get started</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="mk-footer">
+      <div class="mk-container mk-footer-inner">
+        <span class="mk-wordmark">studyus</span>
+        <nav class="mk-footer-links" aria-label="Footer">
+          <a href="/compare">Compare</a>
+          <a href="/login">Log in</a>
+        </nav>
+        <span class="mk-footer-note">Built for students who want the plan, not another app to manage.</span>
+      </div>
+    </footer>
+
+    <script>
+      const els = document.querySelectorAll('.reveal');
+      if (matchMedia('(prefers-reduced-motion: no-preference)').matches && 'IntersectionObserver' in window) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) {
+              if (e.isIntersecting) {
+                e.target.classList.add('is-in');
+                io.unobserve(e.target);
+              }
+            }
+          },
+          { threshold: 0.15, rootMargin: '0px 0px -8% 0px' }
+        );
+        els.forEach((el) => io.observe(el));
+      } else {
+        els.forEach((el) => el.classList.add('is-in'));
+      }
+    </script>
+
+    <style>
+      .mk-nav {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: color-mix(in oklch, var(--mk-bg) 82%, transparent);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--mk-hairline);
+      }
+      .mk-nav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 64px;
+      }
+      .mk-wordmark {
+        font-family: var(--mk-font-display);
+        font-weight: 640;
+        font-size: 19px;
+        letter-spacing: -0.02em;
+        text-decoration: none;
+      }
+      .mk-wordmark::after {
+        content: '.';
+        color: var(--mk-accent);
+      }
+      .mk-nav-links {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+      }
+      .mk-nav-links a:not(.mk-btn) {
+        font-size: 15px;
+        color: var(--mk-muted);
+        text-decoration: none;
+        transition: color 150ms;
+      }
+      .mk-nav-links a:not(.mk-btn):hover,
+      .mk-nav-links a[aria-current='page'] {
+        color: var(--mk-ink);
+      }
+      .mk-nav-cta { padding: 9px 18px; font-size: 14px; }
+
+      .mk-footer {
+        border-top: 1px solid var(--mk-hairline);
+        padding-block: 40px;
+        margin-top: 96px;
+      }
+      .mk-footer-inner {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 16px 32px;
+      }
+      .mk-footer-links {
+        display: flex;
+        gap: 20px;
+      }
+      .mk-footer-links a {
+        color: var(--mk-muted);
+        font-size: 14px;
+        text-decoration: none;
+      }
+      .mk-footer-links a:hover { color: var(--mk-ink); }
+      .mk-footer-note {
+        margin-left: auto;
+        color: var(--mk-faint);
+        font-size: 13px;
+      }
+      @media (max-width: 560px) {
+        .mk-nav-links { gap: 14px; }
+        .mk-footer-note { margin-left: 0; }
+      }
+    </style>
+  </body>
+</html>

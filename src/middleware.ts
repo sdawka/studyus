@@ -4,7 +4,7 @@ import { getDb } from './db/client';
 import { SESSION_COOKIE_NAME, validateSessionToken } from './lib/auth/session';
 import { apiError } from './lib/api';
 
-const PUBLIC_PAGE_PATHS = new Set(['/login']);
+const PUBLIC_PAGE_PATHS = new Set(['/', '/login', '/compare']);
 
 function isPublicApiPath(pathname: string): boolean {
   return pathname.startsWith('/api/v1/auth/');
