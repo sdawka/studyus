@@ -16,6 +16,7 @@
     worked_example: 'Worked example',
     self_explain: 'Self-explain',
     interactive_model: 'Interactive model',
+    absorb: 'Absorb session',
   };
 </script>
 
@@ -27,16 +28,22 @@
     {:else}
       <div class="card-grid">
         {#each principleKcs as kc (kc.id)}
-          <a class="model-card" href={`/tutor/${kc.id}`}>
-            <span class="kc-type">Principle</span>
-            <span class="kc-name">{kc.name}</span>
-          </a>
+          <div class="model-card">
+            <a class="model-link" href={`/tutor/${kc.id}`}>
+              <span class="kc-type">Principle</span>
+              <span class="kc-name">{kc.name}</span>
+            </a>
+            <a class="understand-link" href={`/learn/${kc.id}`}>Understand</a>
+          </div>
         {/each}
         {#each conceptKcs as kc (kc.id)}
-          <a class="model-card secondary" href={`/tutor/${kc.id}`}>
-            <span class="kc-type">Concept</span>
-            <span class="kc-name">{kc.name}</span>
-          </a>
+          <div class="model-card secondary">
+            <a class="model-link" href={`/tutor/${kc.id}`}>
+              <span class="kc-type">Concept</span>
+              <span class="kc-name">{kc.name}</span>
+            </a>
+            <a class="understand-link" href={`/learn/${kc.id}`}>Understand</a>
+          </div>
         {/each}
       </div>
     {/if}
@@ -73,18 +80,19 @@
   .model-card {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.5rem;
     padding: 0.9rem 1rem;
     border: 1px solid var(--border);
     border-radius: 10px;
-    text-decoration: none;
-    color: var(--text);
     background: var(--surface);
   }
   .model-card:hover { border-color: var(--accent); }
   .model-card.secondary { opacity: 0.85; }
+  .model-link { display: flex; flex-direction: column; gap: 0.4rem; text-decoration: none; color: var(--text); }
   .kc-type { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
   .kc-name { font-size: 0.95rem; font-weight: 550; }
+  .understand-link { align-self: flex-start; font-size: 0.78rem; font-weight: 550; color: var(--accent); text-decoration: none; }
+  .understand-link:hover { text-decoration: underline; }
 
   .convo-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
   .convo-row {

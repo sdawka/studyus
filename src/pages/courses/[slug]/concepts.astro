@@ -28,12 +28,17 @@ try {
       <ul class="kc-list">
         {branch.kcs.map((kc) => (
           <li>
-            <a class="kc-row" href={`/courses/${course.slug}/kc/${kc.id}`}>
-              <span class="kc-name">{kc.name}</span>
+            <!-- Not an <a> at the row level — Understand needs its own link
+                 target alongside the KC-detail one, and anchors can't nest. -->
+            <div class="kc-row">
+              <a class="kc-name-link" href={`/courses/${course.slug}/kc/${kc.id}`}>
+                <span class="kc-name">{kc.name}</span>
+              </a>
               <KcTypeBadge kcType={kc.kcType} />
               <span class="kc-bar"><MasteryBar mastery={kc.mastery} status={kc.status} /></span>
               <StatusChip status={kc.status} />
-            </a>
+              <a class="understand-link" href={`/learn/${kc.id}`}>Understand</a>
+            </div>
           </li>
         ))}
         {branch.kcs.length === 0 && <li class="placeholder">No KCs in this branch.</li>}
@@ -55,15 +60,37 @@ try {
     padding: 0.55rem 0.8rem;
     border: 1px solid var(--border);
     border-radius: 8px;
-    text-decoration: none;
     color: var(--text);
   }
   .kc-row:hover { border-color: var(--accent); }
-  .kc-name { flex: 1; font-size: 0.92rem; }
-  .kc-bar { width: 140px; }
+  .kc-name-link {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    text-decoration: none;
+    color: inherit;
+  }
+  .kc-name {
+    font-size: 0.92rem;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .kc-bar { width: 140px; flex-shrink: 0; }
+  .understand-link {
+    flex: none;
+    font-size: 0.82rem;
+    font-weight: 550;
+    color: var(--accent);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .understand-link:hover { text-decoration: underline; }
 
-  /* PHONE — main content-box ≤ 480px: two-line row so the mastery bar
-     gets full width instead of squeezing next to name/badge/status.
+  /* PHONE — main content-box ≤ 480px: three-line row so the mastery bar
+     and Understand link each get their own full-width row instead of
+     squeezing next to name/badge/status.
      KcTypeBadge and StatusChip are separate components — their root
      elements need :global() to be targeted from this file's scoped CSS. */
   @container (max-width: 480px) {
@@ -72,20 +99,16 @@ try {
       grid-template-columns: 1fr auto auto;
       grid-template-areas:
         "name badge status"
-        "bar bar bar";
+        "bar bar bar"
+        "understand understand understand";
       column-gap: 0.6rem;
       row-gap: 0.4rem;
       align-items: center;
     }
-    .kc-name {
-      grid-area: name;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+    .kc-name-link { grid-area: name; }
     .kc-row :global(.kc-type-badge) { grid-area: badge; }
     .kc-bar { grid-area: bar; width: auto; }
     .kc-row :global(.status-chip) { grid-area: status; }
+    .understand-link { grid-area: understand; justify-self: end; }
   }
 </style>

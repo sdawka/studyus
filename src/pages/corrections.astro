@@ -1,0 +1,37 @@
+---
+// /corrections — the accepted-correction ledger (docs/api.md v1.7). Loads
+// the full list server-side (both statuses; the ledger is small per-user,
+// so the client filters in place rather than round-tripping per toggle —
+// same "server loads everything, island filters" convention as tasks.astro/
+// TasksView).
+import { env } from 'cloudflare:workers';
+import AppShell from '../layouts/AppShell.astro';
+import { getDb } from '../db/client';
+import { listCorrections } from '../lib/services/corrections';
+import { toApi } from '../lib/serialize';
+import CorrectionsLedger from '../components/corrections/CorrectionsLedger.svelte';
+
+const db = getDb(env.DB);
+const userId = Astro.locals.user!.id;
+
+const corrections = await listCorrections(db, userId, {});
+const initialCorrections = toApi(corrections);
+---
+
+<AppShell title="Corrections">
+  <div class="page-head">
+    <h1>Corrections</h1>
+    <p class="intro">
+      Beliefs the tutor flagged and you accepted as corrected, so they resurface on a spaced
+      schedule until you mark them internalized.
+    </p>
+  </div>
+
+  <CorrectionsLedger client:load initialCorrections={initialCorrections} />
+</AppShell>
+
+<style>
+  .page-head { margin-bottom: 1.5rem; }
+  .page-head h1 { font-size: 1.4rem; margin: 0 0 0.4rem 0; }
+  .intro { color: var(--muted); font-size: 0.9rem; margin: 0; max-width: 560px; }
+</style>

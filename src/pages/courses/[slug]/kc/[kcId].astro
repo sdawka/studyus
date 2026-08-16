@@ -70,7 +70,10 @@ const historyEvents = [...recentEvents].reverse();
     </div>
     {kc.description && <p class="description">{kc.description}</p>}
     {kc.practiceNotes && <p class="practice-notes"><strong>Practice notes:</strong> {kc.practiceNotes}</p>}
-    <a class="tutor-btn" href={`/tutor/${kc.id}`}>Tutor me</a>
+    <div class="action-row">
+      <a class="tutor-btn" href={`/tutor/${kc.id}`}>Tutor me</a>
+      <a class="understand-btn" href={`/learn/${kc.id}`}>Understand</a>
+    </div>
   </header>
 
   <section class="section">
@@ -132,17 +135,18 @@ const historyEvents = [...recentEvents].reverse();
   .bar-wrap { flex: 1; }
   .description { margin: 0.6rem 0 0 0; max-width: 700px; }
   .practice-notes { margin: 0.5rem 0 0 0; max-width: 700px; font-size: 0.9rem; color: var(--muted); }
-  .tutor-btn {
+  .action-row { display: flex; gap: 0.6rem; margin-top: 1rem; flex-wrap: wrap; }
+  .tutor-btn,
+  .understand-btn {
     display: inline-block;
-    margin-top: 1rem;
-    background: var(--accent);
-    color: var(--surface);
     text-decoration: none;
     padding: 0.55rem 1rem;
     border-radius: 8px;
     font-size: 0.9rem;
     font-weight: 600;
   }
+  .tutor-btn { background: var(--accent); color: var(--surface); }
+  .understand-btn { background: var(--hover); color: var(--text); }
 
   .section { margin-bottom: 2.25rem; }
   .section h2 { font-size: 1rem; margin: 0 0 0.7rem 0; }

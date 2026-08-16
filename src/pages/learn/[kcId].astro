@@ -1,0 +1,63 @@
+---
+// /learn/:kcId — the absorb experience's entry point (docs/api.md v1.7:
+// prereq map -> verify -> interest ordering -> absorb chat). Server-side
+// only loads the target KC + its full prereq graph (getKcGraph); everything
+// after that (verify quiz, ranking, the tutor conversation itself) is client
+// state inside AbsorbFlow, same "Astro calls services directly, islands use
+// apiFetch" split as every other page in the app.
+import { env } from 'cloudflare:workers';
+import { eq } from 'drizzle-orm';
+import AppShell from '../../layouts/AppShell.astro';
+import { getDb } from '../../db/client';
+import { courses } from '../../db/schema';
+import { getKc } from '../../lib/services/kcs';
+import { getKcGraph } from '../../lib/services/knowledgeMap';
+import { NotFoundError, notFound } from '../../lib/handleNotFound';
+import AbsorbFlow from '../../components/learn/AbsorbFlow.svelte';
+
+const db = getDb(env.DB);
+const userId = Astro.locals.user!.id;
+const kcId = Astro.params.kcId!;
+
+let kc;
+try {
+  kc = await getKc(db, userId, kcId);
+} catch (err) {
+  if (err instanceof NotFoundError) return notFound(Astro);
+  throw err;
+}
+
+const graph = await getKcGraph(db, userId, kcId);
+
+const courseRows = await db
+  .select({ slug: courses.slug, code: courses.code })
+  .from(courses)
+  .where(eq(courses.id, kc.courseId))
+  .limit(1);
+const course = courseRows[0];
+---
+
+<AppShell title={`Understand · ${kc.name}`}>
+  <p class="breadcrumb">
+    <a href="/courses">Courses</a>
+    {course && <> / <a href={`/courses/${course.slug}`}>{course.code}</a> / <a href={`/courses/${course.slug}/kc/${kc.id}`}>{kc.name}</a></>}
+    {' '}/ Understand
+  </p>
+
+  <h1 class="page-title">Understand: {kc.name}</h1>
+
+  <AbsorbFlow
+    client:load
+    kcId={kc.id}
+    initialKc={graph.kc}
+    initialPrereqs={graph.prereqs}
+    initialWarnings={graph.warnings}
+  />
+</AppShell>
+
+<style>
+  .breadcrumb { font-size: 0.8rem; color: var(--muted); margin: 0 0 1rem 0; }
+  .breadcrumb a { color: var(--muted); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--text); }
+  .page-title { font-size: 1.4rem; margin: 0 0 1.5rem 0; }
+</style>

@@ -48,6 +48,7 @@
              is intentionally unchanged — these rows don't exist there. -->
         <button type="button" class="row" onclick={() => togglePopover('scratchpad')}>Scratchpad</button>
         <a class="row" href="/feed" onclick={onClose}>Feed</a>
+        <a class="row" href="/corrections" onclick={onClose}>Corrections</a>
         <div class="divider"></div>
         {@render menuRows()}
       </Sheet>

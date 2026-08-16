@@ -49,6 +49,12 @@ const CONFIG = {
   email: process.env.LAYOUT_CHECK_EMAIL || 'student@example.com',
   password: process.env.LAYOUT_CHECK_PASSWORD || 'studyus',
   course: process.env.LAYOUT_CHECK_COURSE || 'chee-314-fluid-mechanics',
+  // v1.7 /learn absorb experience (wave-2 UI track) — "Continuity equation"
+  // in the seeded chee-314 course, chosen because it has 3 not-ready
+  // prereqs (real seed data, not fixture-only), so the prereq-map stage
+  // actually renders the amber/not-ready state this check matrix cares
+  // about. Update if that KC's id or readiness ever drifts after a reseed.
+  learnKcId: process.env.LAYOUT_CHECK_LEARN_KC || 'cfe52a8d-1867-c4db-cfe5-2a8d1867c4db',
 
   // src/styles/tokens.css --content-max
   contentMaxPx: 1320,
@@ -89,6 +95,9 @@ const CONFIG = {
     'course-overview': (course) => `/courses/${course}`,
     'course-concepts': (course) => `/courses/${course}/concepts`,
     'course-resources': (course) => `/courses/${course}/resources`,
+    // v1.7 additions (wave-2 UI track).
+    learn: () => `/learn/${CONFIG.learnKcId}`,
+    corrections: '/corrections',
   },
 
   // Checks that are known to flake right now because another agent is
