@@ -40,6 +40,16 @@ Escape hatch: `PUBLIC_DOCS_OVERLAY=true npm run build` (a real shell export — 
 trigger it) forces the overlay into a build for a preview smoke test, and logs a loud warning.
 `PUBLIC_DOCS_OVERLAY=false` turns it off in dev.
 
+**Dev-loop gotcha, observed in practice:** a long-running `astro dev` daemon can silently stop
+emitting the injected `astro:scripts/page.js` after later edits — the overlay then renders nothing
+at all, on every route, with no console error and no server error, which looks exactly like a code
+defect. Confirm by curling an authenticated page and grepping for `astro:scripts/page.js`; if only
+`before-hydration.js` is present, the injection was dropped. The fix is the same recovery the repo
+already documents for the Vite cache: `astro dev stop`, then
+`rm -rf node_modules/.vite node_modules/.astro .astro`, then `astro dev --force`. Do this before
+concluding the overlay is broken, and note that grepping the HTML for `mount.ts` is **not** a valid
+check — the injected script is a bundled virtual module and never mentions the source filename.
+
 ## The binding rule
 
 `src/lib/docs-overlay/annotations.ts` — `ROUTE_ANNOTATIONS: RouteAnnotation[]` plus
