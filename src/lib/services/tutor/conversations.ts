@@ -11,17 +11,37 @@ import { and, asc, desc, eq } from 'drizzle-orm';
 import type { Db } from '../../../db/client';
 import { branches, courses, kcs, notes, noteLinks, tutorConversations, tutorMessages } from '../../../db/schema';
 import type { KcType } from '../../schemas/kcs';
-import type { CreateConversationInput, EndConversationInput, ListConversationsQuery, TutorMode } from '../../schemas/tutor';
+import type {
+  ConversationDetailsInput,
+  CreateConversationInput,
+  EndConversationInput,
+  ListConversationsQuery,
+  TutorMode,
+} from '../../schemas/tutor';
 import { createEvent, getKcEvents } from '../events';
+import { getKcGraph, listKcMisconceptions, listKcScaffolds } from '../knowledgeMap';
 import { NotFoundError, requireOwnedKc } from '../util';
-import { buildSystemPrompt, modeForKcType, type TutorContext } from './prompts';
+import { buildSystemPrompt, modeForKcType, type AbsorbMisconception, type AbsorbPrereq, type AbsorbScaffold, type TutorContext } from './prompts';
 import { relayAsSSE, streamChatCompletion, type ChatMessage } from './openrouter';
 
 export const MAX_MESSAGES_PER_CONVERSATION = 30;
 
+// Absorb arcs walk 4 stages (prereq check -> synthesis -> misconception
+// probing -> correction proposals) across potentially several prereqs, so a
+// realistic arc needs more room than a single-mode conversation — e.g. 3
+// not-ready prereqs alone can take 6+ exchanges before Stage B even starts.
+// Doubling the standard cap keeps the same cost-bounding intent (a hard
+// server-enforced ceiling, not just a UI suggestion) while giving the longer
+// arc space to actually complete.
+export const MAX_MESSAGES_PER_CONVERSATION_ABSORB = 60;
+
+function capFor(mode: TutorMode): number {
+  return mode === 'absorb' ? MAX_MESSAGES_PER_CONVERSATION_ABSORB : MAX_MESSAGES_PER_CONVERSATION;
+}
+
 export class ConversationCapReachedError extends Error {
-  constructor() {
-    super(`This conversation has reached its ${MAX_MESSAGES_PER_CONVERSATION}-message cap — please end it and start a fresh one.`);
+  constructor(cap: number = MAX_MESSAGES_PER_CONVERSATION) {
+    super(`This conversation has reached its ${cap}-message cap — please end it and start a fresh one.`);
     this.name = 'ConversationCapReachedError';
   }
 }
@@ -33,7 +53,7 @@ export async function createConversation(db: Db, userId: string, input: CreateCo
   const mode: TutorMode = input.mode ?? modeForKcType(kc.kcType as KcType);
 
   const id = crypto.randomUUID();
-  await db.insert(tutorConversations).values({ id, userId, kcId: kc.id, mode });
+  await db.insert(tutorConversations).values({ id, userId, kcId: kc.id, mode, details: input.details ?? {} });
 
   const rows = await db.select().from(tutorConversations).where(eq(tutorConversations.id, id)).limit(1);
   return rows[0];
@@ -85,7 +105,69 @@ export async function getConversation(db: Db, userId: string, conversationId: st
   return { ...convo, messages };
 }
 
-async function assembleTutorContext(db: Db, userId: string, kc: Awaited<ReturnType<typeof requireOwnedKc>>, mode: TutorMode): Promise<TutorContext> {
+// getKcGraph/listKcMisconceptions/listKcScaffolds (../knowledgeMap) return
+// rows shaped to mirror their respective GET response contracts in
+// docs/api.md (snake_case field names like kc_id/kc_type/root_cause) — but
+// since that module is built on a parallel track, these mappers accept
+// either casing defensively (camelCase Drizzle-row style or snake_case
+// API-shaped style) so this file doesn't silently break on a casing choice
+// made after this was written.
+function field(row: Record<string, unknown>, camel: string, snake: string): unknown {
+  return row[camel] !== undefined ? row[camel] : row[snake];
+}
+
+function toAbsorbPrereq(node: Record<string, unknown>): AbsorbPrereq {
+  return {
+    kcId: field(node, 'kcId', 'kc_id') as string,
+    slug: (node.slug ?? null) as string | null,
+    name: node.name as string,
+    kcType: field(node, 'kcType', 'kc_type') as KcType,
+    mastery: (node.mastery as number) ?? 0,
+    status: (node.status as string) ?? 'not-started',
+    ready: Boolean(node.ready),
+    depth: (node.depth as number) ?? 0,
+  };
+}
+
+function toAbsorbMisconception(row: Record<string, unknown>): AbsorbMisconception {
+  return {
+    slug: row.slug as string,
+    name: row.name as string,
+    description: row.description as string,
+    rootCause: field(row, 'rootCause', 'root_cause') as string,
+    diagnosticProbe: field(row, 'diagnosticProbe', 'diagnostic_probe') as string,
+    correction: row.correction as string,
+  };
+}
+
+function toAbsorbScaffold(row: Record<string, unknown>): AbsorbScaffold {
+  return {
+    kind: row.kind as string,
+    level: row.level as number,
+    title: row.title as string,
+    body: row.body as string,
+  };
+}
+
+// Orders prereqs for Stage B synthesis: any prereq the learner explicitly
+// ordered via focus_order comes first (in that order), then remaining
+// prereqs fall back to graph-depth ascending (nearest dependencies first).
+function orderAbsorbPrereqs(prereqs: AbsorbPrereq[], focusOrder: string[]): AbsorbPrereq[] {
+  const focusIndex = new Map(focusOrder.map((id, i) => [id, i]));
+  return [...prereqs].sort((a, b) => {
+    const ai = focusIndex.has(a.kcId) ? focusIndex.get(a.kcId)! : Infinity;
+    const bi = focusIndex.has(b.kcId) ? focusIndex.get(b.kcId)! : Infinity;
+    return ai !== bi ? ai - bi : a.depth - b.depth;
+  });
+}
+
+async function assembleTutorContext(
+  db: Db,
+  userId: string,
+  kc: Awaited<ReturnType<typeof requireOwnedKc>>,
+  mode: TutorMode,
+  details: ConversationDetailsInput | Record<string, unknown> | null | undefined,
+): Promise<TutorContext> {
   const [branchRows, courseRows, recentEvents, linkedNoteRows] = await Promise.all([
     db.select().from(branches).where(eq(branches.id, kc.branchId)).limit(1),
     db.select().from(courses).where(eq(courses.id, kc.courseId)).limit(1),
@@ -97,7 +179,7 @@ async function assembleTutorContext(db: Db, userId: string, kc: Awaited<ReturnTy
       .where(eq(noteLinks.kcId, kc.id)),
   ]);
 
-  return {
+  const base: TutorContext = {
     kc: { name: kc.name, type: kc.kcType as KcType, description: kc.description, practiceNotes: kc.practiceNotes },
     branchName: branchRows[0]?.name ?? 'Unknown branch',
     course: { title: courseRows[0]?.title ?? 'Unknown course', overview: courseRows[0]?.overview ?? null },
@@ -106,6 +188,35 @@ async function assembleTutorContext(db: Db, userId: string, kc: Awaited<ReturnTy
     recentEvents: recentEvents.map((e) => ({ type: e.type, ts: e.ts, payload: e.payload })),
     linkedNotes: linkedNoteRows.map((n) => ({ title: n.title, body: n.body.slice(0, 500) })),
     mode,
+  };
+
+  if (mode !== 'absorb') return base;
+
+  // details.focus_order may arrive as a plain object off the DB (JSON
+  // column) rather than the validated schema type — read it defensively.
+  const focusOrder = Array.isArray((details as Record<string, unknown> | null | undefined)?.focus_order)
+    ? ((details as Record<string, unknown>).focus_order as string[])
+    : [];
+
+  const [graph, misconceptionRows, scaffoldRows] = await Promise.all([
+    getKcGraph(db, userId, kc.id),
+    listKcMisconceptions(db, userId, kc.id),
+    listKcScaffolds(db, userId, kc.id),
+  ]);
+
+  const prereqs = orderAbsorbPrereqs(
+    (graph.prereqs as Array<Record<string, unknown>>).map(toAbsorbPrereq),
+    focusOrder,
+  );
+
+  return {
+    ...base,
+    absorb: {
+      focusOrder,
+      prereqs,
+      misconceptions: (misconceptionRows as Array<Record<string, unknown>>).map(toAbsorbMisconception),
+      scaffolds: (scaffoldRows as Array<Record<string, unknown>>).map(toAbsorbScaffold),
+    },
   };
 }
 
@@ -118,6 +229,8 @@ export async function appendMessageAndStream(
 ): Promise<ReadableStream<Uint8Array>> {
   const convo = await requireOwnedConversation(db, userId, conversationId);
   const kc = await requireOwnedKc(db, userId, convo.kcId);
+  const mode = convo.mode as TutorMode;
+  const cap = capFor(mode);
 
   const existingMessages = await db
     .select()
@@ -125,15 +238,14 @@ export async function appendMessageAndStream(
     .where(eq(tutorMessages.conversationId, conversationId))
     .orderBy(asc(tutorMessages.createdAt));
 
-  if (existingMessages.length >= MAX_MESSAGES_PER_CONVERSATION) {
+  if (existingMessages.length >= cap) {
     await endConversation(db, userId, conversationId, {});
-    throw new ConversationCapReachedError();
+    throw new ConversationCapReachedError(cap);
   }
 
   await db.insert(tutorMessages).values({ id: crypto.randomUUID(), conversationId, role: 'user', content });
 
-  const mode = convo.mode as TutorMode;
-  const ctx = await assembleTutorContext(db, userId, kc, mode);
+  const ctx = await assembleTutorContext(db, userId, kc, mode, convo.details as Record<string, unknown> | null | undefined);
   const systemPrompt = buildSystemPrompt(ctx);
 
   const history: ChatMessage[] = [
@@ -147,7 +259,7 @@ export async function appendMessageAndStream(
   // +1 for the user message just inserted, +1 for the assistant reply about
   // to be persisted in onDone below — if that pushes us to the cap, end the
   // conversation automatically once this exchange finishes.
-  const willReachCap = existingMessages.length + 2 >= MAX_MESSAGES_PER_CONVERSATION;
+  const willReachCap = existingMessages.length + 2 >= cap;
 
   return relayAsSSE(upstream, {
     onDone: async (fullText) => {
@@ -167,12 +279,17 @@ export async function endConversation(db: Db, userId: string, conversationId: st
   const payload: Record<string, unknown> = { conversation_id: conversationId, mode: convo.mode };
   if (input.final_rating !== undefined) payload.final_rating = input.final_rating;
 
-  const { event, masteryDeltas } = await createEvent(db, userId, {
-    type: 'tutor_session',
-    kc_id: kc.id,
-    course_id: kc.courseId,
-    payload,
-  });
+  const { event, masteryDeltas } = await createEvent(
+    db,
+    userId,
+    {
+      type: 'tutor_session',
+      kc_id: kc.id,
+      course_id: kc.courseId,
+      payload,
+    },
+    'tutor',
+  );
 
   return { conversation: convo, event, mastery_deltas: masteryDeltas };
 }
