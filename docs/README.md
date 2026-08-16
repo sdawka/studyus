@@ -9,6 +9,7 @@ This directory holds product and architecture documentation for studyus, a KLI-g
 - **user-journeys.md** — Onboarding flow, three returning-user entry points (dashboard, browse feed, study), recording outside-app events, future channels.
 - **screens.md** — Full screen inventory from the build plan with purpose and key components per route.
 - **student-lifecycle.md** — Mermaid diagrams of the student's full lifecycle in studyus: onboarding, the daily before/in/after-class rhythm, weekly planning, pre-exam practice, post-grade reflection, and the long-run mastery loop, each annotated with the studyus surface that serves it.
+- **annotations.md** — Convention for the **temporary** in-app docs annotation overlay: field vocabulary (purpose/affordances/actions/feedback), the binding rule that keeps `src/lib/docs-overlay/annotations.ts` in sync with `screens.md`, anchoring conventions, and how to retire the whole layer.
 
 ### Architecture (`/architecture/`)
 - **overview.md** — Stack (Astro 7.2 + Svelte 5, @astrojs/cloudflare 14 on Workers, D1 + Drizzle, R2, OpenRouter), headless service principle, repo layout.
@@ -40,7 +41,7 @@ This directory holds product and architecture documentation for studyus, a KLI-g
 
 ## Reading Guide
 
-**For product**: Start with vision → user-journeys → screens. Each screen links to its data model dependencies.
+**For product**: Start with vision → user-journeys → screens. Each screen links to its data model dependencies. Touching the in-app docs overlay or its registry? Read annotations.md first — `npm run check:annotations` enforces it staying in sync with screens.md.
 
 **For architecture**: Start with overview → data-model. Then dive deep:
 - Understanding mastery? Read events-and-mastery.

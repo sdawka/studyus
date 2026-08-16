@@ -49,6 +49,21 @@
         <button type="button" class="row" onclick={() => togglePopover('scratchpad')}>Scratchpad</button>
         <a class="row" href="/feed" onclick={onClose}>Feed</a>
         <a class="row" href="/corrections" onclick={onClose}>Corrections</a>
+        <!-- TEMPORARY docs annotation overlay toggle (docs/product/annotations.md).
+             Mobile-only on purpose: the sidebar carries this on desktop and is
+             display:none below 767px. Remove with the layer. -->
+        {#if import.meta.env.PUBLIC_DOCS_OVERLAY === 'true'}
+          <button
+            type="button"
+            class="row"
+            onclick={() => {
+              onClose();
+              window.dispatchEvent(new CustomEvent('toggle-docs-overlay'));
+            }}
+          >
+            Docs overlay
+          </button>
+        {/if}
         <div class="divider"></div>
         {@render menuRows()}
       </Sheet>

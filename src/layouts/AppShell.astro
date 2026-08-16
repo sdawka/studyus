@@ -69,6 +69,14 @@ const sidebarAttr = settings.sidebar_collapsed ? 'collapsed' : undefined;
          under the sticky header instead of covering the viewport. See
          docs/design/mobile-shell.md for the full writeup. -->
     <slot name="overlay" />
+    <!-- The TEMPORARY docs annotation overlay used to mount here as a
+         flag-guarded `client:idle` island. It does not any more: Astro
+         registers `client:*` islands at build-analysis time, so the guard
+         folded to false server-side but still emitted a 55.5K chunk of
+         internal annotation prose into dist/. It is now injected by
+         docsOverlayIntegration() in astro.config.mjs, which no-ops for
+         `astro build` — see src/lib/docs-overlay/integration.mjs and
+         docs/product/annotations.md. Nothing to remove here. -->
   </body>
 </html>
 

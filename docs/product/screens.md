@@ -1,5 +1,10 @@
 # studyus Screen Inventory (v1.4)
 
+> **Docs overlay sync**: this file's route table and "Shell components" list are mirrored into
+> `src/lib/docs-overlay/annotations.ts` (the temporary in-app docs overlay — see
+> `docs/product/annotations.md`). Changing a route's purpose or a component here updates that
+> registry in the same commit; `npm run check:annotations` catches drift between the two.
+
 Every page renders inside `AppShell.astro` — on desktop (>767px), a two-column grid: a collapsible **Sidebar** (Home, current-term courses with hue tints, "+ Add course", past-terms `<details>`, footer Feed/Settings/collapse toggle) and a sticky **Header** (56px; a center slot for course tabs/breadcrumbs, and a right-hand cluster: Record Event pill, scratchpad popup, todo dropdown, notifications bell, avatar menu). Below 767px the shell swaps to a different paradigm entirely — see "Mobile (≤767px)" below and `docs/design/mobile-shell.md` for the full contract. `ThemeScript.astro` stamps `data-theme`/`data-scheme`/`data-sidebar` on `<html>` pre-paint from `localStorage`, mirrored server-side from `users.settings`. `*` marks Svelte islands.
 
 ## Mobile (≤767px)

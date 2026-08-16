@@ -17,6 +17,7 @@
     "test": "vitest run",
     "check:types": "wrangler types && astro check",
     "check:layout": "node scripts/layout-check.cjs",
+    "check:annotations": "node scripts/annotations-check.cjs",
     "check": "npm run check:types"
   },
   "dependencies": {

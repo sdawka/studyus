@@ -114,6 +114,20 @@ function monogram(code: string): string {
       <Icon name="gear" />
       <span class="label">Settings</span>
     </a>
+    {/* TEMPORARY docs annotation overlay toggle — docs/product/annotations.md.
+        Flag-guarded inline so production builds render nothing here. */}
+    {import.meta.env.PUBLIC_DOCS_OVERLAY === 'true' && (
+      <button
+        type="button"
+        class="nav-item"
+        id="docs-overlay-btn"
+        title="Docs overlay (Shift+D)"
+        aria-label="Toggle docs overlay"
+      >
+        <Icon name="info" />
+        <span class="label">Docs overlay</span>
+      </button>
+    )}
     <button type="button" class="nav-item collapse-toggle" id="sidebar-collapse-toggle" title="Collapse sidebar">
       <Icon name="chevron-left" />
       <span class="label">Collapse</span>
@@ -125,6 +139,13 @@ function monogram(code: string): string {
   document.getElementById('add-course-btn')?.addEventListener('click', () => {
     const evt = new CustomEvent('open-add-course');
     window.dispatchEvent(evt);
+  });
+
+  // TEMPORARY docs annotation overlay toggle — same decoupled-trigger idiom as
+  // add-course above. The button only exists when PUBLIC_DOCS_OVERLAY is on, so
+  // this is a no-op otherwise. Remove with the layer.
+  document.getElementById('docs-overlay-btn')?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('toggle-docs-overlay'));
   });
 
   const toggle = document.getElementById('sidebar-collapse-toggle');
