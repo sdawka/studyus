@@ -211,6 +211,28 @@ async function main() {
       // --- content.json path (v1.7): supersedes this course's legacy
       // branches/canonical/feed keys entirely — see
       // courses/content-schema.md's "Relationship to courses.json". ---
+
+      // Purge superseded legacy-path rows: a DB seeded before this course had
+      // a content.json still carries the legacy branches/KCs/resources under
+      // their old deterministic ids (disjoint namespace: `slug:...` vs
+      // `slug#...`), so upserts alone leave both generations coexisting.
+      // Deleting exactly the ids the legacy path would generate is surgical —
+      // user-created rows never match. Branch deletes cascade to their KCs,
+      // which cascade to kc_edges/scaffolds/misconceptions/assessment_kcs/
+      // session_kcs; events.kc_id goes SET NULL (demo events re-point via
+      // their own upsert below).
+      const legacyBranchIds = (course.branches || []).map((b) => deterministicId('branch', `${course.slug}:${b.branch}`));
+      const legacyResourceIds = [
+        ...(course.canonical || []).map((l) => deterministicId('resource', `canonical:${course.slug}:${l.url}`)),
+        ...(course.feed || []).map((l) => deterministicId('resource', `feed:${course.slug}:${l.url}`)),
+      ];
+      if (legacyBranchIds.length) {
+        statements.push(`DELETE FROM branches WHERE id IN (${legacyBranchIds.map((id) => sqlStr(id)).join(', ')});`);
+      }
+      if (legacyResourceIds.length) {
+        statements.push(`DELETE FROM resources WHERE id IN (${legacyResourceIds.map((id) => sqlStr(id)).join(', ')});`);
+      }
+
       const stats = { kcCount: 0, kcTypeCounts: {} as Record<string, number>, scaffoldCount: 0, misconceptionCount: 0 };
       contentStatsBySlug.set(course.slug, stats);
 
@@ -394,16 +416,23 @@ async function main() {
     const nearId = deterministicId('assessment', `demo:${slug}:near`);
     const farId = deterministicId('assessment', `demo:${slug}:far`);
 
+    // Content-backed courses (v1.7) carry their real, 100%-summing official
+    // weights in content.json — demo officials for those go weight-less so
+    // they never distort the weighted grade (weightedStanding skips
+    // NULL-weight rows) while still feeding the practice_kc sweep, which
+    // keys on kind='official' + due window, not weight.
+    const demoWeights: (number | null)[] = contentBySlug.has(slug) ? [null, null, null] : [20, 10, 15];
+
     statements.push(
       `INSERT INTO assessments (id, course_id, title, type, due_date, weight_pct, grade_received, grade_max, created_at)
-       VALUES (${sqlStr(pastId)}, ${sqlStr(courseId)}, ${sqlStr(ASSESSMENT_TITLES.past[courseIdx % ASSESSMENT_TITLES.past.length])}, 'midterm', ${pastDue}, 20, ${gradePct}, 100, ${now})
-       ON CONFLICT(id) DO UPDATE SET due_date=excluded.due_date, grade_received=excluded.grade_received;`,
+       VALUES (${sqlStr(pastId)}, ${sqlStr(courseId)}, ${sqlStr(ASSESSMENT_TITLES.past[courseIdx % ASSESSMENT_TITLES.past.length])}, 'midterm', ${pastDue}, ${sqlStr(demoWeights[0])}, ${gradePct}, 100, ${now})
+       ON CONFLICT(id) DO UPDATE SET due_date=excluded.due_date, grade_received=excluded.grade_received, weight_pct=excluded.weight_pct;`,
       `INSERT INTO assessments (id, course_id, title, type, due_date, weight_pct, grade_received, grade_max, created_at)
-       VALUES (${sqlStr(nearId)}, ${sqlStr(courseId)}, ${sqlStr(ASSESSMENT_TITLES.near[courseIdx % ASSESSMENT_TITLES.near.length])}, 'assignment', ${nearDue}, 10, NULL, 100, ${now})
-       ON CONFLICT(id) DO UPDATE SET due_date=excluded.due_date;`,
+       VALUES (${sqlStr(nearId)}, ${sqlStr(courseId)}, ${sqlStr(ASSESSMENT_TITLES.near[courseIdx % ASSESSMENT_TITLES.near.length])}, 'assignment', ${nearDue}, ${sqlStr(demoWeights[1])}, NULL, 100, ${now})
+       ON CONFLICT(id) DO UPDATE SET due_date=excluded.due_date, weight_pct=excluded.weight_pct;`,
       `INSERT INTO assessments (id, course_id, title, type, due_date, weight_pct, grade_received, grade_max, created_at)
-       VALUES (${sqlStr(farId)}, ${sqlStr(courseId)}, ${sqlStr(ASSESSMENT_TITLES.far[courseIdx % ASSESSMENT_TITLES.far.length])}, 'lab', ${farDue}, 15, NULL, 100, ${now})
-       ON CONFLICT(id) DO UPDATE SET due_date=excluded.due_date;`,
+       VALUES (${sqlStr(farId)}, ${sqlStr(courseId)}, ${sqlStr(ASSESSMENT_TITLES.far[courseIdx % ASSESSMENT_TITLES.far.length])}, 'lab', ${farDue}, ${sqlStr(demoWeights[2])}, NULL, 100, ${now})
+       ON CONFLICT(id) DO UPDATE SET due_date=excluded.due_date, weight_pct=excluded.weight_pct;`,
     );
 
     // Practice assessments (v1.3.1): kind='practice', never counted toward
@@ -532,7 +561,7 @@ async function main() {
       statements.push(
         `INSERT INTO events (id, user_id, ts, type, is_instructional, is_assessment, kc_id, course_id, session_id, payload, source, created_at)
          VALUES (${sqlStr(eventId)}, ${sqlStr(userId)}, ${ts}, ${sqlStr(type)}, ${sqlStr(flags.isInstructional)}, ${sqlStr(flags.isAssessment)}, ${sqlStr(kc.id)}, ${sqlStr(course.id)}, NULL, ${sqlStr(JSON.stringify(payload))}, 'seed', ${now})
-         ON CONFLICT(id) DO UPDATE SET ts=excluded.ts, payload=excluded.payload;`,
+         ON CONFLICT(id) DO UPDATE SET ts=excluded.ts, payload=excluded.payload, kc_id=excluded.kc_id, course_id=excluded.course_id;`,
       );
     }
   }
