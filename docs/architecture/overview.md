@@ -105,8 +105,8 @@ src/
     stores/                               # nanostores: ui.ts, courseContext.ts, tasks.ts, toast.ts, viewport.ts
     schemas/                              # Zod validators — one file per domain (assessments, attachments,
                                            #   calendar, classSessions, common, corrections, courses, events, kcs,
-                                           #   notes, notifications, quickQuiz, resources, sessions, tasks, tutor,
-                                           #   user)
+                                           #   knowledgeMap, notes, notifications, quickQuiz, resources, sessions,
+                                           #   tasks, tutor, user)
     content/                              # v1.7: courseContent.ts — Zod schema for courses/<slug>/content.json
                                            #   (authoritative shape lives in courses/content-schema.md) +
                                            #   cross-course prereq-slug resolver, cycle-safe
@@ -121,10 +121,11 @@ src/
     apiErrors.ts                          # withServiceErrors / apiError mapping (incl. ZodError → 400 invalid_input)
     serialize.ts                          # toApi (db row → API shape)
     services/                             # Pure (db, userId, input) -> result functions, one file per domain:
-                                           #   assessments, attachments, calendar, classSessions, courses, events,
-                                           #   grades, kcs, mastery (pure fold, no db writes), notes, notifications,
-                                           #   practiceSummary, profile, resources, sessions, tasks, taskSweep, user,
-                                           #   util (ownership/error helpers)
+                                           #   assessments, attachments, calendar, classSessions, corrections (v1.7),
+                                           #   courses, events, grades, kcs, knowledgeMap (v1.7 — BFS depth + DFS
+                                           #   back-edge detection, diamond-safe traversal), mastery (pure fold, no
+                                           #   db writes), notes, notifications, practiceSummary, profile, resources,
+                                           #   sessions, tasks, taskSweep, user, util (ownership/error helpers)
       tutor/
         conversations.ts
         openrouter.ts
@@ -138,11 +139,16 @@ src/
   components/                             # By feature — Svelte islands + .astro partials side by side
     LoginForm.svelte                      # Top-level, not feature-namespaced (used only by login.astro)
     admin/                                # GradeTable.svelte, QuickEventForm.svelte
-    course/                               # AttachmentsPanel, KcTypeBadge, MasteryBar, PlayPanel, PracticePanel,
-                                           #   ResourceTile, StatusChip
+    corrections/                          # v1.7: CorrectionsLedger.svelte (Active/Internalized/All filters,
+                                           #   inline "mark internalized" two-step confirm)
+    course/                               # AttachmentsPanel, KcTypeBadge, MasteryBar, PlayPanel (v1.7: gains an
+                                           #   "Understand" link per KC row), PracticePanel, ResourceTile, StatusChip
     dashboard/                            # CourseCards, DeadlinesList, RecordEventCard, TodayTasks, WeekView
     events/                               # EventTimeline.svelte, LogEventModal.svelte
     feed/                                 # ResourceCard (favicon tiles), ShareResourceForm, StudySessionStub
+    learn/                                # v1.7: /learn/[kcId]'s 4-stage flow — PrereqGraph (layered, BFS depth),
+                                           #   VerifyQuiz, InterestRanker (tap-to-rank -> focus_order), AbsorbFlow
+                                           #   (wraps ScaffoldChat, mode: 'absorb'), types.ts
     notes/                                # NotesList, NoteEditor, LinkPicker
     onboarding/                           # OnboardingFlow.svelte
     planner/                              # PlannerView, WeekGrid, CalendarGrid, AgendaList, EventPopover,
@@ -157,7 +163,9 @@ src/
     study/                                # StudyFlow.svelte
     tasks/                                # TaskItem, TaskTypeIcon, TasksView, TaskCheckbox (checkbox delight +
                                            #   confetti), CompletionFlow (typed-task completion dialog)
-    tutor/                                # ScaffoldChat, InteractiveModel, QuickQuiz
+    tutor/                                # ScaffoldChat (v1.7: scans every fenced block per message, not just
+                                           #   the first, so a turn can carry interactive_model AND
+                                           #   correction_proposal), InteractiveModel, QuickQuiz
   pages/
     404.astro
     login.astro, index.astro, onboarding.astro, dashboard.astro
@@ -165,6 +173,8 @@ src/
     grades.astro, feed.astro, planner.astro, profile.astro, settings.astro, tasks.astro
     study.astro, study/quiz.astro
     tutor/[kcId].astro
+    learn/[kcId].astro                     # v1.7: the absorb-experience 4-stage flow (see components/learn/)
+    corrections.astro                     # v1.7: the corrections-ledger page (CorrectionsLedger.svelte)
     notes/index.astro, notes/[id].astro
     courses/
       index.astro
@@ -175,7 +185,9 @@ src/
       user/index.ts
       courses/index.ts, courses/[id]/assessments.ts, courses/[id]/attachments.ts,
         courses/[id]/class-sessions.ts, courses/[id]/practice-summary.ts, courses/[slug].ts
-      kcs/[id]/index.ts, kcs/[id]/events.ts
+      kcs/[id]/index.ts, kcs/[id]/events.ts, kcs/[id]/graph.ts, kcs/[id]/misconceptions.ts,
+        kcs/[id]/scaffolds.ts               # v1.7: knowledge-graph traversal + scaffold/misconception reads
+      corrections/index.ts, corrections/[id]/index.ts   # v1.7: the corrections-ledger CRUD
       events/index.ts, events/[id].ts
       assessments/[id].ts
       class-sessions/[id].ts
@@ -195,9 +207,10 @@ src/
 tests/                                    # Flat layout (no unit//integration split — that was never built)
   audit-grades-perf, audit-lifecycle, audit-notifications, audit-ownership, audit-schema-bounds,
     audit-sweep, audit-uploads (.test.ts)  # Targeted regression suites from security/perf/lifecycle audits
-  auth, calendar, classSessions, course-content, courses-create, events, grades, mastery, middleware,
-    notifications, practiceSummary, quick-quiz, serialize, session, sessions, stores-tasks, tasks,
-    tasksStoreSelectors, taskSweep, tutor-conversations, tutor-list, tutor-modelSpec, tutor-openrouter (.test.ts)
+  auth, calendar, classSessions, corrections, course-content, courses-create, events, grades,
+    knowledgeMap, mastery, middleware, notifications, practiceSummary, quick-quiz, serialize, session,
+    sessions, stores-tasks, tasks, tasksStoreSelectors, taskSweep, tutor-conversations, tutor-list,
+    tutor-modelSpec, tutor-openrouter (.test.ts)
   env.d.ts
   routes/
     assessments.test.ts, assessmentsKcs.test.ts, assessmentsKind.test.ts, events.test.ts, tasks.test.ts
@@ -257,7 +270,7 @@ As of this writing `npm run check` is clean except: `scripts/seed.ts` and `vites
 
 ### Layout regression guard
 
-`scripts/layout-check.cjs` is an assertion-based Playwright script (no screenshots) that logs in and checks layout invariants across a viewport × sidebar-state matrix, so a regression in the container/breakpoint math fails fast instead of waiting for a human to notice a squished page. It checks, per page: no horizontal page overflow, the main content column staying centered with equal gutters once it's narrower than its container, and no element bleeding past the viewport's right edge; on `/dashboard` specifically, that the rail (320px column) goes side-by-side vs. stacks based on the actual measured container width vs. the `@container` breakpoint read live out of `dashboard.astro`; and that each of the 4 header popovers stays fully on-screen when opened. Pages covered: dashboard, feed, planner, tasks, notes, profile, and a course's overview/concepts/resources tabs, at widths 1440/1280/1024/820 in both sidebar states.
+`scripts/layout-check.cjs` is an assertion-based Playwright script (no screenshots) that logs in and checks layout invariants across a viewport × sidebar-state matrix, so a regression in the container/breakpoint math fails fast instead of waiting for a human to notice a squished page. It checks, per page: no horizontal page overflow, the main content column staying centered with equal gutters once it's narrower than its container, and no element bleeding past the viewport's right edge; on `/dashboard` specifically, that the rail (320px column) goes side-by-side vs. stacks based on the actual measured container width vs. the `@container` breakpoint read live out of `dashboard.astro`; and that each of the 4 header popovers stays fully on-screen when opened. Pages covered: dashboard, feed, planner, tasks, notes, profile, `/corrections` and a `/learn/[kcId]` route (v1.7), and a course's overview/concepts/resources tabs, at widths 1440/1280/1024/820 in both sidebar states.
 
 Like `visual-qa.mjs`, it needs Playwright under Node 20 (see the comment header in the script for the exact `NODE_PATH` invocation) and a running dev server — pass the base URL as an argument or via `LAYOUT_CHECK_BASE_URL`.
 
