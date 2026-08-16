@@ -1,0 +1,905 @@
+{
+  "schema_version": 1,
+  "course_slug": "chee-314-fluid-mechanics",
+  "branches": [
+    {
+      "slug": "foundations",
+      "name": "Foundations",
+      "sort_order": 1,
+      "kcs": [
+        {
+          "slug": "fluid-properties",
+          "name": "Fluid properties",
+          "kc_type": "fact",
+          "description": "Recall the key properties that characterize a fluid (density, viscosity, compressibility, vapor pressure) and their typical magnitudes for common process fluids like water and air.",
+          "practice_notes": "Drill property values against fluid identity: given a fluid and conditions, retrieve density and viscosity from memory or a standard table; practice noticing which property matters for which problem type (density for buoyancy/hydrostatics, viscosity for drag/friction, compressibility for high-speed gas flow).",
+          "sort_order": 1,
+          "prereqs": [],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Fluid Mechanics simulations (Bernoulli, Reynolds, drag, momentum, manometers, Moody diagram)",
+              "url": "https://learncheme.com/simulations/fluid-mechanics/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "retrieval_prompt",
+              "level": 1,
+              "title": "Recall: water and air properties",
+              "body": "Without looking it up: what is the density of liquid water at 20 degC (kg/m^3)? What is its dynamic viscosity (Pa*s)? Now do the same for air at 20 degC and 1 atm. Check: water rho ~ 998 kg/m^3, mu ~ 1.0e-3 Pa*s; air rho ~ 1.2 kg/m^3, mu ~ 1.8e-5 Pa*s. Notice air is about 3 orders of magnitude less dense but only about 1.5 orders of magnitude less viscous than water -- this is why air feels 'thin' but a hot-air balloon still feels wind drag."
+            },
+            {
+              "kind": "mnemonic",
+              "level": 1,
+              "title": "Order-of-magnitude anchors",
+              "body": "Memory hook: anchor two reference fluids and scale from them. Water is the density anchor (~1000 kg/m^3, ~1 cP viscosity) -- almost every other common liquid is 'somewhat less dense than water, and either similar or much more viscous' (e.g. light oils ~800-900 kg/m^3 but 10-100x more viscous; glycerol near water's density but ~1000x more viscous). Air is the gas anchor (~1.2 kg/m^3 at room conditions, ~1000x less dense than water) -- other gases near atmospheric conditions stay within a factor of a few of air's density unless pressure or molecular weight changes sharply."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "newtonian-vs-non-newtonian-behavior",
+          "name": "Newtonian vs. non-Newtonian behavior",
+          "kc_type": "concept",
+          "description": "Classify a fluid's rheological behavior -- Newtonian, shear-thinning (pseudoplastic), shear-thickening (dilatant), or Bingham plastic -- from a shear-stress-vs-shear-rate plot or a description of its behavior under flow.",
+          "practice_notes": "Practice by sketching or reading tau-vs-(du/dy) curves: a straight line through the origin is Newtonian; concave-down is shear-thinning; concave-up is shear-thickening; a line with a nonzero y-intercept (yield stress) is Bingham plastic. Vary which feature is highlighted (slope changing vs. an intercept) to force discrimination rather than memorized labels.",
+          "sort_order": 2,
+          "prereqs": [
+            "#fluid-properties"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Fluid Mechanics simulations (Bernoulli, Reynolds, drag, momentum, manometers, Moody diagram)",
+              "url": "https://learncheme.com/simulations/fluid-mechanics/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "contrast_examples",
+              "level": 2,
+              "title": "Same-looking data, different classification",
+              "body": "Two fluids are tested in a viscometer. Fluid A: shear stress doubles when shear rate doubles (tau = 0.5 * gamma_dot, straight line through origin). Fluid B: shear stress is zero until a threshold of 5 Pa, then rises linearly (tau = 5 + 0.3*gamma_dot for gamma_dot > 0). Classify each. Fluid A is Newtonian (constant viscosity 0.5 Pa*s at all shear rates). Fluid B is a Bingham plastic -- it behaves like a rigid solid below the 5 Pa yield stress and flows like a Newtonian fluid above it (e.g., toothpaste, some slurries)."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 1,
+              "title": "Recall the four classic categories",
+              "body": "Name the four rheological categories covered in this course and, for each, state whether apparent viscosity increases or decreases with increasing shear rate (or note that it isn't defined the same way for a Bingham plastic)."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "dimensional-analysis-and-buckingham-pi-theorem",
+          "name": "Dimensional analysis and the Buckingham Pi theorem",
+          "kc_type": "rule",
+          "description": "Apply the Buckingham Pi theorem to reduce a physical relationship among n dimensional variables (spanning m primary dimensions) to (n - m) independent dimensionless groups, and construct those groups by the repeating-variables method.",
+          "practice_notes": "Practice counting variables and primary dimensions first (that fixes how many pi groups you need) before attempting to build the groups themselves; always sanity-check a constructed group by writing out its dimensions explicitly and confirming they cancel to 1.",
+          "sort_order": 3,
+          "prereqs": [
+            "#fluid-properties"
+          ],
+          "resources": [
+            {
+              "label": "Engineering LibreTexts \u2014 Bar-Meir Fluid Mechanics: Buckingham Pi theorem",
+              "url": "https://eng.libretexts.org/Bookshelves/Civil_Engineering/Fluid_Mechanics_(Bar-Meir)/09%3A_Dimensional_Analysis/9.2%3A_Buckingham%E2%80%93%CF%80%E2%80%93Theorem",
+              "kind": "canonical"
+            },
+            {
+              "label": "LearnChemE \u2014 Fluid Mechanics simulations (Bernoulli, Reynolds, drag, momentum, manometers, Moody diagram)",
+              "url": "https://learncheme.com/simulations/fluid-mechanics/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Pressure drop in pipe flow, fully worked (fading level 1 of 3)",
+              "body": "Problem: pressure drop per unit length (dP/dx, Pa/m) in fully developed pipe flow depends on pipe diameter D (m), average velocity v (m/s), fluid density rho (kg/m^3), and viscosity mu (Pa*s). Find the dimensionless groups.\n\nStep 1 -- list variables and dimensions: dP/dx [M L^-2 T^-2], D [L], v [L T^-1], rho [M L^-3], mu [M L^-1 T^-1]. That's n = 5 variables.\nStep 2 -- primary dimensions present: M, L, T, so m = 3.\nStep 3 -- number of pi groups: n - m = 5 - 3 = 2.\nStep 4 -- choose 3 repeating variables that together contain M, L, T and are dimensionally independent: D, v, rho.\nStep 5 -- build pi_1 from (dP/dx) and the repeating variables: pi_1 = (dP/dx) * D^a * v^b * rho^c. Matching dimensions forces a = 2, b = -2, c = -1, giving pi_1 = (dP/dx) * D^2 / (rho * v^2) \u2014 this is (up to a constant) the Euler/friction-factor group.\nStep 6 -- build pi_2 from mu: pi_2 = mu * D^a * v^b * rho^c, matching dimensions gives a = -1, b = -1, c = -1, so pi_2 = mu / (rho * v * D) = 1/Re, the reciprocal Reynolds number.\nResult: dP/dx*D^2/(rho*v^2) = f(1/Re), i.e. the friction factor is a function of Reynolds number alone -- exactly what pipe-flow correlations (Moody chart) express."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Same problem, you finish the pi groups (fading level 2 of 3)",
+              "body": "Same setup as level 1: dP/dx, D, v, rho, mu; n = 5, m = 3 (M, L, T), so 2 pi groups are needed. Repeating variables: D, v, rho.\n\nGiven: pi_1 built from (dP/dx) came out to (dP/dx)*D^2/(rho*v^2). Your task: build pi_2 from mu using the same repeating variables. Write mu * D^a * v^b * rho^c, expand the dimensions of each factor ([M L^-1 T^-1] for mu, [L]^a for D, [L T^-1]^b for v, [M L^-3]^c for rho), and solve the three linear equations (one per dimension M, L, T) for a, b, c. Check your answer: it should simplify to 1/Re = mu/(rho*v*D)."
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Independent problem: drag on a sphere (fading level 3 of 3)",
+              "body": "A sphere of diameter D falls through a fluid of density rho and viscosity mu at terminal velocity v, experiencing drag force F. Using the same repeating-variables method, find the number of dimensionless groups and construct them (one should be a drag coefficient F/(rho*v^2*D^2), the other should be Reynolds number rho*v*D/mu). Work the full six steps yourself before checking against a textbook drag-coefficient correlation."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "pi-groups-must-look-like-textbook-groups",
+              "name": "A valid pi group must match a 'named' dimensionless number",
+              "description": "Learner believes that if a constructed dimensionless group doesn't look like a textbook-named number (Reynolds, Euler, etc.), the derivation must be wrong.",
+              "root_cause": "Repeated exposure to only the named groups in lecture creates the impression that dimensionless groups are a fixed, closed list rather than an outcome of whichever variables and repeating set you chose.",
+              "diagnostic_probe": "You pick a different (but still dimensionally independent) set of repeating variables than your classmate and get a pi group that is the square of the Reynolds number instead of the Reynolds number itself. Did you make an error?",
+              "correction": "The Buckingham Pi theorem guarantees the *number* of independent dimensionless groups, but the specific groups you construct depend on which repeating variables you choose; any valid choice gives a correct (if differently combined) set of pi groups, and named numbers like Re are simply the conventional choice, not the only correct one."
+            }
+          ]
+        },
+        {
+          "slug": "reynolds-number-and-flow-regime",
+          "name": "Reynolds number and flow regime",
+          "kc_type": "concept",
+          "description": "Classify a flow as laminar, transitional, or turbulent from its Reynolds number for internal (pipe) flow and external flow past a submerged object, and state the approximate transition ranges.",
+          "practice_notes": "Practice with numbers, not just labels: compute Re = rho*v*D/mu for varied v and D and place the result on the laminar/transitional/turbulent scale; vary which quantity changes (velocity vs. diameter vs. fluid) so the classification isn't tied to a memorized 'shape' of the problem.",
+          "sort_order": 4,
+          "prereqs": [
+            "#dimensional-analysis-and-buckingham-pi-theorem"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Fluid Mechanics simulations (Bernoulli, Reynolds, drag, momentum, manometers, Moody diagram)",
+              "url": "https://learncheme.com/simulations/fluid-mechanics/",
+              "kind": "canonical",
+              "pinned": true
+            },
+            {
+              "label": "NPTEL/Internet Archive \u2014 Fluid Mechanics for Chemical Engineers (40-lecture video course)",
+              "url": "https://archive.org/details/NPTEL-ChemEngr-Fluid_Mechanics",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify five flows by Reynolds number",
+              "body": "Compute Re = rho*v*D/mu for each and classify as laminar (Re < ~2300), transitional (~2300-4000), or turbulent (Re > ~4000) for pipe flow: (1) water, rho=998, mu=1.0e-3, D=0.02 m, v=0.05 m/s. (2) water, same D, v=2 m/s. (3) glycerol, rho=1260, mu=1.5 Pa*s, D=0.02 m, v=2 m/s. (4) air, rho=1.2, mu=1.8e-5, D=0.1 m, v=1 m/s. (5) water, D=0.02 m, v=0.12 m/s.\nAnswers: (1) Re=998*0.05*0.02/1.0e-3=998 -> laminar. (2) Re=998*2*0.02/1.0e-3=39,920 -> turbulent. (3) Re=1260*2*0.02/1.5=33.6 -> laminar (glycerol's huge viscosity suppresses turbulence even at high velocity). (4) Re=1.2*1*0.1/1.8e-5=6,667 -> turbulent. (5) Re=998*0.12*0.02/1.0e-3=2,395 -> transitional."
+            },
+            {
+              "kind": "interactive_model",
+              "level": 2,
+              "title": "Reynolds number explorer",
+              "body": "Adjust fluid density, velocity, pipe diameter, and viscosity below and watch where the computed Reynolds number falls relative to the laminar (<2300) and turbulent (>4000) thresholds for pipe flow. Notice how much more strongly Re responds to diameter and velocity than to typical density variations across common fluids, and how a 10x jump in viscosity (e.g., moving from water toward a light oil) can pull a flow from turbulent back into laminar at the same velocity and pipe size.",
+              "details": {
+                "title": "Reynolds number regime explorer",
+                "parameters": [
+                  {
+                    "id": "rho",
+                    "label": "Density",
+                    "min": 500,
+                    "max": 1300,
+                    "step": 10,
+                    "default": 1000,
+                    "unit": "kg/m^3"
+                  },
+                  {
+                    "id": "v",
+                    "label": "Velocity",
+                    "min": 0.01,
+                    "max": 10,
+                    "step": 0.01,
+                    "default": 1,
+                    "unit": "m/s"
+                  },
+                  {
+                    "id": "D",
+                    "label": "Diameter",
+                    "min": 0.005,
+                    "max": 0.5,
+                    "step": 0.005,
+                    "default": 0.05,
+                    "unit": "m"
+                  },
+                  {
+                    "id": "mu",
+                    "label": "Viscosity",
+                    "min": 0.0001,
+                    "max": 0.01,
+                    "step": 0.0001,
+                    "default": 0.001,
+                    "unit": "Pa*s"
+                  }
+                ],
+                "expressions": [
+                  {
+                    "id": "Re",
+                    "label": "Reynolds number Re",
+                    "formula": "rho * v * D / mu"
+                  }
+                ],
+                "notes": "Re < 2300 is reliably laminar, Re > 4000 is reliably turbulent for pipe flow; the band between is transitional and depends on entrance effects and disturbances."
+              }
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "reynolds-number-guarantees-regime",
+              "name": "Crossing Re = 2300 instantly makes flow turbulent",
+              "description": "Learner treats the laminar/turbulent Reynolds-number thresholds as a sharp on/off switch at one exact value, rather than a transition band influenced by geometry, entrance effects, and disturbances.",
+              "root_cause": "Textbook problems present a single critical Re number for pipe flow, and that single number gets over-generalized into a universal deterministic cutoff.",
+              "diagnostic_probe": "A pipe flow has Re = 2500. A student concludes 'this is definitely fully turbulent.' What is oversimplified about that conclusion?",
+              "correction": "For pipe flow, Re below about 2300 is reliably laminar and Re above about 4000 is reliably turbulent, but the intervening range is a transitional regime where the actual state depends on entrance conditions, surface roughness, and disturbances -- there is no single Reynolds number at which flow switches instantly and universally."
+            }
+          ]
+        },
+        {
+          "slug": "drag-and-friction-factor",
+          "name": "Drag and friction factor",
+          "kc_type": "rule",
+          "description": "Compute the drag force on a submerged object from a drag coefficient correlation, or the Darcy/Fanning friction factor for pipe flow from a Reynolds-number correlation, and relate both to the underlying momentum balance.",
+          "practice_notes": "Practice reading drag-coefficient and friction-factor correlations (or Moody-chart-style plots) as functions of Reynolds number, and always check which definition (Darcy vs. Fanning friction factor; drag coefficient basis area) a given formula uses before plugging in numbers.",
+          "sort_order": 5,
+          "prereqs": [
+            "#reynolds-number-and-flow-regime"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Fluid Mechanics simulations (Bernoulli, Reynolds, drag, momentum, manometers, Moody diagram)",
+              "url": "https://learncheme.com/simulations/fluid-mechanics/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Drag force on a settling sphere",
+              "body": "A 2 mm diameter glass sphere (rho_s = 2500 kg/m^3) falls through water (rho=998 kg/m^3, mu=1.0e-3 Pa*s) at its terminal velocity of 0.03 m/s. Find the drag coefficient and check it against the Stokes-law regime.\nStep 1: Re = rho*v*D/mu = 998*0.03*0.002/1.0e-3 = 59.9 -> this is above the Stokes-law limit (Re<1) but still in the intermediate drag regime.\nStep 2: at terminal velocity, drag force balances net gravity: F_drag = (rho_s - rho)*g*(pi/6)*D^3 = (2500-998)*9.81*(pi/6)*(0.002)^3 = 6.17e-5 N.\nStep 3: drag coefficient C_D = F_drag / (0.5*rho*v^2*(pi/4)*D^2) = 6.17e-5 / (0.5*998*0.03^2*(pi/4)*0.002^2) = 6.17e-5 / (1.41e-6) = 43.8, consistent with intermediate-Reynolds-number drag correlations (C_D roughly 24/Re*(1+0.15*Re^0.687) predicts about 44.9 at Re=59.9 -- close agreement)."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    },
+    {
+      "slug": "macroscopic-balances",
+      "name": "Macroscopic balances",
+      "sort_order": 2,
+      "kcs": [
+        {
+          "slug": "macroscopic-mass-balance",
+          "name": "Macroscopic mass balance",
+          "kc_type": "rule",
+          "description": "Apply the steady-state macroscopic mass (continuity) balance, sum(rho*v*A)_in = sum(rho*v*A)_out, to a control volume with one or more inlets and outlets, including cases with variable cross-section or multiple streams.",
+          "practice_notes": "Practice drawing the control volume and labeling every inlet/outlet with rho, v, A explicitly before writing the balance -- the most common error is forgetting a stream or mixing up which cross-sectional area belongs to which velocity.",
+          "sort_order": 1,
+          "prereqs": [
+            "#fluid-properties"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Fluid Mechanics simulations (Bernoulli, Reynolds, drag, momentum, manometers, Moody diagram)",
+              "url": "https://learncheme.com/simulations/fluid-mechanics/",
+              "kind": "canonical",
+              "pinned": true
+            },
+            {
+              "label": "MIT OCW 10.302 \u2014 Transport Processes (control-volume balances)",
+              "url": "https://ocw.mit.edu/courses/10-302-transport-processes-fall-2004/",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Pipe contraction, fully worked",
+              "body": "Water flows steadily through a pipe that contracts from diameter D1 = 0.10 m to D2 = 0.05 m. The velocity in the larger section is v1 = 2 m/s. Find v2.\nStep 1: incompressible continuity: A1*v1 = A2*v2.\nStep 2: A1 = pi/4*(0.10)^2 = 7.854e-3 m^2; A2 = pi/4*(0.05)^2 = 1.963e-3 m^2.\nStep 3: v2 = v1*A1/A2 = 2*7.854e-3/1.963e-3 = 8.0 m/s.\nCheck: area shrank by a factor of 4 (since (D1/D2)^2 = 4), so velocity had to rise by exactly that same factor of 4 -- 2 m/s to 8 m/s. This is the reasoning step examiners look for, not just the arithmetic."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "bernoulli-equation",
+          "name": "Bernoulli equation",
+          "kc_type": "principle",
+          "description": "Derive Bernoulli's equation by integrating the inviscid equation of motion along a streamline in steady, incompressible flow, and explain why each assumption (steady, incompressible, inviscid, same streamline, no shaft work) is required for the P/rho + v^2/2 + gz = constant form to hold.",
+          "practice_notes": "Practice explaining, in your own words, what breaks the equation when one assumption is relaxed (e.g., add a pump -- now there's shaft work; add a long pipe -- now friction removes mechanical energy) rather than only plugging numbers into the formula.",
+          "sort_order": 2,
+          "prereqs": [
+            "#macroscopic-mass-balance",
+            "math-264-advanced-calculus-for-engineers#partial-derivatives"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Fluid Mechanics simulations (Bernoulli, Reynolds, drag, momentum, manometers, Moody diagram)",
+              "url": "https://learncheme.com/simulations/fluid-mechanics/",
+              "kind": "canonical",
+              "pinned": true
+            },
+            {
+              "label": "NPTEL/Internet Archive \u2014 Fluid Mechanics for Chemical Engineers (40-lecture video course)",
+              "url": "https://archive.org/details/NPTEL-ChemEngr-Fluid_Mechanics",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "derivation_walkthrough",
+              "level": 2,
+              "title": "From F = ma along a streamline to Bernoulli's equation",
+              "body": "Start from Newton's second law applied to a fluid element of mass dm moving along a streamline with no friction and no shaft work: the only forces are pressure and gravity. Writing the momentum balance along the streamline coordinate s gives -dP/ds - rho*g*dz/ds = rho*v*dv/ds. Multiply through by ds and integrate along the streamline between two points: -(P2-P1) - rho*g*(z2-z1) = rho*(v2^2-v1^2)/2, assuming rho constant (incompressible). Rearranging: P1 + rho*g*z1 + rho*v1^2/2 = P2 + rho*g*z2 + rho*v2^2/2 -- Bernoulli's equation. Every assumption used (steady flow so d/dt terms vanish, incompressible so rho pulls out of the integral, inviscid so no friction term appears, same streamline so the 1D integration is valid, no pump/turbine so no external work term) is a place the equation can fail if violated."
+            },
+            {
+              "kind": "self_explanation_prompt",
+              "level": 3,
+              "title": "Explain a Bernoulli failure",
+              "body": "A student uses Bernoulli's equation to relate the pressure at a tank's free surface to the pressure at the exit of a long pipe with a pump partway along it, and gets an answer that doesn't match the measured pump curve. In your own words, explain which assumption(s) of Bernoulli's equation are violated here and what balance should be used instead."
+            },
+            {
+              "kind": "interactive_model",
+              "level": 2,
+              "title": "Bernoulli head explorer",
+              "body": "Adjust gauge pressure P, velocity v, and elevation z for a point in a steady, incompressible, frictionless flow (water) and watch how the pressure head, velocity head, and elevation head trade off. Pick a downstream point and figure out what combination of P, v, z keeps the total head the same as your starting point -- that's what Bernoulli's equation is enforcing.",
+              "details": {
+                "title": "Bernoulli head balance (water)",
+                "parameters": [
+                  {
+                    "id": "P",
+                    "label": "Gauge pressure P",
+                    "min": 0,
+                    "max": 500000,
+                    "step": 1000,
+                    "default": 200000,
+                    "unit": "Pa"
+                  },
+                  {
+                    "id": "v",
+                    "label": "Velocity v",
+                    "min": 0,
+                    "max": 20,
+                    "step": 0.1,
+                    "default": 4,
+                    "unit": "m/s"
+                  },
+                  {
+                    "id": "z",
+                    "label": "Elevation z",
+                    "min": 0,
+                    "max": 50,
+                    "step": 0.5,
+                    "default": 5,
+                    "unit": "m"
+                  }
+                ],
+                "expressions": [
+                  {
+                    "id": "pressureHead",
+                    "label": "Pressure head P/(rho*g)",
+                    "formula": "P / (1000 * 9.81)"
+                  },
+                  {
+                    "id": "velocityHead",
+                    "label": "Velocity head v^2/(2g)",
+                    "formula": "v^2 / (2 * 9.81)"
+                  },
+                  {
+                    "id": "totalHead",
+                    "label": "Total head",
+                    "formula": "P/(1000*9.81) + v^2/(2*9.81) + z"
+                  }
+                ],
+                "notes": "Along a streamline with no friction and no pump/turbine, totalHead must stay constant as P, v, and z all change together."
+              }
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "high-speed-always-low-pressure",
+              "name": "Higher velocity always means lower pressure",
+              "description": "Learner treats 'faster flow means lower pressure' as a universal rule applicable to any two points in any flow, rather than a conclusion that holds only along a streamline in steady, incompressible, inviscid flow without shaft work.",
+              "root_cause": "Overgeneralization from a memorized qualitative slogan version of Bernoulli's equation, extrapolated past the conditions under which the inverse velocity-pressure relationship actually holds; documented in physics-education research on hydrodynamics misconceptions (e.g. 'Bernoulli's muddle,' arXiv:2012.13639).",
+              "diagnostic_probe": "Water flows through a long, narrow pipe with a pump partway along it. A student says 'the pipe narrows partway, so velocity goes up there, so pressure must drop -- end of story.' What is being ignored?",
+              "correction": "The velocity-pressure trade-off in Bernoulli's equation holds only along a streamline in steady, incompressible, inviscid flow with no added or removed shaft work; friction losses and pump/turbine work both change the mechanical energy and must be included via the extended mechanical energy balance, so 'faster means lower pressure' is not a universal law."
+            },
+            {
+              "slug": "bernoulli-between-any-two-points",
+              "name": "Bernoulli relates any two points in a flow, moving or not",
+              "description": "Learner applies Bernoulli's equation between two arbitrary points in a fluid system without checking that both lie on the same streamline in a steady flow, sometimes mixing a nearly-stagnant point with one in fast motion.",
+              "root_cause": "Treating Bernoulli's equation as a generic energy-conservation formula for 'the fluid' rather than as a statement derived by integrating the equation of motion along one particular streamline; documented as a persistent confusion between Bernoulli's principle and the continuity equation in student reasoning (Phys. Rev. PER 17, 010147).",
+              "diagnostic_probe": "A large open tank drains through a small pipe at the bottom. A student writes Bernoulli's equation between a point on the tank's side wall (fluid nearly still) and the pipe exit (fluid moving fast) and gets an answer that doesn't match measurement. What assumption should they check first?",
+              "correction": "Bernoulli's equation is only valid between two points on the same streamline in steady flow; applying it between arbitrary points -- especially mixing near-stagnant regions with fast-moving ones without accounting for the velocity field along the path between them -- produces an invalid energy balance."
+            }
+          ]
+        },
+        {
+          "slug": "mechanical-energy-balance-with-losses",
+          "name": "Mechanical energy balance with losses",
+          "kc_type": "rule",
+          "description": "Apply the extended mechanical energy balance (Bernoulli's equation plus friction head loss and pump/turbine shaft work) to a real pipeline between two points.",
+          "practice_notes": "Practice identifying every term that a plain Bernoulli equation would miss in a realistic system: friction loss (function of pipe length, diameter, roughness, velocity) and shaft work (pump adds energy, turbine removes it) -- write the general balance first, then set unneeded terms to zero rather than starting from the simple form and trying to bolt terms on.",
+          "sort_order": 3,
+          "prereqs": [
+            "#bernoulli-equation"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Fluid Mechanics simulations (Bernoulli, Reynolds, drag, momentum, manometers, Moody diagram)",
+              "url": "https://learncheme.com/simulations/fluid-mechanics/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Pump sizing across an elevation change",
+              "body": "Water (rho=1000 kg/m^3) is pumped from an open tank (surface at atmospheric pressure, negligible velocity) up to a second open tank whose surface is 15 m higher, through a pipe with friction head loss h_L = 3 m of water. Find the pump head required.\nStep 1: write the extended mechanical energy balance between the two free surfaces: P1/rho/g + v1^2/2/g + z1 + h_pump = P2/rho/g + v2^2/2/g + z2 + h_L.\nStep 2: both surfaces are open to atmosphere and both velocities are negligible, so P1=P2=0 (gauge) and v1=v2=0.\nStep 3: h_pump = (z2 - z1) + h_L = 15 + 3 = 18 m of head.\nStep 4: convert to power if needed: power = rho*g*Q*h_pump for a given flow rate Q."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "linear-momentum-theorem",
+          "name": "Linear momentum theorem",
+          "kc_type": "principle",
+          "description": "Apply the macroscopic linear momentum balance on a control volume (sum of forces = net rate of momentum efflux) to compute the force a flow exerts on a fitting such as a pipe bend, nozzle, or reducer, and explain why this is a vector balance distinct from the (scalar) energy balance.",
+          "practice_notes": "Practice by drawing the control volume, labeling every force (pressure at each open face, the unknown reaction force from the pipe wall, gravity if relevant) and every momentum flux term (rho*v*v*A at each opening, as a vector) before writing component equations -- momentum problems are almost always lost to sign or direction errors, not the underlying physics.",
+          "sort_order": 4,
+          "prereqs": [
+            "#macroscopic-mass-balance",
+            "math-264-advanced-calculus-for-engineers#line-and-surface-integrals"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Fluid Mechanics simulations (Bernoulli, Reynolds, drag, momentum, manometers, Moody diagram)",
+              "url": "https://learncheme.com/simulations/fluid-mechanics/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "self_explanation_prompt",
+              "level": 2,
+              "title": "Why momentum and energy give different equations",
+              "body": "For the same reducing pipe bend, the mass balance gives one equation, the energy (Bernoulli) balance gives another, and the momentum balance gives yet another (vector) equation. Explain in your own words why you need all three -- what physical information does the momentum balance capture that the scalar energy balance cannot, given that both nominally involve 'v' and 'A' at each opening?"
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Force on a 90-degree reducing elbow",
+              "body": "Water flows through a 90-degree elbow that reduces from A1=0.01 m^2 (v1=5 m/s, P1=150,000 Pa gauge) to A2=0.004 m^2. Find the force the elbow exerts on the fluid (and by Newton's third law, on the pipe supports).\nStep 1: continuity gives v2 = v1*A1/A2 = 5*0.01/0.004 = 12.5 m/s.\nStep 2: choose x along the inlet direction, y along the outlet direction (since it turns 90 degrees). Momentum balance in x: -P1*A1 - Rx = 0 - rho*v1^2*A1 (inlet momentum leaves the CV in x, nothing leaves in x at outlet), so Rx = P1*A1 + rho*v1*(rho... ) -- carefully: sum(F_x) = (rate of x-momentum out) - (rate of x-momentum in) = 0 - rho*v1*A1*v1, and F_x = P1*A1 (pressure pushing in +x) + Rx (unknown reaction), giving Rx = -P1*A1 - rho*v1^2*A1 = -(150,000*0.01) - (1000*25*0.01) = -1500 - 250 = -1750 N.\nStep 3: repeat in y using P2 (from Bernoulli/energy balance, a separate step) and v2 to get Ry. The final elbow force vector is (Rx, Ry) -- the two components come from the same momentum balance applied to each direction, not two separate physical principles."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "flowmeters",
+          "name": "Flowmeters",
+          "kc_type": "rule",
+          "description": "Apply the venturi meter or orifice meter equation, derived from Bernoulli's equation plus continuity across a constriction, to compute volumetric flow rate from a measured pressure drop.",
+          "practice_notes": "Practice deriving the meter equation from Bernoulli + continuity each time rather than memorizing the final formula in isolation, so you can adapt it when a discharge coefficient or non-ideal correction is introduced.",
+          "sort_order": 5,
+          "prereqs": [
+            "#bernoulli-equation",
+            "#macroscopic-mass-balance"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Fluid Mechanics simulations (Bernoulli, Reynolds, drag, momentum, manometers, Moody diagram)",
+              "url": "https://learncheme.com/simulations/fluid-mechanics/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Venturi meter flow rate",
+              "body": "A venturi meter has throat diameter D2=0.05 m in a pipe of diameter D1=0.10 m carrying water (rho=1000 kg/m^3). The measured pressure drop between the approach section and the throat is 20,000 Pa. Find the flow rate (ignore losses, discharge coefficient = 1).\nStep 1: Bernoulli between sections 1 and 2 (same elevation): P1 + rho*v1^2/2 = P2 + rho*v2^2/2, so P1-P2 = rho*(v2^2 - v1^2)/2 = 20,000 Pa.\nStep 2: continuity: v1*A1 = v2*A2, and A1/A2 = (D1/D2)^2 = 4, so v1 = v2/4.\nStep 3: substitute: 20,000 = 1000*(v2^2 - (v2/4)^2)/2 = 500*v2^2*(1 - 1/16) = 500*v2^2*0.9375, so v2^2 = 42.67, v2 = 6.53 m/s.\nStep 4: Q = v2*A2 = 6.53 * (pi/4*0.05^2) = 6.53*1.963e-3 = 0.0128 m^3/s (about 12.8 L/s)."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "pipeline-systems-and-friction-loss",
+          "name": "Pipeline systems and friction loss",
+          "kc_type": "rule",
+          "description": "Compute frictional pressure drop or size a pipe diameter for a required flow rate using the Darcy-Weisbach equation with a friction factor read from a Moody-chart-style correlation, given pipe length, diameter, roughness, and flow properties.",
+          "practice_notes": "Practice the iterative nature of these problems when diameter is the unknown: friction factor depends on Reynolds number, which depends on velocity, which depends on the diameter you're solving for -- guess, compute, and refine rather than expecting a one-shot algebraic solution.",
+          "sort_order": 6,
+          "prereqs": [
+            "#mechanical-energy-balance-with-losses",
+            "#drag-and-friction-factor"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Fluid Mechanics simulations (Bernoulli, Reynolds, drag, momentum, manometers, Moody diagram)",
+              "url": "https://learncheme.com/simulations/fluid-mechanics/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Friction head loss in a straight pipe run",
+              "body": "Water flows at v=3 m/s through 200 m of pipe with internal diameter 0.1 m. Given a Darcy friction factor f=0.02 (read off a Moody-chart-style correlation for the flow's Reynolds number and pipe roughness), find the friction head loss.\nStep 1: Darcy-Weisbach: h_L = f*(L/D)*(v^2/(2g)).\nStep 2: h_L = 0.02*(200/0.1)*(3^2/(2*9.81)) = 0.02*2000*(9/19.62) = 40*0.4587 = 18.3 m of water.\nStep 3: sanity check the L/D ratio (2000) -- for a fixed friction factor, head loss scales linearly with pipe length, so doubling the run to 400 m would double h_L to about 36.7 m, all else equal."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    },
+    {
+      "slug": "porous-particle-systems",
+      "name": "Porous/particle systems",
+      "sort_order": 3,
+      "kcs": [
+        {
+          "slug": "packed-bed-pressure-drop",
+          "name": "Packed-bed pressure drop",
+          "kc_type": "rule",
+          "description": "Apply the Ergun equation to compute pressure drop across a packed bed of particles from bed voidage, particle size, superficial velocity, and fluid properties.",
+          "practice_notes": "Practice identifying which Ergun term dominates: the viscous (laminar) term dominates at low Reynolds number/fine particles, the inertial (turbulent) term dominates at high Reynolds number/coarse particles -- check both before deciding a simplified (Kozeny-Carman only, or Burke-Plummer only) form is adequate.",
+          "sort_order": 1,
+          "prereqs": [
+            "#drag-and-friction-factor"
+          ],
+          "resources": [
+            {
+              "label": "Clarkson University (Subramanian) \u2014 Flow Through Packed and Fluidized Beds (PDF notes)",
+              "url": "https://people.clarkson.edu/projects/subramanian/ch330/notes/Flow%20Through%20Packed%20and%20Fluidized%20Beds.pdf",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Ergun equation, fully worked",
+              "body": "Air (rho=1.2 kg/m^3, mu=1.8e-5 Pa*s) flows upward through a packed bed of 3 mm spherical particles, bed voidage epsilon=0.4, superficial velocity v=0.1 m/s, bed height L=0.5 m. Find the pressure drop.\nStep 1: Ergun equation: dP/L = 150*mu*(1-epsilon)^2*v/(epsilon^3*d_p^2) + 1.75*rho*(1-epsilon)*v^2/(epsilon^3*d_p).\nStep 2: viscous term: 150*1.8e-5*(0.6)^2*0.1/((0.4)^3*(0.003)^2) = 150*1.8e-5*0.36*0.1/(0.064*9e-6) = 9.72e-5/5.76e-7 = 168.8 Pa/m.\nStep 3: inertial term: 1.75*1.2*(0.6)*(0.1)^2/((0.4)^3*0.003) = 1.75*1.2*0.6*0.01/(0.064*0.003) = 0.0126/1.92e-4 = 65.6 Pa/m.\nStep 4: total dP/L = 168.8+65.6 = 234.4 Pa/m, so dP = 234.4*0.5 = 117.2 Pa across the bed -- note the viscous term dominates here (about 72% of the total) because the particles are small and the superficial velocity is low."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "fluidization-and-minimum-fluidization-velocity",
+          "name": "Fluidization and minimum fluidization velocity",
+          "kc_type": "concept",
+          "description": "Determine the minimum fluidization velocity (where drag on the particles balances their net weight) and classify a bed as fixed, fluidized, or pneumatically entrained given the superficial velocity relative to that value.",
+          "practice_notes": "Practice the physical picture, not just the formula: below minimum fluidization velocity the bed behaves like a fixed packed bed with rising pressure drop as velocity increases; at and above it, pressure drop plateaus (it just supports the particle weight) while the bed expands and behaves like a fluid.",
+          "sort_order": 2,
+          "prereqs": [
+            "#packed-bed-pressure-drop"
+          ],
+          "resources": [
+            {
+              "label": "Clarkson University (Subramanian) \u2014 Flow Through Packed and Fluidized Beds (PDF notes)",
+              "url": "https://people.clarkson.edu/projects/subramanian/ch330/notes/Flow%20Through%20Packed%20and%20Fluidized%20Beds.pdf",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify the bed state",
+              "body": "A bed of particles has a known minimum fluidization velocity v_mf = 0.02 m/s. Classify the bed state at superficial velocities of (a) 0.005 m/s, (b) 0.02 m/s, (c) 0.05 m/s, (d) a very high velocity where particles are carried out of the vessel entirely.\nAnswers: (a) fixed (packed) bed -- pressure drop rises with velocity, no expansion. (b) minimum fluidization -- pressure drop just equals the bed's weight per unit area, onset of expansion. (c) fluidized bed -- pressure drop stays roughly constant (equal to bed weight/area) while bed height expands and particles circulate. (d) pneumatic transport/entrainment -- velocity exceeds the particles' terminal settling velocity and they are carried out with the fluid rather than staying in a bounded, expanded bed."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    },
+    {
+      "slug": "microscopic-balances",
+      "name": "Microscopic balances",
+      "sort_order": 4,
+      "kcs": [
+        {
+          "slug": "continuity-equation",
+          "name": "Continuity equation",
+          "kc_type": "principle",
+          "description": "Derive the differential (microscopic) continuity equation, d(rho)/dt + div(rho*v) = 0, from a mass balance on an infinitesimal control volume, and explain what each term represents physically.",
+          "practice_notes": "Practice re-deriving the equation from the infinitesimal shell balance rather than only memorizing the vector form -- being able to go from 'mass in minus mass out equals accumulation' on a small box to the divergence form is the actual skill being assessed.",
+          "sort_order": 1,
+          "prereqs": [
+            "#macroscopic-mass-balance",
+            "math-264-advanced-calculus-for-engineers#vector-calculus",
+            "math-264-advanced-calculus-for-engineers#divergence-and-stokes-theorems"
+          ],
+          "resources": [
+            {
+              "label": "NPTEL/Internet Archive \u2014 Fluid Mechanics for Chemical Engineers (40-lecture video course)",
+              "url": "https://archive.org/details/NPTEL-ChemEngr-Fluid_Mechanics",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "derivation_walkthrough",
+              "level": 2,
+              "title": "From a shell balance to div(rho*v)",
+              "body": "Consider an infinitesimal rectangular control volume dx*dy*dz fixed in space. Mass balance: (rate of mass accumulation) = (mass flow in) - (mass flow out), considering only the x-direction first: net inflow in x = [rho*vx|_x - rho*vx|_(x+dx)]*dy*dz = -d(rho*vx)/dx * dx*dy*dz (Taylor expansion, keeping first order). Repeating for y and z and summing: accumulation d(rho)/dt * dx*dy*dz = -[d(rho*vx)/dx + d(rho*vy)/dy + d(rho*vz)/dz] * dx*dy*dz. Dividing through by the volume dx*dy*dz gives d(rho)/dt + div(rho*v) = 0 -- the divergence term is exactly the net rate at which mass flux 'spreads out' from the point, and for an incompressible fluid (rho constant) this reduces to div(v) = 0, i.e. the velocity field has zero net outflow from any point."
+            },
+            {
+              "kind": "self_explanation_prompt",
+              "level": 3,
+              "title": "Explain div(v) = 0 in your own words",
+              "body": "For an incompressible flow, explain in your own words what div(v) = 0 means physically at a point in the fluid, and why it does NOT mean 'the velocity is zero' or 'the velocity is constant everywhere' -- give an example velocity field where v varies in space but still satisfies div(v) = 0."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "navier-stokes-equations",
+          "name": "Navier-Stokes equations",
+          "kc_type": "principle",
+          "description": "Derive the Navier-Stokes equations by applying Newton's second law (conservation of momentum) to a differential fluid element, and identify the physical meaning of each term (unsteady acceleration, convective acceleration, pressure gradient, viscous stress, body force).",
+          "practice_notes": "Practice naming each term out loud in a specific equation instance before solving anything -- students who can label 'this term is convective acceleration, this one is the pressure-gradient force' rarely make sign errors later, while students who only pattern-match the whole equation frequently do.",
+          "sort_order": 2,
+          "prereqs": [
+            "#continuity-equation",
+            "math-264-advanced-calculus-for-engineers#gradient-divergence-curl"
+          ],
+          "resources": [
+            {
+              "label": "NPTEL/Internet Archive \u2014 Fluid Mechanics for Chemical Engineers (40-lecture video course)",
+              "url": "https://archive.org/details/NPTEL-ChemEngr-Fluid_Mechanics",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "derivation_walkthrough",
+              "level": 2,
+              "title": "From F=ma on a fluid element to the Navier-Stokes equation",
+              "body": "Apply Newton's second law to an infinitesimal fluid element of mass rho*dx*dy*dz: (mass)*(acceleration) = sum of forces (pressure + viscous + gravity). The acceleration of a fluid element following the flow is the material derivative Dv/Dt = dv/dt + (v . grad)v -- the first term is the local (unsteady) acceleration at a fixed point, the second is convective acceleration from the element moving into a region of different velocity. The forces per unit volume are -grad(P) (net pressure force), mu*(laplacian of v) (viscous force, for a Newtonian fluid with constant viscosity), and rho*g (gravity). Assembling: rho*(dv/dt + (v.grad)v) = -grad(P) + mu*laplacian(v) + rho*g -- the Navier-Stokes equation. Each term traces back to one physical cause: mass times acceleration on the left, and the three distinct force mechanisms on the right."
+            },
+            {
+              "kind": "self_explanation_prompt",
+              "level": 3,
+              "title": "Which term dominates?",
+              "body": "For a given flow, the relative size of the convective-acceleration term versus the viscous term is set by the Reynolds number (their ratio scales as Re = rho*v*L/mu). At low Re (creeping flow), viscous forces dominate and the convective term can often be dropped (Stokes flow); at high Re, the reverse is true and inviscid analysis (like Bernoulli) becomes a good approximation away from walls. Using the Reynolds-number explorer from an earlier KC, connect a numeric Re value to which term you would expect to dominate in the corresponding Navier-Stokes balance, and explain why boundary layers exist specifically because viscous effects can never be fully neglected right at a solid wall, however high the Reynolds number is."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "boundary-layer-approximation",
+          "name": "Boundary layer approximation",
+          "kc_type": "concept",
+          "description": "Identify when the boundary-layer approximation is valid (high-Reynolds-number flow past a solid surface) and estimate how boundary-layer thickness grows with distance along a flat plate.",
+          "practice_notes": "Practice distinguishing the boundary-layer region (where viscous effects and velocity gradients are large, close to the wall) from the free-stream region (where the flow behaves as nearly inviscid) for a range of Reynolds numbers and positions along a surface.",
+          "sort_order": 3,
+          "prereqs": [
+            "#navier-stokes-equations",
+            "#reynolds-number-and-flow-regime"
+          ],
+          "resources": [
+            {
+              "label": "NPTEL/Internet Archive \u2014 Fluid Mechanics for Chemical Engineers (40-lecture video course)",
+              "url": "https://archive.org/details/NPTEL-ChemEngr-Fluid_Mechanics",
+              "kind": "canonical"
+            },
+            {
+              "label": "LearnChemE \u2014 Fluid Mechanics simulations (Bernoulli, Reynolds, drag, momentum, manometers, Moody diagram)",
+              "url": "https://learncheme.com/simulations/fluid-mechanics/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Inside or outside the boundary layer?",
+              "body": "For flow of air over a long flat plate at high Reynolds number, classify each statement as describing the boundary-layer region or the free-stream region: (1) velocity gradient normal to the wall is very large; (2) velocity is essentially uniform and equal to the free-stream value; (3) viscous shear stress is significant; (4) the flow can be well approximated as inviscid (Bernoulli-like). Answers: (1) boundary layer, (2) free stream, (3) boundary layer, (4) free stream."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "turbulence-characterization",
+          "name": "Turbulence characterization",
+          "kc_type": "concept",
+          "description": "Distinguish laminar, transitional, and turbulent flow structure using time-averaged velocity, fluctuation intensity, and the Reynolds-decomposition (mean plus fluctuating component) description of a turbulent velocity field.",
+          "practice_notes": "Practice reading a velocity-vs-time trace at a point: a flat, non-fluctuating trace is laminar; a trace with random, broadband fluctuations superimposed on a mean value is turbulent -- and connect that picture to why turbulent flows are described statistically (mean + fluctuation) rather than by a single deterministic velocity.",
+          "sort_order": 4,
+          "prereqs": [
+            "#boundary-layer-approximation"
+          ],
+          "resources": [
+            {
+              "label": "NPTEL/Internet Archive \u2014 Fluid Mechanics for Chemical Engineers (40-lecture video course)",
+              "url": "https://archive.org/details/NPTEL-ChemEngr-Fluid_Mechanics",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "retrieval_prompt",
+              "level": 1,
+              "title": "Recall the Reynolds decomposition",
+              "body": "Write the Reynolds decomposition of an instantaneous turbulent velocity component u(t) into a mean and fluctuating part, and state (without derivation) why the time-average of the fluctuating part alone is zero by construction."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    },
+    {
+      "slug": "lab",
+      "name": "Lab",
+      "sort_order": 5,
+      "kcs": [
+        {
+          "slug": "fluid-mechanics-lab-methods",
+          "name": "Fluid mechanics laboratory methods",
+          "kc_type": "association",
+          "description": "Identify the appropriate laboratory instrument or technique (manometer, venturi meter, pitot tube, rotameter) for measuring pressure difference, flow rate, or local velocity in a fluid mechanics experiment.",
+          "practice_notes": "Practice matching the measurement goal to the instrument rather than memorizing instrument names in isolation: ask 'am I measuring a pressure difference, a flow rate, or a point velocity?' first.",
+          "sort_order": 1,
+          "prereqs": [
+            "#flowmeters"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Fluid Mechanics simulations (Bernoulli, Reynolds, drag, momentum, manometers, Moody diagram)",
+              "url": "https://learncheme.com/simulations/fluid-mechanics/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "matching_drill",
+              "level": 1,
+              "title": "Match instrument to measurement",
+              "body": "Match each instrument to what it directly measures: (1) manometer, (2) pitot tube, (3) venturi meter, (4) rotameter. Options: (a) volumetric flow rate via a float position in a tapered tube, (b) local point velocity via the difference between stagnation and static pressure, (c) pressure difference between two points via a column of liquid, (d) volumetric flow rate via a measured pressure drop across a constriction. Correct: (1)-(c), (2)-(b), (3)-(d), (4)-(a)."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    }
+  ],
+  "course_resources": [
+    {
+      "label": "NPTEL/Internet Archive \u2014 Fluid Mechanics for Chemical Engineers (40-lecture video course)",
+      "url": "https://archive.org/details/NPTEL-ChemEngr-Fluid_Mechanics",
+      "kind": "canonical"
+    },
+    {
+      "label": "LearnChemE \u2014 Fluid Mechanics simulations (Bernoulli, Reynolds, drag, momentum, manometers, Moody diagram)",
+      "url": "https://learncheme.com/simulations/fluid-mechanics/",
+      "kind": "canonical",
+      "pinned": true
+    },
+    {
+      "label": "MIT OCW 10.302 \u2014 Transport Processes (course page)",
+      "url": "https://ocw.mit.edu/courses/10-302-transport-processes-fall-2004/",
+      "kind": "feed"
+    }
+  ],
+  "assessments": [
+    {
+      "title": "Assignment 1 -- Fluid properties, dimensional analysis, drag",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 8,
+      "kc_slugs": [
+        "#fluid-properties",
+        "#newtonian-vs-non-newtonian-behavior",
+        "#dimensional-analysis-and-buckingham-pi-theorem",
+        "#reynolds-number-and-flow-regime",
+        "#drag-and-friction-factor"
+      ]
+    },
+    {
+      "title": "Assignment 2 -- Macroscopic balances",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 8,
+      "kc_slugs": [
+        "#macroscopic-mass-balance",
+        "#bernoulli-equation",
+        "#mechanical-energy-balance-with-losses",
+        "#linear-momentum-theorem",
+        "#flowmeters"
+      ]
+    },
+    {
+      "title": "Assignment 3 -- Pipelines, packed/fluidized beds",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 8,
+      "kc_slugs": [
+        "#pipeline-systems-and-friction-loss",
+        "#packed-bed-pressure-drop",
+        "#fluidization-and-minimum-fluidization-velocity"
+      ]
+    },
+    {
+      "title": "Assignment 4 -- Microscopic balances",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 6,
+      "kc_slugs": [
+        "#continuity-equation",
+        "#navier-stokes-equations",
+        "#boundary-layer-approximation",
+        "#turbulence-characterization"
+      ]
+    },
+    {
+      "title": "Laboratory reports",
+      "type": "lab",
+      "kind": "official",
+      "weight_pct": 15,
+      "kc_slugs": [
+        "#fluid-mechanics-lab-methods",
+        "#flowmeters",
+        "#drag-and-friction-factor"
+      ]
+    },
+    {
+      "title": "Midterm exam",
+      "type": "midterm",
+      "kind": "official",
+      "weight_pct": 25,
+      "kc_slugs": [
+        "#fluid-properties",
+        "#dimensional-analysis-and-buckingham-pi-theorem",
+        "#reynolds-number-and-flow-regime",
+        "#macroscopic-mass-balance",
+        "#bernoulli-equation",
+        "#mechanical-energy-balance-with-losses",
+        "#linear-momentum-theorem",
+        "#flowmeters"
+      ]
+    },
+    {
+      "title": "Final exam",
+      "type": "final",
+      "kind": "official",
+      "weight_pct": 30,
+      "kc_slugs": [
+        "#pipeline-systems-and-friction-loss",
+        "#packed-bed-pressure-drop",
+        "#fluidization-and-minimum-fluidization-velocity",
+        "#continuity-equation",
+        "#navier-stokes-equations",
+        "#boundary-layer-approximation",
+        "#turbulence-characterization",
+        "#bernoulli-equation"
+      ]
+    },
+    {
+      "title": "Practice set -- Bernoulli and momentum problems",
+      "type": "assignment",
+      "kind": "practice",
+      "kc_slugs": [
+        "#bernoulli-equation",
+        "#linear-momentum-theorem",
+        "#flowmeters"
+      ]
+    },
+    {
+      "title": "Practice set -- Moody chart and friction factor drills",
+      "type": "assignment",
+      "kind": "practice",
+      "kc_slugs": [
+        "#drag-and-friction-factor",
+        "#pipeline-systems-and-friction-loss"
+      ]
+    },
+    {
+      "title": "Past-exam practice -- microscopic balances derivations",
+      "type": "quiz",
+      "kind": "practice",
+      "kc_slugs": [
+        "#continuity-equation",
+        "#navier-stokes-equations"
+      ]
+    }
+  ]
+}

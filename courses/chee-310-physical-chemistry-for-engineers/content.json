@@ -1,0 +1,725 @@
+{
+  "schema_version": 1,
+  "course_slug": "chee-310-physical-chemistry-for-engineers",
+  "branches": [
+    {
+      "slug": "kinetics",
+      "name": "Kinetics",
+      "sort_order": 1,
+      "kcs": [
+        {
+          "slug": "rate-laws-and-reaction-order",
+          "name": "Rate laws and reaction order",
+          "kc_type": "concept",
+          "description": "Classify the order of a reaction in each species and overall, given a rate law expression or a set of concentration-vs-time data.",
+          "practice_notes": "Practice with rate laws presented in different forms (algebraic expression, log-log plot of initial rates, raw concentration-time data) so the classification skill transfers rather than being tied to one representation.",
+          "sort_order": 1,
+          "prereqs": [],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Kinetics & Reactor Design resources",
+              "url": "https://learncheme.com/course-overview/kinetics-resources/",
+              "kind": "canonical",
+              "pinned": true
+            },
+            {
+              "label": "MIT OCW 5.60 \u2014 Thermodynamics & Kinetics (lecture notes)",
+              "url": "https://ocw.mit.edu/courses/5-60-thermodynamics-kinetics-spring-2008/pages/lecture-notes/",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify these rate laws",
+              "body": "For each rate law, state the order in each species and the overall order: (1) r = k[A]; (2) r = k[A]^2; (3) r = k[A][B]; (4) r = k[A]^0 (r = k); (5) r = k[A][B]^2.\nAnswers: (1) first order in A, first order overall. (2) second order in A, second order overall. (3) first order in A, first order in B, second order overall. (4) zeroth order in A, zeroth order overall (rate independent of concentration). (5) first order in A, second order in B, third order overall."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 1,
+              "title": "Recall: units of the rate constant",
+              "body": "Without looking it up: what are the units of k for a zeroth-order, first-order, and second-order reaction (concentration in mol/L, time in s)? Check: zeroth order k has units mol/(L*s); first order k has units 1/s; second order k has units L/(mol*s). Noticing that the units of k change with order is itself a fast, reliable way to sanity-check which order you're dealing with from a units clue alone."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "integrated-rate-laws",
+          "name": "Integrated rate laws",
+          "kc_type": "rule",
+          "description": "Apply the integrated form of the zeroth-, first-, or second-order rate law to solve for concentration at a given time, time to reach a given concentration, or half-life.",
+          "practice_notes": "Practice choosing the correct integrated form from the reaction order first (don't guess-and-check formulas), then solving algebraically; always double check with the half-life formula for that order as an independent sanity check.",
+          "sort_order": 2,
+          "prereqs": [
+            "#rate-laws-and-reaction-order"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Kinetics & Reactor Design resources",
+              "url": "https://learncheme.com/course-overview/kinetics-resources/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "First-order decay, fully worked (fading level 1 of 3)",
+              "body": "A reactant A decomposes by a first-order reaction with k = 0.020 1/min. Starting from [A]0 = 2.0 mol/L, find [A] after 50 minutes, and the half-life.\nStep 1: integrated first-order law: ln([A]/[A]0) = -k*t.\nStep 2: ln([A]/2.0) = -0.020*50 = -1.0, so [A]/2.0 = e^-1.0 = 0.3679, giving [A] = 0.736 mol/L.\nStep 3: half-life for first order: t_(1/2) = ln(2)/k = 0.693/0.020 = 34.7 min.\nStep 4: sanity check -- at t=50 min (more than one half-life of 34.7 min), we expect less than half of the original concentration to remain; 0.736/2.0 = 0.368, i.e. about 37% remains, consistent with having passed just over one half-life."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Same setup, you finish it (fading level 2 of 3)",
+              "body": "Same reaction, k = 0.020 1/min, [A]0 = 2.0 mol/L (first order, confirmed). This time, find the time required for [A] to drop to 0.25 mol/L. Set up ln([A]/[A]0) = -k*t with the given values, solve for t, and check your answer against the half-life (0.25 mol/L is 1/8 of 2.0 mol/L, i.e. exactly 3 half-lives -- does your computed t come out to about 3*34.7 = 104 min?)."
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Independent problem: second-order case (fading level 3 of 3)",
+              "body": "A different reactant B decomposes by a second-order reaction (rate = k[B]^2) with k = 0.15 L/(mol*min) and [B]0 = 1.0 mol/L. Using the integrated second-order law 1/[B] - 1/[B]0 = k*t, find [B] after 20 minutes and the half-life, without any further hints. Remember: the second-order half-life depends on the starting concentration, unlike the first-order case -- make sure your formula reflects that."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "arrhenius-equation-and-temperature-dependence",
+          "name": "Arrhenius equation and temperature dependence",
+          "kc_type": "fact",
+          "description": "State the Arrhenius equation k = A*exp(-Ea/(R*T)) and recall the physical meaning of each term: the pre-exponential (frequency) factor A, the activation energy Ea, the gas constant R, and absolute temperature T.",
+          "practice_notes": "Drill the equation and its linearized log form (ln k = ln A - Ea/(R*T)) until both are automatic recall, since almost every kinetics-temperature problem in this course starts from one of these two forms.",
+          "sort_order": 3,
+          "prereqs": [],
+          "resources": [
+            {
+              "label": "MIT OCW 5.60 \u2014 Thermodynamics & Kinetics (lecture notes)",
+              "url": "https://ocw.mit.edu/courses/5-60-thermodynamics-kinetics-spring-2008/pages/lecture-notes/",
+              "kind": "canonical"
+            },
+            {
+              "label": "LearnChemE \u2014 Kinetics & Reactor Design resources",
+              "url": "https://learncheme.com/course-overview/kinetics-resources/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "retrieval_prompt",
+              "level": 1,
+              "title": "Recall the Arrhenius equation, both forms",
+              "body": "Without looking it up: write the Arrhenius equation k = A*exp(...), and then write its linearized (natural-log) form that would be plotted as a straight line against 1/T. State what the slope and intercept of that line represent physically."
+            },
+            {
+              "kind": "mnemonic",
+              "level": 1,
+              "title": "Bigger Ea, more temperature-sensitive",
+              "body": "Memory hook: Ea in the exponent's numerator means a LARGER activation energy makes k MORE sensitive to temperature changes (a steeper Arrhenius plot), because the exponential term -Ea/(RT) swings more with T when Ea is large. A reaction with a tiny Ea barely speeds up when heated; a reaction with a huge Ea can go from negligible to fast over a modest temperature range."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "activation-energy-determination",
+          "name": "Activation energy determination",
+          "kc_type": "rule",
+          "description": "Determine the activation energy Ea and pre-exponential factor A of a reaction from rate constants measured at two or more temperatures, using the linearized Arrhenius relationship.",
+          "practice_notes": "Practice with both the two-point formula (ln(k2/k1) = -Ea/R*(1/T2 - 1/T1)) and the full linear-regression picture (plotting ln k vs 1/T across several points) so you're not locked into only the two-temperature shortcut.",
+          "sort_order": 4,
+          "prereqs": [
+            "#arrhenius-equation-and-temperature-dependence",
+            "#integrated-rate-laws"
+          ],
+          "resources": [
+            {
+              "label": "MIT OCW 5.60 \u2014 Thermodynamics & Kinetics (lecture notes)",
+              "url": "https://ocw.mit.edu/courses/5-60-thermodynamics-kinetics-spring-2008/pages/lecture-notes/",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Two-temperature Arrhenius determination",
+              "body": "A reaction has k1 = 0.015 1/s at T1 = 298 K and k2 = 0.048 1/s at T2 = 318 K. Find Ea.\nStep 1: two-point Arrhenius relation: ln(k2/k1) = -(Ea/R)*(1/T2 - 1/T1).\nStep 2: ln(0.048/0.015) = ln(3.2) = 1.163.\nStep 3: 1/T2 - 1/T1 = 1/318 - 1/298 = 0.003145 - 0.003356 = -2.11e-4 1/K.\nStep 4: Ea = -1.163*8.314/(-2.11e-4) = -1.163*8.314/(-2.11e-4) = 45,830 J/mol ~= 45.8 kJ/mol.\nStep 5: with Ea known, back out A from either point: A = k1*exp(Ea/(R*T1)) = 0.015*exp(45830/(8.314*298)) = 0.015*exp(18.49) = 0.015*1.07e8 = 1.61e6 1/s."
+            },
+            {
+              "kind": "interactive_model",
+              "level": 2,
+              "title": "Arrhenius rate explorer: how catalysts shift k",
+              "body": "Adjust the pre-exponential factor A, activation energy Ea, and temperature T and watch how the rate constant k responds. Compare k at your chosen Ea against k at half that Ea (same A, same T) to see, quantitatively, how much a catalyst's lower-Ea pathway can accelerate a reaction at a fixed temperature -- without changing A or T at all.",
+              "details": {
+                "title": "Arrhenius rate constant explorer",
+                "parameters": [
+                  {
+                    "id": "A",
+                    "label": "Pre-exponential factor A",
+                    "min": 1,
+                    "max": 1000000,
+                    "step": 1000,
+                    "default": 100000,
+                    "unit": "s^-1 (illustrative)"
+                  },
+                  {
+                    "id": "Ea",
+                    "label": "Activation energy Ea",
+                    "min": 20000,
+                    "max": 120000,
+                    "step": 1000,
+                    "default": 60000,
+                    "unit": "J/mol"
+                  },
+                  {
+                    "id": "T",
+                    "label": "Temperature T",
+                    "min": 250,
+                    "max": 400,
+                    "step": 5,
+                    "default": 298,
+                    "unit": "K"
+                  }
+                ],
+                "expressions": [
+                  {
+                    "id": "k",
+                    "label": "Rate constant k (this Ea)",
+                    "formula": "A * exp(-(Ea / (8.314 * T)))"
+                  },
+                  {
+                    "id": "kCatalyzed",
+                    "label": "Rate constant with catalyst (half Ea)",
+                    "formula": "A * exp(-((Ea/2) / (8.314 * T)))"
+                  }
+                ],
+                "notes": "Compare k and kCatalyzed at the same A and T: halving Ea (an illustrative catalyst effect) multiplies k by a large factor because Ea sits in the exponent -- this is the alternative lower-activation-energy pathway a catalyst provides, with A and T unchanged."
+              }
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "arrhenius-plot-intercept-misread",
+              "name": "The Arrhenius plot's y-intercept is a real rate constant",
+              "description": "Learner reads the y-intercept of an ln(k) vs 1/T plot directly as a rate constant value at some real temperature, rather than as ln(A) at the (non-physical) limit 1/T -> 0, i.e. T -> infinity.",
+              "root_cause": "Pattern-matching linear regression mechanically (slope and intercept) without connecting the intercept's physical meaning to the extrapolated infinite-temperature limit implied by 1/T = 0.",
+              "diagnostic_probe": "You plot ln(k) vs 1/T and get intercept = 25.3. A classmate says 'so k = 25.3 at some measured temperature.' What's wrong with that statement?",
+              "correction": "The y-intercept of ln(k) vs 1/T is ln(A), the natural log of the pre-exponential factor -- the (non-physical) extrapolated rate constant as T approaches infinity, not a rate constant at any measured or T=0 condition; A itself is recovered by exponentiating the intercept."
+            }
+          ]
+        },
+        {
+          "slug": "reaction-mechanisms-and-rate-determining-step",
+          "name": "Reaction mechanisms and the rate-determining step",
+          "kc_type": "rule",
+          "description": "Given a proposed multi-step reaction mechanism, identify the rate-determining (slowest) elementary step and derive the overall rate law consistent with that mechanism.",
+          "practice_notes": "Practice distinguishing the overall (observed, often non-integer or complex-looking) rate law from the rate law of a single elementary step; work through the steady-state or rate-determining-step approximation explicitly rather than pattern-matching mechanism 'shapes.'",
+          "sort_order": 5,
+          "prereqs": [
+            "#rate-laws-and-reaction-order"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Kinetics & Reactor Design resources",
+              "url": "https://learncheme.com/course-overview/kinetics-resources/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Deriving a rate law from a two-step mechanism",
+              "body": "Mechanism: (1) A + B <-> C (fast, reversible, equilibrium constant K1); (2) C -> D (slow, rate-determining, rate constant k2). Find the overall rate law in terms of [A] and [B].\nStep 1: since step 2 is rate-determining, overall rate = rate of step 2 = k2*[C].\nStep 2: [C] is an intermediate, so express it using the fast pre-equilibrium of step 1: K1 = [C]/([A][B]), so [C] = K1*[A][B].\nStep 3: substitute: rate = k2*K1*[A][B] -- overall the reaction appears first order in A, first order in B, second order overall, even though neither elementary step individually looks like that from the overall stoichiometry alone.\nStep 4: this illustrates why you cannot read reaction order for a multi-step reaction directly off the overall balanced equation -- it must come from the mechanism and the rate-determining step."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "catalysis-and-activation-energy-pathways",
+          "name": "Catalysis and activation-energy pathways",
+          "kc_type": "principle",
+          "description": "Explain, using the activation-energy concept, why a catalyst increases reaction rate without changing the reaction's thermodynamics (equilibrium constant, \u0394G_rxn), by providing an alternative reaction pathway with lower activation energy.",
+          "practice_notes": "Practice articulating the distinction between kinetics (rate, Ea, catalysts) and thermodynamics (\u0394G\u00b0, K_eq) out loud or in writing -- this is one of the most examined conceptual distinctions in physical chemistry for engineers.",
+          "sort_order": 6,
+          "prereqs": [
+            "#activation-energy-determination",
+            "#reaction-mechanisms-and-rate-determining-step"
+          ],
+          "resources": [
+            {
+              "label": "MIT OCW 5.60 \u2014 Thermodynamics & Kinetics (lecture notes)",
+              "url": "https://ocw.mit.edu/courses/5-60-thermodynamics-kinetics-spring-2008/pages/lecture-notes/",
+              "kind": "canonical"
+            },
+            {
+              "label": "LearnChemE \u2014 Langmuir-Hinshelwood kinetics interactive module",
+              "url": "https://learncheme.com/quiz-yourself/interactive-self-study-modules/langmuir-hinshelwood-kinetics/langmuir-hinshelwood-kinetics-introduction/",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "self_explanation_prompt",
+              "level": 3,
+              "title": "Explain why a catalyst doesn't move the equilibrium",
+              "body": "A catalyst is added to a reversible reaction that was already at equilibrium. In your own words, explain why the equilibrium concentrations of reactants and products do NOT change, using the idea that the catalyst lowers the activation energy for BOTH the forward and reverse reactions by the same amount."
+            },
+            {
+              "kind": "analogy",
+              "level": 2,
+              "title": "The mountain-pass analogy",
+              "body": "Think of a reaction coordinate diagram as a mountain range between a reactant valley and a product valley, with the activation energy as the height of the pass you must cross. A catalyst doesn't lower either valley (it doesn't change the reactants' or products' energy, so \u0394G_rxn and K_eq are unchanged) -- it finds or carves a lower pass through the mountains (a different reaction pathway with a lower transition-state energy) that both forward and reverse travelers can use. More travelers get through per unit time in both directions, but the two valley floors themselves stay exactly where they were."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "catalyst-changes-equilibrium",
+              "name": "Catalysts shift the equilibrium position",
+              "description": "Learner believes adding a catalyst increases the equilibrium yield of product, not just the rate of approach to equilibrium.",
+              "root_cause": "Overgeneralizing 'catalysts make reactions go better' from qualitative descriptions, without distinguishing the kinetic pathway (Ea) from the thermodynamic state function (Delta G) that fixes K_eq.",
+              "diagnostic_probe": "A catalyst is added to a reversible reaction at equilibrium. What happens to the equilibrium concentrations of products and reactants?",
+              "correction": "A catalyst lowers the activation energy for both the forward and reverse reactions equally, so it speeds up the approach to equilibrium but does not change the equilibrium constant or the equilibrium concentrations themselves."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "interfaces",
+      "name": "Interfaces",
+      "sort_order": 2,
+      "kcs": [
+        {
+          "slug": "adsorption-fundamentals-physisorption-vs-chemisorption",
+          "name": "Adsorption fundamentals: physisorption vs. chemisorption",
+          "kc_type": "concept",
+          "description": "Classify an adsorption process as physisorption (weak, van der Waals, reversible, low heat of adsorption) or chemisorption (strong, chemical bond formation, often irreversible, higher heat of adsorption) from evidence about bonding, reversibility, or heat of adsorption.",
+          "practice_notes": "Practice with the diagnostic evidence, not the label: heat of adsorption magnitude (physisorption typically < 40 kJ/mol, chemisorption typically > 80 kJ/mol), reversibility on mild heating, and whether a monolayer limit or multilayer buildup is observed.",
+          "sort_order": 1,
+          "prereqs": [],
+          "resources": [
+            {
+              "label": "Chemistry LibreTexts (Nix) \u2014 The Langmuir Isotherm",
+              "url": "https://chem.libretexts.org/Bookshelves/Physical_and_Theoretical_Chemistry_Textbook_Maps/Surface_Science_(Nix)/03:_The_Langmuir_Isotherm",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "contrast_examples",
+              "level": 2,
+              "title": "Physisorption or chemisorption?",
+              "body": "Case A: nitrogen gas adsorbing onto activated carbon at 77 K, heat of adsorption ~15 kJ/mol, fully reversible on warming to room temperature, multiple layers can build up at high pressure. Case B: oxygen adsorbing onto a clean metal surface, heat of adsorption ~250 kJ/mol, forms a surface oxide, does not desorb on mild heating. Classify each. Case A is physisorption (low heat of adsorption, reversible, multilayer capable). Case B is chemisorption (high heat of adsorption indicating true chemical bonding, essentially irreversible, monolayer-limited since it requires direct bonding to surface atoms)."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "langmuir-adsorption-isotherm",
+          "name": "Langmuir adsorption isotherm",
+          "kc_type": "rule",
+          "description": "Apply the Langmuir isotherm theta = b*P/(1 + b*P) to compute fractional surface coverage or amount adsorbed, given the equilibrium adsorption constant b and gas pressure P (or an analogous solution-phase form with concentration).",
+          "practice_notes": "Practice recognizing the isotherm's limiting behavior: at low pressure theta is approximately linear in P (theta ~ b*P), and at high pressure theta saturates toward 1 -- use these limits to sanity-check any computed coverage value.",
+          "sort_order": 2,
+          "prereqs": [
+            "#adsorption-fundamentals-physisorption-vs-chemisorption"
+          ],
+          "resources": [
+            {
+              "label": "Chemistry LibreTexts (Nix) \u2014 The Langmuir Isotherm",
+              "url": "https://chem.libretexts.org/Bookshelves/Physical_and_Theoretical_Chemistry_Textbook_Maps/Surface_Science_(Nix)/03:_The_Langmuir_Isotherm",
+              "kind": "canonical"
+            },
+            {
+              "label": "LearnChemE \u2014 Langmuir-Hinshelwood kinetics interactive module",
+              "url": "https://learncheme.com/quiz-yourself/interactive-self-study-modules/langmuir-hinshelwood-kinetics/langmuir-hinshelwood-kinetics-introduction/",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Fractional coverage from the Langmuir isotherm",
+              "body": "A gas adsorbs onto a catalyst surface with Langmuir constant b = 0.02 kPa^-1 at the operating temperature. Find the fractional coverage theta at P = 10 kPa and at P = 200 kPa.\nStep 1: theta = b*P/(1+b*P).\nStep 2: at P=10 kPa: theta = 0.02*10/(1+0.02*10) = 0.2/1.2 = 0.167 (about 17% covered).\nStep 3: at P=200 kPa: theta = 0.02*200/(1+0.02*200) = 4/5 = 0.80 (80% covered).\nStep 4: sanity check the trend -- a 20x increase in pressure (10 to 200 kPa) only increased coverage from 0.167 to 0.80, not 20x, because the isotherm saturates toward a monolayer limit of theta=1 as P grows; this saturating behavior is the isotherm's defining qualitative signature."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "langmuir-isotherm-valid-any-coverage",
+              "name": "The Langmuir isotherm applies regardless of surface heterogeneity or multilayer coverage",
+              "description": "Learner applies the Langmuir isotherm equation to systems showing multilayer adsorption or strongly heterogeneous sites, assuming the equation is a universal adsorption law.",
+              "root_cause": "The Langmuir isotherm is often the only one taught in depth, so learners default to it without checking its founding assumptions (monolayer coverage, identical independent sites, no adsorbate-adsorbate interaction).",
+              "diagnostic_probe": "Adsorption data show coverage still rising steeply well past a monolayer's worth of gas at high pressure. Does the Langmuir isotherm still describe this data?",
+              "correction": "The Langmuir isotherm assumes a single layer of adsorption onto identical, independent sites; multilayer adsorption or strongly interacting or heterogeneous sites require a different model (e.g., the BET isotherm for multilayers), not the Langmuir form."
+            }
+          ]
+        },
+        {
+          "slug": "surface-tension-and-capillarity",
+          "name": "Surface tension and capillarity",
+          "kc_type": "rule",
+          "description": "Apply the capillary-rise relation (h = 2*gamma*cos(theta_c)/(rho*g*r)) to compute the rise or depression of a liquid in a narrow tube, given surface tension, contact angle, liquid density, and tube radius.",
+          "practice_notes": "Practice identifying which direction (rise vs. depression) a given contact angle implies before computing a number: contact angle less than 90 degrees (wetting) gives capillary rise, greater than 90 degrees (non-wetting) gives capillary depression.",
+          "sort_order": 3,
+          "prereqs": [],
+          "resources": [
+            {
+              "label": "Chemistry LibreTexts \u2014 Surface Tension, Viscosity, and Capillary Action",
+              "url": "https://chem.libretexts.org/Courses/Oregon_Institute_of_Technology/OIT:_CHE_202_-_General_Chemistry_II/Unit_7:_Intermolecular_and_Intramolecular_Forces_in_Action/7.1:_Surface_Tension,_Viscosity,_and_Capillary_Action",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Capillary rise of water in a glass tube",
+              "body": "Water (surface tension gamma = 0.0728 N/m, density rho = 998 kg/m^3) rises in a clean glass capillary tube of radius r = 0.2 mm. Water wets glass with contact angle theta_c ~= 0 degrees. Find the rise height.\nStep 1: h = 2*gamma*cos(theta_c)/(rho*g*r).\nStep 2: h = 2*0.0728*cos(0)/(998*9.81*0.0002) = 0.1456/1.958 = 0.0744 m = 74.4 mm.\nStep 3: sanity check -- capillary rise scales as 1/r, so halving the tube radius to 0.1 mm would double the rise to about 149 mm; this inverse relationship (narrower tube, much higher rise) is why capillary effects matter in fine porous media but are negligible in wide pipes."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "wetting-and-contact-angle",
+          "name": "Wetting and contact angle",
+          "kc_type": "concept",
+          "description": "Classify the wetting behavior of a liquid on a solid surface (wetting/spreading vs. non-wetting/beading) from the measured contact angle, and predict qualitatively how surface chemistry changes (e.g., a hydrophobic coating) shift that angle.",
+          "practice_notes": "Practice connecting contact-angle ranges to everyday and industrial pictures: near 0 degrees is complete wetting/spreading, less than 90 degrees is generally wetting, greater than 90 degrees is non-wetting, near 180 degrees is complete beading (superhydrophobic).",
+          "sort_order": 4,
+          "prereqs": [
+            "#surface-tension-and-capillarity"
+          ],
+          "resources": [
+            {
+              "label": "Chemistry LibreTexts \u2014 Surface Tension, Viscosity, and Capillary Action",
+              "url": "https://chem.libretexts.org/Courses/Oregon_Institute_of_Technology/OIT:_CHE_202_-_General_Chemistry_II/Unit_7:_Intermolecular_and_Intramolecular_Forces_in_Action/7.1:_Surface_Tension,_Viscosity,_and_Capillary_Action",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify the wetting behavior",
+              "body": "Classify each as wetting or non-wetting and predict the sign of capillary rise (rise vs. depression) in a narrow tube of that material: (1) water on clean glass, contact angle ~0 degrees; (2) mercury on glass, contact angle ~140 degrees; (3) water on a Teflon-coated surface, contact angle ~110 degrees.\nAnswers: (1) wetting, capillary rise (positive). (2) non-wetting, capillary depression (mercury is pushed down in a glass capillary, which is why mercury barometers/thermometers show a depressed meniscus). (3) non-wetting, capillary depression."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    },
+    {
+      "slug": "electrochemistry",
+      "name": "Electrochemistry",
+      "sort_order": 3,
+      "kcs": [
+        {
+          "slug": "electrochemical-cell-fundamentals",
+          "name": "Electrochemical cell fundamentals",
+          "kc_type": "association",
+          "description": "Identify the anode and cathode, write standard cell notation, and determine the direction of electron flow (external circuit) and ion flow (salt bridge/electrolyte) for a given galvanic cell.",
+          "practice_notes": "Drill the pairing until automatic: oxidation always happens at the anode, reduction always happens at the cathode, in both galvanic and electrolytic cells -- what changes between the two cell types is which electrode is positive/negative, not which reaction happens where.",
+          "sort_order": 1,
+          "prereqs": [],
+          "resources": [
+            {
+              "label": "Chemistry LibreTexts (OpenSTAX) \u2014 The Nernst Equation",
+              "url": "https://chem.libretexts.org/Bookshelves/General_Chemistry/Chemistry_1e_(OpenSTAX)/17:_Electrochemistry/17.04:_The_Nernst_Equation",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "retrieval_prompt",
+              "level": 1,
+              "title": "Recall: anode/cathode and electron direction",
+              "body": "Without looking it up: in a galvanic (spontaneous, battery-like) cell, which electrode is the anode, which reaction (oxidation or reduction) happens there, and which direction do electrons flow through the external circuit (from anode to cathode, or cathode to anode)? Check: anode = oxidation always; electrons flow from anode to cathode through the external wire, driving the external load."
+            },
+            {
+              "kind": "matching_drill",
+              "level": 1,
+              "title": "Match cell notation elements",
+              "body": "Standard cell notation is written anode | anode solution || cathode solution | cathode. Match: (1) single vertical bar |, (2) double vertical bar ||, (3) leftmost electrode, (4) rightmost electrode. Options: (a) cathode, (b) phase boundary, (c) anode, (d) salt bridge/porous barrier separating half-cells. Correct: (1)-(b), (2)-(d), (3)-(c), (4)-(a)."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "standard-electrode-potentials",
+          "name": "Standard electrode potentials",
+          "kc_type": "rule",
+          "description": "Use a table of standard reduction potentials to determine which half-reaction is reduced and which is oxidized in a given pair, and compute the standard cell potential E\u00b0cell = E\u00b0cathode - E\u00b0anode.",
+          "practice_notes": "Drill the rule 'the half-reaction with the more positive (higher) standard reduction potential gets reduced (acts as cathode); the other is forced to run in reverse as oxidation (anode)' until it's automatic, then always double-check the sign of E\u00b0cell (should be positive for a spontaneous galvanic cell).",
+          "sort_order": 2,
+          "prereqs": [
+            "#electrochemical-cell-fundamentals"
+          ],
+          "resources": [
+            {
+              "label": "Chemistry LibreTexts (OpenSTAX) \u2014 The Nernst Equation",
+              "url": "https://chem.libretexts.org/Bookshelves/General_Chemistry/Chemistry_1e_(OpenSTAX)/17:_Electrochemistry/17.04:_The_Nernst_Equation",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Determine cathode/anode and E\u00b0cell",
+              "body": "Given two half-reactions: Cu2+ + 2e- -> Cu, E\u00b0 = +0.34 V; Zn2+ + 2e- -> Zn, E\u00b0 = -0.76 V. Determine which is reduced and find E\u00b0cell for the spontaneous cell.\nStep 1: the half-reaction with the higher (more positive) standard reduction potential is reduced -- here that's Cu2+/Cu (+0.34 V > -0.76 V), so copper is the cathode.\nStep 2: zinc is then forced to oxidize (run in reverse: Zn -> Zn2+ + 2e-) and is the anode.\nStep 3: E\u00b0cell = E\u00b0cathode - E\u00b0anode = 0.34 - (-0.76) = 1.10 V, matching the well-known standard potential of the Daniell cell."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "higher-standard-potential-means-faster-reaction",
+              "name": "A larger standard cell potential means a faster reaction",
+              "description": "Learner assumes a more positive or larger E\u00b0cell implies the electrochemical reaction proceeds more quickly.",
+              "root_cause": "Conflating a thermodynamic driving-force quantity (E\u00b0, related to Delta G\u00b0) with a kinetic rate quantity, likely from an intuitive 'bigger number means more happens' heuristic.",
+              "diagnostic_probe": "Cell A has E\u00b0cell = +2.0 V but the reaction is observed to be very slow at room temperature; Cell B has E\u00b0cell = +0.3 V and reacts quickly. Is this a contradiction?",
+              "correction": "E\u00b0cell measures the thermodynamic driving force (via Delta G\u00b0 = -nFE\u00b0cell) and says nothing about the rate; a reaction can be strongly thermodynamically favored yet kinetically slow due to a high activation energy, so cell potential and reaction rate must be evaluated independently."
+            }
+          ]
+        },
+        {
+          "slug": "nernst-equation",
+          "name": "Nernst equation",
+          "kc_type": "rule",
+          "description": "Apply the Nernst equation E_cell = E\u00b0_cell - (RT/nF)*ln(Q) (or the 25 degC form with 0.0592/n * log10 Q) to compute cell potential under non-standard concentration or partial-pressure conditions.",
+          "practice_notes": "Practice writing the reaction quotient Q correctly from the overall balanced cell reaction before touching the Nernst equation itself -- most errors come from a wrong Q, not a wrong Nernst-equation setup.",
+          "sort_order": 3,
+          "prereqs": [
+            "#standard-electrode-potentials"
+          ],
+          "resources": [
+            {
+              "label": "Chemistry LibreTexts (OpenSTAX) \u2014 The Nernst Equation",
+              "url": "https://chem.libretexts.org/Bookshelves/General_Chemistry/Chemistry_1e_(OpenSTAX)/17:_Electrochemistry/17.04:_The_Nernst_Equation",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Cell potential under non-standard concentrations",
+              "body": "For the cell Zn(s) | Zn2+(0.010 M) || Cu2+(1.50 M) | Cu(s), with E\u00b0cell = 1.10 V and n=2 electrons transferred, find E_cell at 25 degC.\nStep 1: overall reaction: Zn(s) + Cu2+ -> Zn2+ + Cu(s), so Q = [Zn2+]/[Cu2+] = 0.010/1.50 = 6.67e-3.\nStep 2: Nernst equation at 25 degC: E_cell = E\u00b0cell - (0.0592/n)*log10(Q).\nStep 3: E_cell = 1.10 - (0.0592/2)*log10(6.67e-3) = 1.10 - 0.0296*(-2.176) = 1.10 + 0.0644 = 1.164 V.\nStep 4: sanity check the direction -- lower product-ion concentration (Zn2+ diluted) and higher reactant-ion concentration (Cu2+ concentrated) both push Q down, which by Le Chatelier-like reasoning should favor the forward reaction and raise E_cell above E\u00b0cell -- consistent with getting 1.164 V > 1.10 V."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "faradays-laws-and-electrolysis",
+          "name": "Faraday's laws and electrolysis",
+          "kc_type": "rule",
+          "description": "Apply Faraday's laws of electrolysis to compute the mass of substance deposited or consumed, or the current/time required, in an electrolytic process, using charge = n*F*(moles of electrons).",
+          "practice_notes": "Practice extracting the moles-of-electrons-per-mole-of-product ratio from the half-reaction first (it is the single most common source of error), then applying Q=It and n_e = Q/F straightforwardly.",
+          "sort_order": 4,
+          "prereqs": [
+            "#electrochemical-cell-fundamentals"
+          ],
+          "resources": [
+            {
+              "label": "Chemistry LibreTexts \u2014 Faraday's Law",
+              "url": "https://chem.libretexts.org/Bookshelves/Analytical_Chemistry/Supplemental_Modules_(Analytical_Chemistry)/Electrochemistry/Faraday's_Law",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Mass of copper deposited by electrolysis",
+              "body": "A current of 5.0 A is passed through a CuSO4 solution for 2.0 hours, depositing copper at the cathode (Cu2+ + 2e- -> Cu). Find the mass of copper deposited.\nStep 1: total charge Q = I*t = 5.0 A * (2.0*3600 s) = 36,000 C.\nStep 2: moles of electrons = Q/F = 36,000/96,485 = 0.373 mol e-.\nStep 3: from the half-reaction, 2 mol e- deposits 1 mol Cu, so moles Cu = 0.373/2 = 0.187 mol.\nStep 4: mass Cu = 0.187 mol * 63.55 g/mol = 11.9 g."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "electrochemical-thermodynamics",
+          "name": "Electrochemical thermodynamics",
+          "kc_type": "principle",
+          "description": "Derive and apply the relationship \u0394G\u00b0 = -nFE\u00b0cell to connect electrochemical cell potential to reaction spontaneity, and relate E\u00b0cell to the equilibrium constant via \u0394G\u00b0 = -RT*ln(K).",
+          "practice_notes": "Practice moving fluently between the three linked quantities (E\u00b0cell, \u0394G\u00b0, K) in either direction -- given any one, be able to compute the other two -- since exam questions often start from whichever is easiest to state and ask for one of the others.",
+          "sort_order": 5,
+          "prereqs": [
+            "#nernst-equation"
+          ],
+          "resources": [
+            {
+              "label": "Chemistry LibreTexts (OpenSTAX) \u2014 The Nernst Equation",
+              "url": "https://chem.libretexts.org/Bookshelves/General_Chemistry/Chemistry_1e_(OpenSTAX)/17:_Electrochemistry/17.04:_The_Nernst_Equation",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "derivation_walkthrough",
+              "level": 2,
+              "title": "From electrical work to \u0394G\u00b0 = -nFE\u00b0cell",
+              "body": "The maximum non-expansion (electrical) work obtainable from a reversible galvanic cell equals the charge moved times the cell potential: w_elec = -n*F*E_cell (charge n*F moved through potential difference E_cell; the negative sign follows the work-done-by-the-system convention). For a reversible process at constant T and P, the maximum non-expansion work equals \u0394G for the reaction: \u0394G = -n*F*E_cell. At standard-state conditions this becomes \u0394G\u00b0 = -n*F*E\u00b0cell. Combining with the standard thermodynamic relation \u0394G\u00b0 = -R*T*ln(K) gives -n*F*E\u00b0cell = -R*T*ln(K), so E\u00b0cell = (R*T/(n*F))*ln(K) -- a positive E\u00b0cell corresponds to K > 1 (products favored at equilibrium), linking the electrochemical and thermodynamic pictures of the same reaction."
+            },
+            {
+              "kind": "self_explanation_prompt",
+              "level": 3,
+              "title": "Explain why E\u00b0cell and K must agree in sign",
+              "body": "Explain, in your own words, why a reaction with a large positive E\u00b0cell must also have a large equilibrium constant K (heavily favoring products) -- walk through the chain of relationships (E\u00b0cell -> \u0394G\u00b0 -> K) rather than quoting the final formula alone."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "corrosion-and-engineering-applications",
+          "name": "Corrosion and engineering applications",
+          "kc_type": "principle",
+          "description": "Explain corrosion of a metal as a coupled electrochemical cell (local anodic and cathodic sites on the same surface) and evaluate engineering mitigation strategies -- sacrificial anodes and cathodic protection -- in terms of the underlying electrode-potential mechanism.",
+          "practice_notes": "Practice explaining WHY a mitigation strategy works mechanistically (which metal becomes the anode and sacrifices itself, which becomes the protected cathode) rather than only naming the strategy.",
+          "sort_order": 6,
+          "prereqs": [
+            "#electrochemical-thermodynamics",
+            "#standard-electrode-potentials"
+          ],
+          "resources": [
+            {
+              "label": "Chemistry LibreTexts \u2014 Electrochemical Corrosion",
+              "url": "https://chem.libretexts.org/Bookshelves/General_Chemistry/Chem1_(Lower)/16:_Electrochemistry/16.08:_Electrochemical_Corrosion",
+              "kind": "feed"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "self_explanation_prompt",
+              "level": 3,
+              "title": "Explain sacrificial-anode protection",
+              "body": "A steel pipeline is protected from corrosion by attaching blocks of zinc (a more easily oxidized metal, E\u00b0 for Zn2+/Zn = -0.76 V vs. -0.44 V for Fe2+/Fe) at intervals along its length. In your own words, explain why the zinc corrodes preferentially instead of the steel, using the idea of which metal is forced to become the anode when the two are electrically connected."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    }
+  ],
+  "course_resources": [
+    {
+      "label": "MIT OCW 5.60 \u2014 Thermodynamics & Kinetics (lecture notes)",
+      "url": "https://ocw.mit.edu/courses/5-60-thermodynamics-kinetics-spring-2008/pages/lecture-notes/",
+      "kind": "canonical"
+    },
+    {
+      "label": "LearnChemE \u2014 Kinetics & Reactor Design resources",
+      "url": "https://learncheme.com/course-overview/kinetics-resources/",
+      "kind": "canonical",
+      "pinned": true
+    }
+  ],
+  "assessments": [
+    {
+      "title": "Assignment 1 -- Rate laws and integrated rate laws",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 7,
+      "kc_slugs": [
+        "#rate-laws-and-reaction-order",
+        "#integrated-rate-laws"
+      ]
+    },
+    {
+      "title": "Assignment 2 -- Arrhenius, mechanisms, catalysis",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 8,
+      "kc_slugs": [
+        "#arrhenius-equation-and-temperature-dependence",
+        "#activation-energy-determination",
+        "#reaction-mechanisms-and-rate-determining-step",
+        "#catalysis-and-activation-energy-pathways"
+      ]
+    },
+    {
+      "title": "Assignment 3 -- Adsorption and interfacial phenomena",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 8,
+      "kc_slugs": [
+        "#adsorption-fundamentals-physisorption-vs-chemisorption",
+        "#langmuir-adsorption-isotherm",
+        "#surface-tension-and-capillarity",
+        "#wetting-and-contact-angle"
+      ]
+    },
+    {
+      "title": "Assignment 4 -- Electrochemistry",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 7,
+      "kc_slugs": [
+        "#electrochemical-cell-fundamentals",
+        "#standard-electrode-potentials",
+        "#nernst-equation",
+        "#faradays-laws-and-electrolysis"
+      ]
+    },
+    {
+      "title": "Midterm exam",
+      "type": "midterm",
+      "kind": "official",
+      "weight_pct": 30,
+      "kc_slugs": [
+        "#rate-laws-and-reaction-order",
+        "#integrated-rate-laws",
+        "#arrhenius-equation-and-temperature-dependence",
+        "#activation-energy-determination",
+        "#reaction-mechanisms-and-rate-determining-step",
+        "#catalysis-and-activation-energy-pathways"
+      ]
+    },
+    {
+      "title": "Final exam",
+      "type": "final",
+      "kind": "official",
+      "weight_pct": 40,
+      "kc_slugs": [
+        "#adsorption-fundamentals-physisorption-vs-chemisorption",
+        "#langmuir-adsorption-isotherm",
+        "#surface-tension-and-capillarity",
+        "#wetting-and-contact-angle",
+        "#electrochemical-cell-fundamentals",
+        "#standard-electrode-potentials",
+        "#nernst-equation",
+        "#faradays-laws-and-electrolysis",
+        "#electrochemical-thermodynamics",
+        "#corrosion-and-engineering-applications"
+      ]
+    },
+    {
+      "title": "Practice set -- Arrhenius plots and activation energy",
+      "type": "assignment",
+      "kind": "practice",
+      "kc_slugs": [
+        "#activation-energy-determination",
+        "#arrhenius-equation-and-temperature-dependence"
+      ]
+    },
+    {
+      "title": "Practice set -- Nernst equation and cell potentials",
+      "type": "assignment",
+      "kind": "practice",
+      "kc_slugs": [
+        "#nernst-equation",
+        "#standard-electrode-potentials"
+      ]
+    },
+    {
+      "title": "Past-exam practice -- adsorption isotherms",
+      "type": "quiz",
+      "kind": "practice",
+      "kc_slugs": [
+        "#langmuir-adsorption-isotherm",
+        "#adsorption-fundamentals-physisorption-vs-chemisorption"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,797 @@
+{
+  "schema_version": 1,
+  "course_slug": "chee-315-heat-and-mass-transfer",
+  "branches": [
+    {
+      "slug": "heat-transfer-modes",
+      "name": "Heat transfer modes",
+      "sort_order": 1,
+      "kcs": [
+        {
+          "slug": "fouriers-law-and-conduction",
+          "name": "Fourier's law and conduction",
+          "kc_type": "rule",
+          "description": "Apply Fourier's law q = -k*(dT/dx) to compute 1-D steady-state conductive heat flux or heat transfer rate through a plane wall of known conductivity, thickness, and surface temperatures.",
+          "practice_notes": "Practice keeping the negative sign and the direction of heat flow straight -- heat flows from high to low temperature, opposite the temperature-gradient vector -- before touching the arithmetic of a specific wall.",
+          "sort_order": 1,
+          "prereqs": [
+            "math-264-advanced-calculus-for-engineers#partial-derivatives"
+          ],
+          "resources": [
+            {
+              "label": "MIT OCW 10.302 \u2014 Transport Processes (heat & mass transfer)",
+              "url": "https://ocw.mit.edu/courses/10-302-transport-processes-fall-2004/",
+              "kind": "canonical",
+              "pinned": true
+            },
+            {
+              "label": "NPTEL/Internet Archive \u2014 Chemical Engineering Heat Transfer (40-lecture video course)",
+              "url": "https://archive.org/details/NPTEL-ChemEngr-Heat_Transfer",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Heat flux through a plane wall, fully worked",
+              "body": "A brick wall (k = 0.72 W/(m*K)) is 0.20 m thick, with inner surface at 22 degC and outer surface at -5 degC. Find the heat flux and the total heat transfer rate through a 3 m x 4 m section.\nStep 1: Fourier's law for a plane wall at steady state: q'' = k*(T1-T2)/L (magnitude form, heat flowing from hot to cold side).\nStep 2: q'' = 0.72*(22-(-5))/0.20 = 0.72*27/0.20 = 97.2 W/m^2.\nStep 3: total rate Q = q''*A = 97.2*(3*4) = 1166.4 W.\nStep 4: sanity check direction -- heat flows from the warm inside (22 degC) toward the cold outside (-5 degC), consistent with the sign convention even though we used the magnitude form here."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "flux-follows-gradient-sign",
+              "name": "Diffusive/conductive flux points in the direction concentration or temperature increases",
+              "description": "Learner writes Fick's or Fourier's law without the negative sign, or reasons that flux points toward the higher-concentration/higher-temperature region because 'that's where the gradient is bigger.'",
+              "root_cause": "The gradient (grad T or grad C) points toward increasing temperature/concentration by definition, and learners transfer that direction directly to the flux instead of applying the law's explicit negative sign, which reverses it to point down-gradient.",
+              "diagnostic_probe": "Temperature increases from left to right across a wall. A student says 'the temperature gradient points right, so the heat flux points right too.' Is that correct?",
+              "correction": "Fourier's law (q = -k*dT/dx) and Fick's first law (J = -D*dC/dx) both carry a negative sign because heat and mass diffuse down the gradient, from high to low temperature/concentration -- flux points opposite to the gradient vector, not along it."
+            },
+            {
+              "slug": "heat-and-temperature-are-the-same",
+              "name": "Heat and temperature are the same quantity",
+              "description": "Learner uses 'heat' and 'temperature' interchangeably, e.g. saying an object 'has more heat' when it is simply at a higher temperature, or assuming equal heat input produces equal temperature rise regardless of the object's mass or heat capacity.",
+              "root_cause": "Everyday language conflates the two ('it's so hot,' 'add heat to warm it up'); documented extensively in thermal-science misconception research as one of the most persistent alternative conceptions carried into engineering coursework, including on instruments like the Thermal and Transport Concept Inventory.",
+              "diagnostic_probe": "Two blocks of equal mass, one steel and one aluminum, are each supplied with the same amount of heat energy (in joules). Will they reach the same final temperature? Why or why not?",
+              "correction": "Heat is energy in transit (measured in joules), while temperature is a state variable describing average molecular kinetic energy (measured in K or degC); the temperature rise produced by a given amount of heat depends on the object's mass and specific heat capacity (deltaT = Q/(m*c)), so equal heat input does not imply equal temperature change."
+            }
+          ]
+        },
+        {
+          "slug": "steady-state-multilayer-conduction",
+          "name": "Steady-state multilayer conduction",
+          "kc_type": "rule",
+          "description": "Compute the heat transfer rate through a composite (multilayer) wall using series and/or parallel thermal-resistance networks, analogous to electrical resistance circuits.",
+          "practice_notes": "Practice drawing the resistance network explicitly (each layer as a resistor R=L/(k*A), convective surfaces as R=1/(h*A)) before summing -- series resistances add directly, parallel paths combine as reciprocals, exactly like circuits.",
+          "sort_order": 2,
+          "prereqs": [
+            "#fouriers-law-and-conduction"
+          ],
+          "resources": [
+            {
+              "label": "MIT OCW 10.302 \u2014 Transport Processes (heat & mass transfer)",
+              "url": "https://ocw.mit.edu/courses/10-302-transport-processes-fall-2004/",
+              "kind": "canonical",
+              "pinned": true
+            },
+            {
+              "label": "LearnChemE \u2014 Heat Transfer simulations (conduction, convection, radiation, heat exchangers, LMTD)",
+              "url": "https://learncheme.com/simulations/heat-transfer/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Composite wall with convection on both sides",
+              "body": "A wall has two layers in series: layer 1 (brick, k1=0.72 W/(m*K), L1=0.20 m) and layer 2 (insulation, k2=0.04 W/(m*K), L2=0.05 m), with convection on the inside (h_in=8 W/(m^2*K), T_in=22 degC) and outside (h_out=25 W/(m^2*K), T_out=-5 degC), area A=1 m^2.\nStep 1: compute each resistance: R_in=1/(h_in*A)=1/8=0.125 K/W; R1=L1/(k1*A)=0.20/0.72=0.278 K/W; R2=L2/(k2*A)=0.05/0.04=1.25 K/W; R_out=1/(h_out*A)=1/25=0.04 K/W.\nStep 2: total series resistance: R_tot=0.125+0.278+1.25+0.04=1.693 K/W.\nStep 3: Q = (T_in-T_out)/R_tot = (22-(-5))/1.693 = 27/1.693 = 15.95 W.\nStep 4: sanity check -- the insulation layer (R2=1.25) dominates the total resistance (about 74% of it), which is exactly the design intent of adding insulation: make the largest resistance the one you control."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "steady-state-is-equilibrium",
+              "name": "Steady state means the system is at equilibrium",
+              "description": "Learner treats a steady-state transport process (constant temperature/concentration profile in time, but with an ongoing flux) as equivalent to thermodynamic equilibrium, where no net flux exists anywhere.",
+              "root_cause": "Both conditions are 'nothing changes with time' at a fixed observation point, so the everyday meaning of 'steady' gets mapped onto 'equilibrium'; documented as a robust misconception on the Thermal and Transport Concept Inventory for engineering students.",
+              "diagnostic_probe": "A metal rod has one end held in boiling water and the other in ice water. After a while, the temperature at every point along the rod stops changing with time. Is the rod at thermal equilibrium?",
+              "correction": "Steady state means properties at each location are constant in time, but driving forces (gradients) and fluxes can still be nonzero and sustained indefinitely by continuous input/removal at the boundaries -- true equilibrium requires all driving forces to vanish and all net fluxes to be zero everywhere, which the rod with a maintained temperature difference never reaches."
+            }
+          ]
+        },
+        {
+          "slug": "transient-conduction-and-biot-number",
+          "name": "Transient conduction and the Biot number",
+          "kc_type": "concept",
+          "description": "Use the Biot number Bi = h*Lc/k to classify whether the lumped-capacitance approximation (spatially uniform temperature within the solid) is valid for a transient conduction problem, versus needing a spatially resolved (Heisler chart or PDE) solution.",
+          "practice_notes": "Practice the Bi < 0.1 rule of thumb as a diagnostic check, not a formula to solve for something else -- the skill is deciding which solution method a problem needs before you start solving it.",
+          "sort_order": 3,
+          "prereqs": [
+            "#steady-state-multilayer-conduction"
+          ],
+          "resources": [
+            {
+              "label": "NPTEL/Internet Archive \u2014 Chemical Engineering Heat Transfer (40-lecture video course)",
+              "url": "https://archive.org/details/NPTEL-ChemEngr-Heat_Transfer",
+              "kind": "canonical"
+            },
+            {
+              "label": "MIT OCW 10.302 \u2014 Transport Processes (heat & mass transfer)",
+              "url": "https://ocw.mit.edu/courses/10-302-transport-processes-fall-2004/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Lumped capacitance: valid or not?",
+              "body": "For each case, compute Bi = h*Lc/k (Lc = characteristic length, e.g. volume/surface area) and decide if lumped capacitance (Bi < 0.1) is appropriate: (1) small copper sphere, k=400 W/(m*K), Lc=0.005 m, h=15 W/(m^2*K) (quenched in air). (2) same sphere quenched in water, h=600 W/(m^2*K).\nAnswers: (1) Bi = 15*0.005/400 = 1.9e-4, Bi << 0.1, lumped capacitance is excellent here -- the sphere's internal conduction is so much faster than the surface heat transfer that the whole sphere is essentially at one temperature at any instant. (2) Bi = 600*0.005/400 = 7.5e-3, still comfortably below 0.1 (water's higher h raises Bi by 40x but it's still small because copper's conductivity is so high) -- lumped capacitance remains valid, though closer to the boundary than case (1)."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "convection-heat-transfer-coefficient",
+          "name": "Convective heat transfer coefficient",
+          "kc_type": "concept",
+          "description": "Apply Newton's law of cooling q = h*A*(T_s - T_infinity) and classify a convection scenario as forced (externally driven flow) or natural/free (buoyancy-driven flow), recognizing that h is a flow-and-geometry-dependent parameter, not a fixed fluid property.",
+          "practice_notes": "Practice identifying the physical driver of the flow (a fan/pump vs. a temperature-induced density difference) as the first step in any convection problem, since that choice determines which correlation family (forced-convection Nu=f(Re,Pr) vs. natural-convection Nu=f(Gr,Pr)) applies.",
+          "sort_order": 4,
+          "prereqs": [
+            "chee-314-fluid-mechanics#boundary-layer-approximation",
+            "chee-314-fluid-mechanics#reynolds-number-and-flow-regime"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Heat Transfer simulations (conduction, convection, radiation, heat exchangers, LMTD)",
+              "url": "https://learncheme.com/simulations/heat-transfer/",
+              "kind": "canonical",
+              "pinned": true
+            },
+            {
+              "label": "MIT OCW 10.302 \u2014 Transport Processes (heat & mass transfer)",
+              "url": "https://ocw.mit.edu/courses/10-302-transport-processes-fall-2004/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "contrast_examples",
+              "level": 2,
+              "title": "Forced or natural convection?",
+              "body": "Case A: air blown across a hot plate by a fan at 5 m/s. Case B: a hot radiator warming still room air purely by the temperature difference it creates. Classify each and state which dimensionless groups set h. Case A is forced convection -- an external agent (the fan) drives the flow, so h correlates with Reynolds number and Prandtl number (Nu = f(Re, Pr)). Case B is natural (free) convection -- buoyancy from the temperature-induced density difference drives the flow, so h correlates with the Grashof number and Prandtl number (Nu = f(Gr, Pr)) instead of Re, since there is no externally imposed velocity to form a Reynolds number from."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "convection-coefficient-is-a-fluid-property",
+              "name": "The convective heat transfer coefficient h is a fixed fluid property",
+              "description": "Learner treats h (or the analogous mass-transfer coefficient k_c) as a tabulated material constant like thermal conductivity, rather than as a flow-and-geometry-dependent parameter.",
+              "root_cause": "h is introduced via a simple formula (q = h*A*deltaT) alongside conductivity k, so learners pattern-match it into the same 'look it up in a table' category without registering that h is empirically correlated to Reynolds/Grashof/Prandtl numbers for the specific geometry and flow regime.",
+              "diagnostic_probe": "The same air is blown over a flat plate at 2 m/s and then at 8 m/s. A student expects the same value of h to be used in both cases 'since it's the same fluid.' What's wrong with that expectation?",
+              "correction": "The convective heat transfer coefficient h depends on the flow velocity, geometry, and flow regime (via correlations like Nu = f(Re, Pr) for forced convection), not just the fluid -- changing the velocity changes Re and therefore h, even though the fluid itself hasn't changed."
+            }
+          ]
+        },
+        {
+          "slug": "radiation-heat-transfer",
+          "name": "Radiation heat transfer",
+          "kc_type": "rule",
+          "description": "Apply the Stefan-Boltzmann law (with emissivity) and simple two-surface view-factor relations to compute net radiative heat exchange between surfaces.",
+          "practice_notes": "Practice keeping temperatures in absolute units (Kelvin) at all times in radiation calculations -- the T^4 dependence makes a Celsius-vs-Kelvin slip far more consequential here than in conduction/convection formulas.",
+          "sort_order": 5,
+          "prereqs": [],
+          "resources": [
+            {
+              "label": "MIT OCW 10.302 \u2014 Transport Processes (heat & mass transfer)",
+              "url": "https://ocw.mit.edu/courses/10-302-transport-processes-fall-2004/",
+              "kind": "canonical",
+              "pinned": true
+            },
+            {
+              "label": "LearnChemE \u2014 Heat Transfer simulations (conduction, convection, radiation, heat exchangers, LMTD)",
+              "url": "https://learncheme.com/simulations/heat-transfer/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Net radiative exchange between two surfaces",
+              "body": "A small object (emissivity eps=0.8, area A=0.5 m^2, T_s=400 K) radiates to large surroundings at T_surr=300 K (surroundings act as a blackbody enclosure, view factor = 1).\nStep 1: net radiative heat transfer: Q = eps*sigma*A*(T_s^4 - T_surr^4), sigma=5.67e-8 W/(m^2*K^4).\nStep 2: T_s^4 = 400^4 = 2.56e10; T_surr^4 = 300^4 = 8.1e9.\nStep 3: Q = 0.8*5.67e-8*0.5*(2.56e10-8.1e9) = 0.8*5.67e-8*0.5*1.75e10 = 0.8*5.67e-8*8.75e9 = 0.8*496.1 = 396.9 W.\nStep 4: sanity check -- because of the fourth-power dependence, a modest 100 K temperature difference (400 vs 300 K, only 33% higher in absolute terms) still produces a large net Q; radiative effects grow much faster than linear as absolute temperature rises."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "overall-heat-transfer-coefficient-and-lmtd",
+          "name": "Overall heat transfer coefficient and LMTD",
+          "kc_type": "rule",
+          "description": "Compute the log-mean temperature difference (LMTD) for a parallel- or counter-flow heat exchanger and use it with the overall heat transfer coefficient U to relate heat duty, area, and terminal temperatures (Q = U*A*LMTD).",
+          "practice_notes": "Practice identifying the two 'ends' of the exchanger correctly for counterflow (hot inlet pairs with cold outlet at one end, hot outlet pairs with cold inlet at the other) before computing the two temperature differences that go into the LMTD formula.",
+          "sort_order": 6,
+          "prereqs": [
+            "#steady-state-multilayer-conduction",
+            "#convection-heat-transfer-coefficient"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Heat Transfer simulations (conduction, convection, radiation, heat exchangers, LMTD)",
+              "url": "https://learncheme.com/simulations/heat-transfer/",
+              "kind": "canonical",
+              "pinned": true
+            },
+            {
+              "label": "MIT OCW 10.302 \u2014 Transport Processes (heat & mass transfer)",
+              "url": "https://ocw.mit.edu/courses/10-302-transport-processes-fall-2004/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "LMTD and required area for a counterflow exchanger",
+              "body": "A counterflow heat exchanger has hot fluid entering at 150 degC and leaving at 90 degC, cold fluid entering at 30 degC and leaving at 70 degC. The exchanger must transfer Q=200 kW with U=500 W/(m^2*K). Find the required area.\nStep 1: identify the two end-temperature differences for counterflow: deltaT1 = T_hot,in - T_cold,out = 150-70 = 80 degC; deltaT2 = T_hot,out - T_cold,in = 90-30 = 60 degC.\nStep 2: LMTD = (deltaT1-deltaT2)/ln(deltaT1/deltaT2) = (80-60)/ln(80/60) = 20/ln(1.333) = 20/0.2877 = 69.5 degC.\nStep 3: Q = U*A*LMTD, so A = Q/(U*LMTD) = 200,000/(500*69.5) = 200,000/34,750 = 5.76 m^2.\nStep 4: sanity check -- LMTD (69.5) sits between the two end differences (60 and 80), as it must for a logarithmic mean; if you ever compute an LMTD outside that range, you've mismatched which end-temperatures pair together."
+            },
+            {
+              "kind": "interactive_model",
+              "level": 2,
+              "title": "LMTD explorer (counterflow)",
+              "body": "Adjust the four terminal temperatures of a counterflow heat exchanger and watch the two end-temperature differences and the resulting LMTD update. Try making the two end differences equal (deltaT1 = deltaT2) and notice the LMTD calculation becomes the simple arithmetic mean in that limit -- the log-mean form only matters when the two ends differ.",
+              "details": {
+                "title": "Counterflow LMTD explorer",
+                "parameters": [
+                  {
+                    "id": "Th_in",
+                    "label": "Hot inlet temperature",
+                    "min": 50,
+                    "max": 250,
+                    "step": 5,
+                    "default": 150,
+                    "unit": "degC"
+                  },
+                  {
+                    "id": "Th_out",
+                    "label": "Hot outlet temperature",
+                    "min": 30,
+                    "max": 200,
+                    "step": 5,
+                    "default": 90,
+                    "unit": "degC"
+                  },
+                  {
+                    "id": "Tc_in",
+                    "label": "Cold inlet temperature",
+                    "min": 0,
+                    "max": 100,
+                    "step": 5,
+                    "default": 30,
+                    "unit": "degC"
+                  },
+                  {
+                    "id": "Tc_out",
+                    "label": "Cold outlet temperature",
+                    "min": 0,
+                    "max": 150,
+                    "step": 5,
+                    "default": 70,
+                    "unit": "degC"
+                  }
+                ],
+                "expressions": [
+                  {
+                    "id": "deltaT1",
+                    "label": "deltaT at hot-inlet end",
+                    "formula": "Th_in - Tc_out"
+                  },
+                  {
+                    "id": "deltaT2",
+                    "label": "deltaT at hot-outlet end",
+                    "formula": "Th_out - Tc_in"
+                  },
+                  {
+                    "id": "lmtd",
+                    "label": "LMTD",
+                    "formula": "((Th_in - Tc_out) - (Th_out - Tc_in)) / log((Th_in - Tc_out) / (Th_out - Tc_in))"
+                  }
+                ],
+                "notes": "For counterflow, deltaT1 pairs the hot inlet with the cold outlet and deltaT2 pairs the hot outlet with the cold inlet -- pairing them the other way (as if parallel-flow) gives a different, incorrect LMTD."
+              }
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "heat-exchanger-effectiveness-ntu",
+          "name": "Heat exchanger effectiveness-NTU method",
+          "kc_type": "rule",
+          "description": "Apply the effectiveness-NTU method (epsilon, NTU=UA/C_min, C_r=C_min/C_max) as an alternative to LMTD when one or more outlet temperatures are unknown and cannot be found without iteration under the LMTD approach.",
+          "practice_notes": "Practice recognizing WHEN to switch methods: if all four terminal temperatures are known, LMTD is direct; if an outlet temperature is unknown (a rating problem, not a sizing problem), effectiveness-NTU avoids the iteration LMTD would otherwise require.",
+          "sort_order": 7,
+          "prereqs": [
+            "#overall-heat-transfer-coefficient-and-lmtd"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Heat Transfer simulations (conduction, convection, radiation, heat exchangers, LMTD)",
+              "url": "https://learncheme.com/simulations/heat-transfer/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Rating an exchanger with an unknown outlet temperature",
+              "body": "A counterflow exchanger has C_min=2000 W/K, C_max=4000 W/K (so C_r=0.5), UA=3000 W/K, hot fluid enters at 150 degC, cold fluid enters at 30 degC. Find the heat duty without knowing either outlet temperature in advance.\nStep 1: NTU = UA/C_min = 3000/2000 = 1.5.\nStep 2: for counterflow, effectiveness epsilon = (1-exp(-NTU*(1-C_r)))/(1-C_r*exp(-NTU*(1-C_r))) = (1-exp(-1.5*0.5))/(1-0.5*exp(-1.5*0.5)) = (1-exp(-0.75))/(1-0.5*exp(-0.75)) = (1-0.4724)/(1-0.2362) = 0.5276/0.7638 = 0.6907.\nStep 3: maximum possible heat transfer Q_max = C_min*(T_h,in - T_c,in) = 2000*(150-30) = 240,000 W.\nStep 4: actual Q = epsilon*Q_max = 0.6907*240,000 = 165,768 W -- obtained directly, with no need to guess an outlet temperature and iterate as an LMTD approach would require."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    },
+    {
+      "slug": "mass-transfer",
+      "name": "Mass transfer",
+      "sort_order": 2,
+      "kcs": [
+        {
+          "slug": "ficks-law-and-diffusive-flux",
+          "name": "Fick's law and diffusive flux",
+          "kc_type": "rule",
+          "description": "Apply Fick's first law J = -D*(dC/dx) to compute steady-state diffusive molar flux across a film, membrane, or stagnant gas layer, given the diffusivity and concentration profile.",
+          "practice_notes": "Practice setting up the concentration boundary conditions on each side of the diffusion path explicitly before applying Fick's law, and keep the negative sign's physical meaning (flux runs from high to low concentration) in view.",
+          "sort_order": 1,
+          "prereqs": [
+            "math-264-advanced-calculus-for-engineers#partial-derivatives"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Separations simulations (diffusion, absorption, stripping, membranes)",
+              "url": "https://learncheme.com/simulations/separations/",
+              "kind": "canonical"
+            },
+            {
+              "label": "MIT OCW 10.302 \u2014 Transport Processes (heat & mass transfer)",
+              "url": "https://ocw.mit.edu/courses/10-302-transport-processes-fall-2004/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Steady diffusion across a stagnant film",
+              "body": "A solute diffuses through a stagnant liquid film of thickness L=2 mm with diffusivity D=1.2e-9 m^2/s. Concentration at one face is C1=50 mol/m^3 and at the other face C2=10 mol/m^3.\nStep 1: for steady-state 1-D diffusion with a linear concentration profile, Fick's law gives flux N = D*(C1-C2)/L (magnitude, flux running from high to low concentration).\nStep 2: N = 1.2e-9*(50-10)/0.002 = 1.2e-9*40/0.002 = 1.2e-9*20,000 = 2.4e-5 mol/(m^2*s).\nStep 3: sanity check -- halving the film thickness L would double the flux (N is inversely proportional to L), just as halving a conduction wall's thickness doubles heat flux -- the same mathematical structure appears in both laws."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "convective-mass-transfer-coefficient",
+          "name": "Convective mass transfer coefficient",
+          "kc_type": "concept",
+          "description": "Apply the mass-transfer analog of Newton's law of cooling, N = k_c*(C_s - C_infinity), and relate the mass-transfer coefficient k_c qualitatively to the convective heat-transfer coefficient h via the heat-and-mass-transfer analogy (Chilton-Colburn), using the same Reynolds-number-based reasoning used for h.",
+          "practice_notes": "Practice recognizing the structural parallel explicitly: k_c plays the same role for mass transfer that h plays for heat transfer, and both depend on the flow (Re) and a transport property ratio (Pr for heat, Sc for mass) rather than being fixed material constants.",
+          "sort_order": 2,
+          "prereqs": [
+            "#convection-heat-transfer-coefficient",
+            "#ficks-law-and-diffusive-flux",
+            "chee-314-fluid-mechanics#dimensional-analysis-and-buckingham-pi-theorem"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Separations simulations (diffusion, absorption, stripping, membranes)",
+              "url": "https://learncheme.com/simulations/separations/",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "contrast_examples",
+              "level": 2,
+              "title": "Heat-transfer coefficient vs. mass-transfer coefficient",
+              "body": "Compare: q = h*(T_s - T_infinity) for heat transfer vs. N = k_c*(C_s - C_infinity) for mass transfer, both describing convective transport from a surface into a moving fluid. Identify which quantities play analogous roles. T_s <-> C_s (surface driving value), T_infinity <-> C_infinity (bulk/free-stream value), h <-> k_c (transfer coefficient depending on the SAME flow field), and just as h is correlated via Nu=f(Re,Pr), k_c is correlated via Sh=f(Re,Sc) -- the Prandtl number (momentum diffusivity/thermal diffusivity) is simply replaced by the Schmidt number (momentum diffusivity/mass diffusivity)."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "absorption-and-gas-liquid-equilibrium",
+          "name": "Absorption and gas-liquid equilibrium",
+          "kc_type": "rule",
+          "description": "Construct the operating line and equilibrium line for a gas absorption column and use them (graphically or algebraically) to determine the number of equilibrium stages or the column height required for a specified separation.",
+          "practice_notes": "Practice drawing the operating line from an overall mass balance on the column (not the equilibrium relationship) and keep it clearly distinct from the equilibrium line -- the vertical/horizontal 'staircase' between the two lines is what counts the stages.",
+          "sort_order": 3,
+          "prereqs": [
+            "#ficks-law-and-diffusive-flux",
+            "chee-310-physical-chemistry-for-engineers#langmuir-adsorption-isotherm"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Mass balances in absorption and stripping units (interactive)",
+              "url": "https://learncheme.com/simulations/mass-energy-balances/mass-balances-in-absorption-and-stripping-units/",
+              "kind": "canonical"
+            },
+            {
+              "label": "LearnChemE \u2014 Separations simulations (diffusion, absorption, stripping, membranes)",
+              "url": "https://learncheme.com/simulations/separations/",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Operating line for a dilute absorption column",
+              "body": "A gas stream (inert gas flow rate G_s = 10 mol/s) with solute mole ratio Y_in=0.05 enters the bottom of an absorber and must leave with Y_out=0.005. Pure solvent (liquid flow rate L_s = 60 mol/s) enters the top with X_in=0.\nStep 1: overall solute balance on the whole column: G_s*(Y_in - Y_out) = L_s*(X_out - X_in).\nStep 2: 10*(0.05-0.005) = 60*(X_out-0), so X_out = 10*0.045/60 = 0.0075.\nStep 3: the operating line connects the two end points (X_in, Y_out) = (0, 0.005) at the top of the column and (X_out, Y_in) = (0.0075, 0.05) at the bottom, on a Y-vs-X diagram; its slope is L_s/G_s = 6.\nStep 4: to find the number of stages, this operating line is stepped off against the equilibrium curve (from vapor-liquid equilibrium data) between the two end points -- the operating line by itself only fixes the mass balance, not the equilibrium relationship, which is why both lines are needed."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "drying-and-moisture-removal",
+          "name": "Drying and moisture removal",
+          "kc_type": "concept",
+          "description": "Identify the constant-rate and falling-rate periods on a drying-rate-vs-moisture-content curve, and compute drying time for each period given the critical moisture content and equilibrium moisture content.",
+          "practice_notes": "Practice reading a drying curve as two distinct physical regimes (surface-evaporation-controlled vs. internal-diffusion-controlled), not as one continuous process, and always locate the critical moisture content before choosing which period's time formula to use.",
+          "sort_order": 4,
+          "prereqs": [
+            "#ficks-law-and-diffusive-flux",
+            "chee-310-physical-chemistry-for-engineers#surface-tension-and-capillarity"
+          ],
+          "resources": [
+            {
+              "label": "NPTEL \u2014 Mass Transfer Operations I syllabus (drying, absorption, adsorption operations)",
+              "url": "https://archive.nptel.ac.in/content/syllabus_pdf/103103035.pdf",
+              "kind": "feed"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Constant-rate or falling-rate?",
+              "body": "For a wet solid drying in air, classify each statement as describing the constant-rate period or the falling-rate period: (1) the solid surface stays saturated with unbound moisture, and the rate is controlled by heat/mass transfer through the air film; (2) moisture content has dropped below the critical moisture content, and internal diffusion of moisture to the surface now limits the rate; (3) drying rate is roughly constant with time; (4) drying rate decreases as moisture content decreases.\nAnswers: (1) constant-rate period, (2) falling-rate period, (3) constant-rate period, (4) falling-rate period."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "drying-rate-constant-throughout",
+              "name": "Drying proceeds at a constant rate until the material is completely dry",
+              "description": "Learner assumes the drying rate stays constant for the entire drying process, extrapolating the initial constant-rate period all the way to zero moisture content.",
+              "root_cause": "The constant-rate period is the first and often most intuitive part of the drying curve (steady surface evaporation), so learners fail to anticipate the transition to internal-moisture-diffusion control once the critical moisture content is reached.",
+              "diagnostic_probe": "A wet solid dries at a steady rate for the first hour. A student predicts it will be completely dry after exactly twice that time if left for two hours total. What might go wrong with that prediction?",
+              "correction": "Drying typically follows a constant-rate period (surface-evaporation-controlled, while unbound surface moisture is available) followed by one or more falling-rate periods once the critical moisture content is reached and internal diffusion of moisture to the surface becomes rate-limiting -- the rate is not constant across the whole process, so linear extrapolation from the constant-rate period underestimates total drying time."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "formulation-and-design",
+      "name": "Formulation and design",
+      "sort_order": 3,
+      "kcs": [
+        {
+          "slug": "mathematical-formulation-of-transport-problems",
+          "name": "Mathematical formulation of transport problems",
+          "kc_type": "principle",
+          "description": "Set up the governing partial differential equation and boundary conditions for a heat- or mass-transfer problem by applying a conservation balance to a differential control volume, mirroring the shell-balance approach used to derive the continuity and momentum equations in fluid mechanics.",
+          "practice_notes": "Practice recognizing that conduction/diffusion, momentum, and even simple reaction-diffusion problems are all built from the same template: (accumulation) = (in) - (out) + (generation), applied to a shrinking control volume -- once that template is automatic, the specific physics (heat vs. mass vs. momentum) is just a different flux law plugged into the same balance.",
+          "sort_order": 1,
+          "prereqs": [
+            "chee-314-fluid-mechanics#continuity-equation",
+            "chee-314-fluid-mechanics#navier-stokes-equations",
+            "math-264-advanced-calculus-for-engineers#partial-derivatives"
+          ],
+          "resources": [
+            {
+              "label": "MIT OCW 10.302 \u2014 Transport Processes (heat & mass transfer)",
+              "url": "https://ocw.mit.edu/courses/10-302-transport-processes-fall-2004/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "derivation_walkthrough",
+              "level": 2,
+              "title": "From a shell balance to the heat-diffusion equation",
+              "body": "Consider steady 1-D conduction through a slab with internal heat generation g (W/m^3) per unit volume. On an infinitesimal slice of thickness dx and area A: (heat in by conduction at x) - (heat out by conduction at x+dx) + (heat generated within the slice) = 0 at steady state. Writing q(x) = -k*A*dT/dx and Taylor-expanding q(x+dx) = q(x) + dq/dx*dx, the balance becomes -A*dq/dx*dx + g*A*dx = 0, i.e. d/dx(k*dT/dx) + g = 0 -- the steady 1-D heat-diffusion equation with generation. This is the exact same derivation pattern (shell balance, Taylor expand, take the differential limit) used to derive the continuity equation for mass in fluid mechanics; only the flux law (Fourier's vs. the momentum-flux terms in Navier-Stokes) differs."
+            },
+            {
+              "kind": "self_explanation_prompt",
+              "level": 3,
+              "title": "Explain the shared derivation template",
+              "body": "In your own words, explain why the same 'shell balance -> Taylor expand -> take the differential limit' method produces the continuity equation from a mass balance, the heat-diffusion equation from an energy balance, and the diffusion equation from a species balance. What has to change between these three derivations, and what stays exactly the same?"
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "boundary-conditions-for-transport",
+          "name": "Boundary conditions for transport problems",
+          "kc_type": "concept",
+          "description": "Classify the boundary condition appropriate to a physical situation in a conduction or diffusion problem: specified surface temperature/concentration (Dirichlet), specified surface flux (Neumann), or a convective/mixed condition relating surface flux to a bulk driving difference (Robin).",
+          "practice_notes": "Practice reading the PHYSICAL description of a boundary (perfectly insulated? fixed-temperature bath? exposed to flowing air?) and translating it into the correct mathematical condition, rather than memorizing condition types in the abstract.",
+          "sort_order": 2,
+          "prereqs": [
+            "#mathematical-formulation-of-transport-problems"
+          ],
+          "resources": [
+            {
+              "label": "MIT OCW 10.302 \u2014 Transport Processes (heat & mass transfer)",
+              "url": "https://ocw.mit.edu/courses/10-302-transport-processes-fall-2004/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Classify the boundary condition",
+              "body": "For a solid slab undergoing transient conduction, classify each boundary description: (1) the surface is held in an ice bath at a fixed 0 degC; (2) the surface is perfectly insulated; (3) the surface loses heat to moving air at T_infinity via a known h.\nAnswers: (1) Dirichlet (specified temperature) condition, T(surface)=0. (2) Neumann (specified flux) condition with flux = 0, dT/dx|surface = 0. (3) convective/Robin condition: -k*dT/dx|surface = h*(T(surface) - T_infinity), relating the conductive flux at the surface to the convective driving difference."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "heat-and-mass-transfer-analogy",
+          "name": "Heat-and-mass-transfer analogy",
+          "kc_type": "principle",
+          "description": "Explain why heat, mass, and momentum transfer share the same underlying mathematical structure (the Chilton-Colburn analogy relating Nusselt, Sherwood, and friction-factor correlations through Reynolds, Prandtl, and Schmidt numbers), and identify the conditions under which the analogy breaks down.",
+          "practice_notes": "Practice stating the analogy's assumptions explicitly (similar velocity/temperature/concentration boundary-layer development, no significant form drag, moderate Prandtl/Schmidt numbers) so you can recognize when a problem violates them rather than applying the analogy blindly.",
+          "sort_order": 3,
+          "prereqs": [
+            "#convective-mass-transfer-coefficient",
+            "chee-314-fluid-mechanics#dimensional-analysis-and-buckingham-pi-theorem"
+          ],
+          "resources": [
+            {
+              "label": "MIT OCW 10.302 \u2014 Transport Processes (heat & mass transfer)",
+              "url": "https://ocw.mit.edu/courses/10-302-transport-processes-fall-2004/",
+              "kind": "canonical",
+              "pinned": true
+            },
+            {
+              "label": "LearnChemE \u2014 Separations simulations (diffusion, absorption, stripping, membranes)",
+              "url": "https://learncheme.com/simulations/separations/",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "self_explanation_prompt",
+              "level": 3,
+              "title": "Explain why the same dimensionless structure appears three times",
+              "body": "Momentum, heat, and mass transfer near a solid surface are all governed by a diffusive flux law (viscous stress, Fourier's law, Fick's law respectively) combined with the same convective transport by the flow. In your own words, explain why this shared structure is why friction factor, Nusselt number, and Sherwood number all end up as functions of Reynolds number and an analogous property ratio (Prandtl for heat, Schmidt for mass) -- and give one physical reason the analogy could fail (e.g., a chemical reaction consuming mass at the surface, or a strongly temperature-dependent viscosity)."
+            }
+          ],
+          "misconceptions": []
+        },
+        {
+          "slug": "equipment-sizing-and-design",
+          "name": "Equipment sizing and design",
+          "kc_type": "rule",
+          "description": "Size a piece of heat- or mass-transfer equipment (heat exchanger area, absorption column height) from a required duty or separation, using the relevant coefficient/equilibrium relationships developed elsewhere in the course.",
+          "practice_notes": "Practice working backward from the design specification (required Q, or required outlet composition) to the sizing variable (A, or column height/stages), rather than only working forward from a given size to predict performance -- design problems in industry are almost always posed this direction.",
+          "sort_order": 4,
+          "prereqs": [
+            "#overall-heat-transfer-coefficient-and-lmtd",
+            "#absorption-and-gas-liquid-equilibrium",
+            "chee-314-fluid-mechanics#pipeline-systems-and-friction-loss"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE \u2014 Heat Transfer simulations (conduction, convection, radiation, heat exchangers, LMTD)",
+              "url": "https://learncheme.com/simulations/heat-transfer/",
+              "kind": "canonical",
+              "pinned": true
+            },
+            {
+              "label": "LearnChemE \u2014 Mass balances in absorption and stripping units (interactive)",
+              "url": "https://learncheme.com/simulations/mass-energy-balances/mass-balances-in-absorption-and-stripping-units/",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Sizing a heat exchanger from a required duty",
+              "body": "A process requires cooling 5 kg/s of oil (cp=2100 J/(kg*K)) from 120 degC to 60 degC using cooling water entering at 20 degC and leaving at 45 degC, counterflow, U=350 W/(m^2*K). Find the required area.\nStep 1: required duty Q = m_dot*cp*deltaT = 5*2100*(120-60) = 5*2100*60 = 630,000 W.\nStep 2: LMTD end differences: deltaT1 = 120-45 = 75 degC (hot in vs cold out); deltaT2 = 60-20 = 40 degC (hot out vs cold in).\nStep 3: LMTD = (75-40)/ln(75/40) = 35/ln(1.875) = 35/0.6286 = 55.7 degC.\nStep 4: A = Q/(U*LMTD) = 630,000/(350*55.7) = 630,000/19,495 = 32.3 m^2 -- this area is the design deliverable that then feeds into selecting a physical exchanger (tube count, length, shell size) able to provide it."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    },
+    {
+      "slug": "lab",
+      "name": "Lab",
+      "sort_order": 4,
+      "kcs": [
+        {
+          "slug": "heat-mass-transfer-lab-methods",
+          "name": "Heat and mass transfer laboratory methods",
+          "kc_type": "association",
+          "description": "Identify appropriate experimental methods and instrumentation for measuring conductivity, convective heat-transfer coefficients, and mass-transfer coefficients in a laboratory setting.",
+          "practice_notes": "Practice matching the physical quantity being measured (a temperature profile, a heat-transfer coefficient, a mass-transfer rate) to the corresponding lab technique rather than memorizing apparatus names alone.",
+          "sort_order": 1,
+          "prereqs": [
+            "#steady-state-multilayer-conduction",
+            "#ficks-law-and-diffusive-flux"
+          ],
+          "resources": [
+            {
+              "label": "NPTEL/Internet Archive \u2014 Chemical Engineering Heat Transfer (40-lecture video course)",
+              "url": "https://archive.org/details/NPTEL-ChemEngr-Heat_Transfer",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "matching_drill",
+              "level": 1,
+              "title": "Match lab technique to measured quantity",
+              "body": "Match: (1) guarded hot-plate apparatus, (2) thermocouple array along a heated rod with forced air, (3) wetted-wick evaporation experiment. Options: (a) mass-transfer coefficient from evaporation rate, (b) thermal conductivity of a solid sample, (c) convective heat-transfer coefficient along a surface. Correct: (1)-(b), (2)-(c), (3)-(a)."
+            }
+          ],
+          "misconceptions": []
+        }
+      ]
+    }
+  ],
+  "course_resources": [
+    {
+      "label": "MIT OCW 10.302 \u2014 Transport Processes (heat & mass transfer)",
+      "url": "https://ocw.mit.edu/courses/10-302-transport-processes-fall-2004/",
+      "kind": "canonical",
+      "pinned": true
+    },
+    {
+      "label": "NPTEL/Internet Archive \u2014 Chemical Engineering Heat Transfer (40-lecture video course)",
+      "url": "https://archive.org/details/NPTEL-ChemEngr-Heat_Transfer",
+      "kind": "canonical"
+    },
+    {
+      "label": "LearnChemE \u2014 Heat Transfer simulations (conduction, convection, radiation, heat exchangers, LMTD)",
+      "url": "https://learncheme.com/simulations/heat-transfer/",
+      "kind": "canonical",
+      "pinned": true
+    }
+  ],
+  "assessments": [
+    {
+      "title": "Assignment 1 -- Conduction and transient conduction",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 7,
+      "kc_slugs": [
+        "#fouriers-law-and-conduction",
+        "#steady-state-multilayer-conduction",
+        "#transient-conduction-and-biot-number"
+      ]
+    },
+    {
+      "title": "Assignment 2 -- Convection and radiation",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 7,
+      "kc_slugs": [
+        "#convection-heat-transfer-coefficient",
+        "#radiation-heat-transfer"
+      ]
+    },
+    {
+      "title": "Assignment 3 -- Heat exchanger design",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 8,
+      "kc_slugs": [
+        "#overall-heat-transfer-coefficient-and-lmtd",
+        "#heat-exchanger-effectiveness-ntu"
+      ]
+    },
+    {
+      "title": "Assignment 4 -- Diffusion and mass transfer coefficients",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 7,
+      "kc_slugs": [
+        "#ficks-law-and-diffusive-flux",
+        "#convective-mass-transfer-coefficient"
+      ]
+    },
+    {
+      "title": "Assignment 5 -- Absorption and drying",
+      "type": "assignment",
+      "kind": "official",
+      "weight_pct": 8,
+      "kc_slugs": [
+        "#absorption-and-gas-liquid-equilibrium",
+        "#drying-and-moisture-removal"
+      ]
+    },
+    {
+      "title": "Laboratory reports",
+      "type": "lab",
+      "kind": "official",
+      "weight_pct": 13,
+      "kc_slugs": [
+        "#heat-mass-transfer-lab-methods",
+        "#steady-state-multilayer-conduction",
+        "#convective-mass-transfer-coefficient"
+      ]
+    },
+    {
+      "title": "Midterm exam",
+      "type": "midterm",
+      "kind": "official",
+      "weight_pct": 25,
+      "kc_slugs": [
+        "#fouriers-law-and-conduction",
+        "#steady-state-multilayer-conduction",
+        "#transient-conduction-and-biot-number",
+        "#convection-heat-transfer-coefficient",
+        "#radiation-heat-transfer",
+        "#overall-heat-transfer-coefficient-and-lmtd",
+        "#heat-exchanger-effectiveness-ntu"
+      ]
+    },
+    {
+      "title": "Final exam",
+      "type": "final",
+      "kind": "official",
+      "weight_pct": 25,
+      "kc_slugs": [
+        "#ficks-law-and-diffusive-flux",
+        "#convective-mass-transfer-coefficient",
+        "#absorption-and-gas-liquid-equilibrium",
+        "#drying-and-moisture-removal",
+        "#mathematical-formulation-of-transport-problems",
+        "#boundary-conditions-for-transport",
+        "#heat-and-mass-transfer-analogy",
+        "#equipment-sizing-and-design"
+      ]
+    },
+    {
+      "title": "Practice set -- LMTD and heat exchanger sizing",
+      "type": "assignment",
+      "kind": "practice",
+      "kc_slugs": [
+        "#overall-heat-transfer-coefficient-and-lmtd",
+        "#equipment-sizing-and-design"
+      ]
+    },
+    {
+      "title": "Practice set -- absorption column staging",
+      "type": "assignment",
+      "kind": "practice",
+      "kc_slugs": [
+        "#absorption-and-gas-liquid-equilibrium"
+      ]
+    },
+    {
+      "title": "Past-exam practice -- conduction and boundary conditions",
+      "type": "quiz",
+      "kind": "practice",
+      "kc_slugs": [
+        "#fouriers-law-and-conduction",
+        "#boundary-conditions-for-transport"
+      ]
+    }
+  ]
+}
