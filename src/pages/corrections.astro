@@ -9,13 +9,19 @@ import AppShell from '../layouts/AppShell.astro';
 import { getDb } from '../db/client';
 import { listCorrections } from '../lib/services/corrections';
 import { toApi } from '../lib/serialize';
-import CorrectionsLedger from '../components/corrections/CorrectionsLedger.svelte';
+import CorrectionsLedger, { type Correction } from '../components/corrections/CorrectionsLedger.svelte';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
 
 const corrections = await listCorrections(db, userId, {});
-const initialCorrections = toApi(corrections);
+// toApi is typed as a generic identity (see lib/serialize.ts) so it reports
+// the pre-conversion (camelCase) type even though it actually returns the
+// snake_case wire shape at runtime — the same gap dashboard.astro/tasks.astro
+// paper over via all-optional prop types. Correction's fields are
+// required-but-nullable, so that loophole doesn't apply here; bridge via
+// `unknown` since the two types don't otherwise overlap.
+const initialCorrections = toApi(corrections) as unknown as Correction[];
 ---
 
 <AppShell title="Corrections">

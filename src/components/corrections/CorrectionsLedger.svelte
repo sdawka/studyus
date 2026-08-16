@@ -5,7 +5,7 @@
   import { apiFetch } from '../../lib/apiClient';
   import { pushToast } from '../../lib/stores/toast';
 
-  type Correction = {
+  export type Correction = {
     id: string;
     kc_id: string | null;
     kc_name: string | null;
