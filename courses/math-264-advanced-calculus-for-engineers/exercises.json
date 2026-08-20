@@ -45,7 +45,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "partial f/partial y = 3x^2 y^2 + x e^(xy). Differentiate with respect to x: partial^2 f/(partial x partial y) = 6xy^2 + e^(xy) + xy e^(xy) = 6xy^2 + (1+xy) e^(xy). At (1,1): 6(1)(1) + (1+1) e^1 = 6 + 2e ≈ 6 + 5.4366 = 11.4366."
+      "solution": "partial f/partial y = 3x^2 y^2 + x e^(xy). Differentiate with respect to x: partial^2 f/(partial x partial y) = 6xy^2 + e^(xy) + xy e^(xy) = 6xy^2 + (1+xy) e^(xy). At (1,1): 6(1)(1) + (1+1) e^1 = 6 + 2e \u2248 6 + 5.4366 = 11.4366."
     },
     {
       "kc": "partial-derivatives",
@@ -173,7 +173,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "grad f = (2xy^3, 3x^2y^2). At (2,1): grad f = (2(2)(1), 3(4)(1)) = (4,12).\n\n|grad f| = sqrt(4^2+12^2) = sqrt(16+144) = sqrt(160) = 4 sqrt(10) ≈ 12.6491. This is the maximum possible directional derivative at (2,1), achieved in the direction of grad f itself."
+      "solution": "grad f = (2xy^3, 3x^2y^2). At (2,1): grad f = (2(2)(1), 3(4)(1)) = (4,12).\n\n|grad f| = sqrt(4^2+12^2) = sqrt(16+144) = sqrt(160) = 4 sqrt(10) \u2248 12.6491. This is the maximum possible directional derivative at (2,1), achieved in the direction of grad f itself."
     },
     {
       "kc": "gradient-as-steepest-ascent",
@@ -246,7 +246,7 @@
       "difficulty": 3,
       "prompt": "Use Lagrange multipliers to find the point(s) on the ellipse x^2/4 + y^2 = 1 that are closest to the origin, and give the minimum distance.",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 14.8)",
-      "solution": "Minimize the squared distance D(x,y)=x^2+y^2 (easier than distance itself) subject to g(x,y)=x^2/4+y^2=1.\n\ngrad D = (2x,2y), grad g = (x/2, 2y). Lagrange: 2x = lambda(x/2), 2y = lambda(2y).\n\nFrom the second equation: either y=0, or lambda=1.\n\nCase y=0: constraint gives x^2/4=1, x=±2. Points (±2,0), distance = 2.\n\nCase lambda=1: first equation becomes 2x = x/2 -> (3/2)x=0 -> x=0. Constraint gives y^2=1, y=±1. Points (0,±1), distance=1.\n\nComparing distances 2 and 1, the closest points are (0,1) and (0,-1), at minimum distance 1 from the origin (the ellipse's semi-minor axis)."
+      "solution": "Minimize the squared distance D(x,y)=x^2+y^2 (easier than distance itself) subject to g(x,y)=x^2/4+y^2=1.\n\ngrad D = (2x,2y), grad g = (x/2, 2y). Lagrange: 2x = lambda(x/2), 2y = lambda(2y).\n\nFrom the second equation: either y=0, or lambda=1.\n\nCase y=0: constraint gives x^2/4=1, x=\u00b12. Points (\u00b12,0), distance = 2.\n\nCase lambda=1: first equation becomes 2x = x/2 -> (3/2)x=0 -> x=0. Constraint gives y^2=1, y=\u00b11. Points (0,\u00b11), distance=1.\n\nComparing distances 2 and 1, the closest points are (0,1) and (0,-1), at minimum distance 1 from the origin (the ellipse's semi-minor axis)."
     },
     {
       "kc": "implicit-differentiation-multivariable",
@@ -356,7 +356,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "integral_{x=0}^{2} integral_{y=0}^{x^2} xy dy dx = integral_0^2 x * [y^2/2]_0^{x^2} dx = integral_0^2 x * (x^4/2) dx = integral_0^2 (x^5/2) dx = [x^6/12]_0^2 = 64/12 = 16/3 ≈ 5.3333."
+      "solution": "integral_{x=0}^{2} integral_{y=0}^{x^2} xy dy dx = integral_0^2 x * [y^2/2]_0^{x^2} dx = integral_0^2 x * (x^4/2) dx = integral_0^2 (x^5/2) dx = [x^6/12]_0^2 = 64/12 = 16/3 \u2248 5.3333."
     },
     {
       "kc": "multiple-integrals",
@@ -374,7 +374,7 @@
       "difficulty": 3,
       "prompt": "Reverse the order of integration for integral_{x=0}^{1} integral_{y=x}^{1} f(x,y) dy dx, then evaluate the resulting integral for f(x,y)=e^(y^2).",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 15.2 -- classic e^(x^2)-type reversal)",
-      "solution": "Original region: 0<=x<=1, x<=y<=1, i.e. the triangle with vertices (0,0),(0,1),(1,1).\n\nReversed order (dx dy): for fixed y between 0 and 1, x ranges from 0 to y. So the integral becomes integral_{y=0}^{1} integral_{x=0}^{y} e^(y^2) dx dy.\n\nThe inner integral over x is trivial since the integrand doesn't depend on x: integral_0^y e^(y^2) dx = y e^(y^2).\n\nSo the integral becomes integral_0^1 y e^(y^2) dy. Substitute w=y^2, dw=2y dy: = (1/2) integral_0^1 e^w dw = (1/2)(e-1) ≈ 0.8591. This reversal is exactly the standard trick for making an otherwise-unintegrable-in-x integrand tractable."
+      "solution": "Original region: 0<=x<=1, x<=y<=1, i.e. the triangle with vertices (0,0),(0,1),(1,1).\n\nReversed order (dx dy): for fixed y between 0 and 1, x ranges from 0 to y. So the integral becomes integral_{y=0}^{1} integral_{x=0}^{y} e^(y^2) dx dy.\n\nThe inner integral over x is trivial since the integrand doesn't depend on x: integral_0^y e^(y^2) dx = y e^(y^2).\n\nSo the integral becomes integral_0^1 y e^(y^2) dy. Substitute w=y^2, dw=2y dy: = (1/2) integral_0^1 e^w dw = (1/2)(e-1) \u2248 0.8591. This reversal is exactly the standard trick for making an otherwise-unintegrable-in-x integrand tractable."
     },
     {
       "kc": "coordinate-changes-for-integration",
@@ -420,7 +420,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "Convert to polar: x^2+y^2 = r^2, dA = r dr dtheta. Integral = integral_0^{2pi} integral_0^3 r^2 * r dr dtheta = integral_0^{2pi} integral_0^3 r^3 dr dtheta = 2pi * [r^4/4]_0^3 = 2pi * (81/4) = 81pi/2 ≈ 127.235."
+      "solution": "Convert to polar: x^2+y^2 = r^2, dA = r dr dtheta. Integral = integral_0^{2pi} integral_0^3 r^2 * r dr dtheta = integral_0^{2pi} integral_0^3 r^3 dr dtheta = 2pi * [r^4/4]_0^3 = 2pi * (81/4) = 81pi/2 \u2248 127.235."
     },
     {
       "kc": "coordinate-changes-for-integration",
@@ -484,11 +484,11 @@
       "difficulty": 3,
       "prompt": "For the lamina in the previous problem (rectangle 0<=x<=2, 0<=y<=3, density rho(x,y)=x+y, total mass 15 kg), find the x-coordinate of the center of mass, x-bar.",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 15.5)",
-      "solution": "M_y (moment about the y-axis) = integral_0^2 integral_0^3 x(x+y) dy dx = integral_0^2 integral_0^3 (x^2+xy) dy dx = integral_0^2 [x^2 y + xy^2/2]_0^3 dx = integral_0^2 (3x^2 + 4.5x) dx = [x^3 + 2.25x^2]_0^2 = 8 + 9 = 17.\n\nx-bar = M_y / mass = 17/15 ≈ 1.1333 m. Note this is slightly right of the rectangle's geometric center (x=1), which makes sense since density increases with x, pulling the mass-weighted center rightward."
+      "solution": "M_y (moment about the y-axis) = integral_0^2 integral_0^3 x(x+y) dy dx = integral_0^2 integral_0^3 (x^2+xy) dy dx = integral_0^2 [x^2 y + xy^2/2]_0^3 dx = integral_0^2 (3x^2 + 4.5x) dx = [x^3 + 2.25x^2]_0^2 = 8 + 9 = 17.\n\nx-bar = M_y / mass = 17/15 \u2248 1.1333 m. Note this is slightly right of the rectangle's geometric center (x=1), which makes sense since density increases with x, pulling the mass-weighted center rightward."
     },
     {
       "kc": "general-change-of-variables-jacobian",
-      "slug": "dA-formula-recognition",
+      "slug": "da-formula-recognition",
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "When changing a double integral from (x,y) to new variables (u,v) via x=x(u,v), y=y(u,v), what is the correct expression for dA in terms of du dv?",
@@ -530,7 +530,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "With u=x+y, v=x-y: x=(u+v)/2, y=(u-v)/2. Jacobian partial(x,y)/partial(u,v) = -1/2, so dA=(1/2) du dv. The region becomes the rectangle 0<=u<=2, 0<=v<=3.\n\nIntegrand becomes u*e^v. Integral = (1/2) integral_0^2 u du * integral_0^3 e^v dv = (1/2)(2)(e^3-1) = e^3-1 ≈ 19.0855."
+      "solution": "With u=x+y, v=x-y: x=(u+v)/2, y=(u-v)/2. Jacobian partial(x,y)/partial(u,v) = -1/2, so dA=(1/2) du dv. The region becomes the rectangle 0<=u<=2, 0<=v<=3.\n\nIntegrand becomes u*e^v. Integral = (1/2) integral_0^2 u du * integral_0^3 e^v dv = (1/2)(2)(e^3-1) = e^3-1 \u2248 19.0855."
     },
     {
       "kc": "general-change-of-variables-jacobian",
@@ -539,7 +539,7 @@
       "difficulty": 1,
       "prompt": "Evaluate the double integral of f(x,y)=(x-2y) over the parallelogram R bounded by x-2y=0, x-2y=4, x+y=1, x+y=3, using u=x-2y, v=x+y.",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 15.9)",
-      "solution": "R maps to the rectangle 0<=u<=4, 1<=v<=3 in the uv-plane, since u and v are each constant along a pair of the region's boundary lines.\n\nSolve for x,y: from u=x-2y, v=x+y, subtract: u-v = -3y -> y=(v-u)/3. Then x = v-y = v-(v-u)/3 = (2v+u)/3.\n\nJacobian: partial x/partial u=1/3, partial x/partial v=2/3, partial y/partial u=-1/3, partial y/partial v=1/3. Determinant = (1/3)(1/3)-(2/3)(-1/3) = 1/9+2/9=3/9=1/3. So dA = (1/3) du dv.\n\nIntegrand x-2y = u (by definition). Integral = integral_0^4 integral_1^3 u * (1/3) dv du = (1/3) * [u^2/2]_0^4 * [v]_1^3 = (1/3)(8)(2) = 16/3 ≈ 5.333."
+      "solution": "R maps to the rectangle 0<=u<=4, 1<=v<=3 in the uv-plane, since u and v are each constant along a pair of the region's boundary lines.\n\nSolve for x,y: from u=x-2y, v=x+y, subtract: u-v = -3y -> y=(v-u)/3. Then x = v-y = v-(v-u)/3 = (2v+u)/3.\n\nJacobian: partial x/partial u=1/3, partial x/partial v=2/3, partial y/partial u=-1/3, partial y/partial v=1/3. Determinant = (1/3)(1/3)-(2/3)(-1/3) = 1/9+2/9=3/9=1/3. So dA = (1/3) du dv.\n\nIntegrand x-2y = u (by definition). Integral = integral_0^4 integral_1^3 u * (1/3) dv du = (1/3) * [u^2/2]_0^4 * [v]_1^3 = (1/3)(8)(2) = 16/3 \u2248 5.333."
     },
     {
       "kc": "general-change-of-variables-jacobian",
@@ -548,7 +548,7 @@
       "difficulty": 3,
       "prompt": "Evaluate the double integral of f(x,y)=xy over the region R in the first quadrant bounded by xy=1, xy=3, y=x, y=4x, using u=xy, v=y/x. (You may take the Jacobian partial(x,y)/partial(u,v) = 1/(2v) as given.)",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 15.9, classic hyperbolic-region substitution)",
-      "solution": "R maps to the rectangle 1<=u<=3, 1<=v<=4 (since u=xy and v=y/x are each constant on a pair of the boundary curves).\n\nThe integrand xy equals u directly (by definition of u). Using the given Jacobian, dA=|1/(2v)| du dv = (1/(2v)) du dv (v>0 in the first quadrant).\n\nIntegral = integral_{u=1}^{3} integral_{v=1}^{4} u * (1/(2v)) dv du = [integral_1^3 u du] * [integral_1^4 1/(2v) dv] = [u^2/2]_1^3 * (1/2)[ln v]_1^4 = (9/2-1/2) * (1/2)(ln4) = 4 * (1/2)ln4 = 2 ln4 ≈ 2.7726."
+      "solution": "R maps to the rectangle 1<=u<=3, 1<=v<=4 (since u=xy and v=y/x are each constant on a pair of the boundary curves).\n\nThe integrand xy equals u directly (by definition of u). Using the given Jacobian, dA=|1/(2v)| du dv = (1/(2v)) du dv (v>0 in the first quadrant).\n\nIntegral = integral_{u=1}^{3} integral_{v=1}^{4} u * (1/(2v)) dv du = [integral_1^3 u du] * [integral_1^4 1/(2v) dv] = [u^2/2]_1^3 * (1/2)[ln v]_1^4 = (9/2-1/2) * (1/2)(ln4) = 4 * (1/2)ln4 = 2 ln4 \u2248 2.7726."
     },
     {
       "kc": "vector-calculus",
@@ -594,7 +594,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "F(2,1) = (2^2-1, 2*1) = (3,2). |F(2,1)| = sqrt(3^2+2^2) = sqrt(13) ≈ 3.6056."
+      "solution": "F(2,1) = (2^2-1, 2*1) = (3,2). |F(2,1)| = sqrt(3^2+2^2) = sqrt(13) \u2248 3.6056."
     },
     {
       "kc": "vector-calculus",
@@ -713,7 +713,7 @@
       "difficulty": 2,
       "prompt": "Compute the flux of F(x,y,z)=(0,0,z) upward through the flat disk of radius 2 centered on the z-axis at height z=4 (i.e., the disk x^2+y^2<=4 in the plane z=4).",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 16.7)",
-      "solution": "Since the surface is the flat, horizontal disk z=4, the upward unit normal is n=(0,0,1) everywhere, and dS=dA (no tilt correction needed for a horizontal plane).\n\nF . n = (0,0,z).(0,0,1) = z. On the surface, z=4 everywhere, so F.n = 4 (a constant).\n\nFlux = integral integral_{disk, r<=2} 4 dA = 4 * (Area of disk) = 4 * pi(2)^2 = 4*4pi = 16pi ≈ 50.265."
+      "solution": "Since the surface is the flat, horizontal disk z=4, the upward unit normal is n=(0,0,1) everywhere, and dS=dA (no tilt correction needed for a horizontal plane).\n\nF . n = (0,0,z).(0,0,1) = z. On the surface, z=4 everywhere, so F.n = 4 (a constant).\n\nFlux = integral integral_{disk, r<=2} 4 dA = 4 * (Area of disk) = 4 * pi(2)^2 = 4*4pi = 16pi \u2248 50.265."
     },
     {
       "kc": "line-and-surface-integrals",
@@ -722,7 +722,7 @@
       "difficulty": 3,
       "prompt": "Evaluate the line integral of F(x,y)=(x^2, xy) along the straight line segment from (0,0) to (2,4) (i.e., along y=2x).",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 16.2)",
-      "solution": "Parametrize r(t) = (t, 2t), 0<=t<=2 (so that at t=2 we reach (2,4)). r'(t)=(1,2).\n\nF(r(t)) = (t^2, t*2t) = (t^2, 2t^2).\n\nF . r'(t) = t^2*1 + 2t^2*2 = t^2+4t^2 = 5t^2.\n\nIntegral = integral_0^2 5t^2 dt = 5*[t^3/3]_0^2 = 5*(8/3) = 40/3 ≈ 13.333."
+      "solution": "Parametrize r(t) = (t, 2t), 0<=t<=2 (so that at t=2 we reach (2,4)). r'(t)=(1,2).\n\nF(r(t)) = (t^2, t*2t) = (t^2, 2t^2).\n\nF . r'(t) = t^2*1 + 2t^2*2 = t^2+4t^2 = 5t^2.\n\nIntegral = integral_0^2 5t^2 dt = 5*[t^3/3]_0^2 = 5*(8/3) = 40/3 \u2248 13.333."
     },
     {
       "kc": "conservative-fields-and-path-independence",
@@ -823,7 +823,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "div F = partial x/partial x + partial y/partial y + partial z/partial z = 1+1+1 = 3 (constant).\n\nBy the Divergence theorem, flux = integral integral integral_E div F dV = 3 * Volume(E) = 3 * (4/3)pi(2)^3 = 3*(4/3)pi(8) = 32pi ≈ 100.53."
+      "solution": "div F = partial x/partial x + partial y/partial y + partial z/partial z = 1+1+1 = 3 (constant).\n\nBy the Divergence theorem, flux = integral integral integral_E div F dV = 3 * Volume(E) = 3 * (4/3)pi(2)^3 = 3*(4/3)pi(8) = 32pi \u2248 100.53."
     },
     {
       "kc": "divergence-and-stokes-theorems",
@@ -832,7 +832,7 @@
       "difficulty": 3,
       "prompt": "Use Stokes' theorem to evaluate the circulation integral_C F.dr, where F(x,y,z)=(-y,x,0) and C is the circle x^2+y^2=4 in the plane z=0, oriented counterclockwise when viewed from above.",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 16.8)",
-      "solution": "Choose S to be the flat disk x^2+y^2<=4 in the plane z=0, with upward unit normal n=(0,0,1) (matching the counterclockwise orientation of C via the right-hand rule).\n\ncurl F: P=-y,Q=x,R=0. curl F=(partial R/partial y - partial Q/partial z, partial P/partial z-partial R/partial x, partial Q/partial x-partial P/partial y) = (0-0,0-0,1-(-1)) = (0,0,2).\n\nStokes: integral_C F.dr = integral integral_S curl F . n dS = integral integral_S (0,0,2).(0,0,1) dS = integral integral_S 2 dS = 2*(Area of disk) = 2*pi(2)^2 = 8pi ≈ 25.133.\n\n(This matches a direct computation via the line integral parametrization r(t)=(2cos t,2 sin t,0): F.dr integrates to 2*Area also, confirming the theorem.)"
+      "solution": "Choose S to be the flat disk x^2+y^2<=4 in the plane z=0, with upward unit normal n=(0,0,1) (matching the counterclockwise orientation of C via the right-hand rule).\n\ncurl F: P=-y,Q=x,R=0. curl F=(partial R/partial y - partial Q/partial z, partial P/partial z-partial R/partial x, partial Q/partial x-partial P/partial y) = (0-0,0-0,1-(-1)) = (0,0,2).\n\nStokes: integral_C F.dr = integral integral_S curl F . n dS = integral integral_S (0,0,2).(0,0,1) dS = integral integral_S 2 dS = 2*(Area of disk) = 2*pi(2)^2 = 8pi \u2248 25.133.\n\n(This matches a direct computation via the line integral parametrization r(t)=(2cos t,2 sin t,0): F.dr integrates to 2*Area also, confirming the theorem.)"
     },
     {
       "kc": "pde-classification-and-setup",
@@ -928,7 +928,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "lambda_3 = (3*pi/2)^2 = 9*pi^2/4 ≈ 9(9.8696)/4 ≈ 88.826/4 ≈ 22.2066."
+      "solution": "lambda_3 = (3*pi/2)^2 = 9*pi^2/4 \u2248 9(9.8696)/4 \u2248 88.826/4 \u2248 22.2066."
     },
     {
       "kc": "separation-of-variables",
@@ -992,7 +992,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "lambda_2 = (2*pi/3)^2 = 4*pi^2/9 ≈ 4(9.8696)/9 ≈ 39.478/9 ≈ 4.3865."
+      "solution": "lambda_2 = (2*pi/3)^2 = 4*pi^2/9 \u2248 4(9.8696)/9 \u2248 39.478/9 \u2248 4.3865."
     },
     {
       "kc": "sturm-liouville-eigenproblems",
@@ -1047,7 +1047,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "b_n = (2/L) integral_0^L 1*sin(n*pi*x/L) dx with L=2: b_n = (2/2) integral_0^2 sin(n*pi*x/2) dx = [-2/(n*pi) cos(n*pi*x/2)]_0^2 = (2/(n*pi))(1-cos(n*pi)).\n\nFor n=1: b_1 = (2/pi)(1-cos(pi)) = (2/pi)(1-(-1)) = (2/pi)(2) = 4/pi ≈ 1.2732."
+      "solution": "b_n = (2/L) integral_0^L 1*sin(n*pi*x/L) dx with L=2: b_n = (2/2) integral_0^2 sin(n*pi*x/2) dx = [-2/(n*pi) cos(n*pi*x/2)]_0^2 = (2/(n*pi))(1-cos(n*pi)).\n\nFor n=1: b_1 = (2/pi)(1-cos(pi)) = (2/pi)(1-(-1)) = (2/pi)(2) = 4/pi \u2248 1.2732."
     },
     {
       "kc": "fourier-series-expansion",
@@ -1157,7 +1157,7 @@
         "unit": null,
         "tolerance_pct": 2
       },
-      "solution": "Matching u(x,1)=sum B_n sin(n*pi*x/2) sinh(n*pi/2) to 3*sin(3*pi*x/2): since the right side has only an n=3 term, every B_n=0 except B_3, and B_3*sinh(3*pi/2) = 3.\n\nB_3 = 3/sinh(3*pi/2) ≈ 3/55.65 ≈ 0.0539."
+      "solution": "Matching u(x,1)=sum B_n sin(n*pi*x/2) sinh(n*pi/2) to 3*sin(3*pi*x/2): since the right side has only an n=3 term, every B_n=0 except B_3, and B_3*sinh(3*pi/2) = 3.\n\nB_3 = 3/sinh(3*pi/2) \u2248 3/55.65 \u2248 0.0539."
     },
     {
       "kc": "laplaces-equation-two-dimensional-steady-state",
@@ -1166,7 +1166,7 @@
       "difficulty": 2,
       "prompt": "A rectangular plate occupies 0<=x<=3, 0<=y<=2. Three sides are held at zero: u(0,y)=u(3,y)=0, u(x,0)=0. The top side is held at u(x,2)=5*sin(2*pi*x/3). Find the complete steady-state solution u(x,y).",
       "source": "Kreyszig, Advanced Engineering Mathematics, style problem (Ch. 12.10)",
-      "solution": "Steady state: u_xx+u_yy=0. Separate u=X(x)Y(y): X''/X = -Y''/Y = -lambda.\n\nThe two homogeneous conditions u(0,y)=u(3,y)=0 give X(0)=X(3)=0, the eigenvalue problem: lambda_n=(n*pi/3)^2, X_n(x)=sin(n*pi*x/3).\n\nThe Y-equation becomes Y''-(n*pi/3)^2 Y=0, general solution Y_n(y)=A_n cosh(n*pi*y/3)+B_n sinh(n*pi*y/3). The homogeneous condition u(x,0)=0 forces Y_n(0)=0, so A_n=0: Y_n(y)=B_n sinh(n*pi*y/3).\n\nGeneral solution: u(x,y)=sum B_n sin(n*pi*x/3) sinh(n*pi*y/3). Apply u(x,2)=5 sin(2*pi*x/3): since the right side is a single n=2 sine term, B_2*sinh(4*pi/3)=5 and every other B_n=0.\n\nB_2 = 5/sinh(4*pi/3) ≈ 5/32.97 ≈ 0.1517.\n\nFinal answer: u(x,y) = [5/sinh(4*pi/3)] * sin(2*pi*x/3) * sinh(2*pi*y/3) ≈ 0.1517 * sin(2*pi*x/3) * sinh(2*pi*y/3)."
+      "solution": "Steady state: u_xx+u_yy=0. Separate u=X(x)Y(y): X''/X = -Y''/Y = -lambda.\n\nThe two homogeneous conditions u(0,y)=u(3,y)=0 give X(0)=X(3)=0, the eigenvalue problem: lambda_n=(n*pi/3)^2, X_n(x)=sin(n*pi*x/3).\n\nThe Y-equation becomes Y''-(n*pi/3)^2 Y=0, general solution Y_n(y)=A_n cosh(n*pi*y/3)+B_n sinh(n*pi*y/3). The homogeneous condition u(x,0)=0 forces Y_n(0)=0, so A_n=0: Y_n(y)=B_n sinh(n*pi*y/3).\n\nGeneral solution: u(x,y)=sum B_n sin(n*pi*x/3) sinh(n*pi*y/3). Apply u(x,2)=5 sin(2*pi*x/3): since the right side is a single n=2 sine term, B_2*sinh(4*pi/3)=5 and every other B_n=0.\n\nB_2 = 5/sinh(4*pi/3) \u2248 5/32.97 \u2248 0.1517.\n\nFinal answer: u(x,y) = [5/sinh(4*pi/3)] * sin(2*pi*x/3) * sinh(2*pi*y/3) \u2248 0.1517 * sin(2*pi*x/3) * sinh(2*pi*y/3)."
     }
   ]
 }
