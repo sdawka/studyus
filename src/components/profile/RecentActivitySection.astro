@@ -1,0 +1,14 @@
+---
+// Pure extraction from profile.astro's "Recent activity" section — wraps
+// the existing EventTimeline usage, no behavior change.
+import EventTimeline from '../events/EventTimeline.svelte';
+---
+<section class="card">
+  <h2>Recent activity</h2>
+  <EventTimeline client:visible limit={20} />
+</section>
+
+<style>
+  section.card { margin-bottom: 1.75rem; }
+  .card h2 { font-size: 1.05rem; margin: 0 0 1rem; }
+</style>

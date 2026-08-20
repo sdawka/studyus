@@ -23,6 +23,7 @@ export const DEFAULT_SETTINGS: ResolvedSettings = {
     practice_kc: true,
     stale_kc: false,
     grade_entry: true,
+    ritual: true,
   },
 };
 

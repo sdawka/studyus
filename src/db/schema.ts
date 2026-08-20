@@ -118,6 +118,45 @@ export const kcs = sqliteTable(
 // Knowledge graph, scaffolds, misconceptions (v1.7 — courses/<slug>/content.json)
 // ---------------------------------------------------------------------------
 
+// Capabilities — higher-order competencies aggregating KCs across courses
+// (see src/lib/capabilityMastery.ts for the derived mastery/coverage fold).
+// User-scoped: competencies are cross-course, so ownership lives here
+// directly rather than flowing through a course.
+export const capabilities = sqliteTable(
+  'capabilities',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    slug: text('slug').notNull(),
+    name: text('name').notNull(),
+    description: text('description'),
+    source: text('source', { enum: ['seed', 'user'] }).notNull().default('seed'),
+    createdAt: createdAt(),
+  },
+  (table) => [uniqueIndex('capabilities_user_slug_unique').on(table.userId, table.slug)],
+);
+
+export const capabilityKcs = sqliteTable(
+  'capability_kcs',
+  {
+    id: id(),
+    capabilityId: text('capability_id')
+      .notNull()
+      .references(() => capabilities.id, { onDelete: 'cascade' }),
+    kcId: text('kc_id')
+      .notNull()
+      .references(() => kcs.id, { onDelete: 'cascade' }),
+    weight: integer('weight').notNull().default(1),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex('capability_kcs_capability_kc_unique').on(table.capabilityId, table.kcId),
+    index('capability_kcs_kc_id_idx').on(table.kcId),
+  ],
+);
+
 // Prerequisite edges between KCs: (kcId) depends on (prereqKcId). No
 // user_id — ownership flows through kcId -> kcs.courseId -> courses.userId,
 // same as assessment_kcs. May cross courses (a cross-course prereq ref in
@@ -314,6 +353,46 @@ export const attachments = sqliteTable('attachments', {
 });
 
 // ---------------------------------------------------------------------------
+// Rituals — recurring study practices ("Sunday weekly review") and/or
+// in-session structure (warm-up -> retrieval -> reflect). `groupId` is a
+// forward-looking hook for a future group scope (groups don't exist yet —
+// always null in v1; the read rule is `userId = ? AND group_id IS NULL`, see
+// data-model.md). No adherence table — adherence is computed on read from
+// ritual-generated tasks (tasks.ritualId) and study_sessions.ritualId.
+// ---------------------------------------------------------------------------
+
+export const rituals = sqliteTable(
+  'rituals',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description'),
+    kind: text('kind', { enum: ['recurring', 'session_shape', 'both'] }).notNull(),
+    cadence: text('cadence', { enum: ['daily', 'weekly', 'after_class', 'before_class'] }),
+    // Same JSON-array-string convention as courses.meetingDays (e.g.
+    // "[1,3,5]", ISO weekday numbers Mon=1..Sun=7), parsed with
+    // parseMeetingDays (src/lib/services/classSessions.ts). Null when cadence
+    // doesn't need a weekday set (daily/after_class/before_class).
+    byWeekday: text('by_weekday'),
+    courseId: text('course_id').references(() => courses.id, { onDelete: 'cascade' }),
+    // JSON array of {kind: 'game'|'warmup'|'retrieval'|'new_material'|'reflect'|'break', label?, minutes?}
+    // — a guidance step rail for session_shape/both rituals, not enforced
+    // gates (see StudyFlow.svelte). Null for plain recurring rituals with no
+    // in-session structure.
+    steps: text('steps', { mode: 'json' }),
+    // Reserved for a future group scope — no FK (groups don't exist yet).
+    // Always null in v1.
+    groupId: text('group_id'),
+    active: integer('active', { mode: 'boolean' }).notNull().default(true),
+    createdAt: createdAt(),
+  },
+  (table) => [index('rituals_user_id_idx').on(table.userId)],
+);
+
+// ---------------------------------------------------------------------------
 // Tasks
 // ---------------------------------------------------------------------------
 
@@ -351,6 +430,9 @@ export const tasks = sqliteTable(
     classSessionId: text('class_session_id').references(() => classSessions.id, { onDelete: 'cascade' }),
     assessmentId: text('assessment_id').references(() => assessments.id, { onDelete: 'cascade' }),
     kcId: text('kc_id').references(() => kcs.id, { onDelete: 'cascade' }),
+    // v1.9: origin FK for sweep-generated 'ritual' tasks — see
+    // services/taskSweep.ts::collectRituals.
+    ritualId: text('ritual_id').references(() => rituals.id, { onDelete: 'cascade' }),
     // Idempotency key for sweep-generated rows, e.g. `attend_class:<id>`.
     // Unique-indexed below; NULL (all user tasks) is unconstrained under
     // SQLite's multi-NULL unique semantics. Never serialized.
@@ -420,6 +502,9 @@ export const studySessions = sqliteTable(
     endedAt: integer('ended_at'),
     scheduledAt: integer('scheduled_at'),
     reflection: text('reflection'),
+    // v1.9: session-shape ritual adherence signal — see rituals table and
+    // services/rituals.ts::listRitualsWithAdherence.
+    ritualId: text('ritual_id').references(() => rituals.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
   },
   (table) => [

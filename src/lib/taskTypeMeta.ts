@@ -57,6 +57,16 @@ export const TASK_TYPE_META: Record<TaskType, TaskTypeMetaEntry> = {
     iconPath: 'M6.5 17.5l11-11 M6 8.5a1.5 1.5 0 1 0 3 0 a1.5 1.5 0 1 0 -3 0 M15 15.5a1.5 1.5 0 1 0 3 0 a1.5 1.5 0 1 0 -3 0',
     weight: 6,
   },
+  // v1.9 placeholder — TASK_TYPE_META is an exhaustive Record<TaskType, ...>,
+  // so 'ritual' needs an entry here to keep check:types green. Label/icon are
+  // provisional; the rituals track owns real polish of this entry.
+  ritual: {
+    label: 'Ritual',
+    // repeat-circle: a near-full circular arc (provisional — placeholder
+    // shape distinct from review_after_class's; rituals track owns final art).
+    iconPath: 'M12 4a8 8 0 1 0 8 8 M16 4v4h-4',
+    weight: 7,
+  },
 };
 
 // Re-exported so frontend code that only needs the list/type of task types

@@ -15,6 +15,10 @@ export const createStudySessionSchema = z.strictObject({
   // When set, this is a planned/scheduled session — startedAt is stamped
   // with this same value (see createSession) rather than "now".
   scheduled_at: isoDatetimeSchema.optional(),
+  // v1.9: session-shape ritual picked at session start (see rituals table,
+  // kind 'session_shape'|'both') — StudyFlow.svelte renders `steps` as a
+  // guidance step rail. Optional; independent of course_id.
+  ritual_id: idSchema.optional(),
 });
 export type CreateStudySessionInput = z.infer<typeof createStudySessionSchema>;
 

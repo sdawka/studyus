@@ -13,6 +13,9 @@ export const TASK_TYPES = [
   'practice_kc',
   'stale_kc',
   'grade_entry',
+  // v1.9: sweep-generated from active rituals (services/taskSweep.ts::collectRituals) —
+  // same non-user-mintable rule as the rest of this list.
+  'ritual',
 ] as const;
 export type TaskType = (typeof TASK_TYPES)[number];
 

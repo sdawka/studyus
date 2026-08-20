@@ -1,0 +1,40 @@
+---
+// Pure extraction from profile.astro's "Overall standing" section — no
+// behavior change, same markup/classes.
+interface Props {
+  overallMastery: number;
+  currentStreak: number;
+  longestStreak: number;
+}
+const { overallMastery, currentStreak, longestStreak } = Astro.props;
+---
+<section class="card summary-sheet">
+  <h2>Overall standing</h2>
+  <div class="standing-row">
+    <div class="standing-num">
+      <div class="big">{overallMastery}%</div>
+      <div class="lbl">overall mastery</div>
+    </div>
+    <div class="divider"></div>
+    <div class="standing-num">
+      <div class="big">{currentStreak}</div>
+      <div class="lbl">day streak, current</div>
+    </div>
+    <div class="divider"></div>
+    <div class="standing-num">
+      <div class="big">{longestStreak}</div>
+      <div class="lbl">day streak, longest</div>
+    </div>
+  </div>
+  <div class="aside-muted">Streaks count consecutive UTC days with at least one logged event — attendance, grades, study, and tutor sessions all count.</div>
+</section>
+
+<style>
+  section.card { margin-bottom: 1.75rem; }
+  .card h2 { font-size: 1.05rem; margin: 0 0 1rem; }
+  .standing-row { display: flex; gap: 2.2rem; align-items: center; flex-wrap: wrap; }
+  .standing-num .big { font-size: 2rem; font-weight: 600; color: var(--accent); line-height: 1; }
+  .standing-num .lbl { font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-top: 0.25rem; }
+  .divider { width: 1px; height: 2.6rem; background: var(--hairline); }
+  .aside-muted { margin-top: 0.9rem; }
+</style>

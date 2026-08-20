@@ -2,11 +2,19 @@
 import AppShell from '../layouts/AppShell.astro';
 import { env } from 'cloudflare:workers';
 import { getDb } from '../db/client';
-import { and, eq, inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { courses, kcs } from '../db/schema';
 import { getProfile } from '../lib/services/profile';
-import MasteryBar from '../components/course/MasteryBar.astro';
-import EventTimeline from '../components/events/EventTimeline.svelte';
+import StandingCard from '../components/profile/StandingCard.astro';
+import MasteryByCourse from '../components/profile/MasteryByCourse.astro';
+import ConceptsByStatus from '../components/profile/ConceptsByStatus.astro';
+import RecentActivitySection from '../components/profile/RecentActivitySection.astro';
+import CapabilitiesPanel from '../components/profile/CapabilitiesPanel.svelte';
+import FrontierPanel from '../components/profile/FrontierPanel.svelte';
+import RitualsPanel from '../components/profile/RitualsPanel.svelte';
+import type { CapabilityResponse, MetaSkill } from '../lib/schemas/capabilities';
+import type { FrontierResponse } from '../lib/schemas/zpd';
+import type { RitualResponse } from '../lib/schemas/rituals';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
@@ -26,147 +34,36 @@ if (courseIds.length > 0) {
 }
 const totalKcs = Object.values(statusCounts).reduce((a, b) => a + b, 0);
 
-const STATUS_LABELS: Record<string, string> = {
-  'not-started': 'Not started',
-  learning: 'Learning',
-  review: 'Review',
-  mastered: 'Mastered',
-};
+// TODO(track-b): wire listCapabilities/getMetaSkills (src/lib/services/capabilities.ts).
+const capabilities: CapabilityResponse[] | null = null;
+const metaSkills: MetaSkill[] | null = null;
+// TODO(track-a): wire getGlobalFrontier (src/lib/services/zpd.ts); also replace
+// getProfile's knowledge_map: null TODO (src/lib/services/profile.ts) with real
+// frontier summary counts.
+const frontier: FrontierResponse | null = null;
+// TODO(track-c): wire listRitualsWithAdherence (src/lib/services/rituals.ts).
+const rituals: RitualResponse[] | null = null;
 ---
 <AppShell title="Profile">
   <h1>Profile</h1>
 
-  <section class="card summary-sheet">
-    <h2>Overall standing</h2>
-    <div class="standing-row">
-      <div class="standing-num">
-        <div class="big">{profile.overall_mastery}%</div>
-        <div class="lbl">overall mastery</div>
-      </div>
-      <div class="divider"></div>
-      <div class="standing-num">
-        <div class="big">{profile.current_streak}</div>
-        <div class="lbl">day streak, current</div>
-      </div>
-      <div class="divider"></div>
-      <div class="standing-num">
-        <div class="big">{profile.longest_streak}</div>
-        <div class="lbl">day streak, longest</div>
-      </div>
-    </div>
-    <div class="aside-muted">Streaks count consecutive UTC days with at least one logged event — attendance, grades, study, and tutor sessions all count.</div>
-  </section>
+  <StandingCard overallMastery={profile.overall_mastery} currentStreak={profile.current_streak} longestStreak={profile.longest_streak} />
+
+  <CapabilitiesPanel client:visible capabilities={capabilities} metaSkills={metaSkills} />
+
+  <FrontierPanel client:visible frontier={frontier} />
+
+  <RitualsPanel client:visible rituals={rituals} />
 
   <div class="cols">
-    <section class="card">
-      <h2>Mastery by course</h2>
-      {profile.by_course.length === 0 ? (
-        <p class="placeholder">No courses yet.</p>
-      ) : (
-        <ul class="course-mastery-list">
-          {profile.by_course.map((c) => (
-            <li>
-              <a href={`/courses/${slugByCourse.get(c.course_id) ?? ''}`}>{c.course_title}</a>
-              <span class="bar-wrap"><MasteryBar mastery={c.mastery} /></span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-
-    <section class="card">
-      <h2>Concepts by status <span class="num">{totalKcs} total</span></h2>
-      {totalKcs === 0 ? (
-        <p class="placeholder">No concepts imported yet.</p>
-      ) : (
-        <ul class="status-dist">
-          {Object.entries(statusCounts).map(([status, count]) => (
-            <li>
-              <span class="status-label">{STATUS_LABELS[status] ?? status}</span>
-              <span class="status-bar-wrap">
-                <span class="status-bar"><span class={`fill fill-${status}`} style={`width: ${totalKcs ? (count / totalKcs) * 100 : 0}%`}></span></span>
-              </span>
-              <span class="status-count">{count}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+    <MasteryByCourse byCourse={profile.by_course} slugByCourse={slugByCourse} />
+    <ConceptsByStatus statusCounts={statusCounts} totalKcs={totalKcs} />
   </div>
 
-  <section class="card">
-    <h2>Recent activity</h2>
-    <EventTimeline client:visible limit={20} />
-  </section>
-
-  <section class="card knowledge-map-stub">
-    <h2>Global knowledge map <span class="cs-tag">coming later</span></h2>
-    <p class="stepdesc">
-      A single map of every concept across every course, showing how they connect and where the gaps are — sketched
-      here so the shape of it exists, not built yet.
-    </p>
-    <div class="sketch" role="img" aria-label="Placeholder sketch of a connected knowledge map">
-      {Array.from({ length: 10 }).map((_, i) => (
-        <span class="node" style={`left: ${8 + ((i * 37) % 84)}%; top: ${12 + ((i * 53) % 70)}%`}></span>
-      ))}
-    </div>
-    <div class="aside-muted">No fake data here — this is a layout placeholder, not a preview of real connections.</div>
-  </section>
+  <RecentActivitySection />
 </AppShell>
 
 <style>
-  section.card { margin-bottom: 1.75rem; }
-  .card h2 { font-size: 1.05rem; margin: 0 0 1rem; }
-  .num { color: var(--muted); font-weight: 400; font-size: 0.8rem; margin-left: 0.4rem; }
-  .placeholder { color: var(--muted); font-size: 0.9rem; }
-
-  .standing-row { display: flex; gap: 2.2rem; align-items: center; flex-wrap: wrap; }
-  .standing-num .big { font-size: 2rem; font-weight: 600; color: var(--accent); line-height: 1; }
-  .standing-num .lbl { font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-top: 0.25rem; }
-  .divider { width: 1px; height: 2.6rem; background: var(--hairline); }
-  .aside-muted { margin-top: 0.9rem; }
-
-  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-  @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
-
-  .course-mastery-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.65rem; }
-  .course-mastery-list li { display: flex; align-items: center; gap: 0.8rem; }
-  .course-mastery-list a { flex: 0 0 auto; min-width: 0; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; text-decoration: none; }
-  .bar-wrap { flex: 1; }
-
-  .status-dist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
-  .status-dist li { display: flex; align-items: center; gap: 0.7rem; font-size: 0.85rem; }
-  .status-label { width: 6rem; flex-shrink: 0; color: var(--muted); }
-  .status-bar-wrap { flex: 1; }
-
-  /* main content-box ≤ 720px (STACK) */
-  @container (max-width: 720px) {
-    .status-label { width: auto; flex: 0 1 90px; min-width: 0; }
-  }
-  .status-bar { display: block; height: 6px; border-radius: 4px; background: var(--hairline); overflow: hidden; }
-  .fill { display: block; height: 100%; }
-  .fill-not-started { background: var(--hairline); }
-  .fill-learning { background: var(--warn); }
-  .fill-review { background: var(--muted); }
-  .fill-mastered { background: var(--good); }
-  .status-count { width: 1.5rem; text-align: right; font-weight: 600; }
-
-  .knowledge-map-stub { opacity: 0.92; }
-  .cs-tag { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-style: italic; font-weight: 400; }
-  .stepdesc { color: var(--muted); font-size: 0.88rem; max-width: 620px; margin: 0 0 1rem; }
-  .sketch {
-    position: relative;
-    height: 140px;
-    border: 1px dashed var(--hairline);
-    border-radius: 3px;
-    background: var(--bg);
-  }
-  .node {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--hairline);
-    border: 1px solid var(--border);
-  }
+  .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem; }
+  @media (max-width: 860px) { .cols { grid-template-columns: minmax(0, 1fr); } }
 </style>

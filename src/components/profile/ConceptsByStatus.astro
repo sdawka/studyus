@@ -1,0 +1,57 @@
+---
+// Pure extraction from profile.astro's "Concepts by status" section — no
+// behavior change, same markup/classes.
+interface Props {
+  statusCounts: Record<string, number>;
+  totalKcs: number;
+}
+const { statusCounts, totalKcs } = Astro.props;
+
+const STATUS_LABELS: Record<string, string> = {
+  'not-started': 'Not started',
+  learning: 'Learning',
+  review: 'Review',
+  mastered: 'Mastered',
+};
+---
+<section class="card">
+  <h2>Concepts by status <span class="num">{totalKcs} total</span></h2>
+  {totalKcs === 0 ? (
+    <p class="placeholder">No concepts imported yet.</p>
+  ) : (
+    <ul class="status-dist">
+      {Object.entries(statusCounts).map(([status, count]) => (
+        <li>
+          <span class="status-label">{STATUS_LABELS[status] ?? status}</span>
+          <span class="status-bar-wrap">
+            <span class="status-bar"><span class={`fill fill-${status}`} style={`width: ${totalKcs ? (count / totalKcs) * 100 : 0}%`}></span></span>
+          </span>
+          <span class="status-count">{count}</span>
+        </li>
+      ))}
+    </ul>
+  )}
+</section>
+
+<style>
+  section.card { margin-bottom: 1.75rem; }
+  .card h2 { font-size: 1.05rem; margin: 0 0 1rem; }
+  .num { color: var(--muted); font-weight: 400; font-size: 0.8rem; margin-left: 0.4rem; }
+  .placeholder { color: var(--muted); font-size: 0.9rem; }
+  .status-dist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+  .status-dist li { display: flex; align-items: center; gap: 0.7rem; font-size: 0.85rem; }
+  .status-label { width: 6rem; flex-shrink: 0; color: var(--muted); }
+  .status-bar-wrap { flex: 1; }
+
+  /* main content-box ≤ 720px (STACK) */
+  @container (max-width: 720px) {
+    .status-label { width: auto; flex: 0 1 90px; min-width: 0; }
+  }
+  .status-bar { display: block; height: 6px; border-radius: 4px; background: var(--hairline); overflow: hidden; }
+  .fill { display: block; height: 100%; }
+  .fill-not-started { background: var(--hairline); }
+  .fill-learning { background: var(--warn); }
+  .fill-review { background: var(--muted); }
+  .fill-mastered { background: var(--good); }
+  .status-count { width: 1.5rem; text-align: right; font-weight: 600; }
+</style>

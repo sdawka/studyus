@@ -726,3 +726,98 @@ Traverses `kc_edges` from the target KC to build its full prerequisite graph.
 ### Notifications — `correction_review`
 
 `type` gains `correction_review` (`NOTIFICATION_TYPES` in `src/lib/schemas/notifications.ts`). Swept (same idempotent-sweep idiom as the other five families, `services/notifications.ts`) from `user_corrections` where `status = 'active'` **and** (`last_reminded_at is null and accepted_at < now - 14d`) **or** (`last_reminded_at < now - 14d`) — i.e. an active, not-yet-internalized correction gets a spaced-repetition-style nudge starting 14 days after acceptance, then every 14 days again as long as it stays `active`. Dedupe key: `correction_review:<user_correction_id>:<bucket>` where `bucket = floor(now / 14d)` (a 14-day epoch bucket, not tied to `accepted_at` or `last_reminded_at`) — so at most one `correction_review` notification per correction per 14-day bucket, re-firing in the next bucket if the correction is still active and unreminded-within-window. The sweep is expected to stamp `last_reminded_at = now` on the `user_corrections` row when it inserts the notification (same "sweep writes back to its source row" pattern as `attend_class`'s two-way sync), so a correction that gets `internalized` between sweeps stops generating new notifications immediately (the `status = 'active'` filter excludes it on the next run).
+
+---
+
+## v1.9 Additions — Rituals, Capabilities, ZPD (contract freeze)
+
+**Status**: FOUNDATION LANDED, endpoints not yet implemented (additive, post-freeze). Wire shapes below are frozen ahead of the parallel build tracks — schema and Zod schemas exist (`src/db/schema.ts`, `src/lib/schemas/{rituals,capabilities,zpd}.ts`), the routes and services themselves land with their respective tracks.
+
+### GET /profile/frontier
+
+Computed on read from `kcs` + `kc_edges`, zero persistence (`src/lib/services/zpd.ts::getGlobalFrontier`, `src/lib/schemas/zpd.ts`). Frontier = unmastered KCs whose every prerequisite is `ready` (readiness = `status !== 'not-started' && mastery >= MASTERY_CONSTANTS.REVIEW_THRESHOLD`, the same single definition as `knowledgeMap.ts`'s `isReady`).
+
+**Response** (200):
+```json
+{
+  "data": {
+    "by_course": [
+      {
+        "course_id": "uuid",
+        "course_title": "string",
+        "course_slug": "string",
+        "color": "string|null",
+        "frontier": [{ "kc_id": "uuid", "name": "string", "slug": "string|null", "mastery": 0, "status": "not-started|learning|review|mastered" }]
+      }
+    ],
+    "counts": { "frontier": 0, "blocked": 0, "mastered": 0, "total": 0 }
+  }
+}
+```
+
+### GET /profile/capabilities
+
+Returns competencies (higher-order aggregates of KCs across courses, seed- or user-authored) with derived mastery/coverage, plus the fixed 3-item meta-skills catalog (`src/lib/services/capabilities.ts::listCapabilities`/`getMetaSkills`, `src/lib/schemas/capabilities.ts`). Nothing here is stored — mastery/coverage/status and meta-skill counts are all computed on read.
+
+**Response** (200):
+```json
+{
+  "data": {
+    "capabilities": [
+      {
+        "id": "uuid",
+        "slug": "string",
+        "name": "string",
+        "description": "string|null",
+        "source": "seed|user",
+        "mastery": 0,
+        "coverage": 0.0,
+        "status": "not-started|learning|review|mastered",
+        "members": [{ "kc_id": "uuid", "name": "string", "course_id": "uuid", "mastery": 0, "status": "not-started|learning|review|mastered", "weight": 1 }]
+      }
+    ],
+    "meta_skills": [
+      { "key": "retrieval_practice|self_explanation|error_analysis", "count_28d": 0, "count_prior_28d": 0, "trend": "up|flat|down", "last_at": "iso|null" }
+    ]
+  }
+}
+```
+
+`status` uses the same `MASTERY_CONSTANTS` thresholds as KCs, but `mastered` additionally requires `coverage === 1` — a competency can't read "mastered" off a fraction of its members. `meta_skills` is deliberately a frequency/trend signal, not a 0-100 score (KLI honesty + anti-gamification, `vision.md`).
+
+### Rituals — `/api/v1/rituals` CRUD
+
+New resource (`src/lib/schemas/rituals.ts`, `src/lib/services/rituals.ts`). A ritual is either a recurring study practice, in-session structure, or both (`kind: 'recurring'|'session_shape'|'both'`).
+
+**`GET /rituals`** — lists the caller's rituals, each with an `adherence` block computed on read (no adherence table): `done_28d`/`generated_28d` from sweep-minted `ritual` tasks over the trailing 28 days (dedupe key `ritual:<ritualId>:<yyyymmdd>`), `session_uses_28d` from `study_sessions.ritualId`, and a 28-day `occurrences` dot row (`done|skipped|upcoming` — never "missed", no streaks/badges).
+
+**`POST /rituals`** — request:
+```json
+{
+  "name": "string",
+  "description": "string?",
+  "kind": "recurring|session_shape|both",
+  "cadence": "daily|weekly|after_class|before_class",
+  "by_weekday": "\"[1,3,5]\"",
+  "course_id": "uuid?",
+  "steps": [{ "kind": "game|warmup|retrieval|new_material|reflect|break", "label": "string?", "minutes": 1 }],
+  "active": true
+}
+```
+`by_weekday` follows the exact same JSON-array-string convention as `courses.meetingDays` (ISO weekday numbers Mon=1..Sun=7, e.g. `"[1,3,5]"`, parsed with `parseMeetingDays` from `src/lib/services/classSessions.ts`) — not a bare comma-separated string.
+
+**`PATCH /rituals/:id`** — all fields optional, same shape (nullable where the column is nullable). **`DELETE /rituals/:id`** — hard delete; cascades to `tasks.ritual_id`/`study_sessions.ritual_id` per their FK `onDelete` (cascade / set null respectively).
+
+`GET /rituals/:id` returns one ritual with the same `adherence` block as the list.
+
+### Study sessions — `ritual_id`
+
+`POST /sessions` gains an optional `ritual_id` (a `session_shape`/`both` ritual picked at session start). `StudyFlow.svelte` renders the ritual's `steps` as a guidance step rail — not enforced gates. Independent of `course_id`.
+
+### Tasks — `ritual` type
+
+`type` gains `ritual` (`TASK_TYPES` in `src/lib/schemas/tasks.ts`) alongside the existing six — sweep-generated only, from active rituals (`services/taskSweep.ts::collectRituals`, a seventh collector reusing the `localNoon`/`isoWeekday`/`parseMeetingDays` patterns from `collectPrepBeforeClass`).
+
+### Settings — `task_generators.ritual`
+
+`task_generators` gains a seventh key, `ritual` (default `true`, matching five of the existing six generators — only `prep_before_class`/`stale_kc` ship opt-in). This is the master toggle for the ritual sweep collector; per-ritual on/off is the separate `rituals.active` flag, and a deactivated ritual (or master toggle off) stops generating new tasks without resurrecting dismissed ones (existing dedupe semantics).

@@ -312,6 +312,15 @@ async function collectGradeEntry(db: Db, userId: string, now: number): Promise<N
   }));
 }
 
+// v1.9 placeholder — COLLECTORS is a Record<GeneratorFamily, ...> and
+// GeneratorFamily now includes 'ritual' (task_generators gained that key),
+// so a no-op entry is needed here to keep check:types green. The rituals
+// track owns the real collectRituals implementation (seventh collector,
+// reusing localNoon/isoWeekday/parseMeetingDays from collectPrepBeforeClass).
+async function collectRituals(_db: Db, _userId: string, _now: number): Promise<NewTask[]> {
+  return [];
+}
+
 const COLLECTORS: Record<GeneratorFamily, (db: Db, userId: string, now: number) => Promise<NewTask[]>> = {
   attend_class: collectAttendClass,
   prep_before_class: collectPrepBeforeClass,
@@ -319,6 +328,7 @@ const COLLECTORS: Record<GeneratorFamily, (db: Db, userId: string, now: number) 
   practice_kc: collectPracticeKc,
   stale_kc: collectStaleKc,
   grade_entry: collectGradeEntry,
+  ritual: collectRituals,
 };
 
 /** Idempotent: safe to call on every list request (listTasks, getCalendar). */

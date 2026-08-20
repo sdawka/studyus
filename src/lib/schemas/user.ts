@@ -11,6 +11,9 @@ export const taskGeneratorsSchema = z.strictObject({
   practice_kc: z.boolean().optional(),
   stale_kc: z.boolean().optional(),
   grade_entry: z.boolean().optional(),
+  // v1.9: master toggle for the ritual sweep collector (services/taskSweep.ts::collectRituals);
+  // per-ritual on/off is the separate rituals.active flag.
+  ritual: z.boolean().optional(),
 });
 export type TaskGeneratorsInput = z.infer<typeof taskGeneratorsSchema>;
 
