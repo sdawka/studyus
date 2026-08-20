@@ -9,13 +9,13 @@
       "prompt": "The rate law for a reaction is r = k[A]^2[B]^0. What is the order in A, the order in B, and the overall order?",
       "source": "Atkins Physical Chemistry, Ch. 20 style",
       "options": [
-        "Order in A = 2, order in B = 0, overall order = 2",
         "Order in A = 2, order in B = 1, overall order = 3",
         "Order in A = 0, order in B = 2, overall order = 2",
+        "Order in A = 2, order in B = 0, overall order = 2",
         "Order in A = 2, order in B = 0, overall order = 0"
       ],
-      "correct_index": 0,
-      "explanation": "The exponent on [A] is 2, so the reaction is second order in A. The exponent on [B] is 0, so the rate is independent of [B] (zero order in B). The overall order is the sum of the individual orders: 2 + 0 = 2. Distractor B invents a first-order dependence on B that is not present in the given rate law. Distractor C swaps the orders of A and B. Distractor D confuses 'zero order in B' with 'zero overall order,' incorrectly forcing the sum to zero instead of adding 2 + 0 = 2."
+      "correct_index": 2,
+      "explanation": "The exponent on [A] is 2, so the reaction is second order in A. The exponent on [B] is 0, so the rate is independent of [B] (zero order in B). The overall order is the sum of the individual orders: 2 + 0 = 2. Distractor A invents a first-order dependence on B that is not present in the given rate law. Distractor B swaps the orders of A and B. Distractor D confuses 'zero order in B' with 'zero overall order,' incorrectly forcing the sum to zero instead of adding 2 + 0 = 2."
     },
     {
       "kc": "rate-laws-and-reaction-order",
@@ -26,12 +26,12 @@
       "source": "Atkins Physical Chemistry, Ch. 20 style",
       "options": [
         "First order overall, because the experimentally measured rate law shows [N2O5] raised to the first power",
-        "Second order overall, matching the stoichiometric coefficient of N2O5 in the balanced equation",
         "Fifth order overall, from summing all stoichiometric coefficients in the balanced equation (2 + 4 + 1)",
-        "Zero order overall, because N2O5 has a stoichiometric coefficient greater than 1"
+        "Zero order overall, because N2O5 has a stoichiometric coefficient greater than 1",
+        "Second order overall, matching the stoichiometric coefficient of N2O5 in the balanced equation"
       ],
       "correct_index": 0,
-      "explanation": "Reaction order must be determined experimentally from the measured rate law, not inferred from the balanced equation. Since r = k[N2O5]^1, the reaction is first order overall (and first order in N2O5), even though the stoichiometric coefficient of N2O5 is 2. Distractor B is the classic misconception of reading reaction order directly off a stoichiometric coefficient. Distractor C sums coefficients of reactants and products together, which has no kinetic meaning. Distractor D wrongly assumes a large stoichiometric coefficient forces a low order."
+      "explanation": "Reaction order must be determined experimentally from the measured rate law, not inferred from the balanced equation. Since r = k[N2O5]^1, the reaction is first order overall (and first order in N2O5), even though the stoichiometric coefficient of N2O5 is 2. Distractor D is the classic misconception of reading reaction order directly off a stoichiometric coefficient. Distractor B sums coefficients of reactants and products together, which has no kinetic meaning. Distractor C wrongly assumes a large stoichiometric coefficient forces a low order."
     },
     {
       "kc": "rate-laws-and-reaction-order",
@@ -65,12 +65,12 @@
       "source": "Atkins Physical Chemistry, Ch. 20 style (pseudo-order kinetics)",
       "options": [
         "Apparent first order (pseudo-first-order) in A, because [B] is effectively constant and folds into an observed rate constant k_obs = k[B]",
+        "Apparent first order in B, since B is the species present in excess",
         "Apparent second order overall is what is directly observed, since the true rate law is second order overall",
-        "Apparent zero order, because having B in large excess means B no longer affects the rate at all",
-        "Apparent first order in B, since B is the species present in excess"
+        "Apparent zero order, because having B in large excess means B no longer affects the rate at all"
       ],
       "correct_index": 0,
-      "explanation": "With [B] >> [A], [B] changes negligibly over the run, so k[B] behaves like a constant, giving r = k_obs[A] with k_obs = k[B] -- a pseudo-first-order rate law, matching the observed linear ln[A] vs t plot. Distractor B confuses the true (intrinsic) overall order with what is experimentally observable once B is pinned essentially constant -- the second-order character in B is masked, not revealed. Distractor C wrongly equates 'held constant' with 'no effect'; B still sets the value of k_obs, it just does not change measurably during the run. Distractor D misassigns the observed order to the species held in excess rather than to the species (A) whose concentration is actually varying and being tracked."
+      "explanation": "With [B] >> [A], [B] changes negligibly over the run, so k[B] behaves like a constant, giving r = k_obs[A] with k_obs = k[B] -- a pseudo-first-order rate law, matching the observed linear ln[A] vs t plot. Distractor C confuses the true (intrinsic) overall order with what is experimentally observable once B is pinned essentially constant -- the second-order character in B is masked, not revealed. Distractor D wrongly equates 'held constant' with 'no effect'; B still sets the value of k_obs, it just does not change measurably during the run. Distractor B misassigns the observed order to the species held in excess rather than to the species (A) whose concentration is actually varying and being tracked."
     },
     {
       "kc": "integrated-rate-laws",
@@ -89,13 +89,13 @@
       "prompt": "A reaction is believed to be second order in a single reactant A (rate law r = k[A]^2). Which plot would be expected to give a straight line, and what is its slope?",
       "source": "Atkins Physical Chemistry, Ch. 20 style",
       "options": [
-        "1/[A] vs t, a straight line with slope k",
+        "[A]^2 vs t, a straight line with slope k",
         "ln[A] vs t, a straight line with slope -k",
         "[A] vs t, a straight line with slope -k",
-        "[A]^2 vs t, a straight line with slope k"
+        "1/[A] vs t, a straight line with slope k"
       ],
-      "correct_index": 0,
-      "explanation": "The integrated second-order law is 1/[A] = 1/[A]0 + k*t, so a plot of 1/[A] vs t is linear with slope +k. Distractor B is the correct linearization for a first-order reaction (ln[A] vs t), not second order -- a classic order mix-up. Distractor C is the zero-order linearization ([A] vs t linear). Distractor D inverts the correct relationship, squaring [A] instead of taking its reciprocal."
+      "correct_index": 3,
+      "explanation": "The integrated second-order law is 1/[A] = 1/[A]0 + k*t, so a plot of 1/[A] vs t is linear with slope +k. Distractor B is the correct linearization for a first-order reaction (ln[A] vs t), not second order -- a classic order mix-up. Distractor C is the zero-order linearization ([A] vs t linear). Distractor A inverts the correct relationship, squaring [A] instead of taking its reciprocal."
     },
     {
       "kc": "integrated-rate-laws",
@@ -133,13 +133,13 @@
       "prompt": "For a zero-order reaction, how does the half-life change as the initial concentration [A]0 is increased, with the rate constant k held fixed?",
       "source": "Atkins Physical Chemistry, Ch. 20 style",
       "options": [
+        "Half-life decreases as [A]0 increases, since t_1/2 = 1/(k*[A]0)",
         "Half-life increases proportionally with [A]0, since t_1/2 = [A]0/(2*k)",
         "Half-life is independent of [A]0, since t_1/2 = ln(2)/k",
-        "Half-life decreases as [A]0 increases, since t_1/2 = 1/(k*[A]0)",
         "Half-life is independent of k and depends only on [A]0"
       ],
-      "correct_index": 0,
-      "explanation": "The zero-order half-life formula is t_1/2 = [A]0/(2*k), which grows linearly with [A]0. Distractor B is the first-order half-life formula (constant, independent of [A]0) -- true for first order but not zero order. Distractor C is the second-order half-life formula, which decreases with increasing [A]0, the opposite trend from zero order. Distractor D is dimensionally impossible, since half-life must depend on the rate constant k for any order."
+      "correct_index": 1,
+      "explanation": "The zero-order half-life formula is t_1/2 = [A]0/(2*k), which grows linearly with [A]0. Distractor C is the first-order half-life formula (constant, independent of [A]0) -- true for first order but not zero order. Distractor A is the second-order half-life formula, which decreases with increasing [A]0, the opposite trend from zero order. Distractor D is dimensionally impossible, since half-life must depend on the rate constant k for any order."
     },
     {
       "kc": "integrated-rate-laws",
@@ -181,13 +181,13 @@
       "prompt": "Why is the method of initial rates used to determine reaction order, rather than measuring the rate at some arbitrary later time during the reaction?",
       "source": "Levine, Physical Chemistry, Ch. 16 style",
       "options": [
-        "At t = 0, the reactant concentrations are known exactly (the values the experimenter mixed in), so the rate can be unambiguously assigned to those specific concentrations before products or depletion complicate the picture",
         "Reactions always go fastest at t = 0, so using the initial rate gives the largest, easiest-to-measure signal",
         "The method of initial rates avoids the need for a calibrated concentration measurement altogether",
+        "At t = 0, the reactant concentrations are known exactly (the values the experimenter mixed in), so the rate can be unambiguously assigned to those specific concentrations before products or depletion complicate the picture",
         "Initial rates are used because integrated rate laws cannot be applied to any reaction with more than one reactant"
       ],
-      "correct_index": 0,
-      "explanation": "The key advantage of initial rates is that the concentrations at t = 0 are precisely the ones deliberately mixed, so each measured initial rate can be cleanly tied to a known, unambiguous set of [A], [B], etc., without needing to worry about how much has already reacted or whether products interfere. Distractor B states a claim that is not generally true (rate does not have to be maximal at t=0 for all rate laws, e.g. autocatalytic reactions) and is not the real reason for the method. Distractor C is false -- concentration measurements are still required, just at a single well-defined instant. Distractor D is an overreach; integrated rate laws can be applied to multi-reactant systems (e.g. via pseudo-order tricks), so this is not the true justification for using initial rates."
+      "correct_index": 2,
+      "explanation": "The key advantage of initial rates is that the concentrations at t = 0 are precisely the ones deliberately mixed, so each measured initial rate can be cleanly tied to a known, unambiguous set of [A], [B], etc., without needing to worry about how much has already reacted or whether products interfere. Distractor A states a claim that is not generally true (rate does not have to be maximal at t=0 for all rate laws, e.g. autocatalytic reactions) and is not the real reason for the method. Distractor B is false -- concentration measurements are still required, just at a single well-defined instant. Distractor D is an overreach; integrated rate laws can be applied to multi-reactant systems (e.g. via pseudo-order tricks), so this is not the true justification for using initial rates."
     },
     {
       "kc": "reaction-order-determination-from-data",
@@ -197,13 +197,13 @@
       "prompt": "A chemist has [A] vs t data for a decomposition reaction and wants to determine the order using the graphical (integral) method. She plots [A] vs t, ln[A] vs t, and 1/[A] vs t. Only the ln[A] vs t plot comes out as a straight line. What is the reaction order, and what is the physical meaning of the slope?",
       "source": "Smith, Van Ness & Abbott, Introduction to Chemical Engineering Thermodynamics 8e, style (kinetics supplement)",
       "options": [
-        "First order; the slope of ln[A] vs t equals -k",
-        "Second order; the slope of ln[A] vs t equals -k",
         "Zero order; the slope of ln[A] vs t equals -k",
-        "First order; the slope of ln[A] vs t equals +k, since concentration is increasing logarithmically"
+        "First order; the slope of ln[A] vs t equals +k, since concentration is increasing logarithmically",
+        "First order; the slope of ln[A] vs t equals -k",
+        "Second order; the slope of ln[A] vs t equals -k"
       ],
-      "correct_index": 0,
-      "explanation": "Only a first-order reaction linearizes ln[A] vs t (from ln[A] = ln[A]0 - k*t), with slope equal to -k. Distractor B misassigns the ln[A] vs t linearization to second order, which actually linearizes as 1/[A] vs t. Distractor C misassigns it to zero order, which linearizes as [A] vs t. Distractor D gets the sign backwards -- concentration is decreasing during a decomposition, so ln[A] decreases with time, giving a negative slope, not positive."
+      "correct_index": 2,
+      "explanation": "Only a first-order reaction linearizes ln[A] vs t (from ln[A] = ln[A]0 - k*t), with slope equal to -k. Distractor D misassigns the ln[A] vs t linearization to second order, which actually linearizes as 1/[A] vs t. Distractor A misassigns it to zero order, which linearizes as [A] vs t. Distractor B gets the sign backwards -- concentration is decreasing during a decomposition, so ln[A] decreases with time, giving a negative slope, not positive."
     },
     {
       "kc": "reaction-order-determination-from-data",
@@ -213,13 +213,13 @@
       "prompt": "A student runs a kinetics experiment on the reaction A + B -> products with B held in large excess, obtains a good straight-line fit for ln[A] vs t, and concludes the reaction is 'first order overall.' Why might this conclusion be incomplete or misleading?",
       "source": "Atkins Physical Chemistry, Ch. 20 style (pseudo-order pitfalls)",
       "options": [
-        "The experiment only reveals the order in A under these conditions (pseudo-first-order); the true dependence on B is hidden because [B] never changes appreciably, so a separate experiment varying [B] is needed to determine the overall order",
-        "The conclusion is fully correct and complete, since a linear ln[A] vs t plot is proof of overall reaction order regardless of experimental conditions",
         "The experiment is invalid because excess reagents can never be used in kinetics studies",
+        "The conclusion is fully correct and complete, since a linear ln[A] vs t plot is proof of overall reaction order regardless of experimental conditions",
+        "The experiment only reveals the order in A under these conditions (pseudo-first-order); the true dependence on B is hidden because [B] never changes appreciably, so a separate experiment varying [B] is needed to determine the overall order",
         "The straight-line fit proves the reaction must be elementary and bimolecular"
       ],
-      "correct_index": 0,
-      "explanation": "A linear ln[A] vs t plot under flooding (excess B) only establishes the order in A (here, 1), giving an observed rate constant k_obs = k[B]^n that folds in whatever the true order in B is; the overall order requires a second series of experiments where [B] is varied to isolate n. Distractor B wrongly treats the pseudo-order result as automatically equal to the true overall order. Distractor C is false -- flooding with excess reagent is a standard, valid technique precisely to isolate one reactant's order. Distractor D is an unsupported leap; observing a first-order-looking plot says nothing about the reaction's molecularity or elementary-step mechanism."
+      "correct_index": 2,
+      "explanation": "A linear ln[A] vs t plot under flooding (excess B) only establishes the order in A (here, 1), giving an observed rate constant k_obs = k[B]^n that folds in whatever the true order in B is; the overall order requires a second series of experiments where [B] is varied to isolate n. Distractor B wrongly treats the pseudo-order result as automatically equal to the true overall order. Distractor A is false -- flooding with excess reagent is a standard, valid technique precisely to isolate one reactant's order. Distractor D is an unsupported leap; observing a first-order-looking plot says nothing about the reaction's molecularity or elementary-step mechanism."
     },
     {
       "kc": "arrhenius-equation-and-temperature-dependence",
@@ -229,13 +229,13 @@
       "prompt": "In the Arrhenius equation k = A * exp(-Ea/(R*T)), what do the symbols A and Ea represent?",
       "source": "Atkins Physical Chemistry, Ch. 20 style",
       "options": [
-        "A is the pre-exponential (frequency) factor related to collision frequency and orientation; Ea is the activation energy, the minimum energy barrier reactants must overcome to react",
-        "A is the activation energy and Ea is the pre-exponential factor",
         "A is the equilibrium constant of the reaction and Ea is the enthalpy of reaction",
+        "A is the activation energy and Ea is the pre-exponential factor",
+        "A is the pre-exponential (frequency) factor related to collision frequency and orientation; Ea is the activation energy, the minimum energy barrier reactants must overcome to react",
         "A is a fitting constant with no physical meaning and Ea is simply the reaction's heat of reaction (Delta_H)"
       ],
-      "correct_index": 0,
-      "explanation": "A (the pre-exponential factor) reflects how often molecules collide with the right orientation, while Ea is the energy barrier that must be surmounted for reaction to occur; the exponential term exp(-Ea/(R*T)) is the fraction of collisions with enough energy to react. Distractor B swaps the two definitions. Distractor C confuses kinetics quantities with an equilibrium/thermodynamic quantity (Delta_H is not the same as Ea). Distractor D wrongly dismisses A as meaningless and conflates Ea (a kinetic barrier) with Delta_H (a thermodynamic state function) -- Ea and Delta_H are unrelated in general and can even have opposite signs relative to each other for endothermic reactions with low barriers."
+      "correct_index": 2,
+      "explanation": "A (the pre-exponential factor) reflects how often molecules collide with the right orientation, while Ea is the energy barrier that must be surmounted for reaction to occur; the exponential term exp(-Ea/(R*T)) is the fraction of collisions with enough energy to react. Distractor B swaps the two definitions. Distractor A confuses kinetics quantities with an equilibrium/thermodynamic quantity (Delta_H is not the same as Ea). Distractor D wrongly dismisses A as meaningless and conflates Ea (a kinetic barrier) with Delta_H (a thermodynamic state function) -- Ea and Delta_H are unrelated in general and can even have opposite signs relative to each other for endothermic reactions with low barriers."
     },
     {
       "kc": "arrhenius-equation-and-temperature-dependence",
@@ -246,12 +246,12 @@
       "source": "Atkins Physical Chemistry, Ch. 20 style",
       "options": [
         "Slope = -Ea/R (so Ea = -R*slope); y-intercept = ln(A)",
-        "Slope = Ea/R; y-intercept = A directly (not ln A)",
         "Slope = -R/Ea; y-intercept = ln(A)",
+        "Slope = Ea/R; y-intercept = A directly (not ln A)",
         "Slope = -Ea/R; y-intercept is the rate constant k at the temperature where the line is plotted"
       ],
       "correct_index": 0,
-      "explanation": "The linearized Arrhenius equation is a straight line in ln(k) vs 1/T with slope -Ea/R and y-intercept ln(A); solving for Ea gives Ea = -R * slope. Distractor B inverts the slope expression and forgets that the intercept is ln(A), not A itself (a common unit/log error). Distractor C inverts Ea and R in the slope. Distractor D reflects a documented misconception -- the y-intercept of an Arrhenius plot is ln(A), the (typically hypothetical) value of ln(k) as 1/T -> 0 (i.e., T -> infinity), not a real, physically attainable rate constant at any actual experimental temperature."
+      "explanation": "The linearized Arrhenius equation is a straight line in ln(k) vs 1/T with slope -Ea/R and y-intercept ln(A); solving for Ea gives Ea = -R * slope. Distractor C inverts the slope expression and forgets that the intercept is ln(A), not A itself (a common unit/log error). Distractor B inverts Ea and R in the slope. Distractor D reflects a documented misconception -- the y-intercept of an Arrhenius plot is ln(A), the (typically hypothetical) value of ln(k) as 1/T -> 0 (i.e., T -> infinity), not a real, physically attainable rate constant at any actual experimental temperature."
     },
     {
       "kc": "arrhenius-equation-and-temperature-dependence",
@@ -275,13 +275,13 @@
       "prompt": "A student fits ln(k) vs 1/T data to a straight line and reads off a y-intercept of 30.0 (dimensionless, since ln(k) is being plotted). They report this directly as 'the rate constant at 1/T = 0 is k = 30.0.' What is wrong with this statement?",
       "source": "Atkins Physical Chemistry, Ch. 20 style (documented Arrhenius plot misconception)",
       "options": [
-        "The y-intercept is ln(A), not k itself; to recover the actual value it represents, one must exponentiate: A = exp(30.0). It also corresponds to T -> infinity (1/T -> 0), a limit that is never physically reached in a real experiment",
         "Nothing is wrong; the y-intercept of an Arrhenius plot is always numerically equal to a real, measurable rate constant",
         "The error is only that the sign should be negative: k = -30.0",
-        "The intercept should instead be read off the x-axis, not the y-axis, since Ea is what the intercept represents"
+        "The intercept should instead be read off the x-axis, not the y-axis, since Ea is what the intercept represents",
+        "The y-intercept is ln(A), not k itself; to recover the actual value it represents, one must exponentiate: A = exp(30.0). It also corresponds to T -> infinity (1/T -> 0), a limit that is never physically reached in a real experiment"
       ],
-      "correct_index": 0,
-      "explanation": "Because the y-axis is ln(k), the intercept value (30.0) is ln(A), so A = exp(30.0), an enormous, typically non-physical extrapolated value corresponding to the hypothetical limit T -> infinity, not a rate constant measured at any real condition. Distractor B repeats the exact misconception being tested. Distractor C incorrectly 'fixes' the units issue with a sign flip, which does not address the real problem (forgetting to exponentiate and misassigning physical meaning). Distractor D confuses the slope-derived quantity (Ea, from the slope) with the intercept-derived quantity (A, from the intercept)."
+      "correct_index": 3,
+      "explanation": "Because the y-axis is ln(k), the intercept value (30.0) is ln(A), so A = exp(30.0), an enormous, typically non-physical extrapolated value corresponding to the hypothetical limit T -> infinity, not a rate constant measured at any real condition. Distractor A repeats the exact misconception being tested. Distractor B incorrectly 'fixes' the units issue with a sign flip, which does not address the real problem (forgetting to exponentiate and misassigning physical meaning). Distractor C confuses the slope-derived quantity (Ea, from the slope) with the intercept-derived quantity (A, from the intercept)."
     },
     {
       "kc": "arrhenius-equation-and-temperature-dependence",
@@ -300,13 +300,13 @@
       "prompt": "Two reactions have the same pre-exponential factor A and are run over the same temperature range, but Reaction 1 has a small Ea and Reaction 2 has a much larger Ea. Which reaction's rate constant is more sensitive to (changes more strongly with) changes in temperature?",
       "source": "Atkins Physical Chemistry, Ch. 20 style",
       "options": [
+        "Both reactions are equally sensitive to temperature, since only A determines how fast k changes with T",
         "Reaction 2 (larger Ea) is more temperature-sensitive, because the magnitude of the Arrhenius slope -Ea/R (and hence the fractional change in k for a given change in T) scales with Ea",
         "Reaction 1 (smaller Ea) is more temperature-sensitive, since a lower barrier means temperature changes matter more",
-        "Both reactions are equally sensitive to temperature, since only A determines how fast k changes with T",
         "Neither reaction's k depends significantly on temperature if A is the same for both"
       ],
-      "correct_index": 0,
-      "explanation": "The Arrhenius slope on a ln(k) vs 1/T plot is -Ea/R, so a larger Ea produces a steeper slope, meaning k changes more dramatically (in relative/fractional terms) for a given change in T; qualitatively, this reflects that high-Ea reactions are 'unlocked' much more strongly by extra thermal energy since a much larger fraction of collisions crosses the barrier. Distractor B has the trend backwards. Distractor C incorrectly assigns temperature sensitivity to A, which only scales k uniformly at all temperatures and does not affect its T-dependence. Distractor D is false -- as long as Ea > 0, k always depends on T through the exponential term, regardless of A's value."
+      "correct_index": 1,
+      "explanation": "The Arrhenius slope on a ln(k) vs 1/T plot is -Ea/R, so a larger Ea produces a steeper slope, meaning k changes more dramatically (in relative/fractional terms) for a given change in T; qualitatively, this reflects that high-Ea reactions are 'unlocked' much more strongly by extra thermal energy since a much larger fraction of collisions crosses the barrier. Distractor C has the trend backwards. Distractor A incorrectly assigns temperature sensitivity to A, which only scales k uniformly at all temperatures and does not affect its T-dependence. Distractor D is false -- as long as Ea > 0, k always depends on T through the exponential term, regardless of A's value."
     },
     {
       "kc": "activation-energy-determination",
@@ -339,13 +339,13 @@
       "prompt": "You are given rate constants k1 and k2 at two known temperatures T1 and T2 and want to find Ea directly, without first finding A. Which relationship should you use?",
       "source": "Atkins Physical Chemistry, Ch. 20 style",
       "options": [
-        "ln(k2/k1) = (Ea/R) * (1/T1 - 1/T2), solved for Ea = R*ln(k2/k1)/(1/T1 - 1/T2)",
-        "k2/k1 = Ea/R * (T2 - T1), solved directly for Ea",
         "Ea = R*T*ln(k), using either temperature and its corresponding k",
-        "ln(k2) + ln(k1) = -Ea/R * (T1 + T2)"
+        "ln(k2) + ln(k1) = -Ea/R * (T1 + T2)",
+        "ln(k2/k1) = (Ea/R) * (1/T1 - 1/T2), solved for Ea = R*ln(k2/k1)/(1/T1 - 1/T2)",
+        "k2/k1 = Ea/R * (T2 - T1), solved directly for Ea"
       ],
-      "correct_index": 0,
-      "explanation": "Subtracting the linearized Arrhenius equation at two temperatures eliminates ln(A), leaving ln(k2/k1) = (Ea/R)*(1/T1 - 1/T2), which is solved directly for Ea without ever needing A. Distractor B fabricates a linear-in-T relationship that does not follow from the exponential Arrhenius form. Distractor C misapplies a single-point relationship (which cannot isolate Ea from A) as if it were a two-point method. Distractor D incorrectly adds instead of subtracting the two log equations, which does not eliminate ln(A) and does not correspond to any valid derivation."
+      "correct_index": 2,
+      "explanation": "Subtracting the linearized Arrhenius equation at two temperatures eliminates ln(A), leaving ln(k2/k1) = (Ea/R)*(1/T1 - 1/T2), which is solved directly for Ea without ever needing A. Distractor D fabricates a linear-in-T relationship that does not follow from the exponential Arrhenius form. Distractor A misapplies a single-point relationship (which cannot isolate Ea from A) as if it were a two-point method. Distractor B incorrectly adds instead of subtracting the two log equations, which does not eliminate ln(A) and does not correspond to any valid derivation."
     },
     {
       "kc": "activation-energy-determination",
@@ -356,12 +356,12 @@
       "source": "Atkins Physical Chemistry, Ch. 20 style (common unit error)",
       "options": [
         "Temperatures must be converted to Kelvin (T1 = 298 K, T2 = 338 K) before use, since the Arrhenius equation requires absolute temperature; using Celsius values directly gives a badly wrong Ea",
+        "R must be changed to a Celsius-based value (R_C = R - 273.15) to compensate for using Celsius temperatures",
         "The calculation is fine as written, since Ea only depends on the temperature difference, which is the same in Celsius or Kelvin",
-        "The rate constants k1 and k2 also need to be converted to a Celsius-based scale before use",
-        "R must be changed to a Celsius-based value (R_C = R - 273.15) to compensate for using Celsius temperatures"
+        "The rate constants k1 and k2 also need to be converted to a Celsius-based scale before use"
       ],
       "correct_index": 0,
-      "explanation": "The Arrhenius equation involves 1/T, and 1/T is not invariant under the Celsius-to-Kelvin shift (unlike a simple temperature difference, which is the same in both scales) -- so absolute temperature in Kelvin must be used, giving 1/298 and 1/338 rather than 1/25 and 1/65. Distractor B incorrectly claims the calculation only needs a temperature difference; the two-point formula needs 1/T1 - 1/T2, which changes non-trivially depending on the absolute scale used. Distractor C is a non-existent requirement; k has no temperature-scale dependence of its own. Distractor D invents a nonsensical 'Celsius-adjusted' gas constant that does not exist in the Arrhenius formalism."
+      "explanation": "The Arrhenius equation involves 1/T, and 1/T is not invariant under the Celsius-to-Kelvin shift (unlike a simple temperature difference, which is the same in both scales) -- so absolute temperature in Kelvin must be used, giving 1/298 and 1/338 rather than 1/25 and 1/65. Distractor C incorrectly claims the calculation only needs a temperature difference; the two-point formula needs 1/T1 - 1/T2, which changes non-trivially depending on the absolute scale used. Distractor D is a non-existent requirement; k has no temperature-scale dependence of its own. Distractor B invents a nonsensical 'Celsius-adjusted' gas constant that does not exist in the Arrhenius formalism."
     },
     {
       "kc": "activation-energy-determination",
@@ -371,13 +371,13 @@
       "prompt": "Two candidate reaction pathways for the same overall transformation give the following two-point Arrhenius data: Pathway 1: k rises from 1.0e-4 1/s at 300 K to 4.0e-4 1/s at 320 K. Pathway 2: k rises from 1.0e-4 1/s at 300 K to 5.0e-2 1/s at 320 K. Which pathway has the larger activation energy, and how can you tell without doing the full calculation?",
       "source": "Atkins Physical Chemistry, Ch. 20 style (qualitative Ea comparison)",
       "options": [
-        "Pathway 2 has the larger Ea, because for the same temperature increase, its rate constant increases by a much larger factor (500-fold vs. 4-fold), and a larger relative increase in k for the same Delta_T corresponds to a larger Ea",
-        "Pathway 1 has the larger Ea, because its rate constant started and stayed smaller in absolute terms",
+        "Ea cannot be compared without knowing A for both pathways first",
         "Both pathways must have the same Ea, since both start from the same k1 = 1.0e-4 1/s at 300 K",
-        "Ea cannot be compared without knowing A for both pathways first"
+        "Pathway 2 has the larger Ea, because for the same temperature increase, its rate constant increases by a much larger factor (500-fold vs. 4-fold), and a larger relative increase in k for the same Delta_T corresponds to a larger Ea",
+        "Pathway 1 has the larger Ea, because its rate constant started and stayed smaller in absolute terms"
       ],
-      "correct_index": 0,
-      "explanation": "From ln(k2/k1) = (Ea/R)*(1/T1 - 1/T2), for the same T1 and T2 (same 1/T1 - 1/T2), a larger ln(k2/k1) directly implies a larger Ea; Pathway 2's 500-fold increase (ln(500) = 6.2) is much larger than Pathway 1's 4-fold increase (ln(4) = 1.4), so Pathway 2 has the larger Ea. Distractor B focuses on absolute k values rather than the relative (ratio) change that actually determines Ea. Distractor C wrongly assumes equal starting k1 implies equal Ea; Ea depends on how k changes with T, not on the starting value alone. Distractor D is unnecessary -- Ea can be compared using only the ratio k2/k1 at matched temperatures, without ever solving for A."
+      "correct_index": 2,
+      "explanation": "From ln(k2/k1) = (Ea/R)*(1/T1 - 1/T2), for the same T1 and T2 (same 1/T1 - 1/T2), a larger ln(k2/k1) directly implies a larger Ea; Pathway 2's 500-fold increase (ln(500) = 6.2) is much larger than Pathway 1's 4-fold increase (ln(4) = 1.4), so Pathway 2 has the larger Ea. Distractor D focuses on absolute k values rather than the relative (ratio) change that actually determines Ea. Distractor B wrongly assumes equal starting k1 implies equal Ea; Ea depends on how k changes with T, not on the starting value alone. Distractor A is unnecessary -- Ea can be compared using only the ratio k2/k1 at matched temperatures, without ever solving for A."
     },
     {
       "kc": "reaction-mechanisms-and-rate-determining-step",
@@ -388,12 +388,12 @@
       "source": "Atkins Physical Chemistry, Ch. 21 style (elementary mechanisms)",
       "options": [
         "Rate = k1[NO2][F2]; Step 1 is rate-determining because it is the slow step, and the fast step 2 does not appear in the rate law",
-        "Rate = k1[NO2]^2[F2], read directly from the overall balanced equation's stoichiometric coefficients",
+        "Rate = k2[F][NO2]; Step 2 is rate-determining because it is the step that actually produces the final product",
         "Rate = k1[NO2][F2] + k2[F][NO2], summing the rates of both elementary steps",
-        "Rate = k2[F][NO2]; Step 2 is rate-determining because it is the step that actually produces the final product"
+        "Rate = k1[NO2]^2[F2], read directly from the overall balanced equation's stoichiometric coefficients"
       ],
       "correct_index": 0,
-      "explanation": "When one elementary step is much slower than the others, it is rate-limiting, and the overall rate law is simply the rate law of that slow step: Rate = k1[NO2][F2]. The fast second step keeps up with whatever intermediate (F) the slow step produces and does not additionally limit the overall rate. Distractor B applies the classic misconception of reading rate law exponents directly off the overall balanced equation's stoichiometric coefficients, rather than deriving them from the mechanism. Distractor C incorrectly sums the rates of sequential steps, which is not how a rate-determining step analysis works (that is only meaningful for parallel, competing pathways, not sequential steps). Distractor D mistakes 'the step that forms final product' for 'the rate-determining step'; the RDS is defined by being slowest/rate-limiting, not by which step happens to yield the observable product."
+      "explanation": "When one elementary step is much slower than the others, it is rate-limiting, and the overall rate law is simply the rate law of that slow step: Rate = k1[NO2][F2]. The fast second step keeps up with whatever intermediate (F) the slow step produces and does not additionally limit the overall rate. Distractor D applies the classic misconception of reading rate law exponents directly off the overall balanced equation's stoichiometric coefficients, rather than deriving them from the mechanism. Distractor C incorrectly sums the rates of sequential steps, which is not how a rate-determining step analysis works (that is only meaningful for parallel, competing pathways, not sequential steps). Distractor B mistakes 'the step that forms final product' for 'the rate-determining step'; the RDS is defined by being slowest/rate-limiting, not by which step happens to yield the observable product."
     },
     {
       "kc": "reaction-mechanisms-and-rate-determining-step",
@@ -426,13 +426,13 @@
       "prompt": "A student sees the overall balanced reaction 2 A + B -> products and, without looking at any proposed mechanism, immediately writes the rate law as Rate = k[A]^2[B]. What is the flaw in this reasoning?",
       "source": "Atkins Physical Chemistry, Ch. 21 style (mechanism vs. stoichiometry)",
       "options": [
-        "Reaction order can only be determined from the mechanism (i.e., from the rate law of the rate-determining step, possibly combined with steady-state or pre-equilibrium expressions for any intermediates) or from experimental data -- it cannot be read directly off the stoichiometric coefficients of the overall balanced equation unless the reaction happens to be a genuinely single elementary step",
         "The rate law is correct as written; stoichiometric coefficients always equal reaction orders for any balanced equation",
         "The flaw is only that the rate constant should be k1*k2, not a single k",
+        "Reaction order can only be determined from the mechanism (i.e., from the rate law of the rate-determining step, possibly combined with steady-state or pre-equilibrium expressions for any intermediates) or from experimental data -- it cannot be read directly off the stoichiometric coefficients of the overall balanced equation unless the reaction happens to be a genuinely single elementary step",
         "The flaw is that rate laws can never contain exponents greater than 1"
       ],
-      "correct_index": 0,
-      "explanation": "For any reaction that proceeds through more than one elementary step (i.e., essentially every reaction encountered in practice unless stated to be a single elementary reaction), the observed rate law depends on the mechanism -- specifically the rate-determining step and any pre-equilibria or steady-state intermediates -- and generally has no fixed relationship to the overall stoichiometric coefficients. Distractor B states the exact misconception being probed. Distractor C is a non-sequitur; the flaw is about whether the exponents are correct at all, not about whether one or two rate constants appear. Distractor D is factually wrong -- rate laws frequently contain exponents of 2 or higher when justified by the mechanism (as in this exercise's own mechanism examples)."
+      "correct_index": 2,
+      "explanation": "For any reaction that proceeds through more than one elementary step (i.e., essentially every reaction encountered in practice unless stated to be a single elementary reaction), the observed rate law depends on the mechanism -- specifically the rate-determining step and any pre-equilibria or steady-state intermediates -- and generally has no fixed relationship to the overall stoichiometric coefficients. Distractor A states the exact misconception being probed. Distractor B is a non-sequitur; the flaw is about whether the exponents are correct at all, not about whether one or two rate constants appear. Distractor D is factually wrong -- rate laws frequently contain exponents of 2 or higher when justified by the mechanism (as in this exercise's own mechanism examples)."
     },
     {
       "kc": "reaction-mechanisms-and-rate-determining-step",
@@ -444,11 +444,11 @@
       "options": [
         "Termolecular (three-body simultaneous collision) elementary steps are extremely rare because the probability of three molecules colliding at exactly the same instant with correct orientation and sufficient energy is very low; a mechanism built from sequential bimolecular (or unimolecular) elementary steps that reproduces the same overall third-order rate law is strongly preferred even if it also matches the data",
         "The objection is invalid; matching the experimental rate law is the only criterion needed to accept any proposed mechanism, regardless of the molecularity of individual steps",
-        "Termolecular steps are impossible in any phase, so this mechanism must be entirely rejected without proposing an alternative",
-        "The objection only applies to reactions in solution, not to gas-phase reactions, so this particular mechanism is fine"
+        "The objection only applies to reactions in solution, not to gas-phase reactions, so this particular mechanism is fine",
+        "Termolecular steps are impossible in any phase, so this mechanism must be entirely rejected without proposing an alternative"
       ],
       "correct_index": 0,
-      "explanation": "Matching the observed overall order is necessary but not sufficient to validate a mechanism -- a proposed elementary step must also be physically plausible in terms of molecularity, and simultaneous three-body collisions are statistically very unlikely compared to sequences of bimolecular/unimolecular steps that can produce the same overall (e.g., third-order) rate law via a pre-equilibrium or steady-state combination. Distractor B ignores that mechanism plausibility (molecularity of individual steps) is a separate, additional criterion beyond just fitting the rate law. Distractor C overstates the case; termolecular steps are not strictly impossible, just rare and generally disfavored as an explanation when simpler multi-step alternatives exist. Distractor D incorrectly restricts the concern to solution-phase reactions; the low probability of a three-body simultaneous collision is, if anything, an even bigger practical concern in the gas phase, where physical contact/coordination is even less likely to be simultaneous for three bodies."
+      "explanation": "Matching the observed overall order is necessary but not sufficient to validate a mechanism -- a proposed elementary step must also be physically plausible in terms of molecularity, and simultaneous three-body collisions are statistically very unlikely compared to sequences of bimolecular/unimolecular steps that can produce the same overall (e.g., third-order) rate law via a pre-equilibrium or steady-state combination. Distractor B ignores that mechanism plausibility (molecularity of individual steps) is a separate, additional criterion beyond just fitting the rate law. Distractor D overstates the case; termolecular steps are not strictly impossible, just rare and generally disfavored as an explanation when simpler multi-step alternatives exist. Distractor C incorrectly restricts the concern to solution-phase reactions; the low probability of a three-body simultaneous collision is, if anything, an even bigger practical concern in the gas phase, where physical contact/coordination is even less likely to be simultaneous for three bodies."
     },
     {
       "kc": "catalysis-and-activation-energy-pathways",
@@ -458,13 +458,13 @@
       "prompt": "A catalyst is added to a reaction and the rate increases substantially. Which statement correctly explains why?",
       "source": "Atkins Physical Chemistry, Ch. 21 style (catalysis)",
       "options": [
-        "The catalyst provides an alternative reaction pathway (a different mechanism) with a lower activation energy, so a larger fraction of collisions have enough energy to react at a given temperature",
+        "The catalyst increases the concentration of reactants available to react",
         "The catalyst increases the average kinetic energy of the reacting molecules, effectively raising the temperature of the system",
-        "The catalyst shifts the reaction's equilibrium further toward products, increasing the amount of product formed and therefore the observed rate",
-        "The catalyst increases the concentration of reactants available to react"
+        "The catalyst provides an alternative reaction pathway (a different mechanism) with a lower activation energy, so a larger fraction of collisions have enough energy to react at a given temperature",
+        "The catalyst shifts the reaction's equilibrium further toward products, increasing the amount of product formed and therefore the observed rate"
       ],
-      "correct_index": 0,
-      "explanation": "Catalysts work by opening up an alternative mechanistic pathway with a lower activation energy barrier, which (via the Arrhenius exponential term) dramatically increases the fraction of molecular collisions with sufficient energy to react, without altering the temperature. Distractor B incorrectly claims a temperature change, which a catalyst does not cause. Distractor C confuses kinetics (rate) with thermodynamics (equilibrium position); a catalyst does not shift the equilibrium at all. Distractor D is not how catalysis works -- a catalyst is not consumed and does not change reactant concentrations; it changes the pathway available to existing reactant molecules."
+      "correct_index": 2,
+      "explanation": "Catalysts work by opening up an alternative mechanistic pathway with a lower activation energy barrier, which (via the Arrhenius exponential term) dramatically increases the fraction of molecular collisions with sufficient energy to react, without altering the temperature. Distractor B incorrectly claims a temperature change, which a catalyst does not cause. Distractor D confuses kinetics (rate) with thermodynamics (equilibrium position); a catalyst does not shift the equilibrium at all. Distractor A is not how catalysis works -- a catalyst is not consumed and does not change reactant concentrations; it changes the pathway available to existing reactant molecules."
     },
     {
       "kc": "catalysis-and-activation-energy-pathways",
@@ -475,12 +475,12 @@
       "source": "Atkins Physical Chemistry, Ch. 21 style (documented catalyst/equilibrium misconception)",
       "options": [
         "No -- a catalyst lowers the activation energy for both the forward and reverse reactions by the same alternate pathway, so it speeds up the approach to equilibrium but does not change K_eq or the equilibrium position, since K_eq is a thermodynamic quantity (related to Delta_G of reaction) that is independent of the reaction pathway or mechanism",
-        "Yes -- lowering Ea for the forward reaction increases the forward rate constant, which directly increases K_eq",
+        "No, because catalysts only affect the reverse reaction, not the forward reaction, which shifts the equilibrium away from products",
         "Yes, but only for exothermic reactions, since catalysts favor the exothermic direction",
-        "No, because catalysts only affect the reverse reaction, not the forward reaction, which shifts the equilibrium away from products"
+        "Yes -- lowering Ea for the forward reaction increases the forward rate constant, which directly increases K_eq"
       ],
       "correct_index": 0,
-      "explanation": "K_eq = k_forward/k_reverse at equilibrium depends only on the thermodynamics (Delta_G_rxn = -R*T*ln(K_eq)), which is a state function independent of pathway; a catalyst lowers Ea for both the forward and reverse steps of the same elementary step (or overall pathway) by the same amount, so the ratio k_forward/k_reverse -- and hence K_eq -- is unchanged, even though both rate constants increase and equilibrium is reached faster. Distractor B states the exact misconception under test, focusing only on the forward direction and ignoring that the reverse rate constant increases proportionally too. Distractor C invents an exothermic-only exception that does not exist -- catalysts are equilibrium-neutral regardless of the reaction's thermodynamic sign. Distractor D incorrectly claims catalysts are direction-selective; a true catalyst accelerates both the forward and reverse reactions of the same equilibrium equally."
+      "explanation": "K_eq = k_forward/k_reverse at equilibrium depends only on the thermodynamics (Delta_G_rxn = -R*T*ln(K_eq)), which is a state function independent of pathway; a catalyst lowers Ea for both the forward and reverse steps of the same elementary step (or overall pathway) by the same amount, so the ratio k_forward/k_reverse -- and hence K_eq -- is unchanged, even though both rate constants increase and equilibrium is reached faster. Distractor D states the exact misconception under test, focusing only on the forward direction and ignoring that the reverse rate constant increases proportionally too. Distractor C invents an exothermic-only exception that does not exist -- catalysts are equilibrium-neutral regardless of the reaction's thermodynamic sign. Distractor B incorrectly claims catalysts are direction-selective; a true catalyst accelerates both the forward and reverse reactions of the same equilibrium equally."
     },
     {
       "kc": "catalysis-and-activation-energy-pathways",
@@ -491,12 +491,12 @@
       "source": "Atkins Physical Chemistry, Ch. 21-25 style (thermodynamics vs. kinetics)",
       "options": [
         "A large, favorable E_cell_standard (or Delta_G_rxn) only guarantees the reaction is thermodynamically favorable (product-favored at equilibrium); it says nothing about the activation energy or rate, so the reaction can still be kinetically slow if Ea is large -- a catalyst could speed it up without changing E_cell_standard or Delta_G_rxn at all",
-        "This is a contradiction; a large favorable E_cell_standard must always correspond to a fast reaction, so the slow rate must indicate an experimental error",
         "The slow rate proves that E_cell_standard was measured incorrectly and must actually be small or unfavorable",
-        "Since Delta_G_rxn is thermodynamically favorable, adding a catalyst would further increase K_eq and make the reaction even more favorable, which is why catalysts are used here"
+        "Since Delta_G_rxn is thermodynamically favorable, adding a catalyst would further increase K_eq and make the reaction even more favorable, which is why catalysts are used here",
+        "This is a contradiction; a large favorable E_cell_standard must always correspond to a fast reaction, so the slow rate must indicate an experimental error"
       ],
       "correct_index": 0,
-      "explanation": "Thermodynamic favorability (large E_cell_standard, very negative Delta_G_rxn, large K_eq) describes only the equilibrium position, not the pathway or the size of the activation energy barrier along the way; a reaction can be strongly thermodynamically favorable yet kinetically very slow if Ea is large, and a catalyst can address exactly this by lowering Ea without touching the thermodynamics. Distractor B repeats the documented misconception that a large E_cell_standard implies fast kinetics. Distractor C wrongly assumes rate data can be used to infer that a thermodynamic measurement is wrong -- rate and equilibrium are independent properties measured independently. Distractor D repeats the catalyst/equilibrium-shift misconception in a new context; catalysts do not change K_eq regardless of how favorable or unfavorable the reaction already is."
+      "explanation": "Thermodynamic favorability (large E_cell_standard, very negative Delta_G_rxn, large K_eq) describes only the equilibrium position, not the pathway or the size of the activation energy barrier along the way; a reaction can be strongly thermodynamically favorable yet kinetically very slow if Ea is large, and a catalyst can address exactly this by lowering Ea without touching the thermodynamics. Distractor D repeats the documented misconception that a large E_cell_standard implies fast kinetics. Distractor B wrongly assumes rate data can be used to infer that a thermodynamic measurement is wrong -- rate and equilibrium are independent properties measured independently. Distractor C repeats the catalyst/equilibrium-shift misconception in a new context; catalysts do not change K_eq regardless of how favorable or unfavorable the reaction already is."
     },
     {
       "kc": "catalysis-and-activation-energy-pathways",
@@ -515,13 +515,13 @@
       "prompt": "A gas adsorbs onto a metal surface with a measured enthalpy of adsorption of -250 kJ/mol, and the adsorbed layer cannot be removed by mild heating or evacuation at room temperature. What type of adsorption is this?",
       "source": "Atkins Physical Chemistry, Ch. 22 (Processes at Solid Surfaces) style",
       "options": [
-        "Chemisorption, because the enthalpy magnitude (tens to hundreds of kJ/mol) and irreversibility indicate true chemical bond formation",
         "Physisorption, because all adsorption releases energy and this is simply a strong van der Waals interaction",
         "Chemisorption, because physisorption always has a positive (endothermic) enthalpy of adsorption",
+        "Chemisorption, because the enthalpy magnitude (tens to hundreds of kJ/mol) and irreversibility indicate true chemical bond formation",
         "Physisorption, because physisorption can also be irreversible at room temperature if the gas is nonpolar"
       ],
-      "correct_index": 0,
-      "explanation": "Chemisorption enthalpies are typically 40-800 kJ/mol (comparable to chemical bond energies) and the process is often irreversible near room temperature because true bonds must be broken to desorb. Option B wrongly treats van der Waals attraction as capable of producing such large enthalpies. Option C is factually wrong -- physisorption is also exothermic (typically 5-40 kJ/mol), just much weaker. Option D is wrong because physisorption is characteristically reversible with mild heating/evacuation; irreversibility at room temperature is the chemisorption signature."
+      "correct_index": 2,
+      "explanation": "Chemisorption enthalpies are typically 40-800 kJ/mol (comparable to chemical bond energies) and the process is often irreversible near room temperature because true bonds must be broken to desorb. Option A wrongly treats van der Waals attraction as capable of producing such large enthalpies. Option B is factually wrong -- physisorption is also exothermic (typically 5-40 kJ/mol), just much weaker. Option D is wrong because physisorption is characteristically reversible with mild heating/evacuation; irreversibility at room temperature is the chemisorption signature."
     },
     {
       "kc": "adsorption-fundamentals-physisorption-vs-chemisorption",
@@ -531,13 +531,13 @@
       "prompt": "Nitrogen gas is adsorbed onto a porous carbon sample at 77 K. As pressure increases toward the saturation vapor pressure, the measured adsorbed volume keeps increasing well beyond what a single close-packed layer could hold, and essentially all of the gas desorbs completely when the sample is evacuated. Which classification and adsorption model best fit this evidence?",
       "source": "Atkins Physical Chemistry, Ch. 22 style; classic BET N2 porosimetry setup",
       "options": [
-        "Physisorption, consistent with multilayer buildup that the BET model is designed to describe",
-        "Chemisorption, because any uptake that continues to increase with pressure signals strong surface bonding",
         "Physisorption, but the data should be fit with the Langmuir isotherm since Langmuir is the general-purpose adsorption model",
-        "Chemisorption, because chemisorption always occurs in multiple layers once the first layer is saturated"
+        "Chemisorption, because chemisorption always occurs in multiple layers once the first layer is saturated",
+        "Physisorption, consistent with multilayer buildup that the BET model is designed to describe",
+        "Chemisorption, because any uptake that continues to increase with pressure signals strong surface bonding"
       ],
-      "correct_index": 0,
-      "explanation": "Complete, easy desorption plus adsorbed amounts exceeding monolayer capacity are the classic signature of physisorption with multilayer condensation, which is exactly what BET theory models. Option B confuses continued uptake with strong bonding -- multilayer physisorption grows precisely because layers 2, 3, ... are held by weak van der Waals forces on top of each other. Option C repeats the common error of applying Langmuir (a strictly monolayer model) to multilayer data. Option D is false: chemisorption is inherently a monolayer, single-layer-only phenomenon since it requires direct bonding to surface sites."
+      "correct_index": 2,
+      "explanation": "Complete, easy desorption plus adsorbed amounts exceeding monolayer capacity are the classic signature of physisorption with multilayer condensation, which is exactly what BET theory models. Option D confuses continued uptake with strong bonding -- multilayer physisorption grows precisely because layers 2, 3, ... are held by weak van der Waals forces on top of each other. Option A repeats the common error of applying Langmuir (a strictly monolayer model) to multilayer data. Option B is false: chemisorption is inherently a monolayer, single-layer-only phenomenon since it requires direct bonding to surface sites."
     },
     {
       "kc": "adsorption-fundamentals-physisorption-vs-chemisorption",
@@ -547,13 +547,13 @@
       "prompt": "An engineer observes that raising the temperature of a gas-solid adsorption system from 200 K to 400 K causes the amount adsorbed to first drop sharply (consistent with physisorption becoming thermodynamically less favorable) and then rise again at higher temperature as an activated process becomes accessible. What is happening physically?",
       "source": "Levine, Physical Chemistry, Ch. 17 style",
       "options": [
-        "Physisorption dominates at low T and is being replaced by chemisorption at higher T, since chemisorption often has an activation energy barrier that requires thermal energy to overcome",
-        "The system is purely physisorbing at all temperatures, since physisorption rates always increase with temperature",
         "The system is purely chemisorbing at all temperatures, since chemisorption is barrierless and occurs to the same extent regardless of temperature",
-        "This behavior is impossible; adsorbed amount must change monotonically with temperature regardless of mechanism"
+        "Physisorption dominates at low T and is being replaced by chemisorption at higher T, since chemisorption often has an activation energy barrier that requires thermal energy to overcome",
+        "This behavior is impossible; adsorbed amount must change monotonically with temperature regardless of mechanism",
+        "The system is purely physisorbing at all temperatures, since physisorption rates always increase with temperature"
       ],
-      "correct_index": 0,
-      "explanation": "This dip-then-rise pattern is a textbook signature of a changeover: physisorption (exothermic, favored at low T, decreasing as T rises per Le Chatelier) gives way to activated chemisorption (needs enough thermal energy to overcome an activation barrier, so uptake grows again once T is high enough). Option B is wrong because physisorption typically decreases with T (exothermic equilibrium). Option C is wrong because many chemisorption processes are activated, not barrierless, which is exactly why they need higher T. Option D is simply false as a generalization."
+      "correct_index": 1,
+      "explanation": "This dip-then-rise pattern is a textbook signature of a changeover: physisorption (exothermic, favored at low T, decreasing as T rises per Le Chatelier) gives way to activated chemisorption (needs enough thermal energy to overcome an activation barrier, so uptake grows again once T is high enough). Option D is wrong because physisorption typically decreases with T (exothermic equilibrium). Option A is wrong because many chemisorption processes are activated, not barrierless, which is exactly why they need higher T. Option C is simply false as a generalization."
     },
     {
       "kc": "adsorption-fundamentals-physisorption-vs-chemisorption",
@@ -572,13 +572,13 @@
       "prompt": "Two gases, A and B, are both being considered for a heterogeneous catalytic process on the same solid. Gas A physisorbs rapidly and completely reaches equilibrium coverage within milliseconds. Gas B chemisorbs slowly, taking minutes to reach a much smaller final coverage, but the chemisorbed B is far more strongly bound (much larger enthalpy magnitude). Which statement correctly relates the kinetics and the classification?",
       "source": "Atkins Physical Chemistry, Ch. 22 style (activated adsorption)",
       "options": [
-        "The slow uptake of B is consistent with chemisorption often being an activated process (requiring bond rearrangement to reach the surface-bonded state), while physisorption of A, requiring no bond breaking, can equilibrate almost instantly",
-        "Because B is more strongly bound, B must physisorb and A must chemisorb, since chemisorption is inherently the weaker and faster process",
         "The rate of adsorption alone determines whether it is physisorption or chemisorption; since B is slower, B must be physisorption",
-        "The strength of binding and the speed of adsorption are unrelated to the classification of physisorption versus chemisorption and give no diagnostic information"
+        "Because B is more strongly bound, B must physisorb and A must chemisorb, since chemisorption is inherently the weaker and faster process",
+        "The strength of binding and the speed of adsorption are unrelated to the classification of physisorption versus chemisorption and give no diagnostic information",
+        "The slow uptake of B is consistent with chemisorption often being an activated process (requiring bond rearrangement to reach the surface-bonded state), while physisorption of A, requiring no bond breaking, can equilibrate almost instantly"
       ],
-      "correct_index": 0,
-      "explanation": "Chemisorption frequently has an activation energy (bonds must be broken/formed, sometimes with dissociation), so it can be slow even though it is thermodynamically much stronger once formed -- exactly matching gas B. Physisorption, driven by weak nonspecific van der Waals forces with no bond rearrangement required, is typically fast, matching gas A. Option B inverts the actual strength relationship (chemisorption is the strong one). Option C mistakenly uses rate alone as the classifier -- rate is corroborating evidence, not the defining criterion (enthalpy magnitude and reversibility are). Option D is wrong: while rate is not the sole criterion, the combination of enthalpy and kinetics given here is highly diagnostic."
+      "correct_index": 3,
+      "explanation": "Chemisorption frequently has an activation energy (bonds must be broken/formed, sometimes with dissociation), so it can be slow even though it is thermodynamically much stronger once formed -- exactly matching gas B. Physisorption, driven by weak nonspecific van der Waals forces with no bond rearrangement required, is typically fast, matching gas A. Option B inverts the actual strength relationship (chemisorption is the strong one). Option A mistakenly uses rate alone as the classifier -- rate is corroborating evidence, not the defining criterion (enthalpy magnitude and reversibility are). Option C is wrong: while rate is not the sole criterion, the combination of enthalpy and kinetics given here is highly diagnostic."
     },
     {
       "kc": "langmuir-adsorption-isotherm",
@@ -588,13 +588,13 @@
       "prompt": "According to the Langmuir isotherm theta = b*P/(1+b*P), what happens to the fractional surface coverage theta as the gas pressure P becomes very large (b held constant)?",
       "source": "Smith Van Ness Abbott 8e, surface phenomena appendix style",
       "options": [
-        "theta approaches 1 (the surface saturates at a full monolayer and coverage cannot increase further)",
         "theta increases without bound, growing linearly with P forever",
+        "theta approaches 1 (the surface saturates at a full monolayer and coverage cannot increase further)",
         "theta approaches 0, since higher pressure compresses the gas away from the surface",
         "theta oscillates periodically with P due to multilayer formation"
       ],
-      "correct_index": 0,
-      "explanation": "As P -> infinity, b*P dominates both numerator and denominator of b*P/(1+b*P), so theta -> b*P/(b*P) = 1: the model predicts saturation at a complete monolayer, which is the defining physical assumption of Langmuir's model (only one layer of sites, each either occupied or empty). Option B ignores the denominator's role in producing saturation. Option C has the physics backwards. Option D describes multilayer behavior, which Langmuir explicitly does not include (that requires BET)."
+      "correct_index": 1,
+      "explanation": "As P -> infinity, b*P dominates both numerator and denominator of b*P/(1+b*P), so theta -> b*P/(b*P) = 1: the model predicts saturation at a complete monolayer, which is the defining physical assumption of Langmuir's model (only one layer of sites, each either occupied or empty). Option A ignores the denominator's role in producing saturation. Option C has the physics backwards. Option D describes multilayer behavior, which Langmuir explicitly does not include (that requires BET)."
     },
     {
       "kc": "langmuir-adsorption-isotherm",
@@ -604,13 +604,13 @@
       "prompt": "A student is asked for the fractional coverage theta on a surface described by the Langmuir isotherm with adsorption equilibrium constant b = 0.4 kPa^-1 at a gas pressure of P = 5 kPa. Which of the following is the correct expression AND value for theta?",
       "source": "Smith Van Ness Abbott 8e style, Langmuir isotherm application",
       "options": [
-        "theta = b*P/(1+b*P) = (0.4)(5)/(1+(0.4)(5)) = 2/3 = 0.667",
-        "theta = b*P = (0.4)(5) = 2.0 (treating theta as directly proportional to pressure with no saturation limit)",
         "theta = 1/(1+b*P) = 1/(1+2.0) = 0.333 (using the fraction of EMPTY sites in place of the fraction of occupied sites)",
-        "theta = b*P/(1-b*P) = (0.4)(5)/(1-(0.4)(5)) = -2.0 (sign error in the denominator)"
+        "theta = b*P/(1-b*P) = (0.4)(5)/(1-(0.4)(5)) = -2.0 (sign error in the denominator)",
+        "theta = b*P = (0.4)(5) = 2.0 (treating theta as directly proportional to pressure with no saturation limit)",
+        "theta = b*P/(1+b*P) = (0.4)(5)/(1+(0.4)(5)) = 2/3 = 0.667"
       ],
-      "correct_index": 0,
-      "explanation": "Correctly applying theta = bP/(1+bP) gives (2)/(1+2) = 2/3 ~ 0.667, a physically valid coverage between 0 and 1. Option B forgets the denominator entirely, giving an impossible coverage greater than 1 (this is the classic 'proportional-only' misconception that ignores site saturation). Option C computes the complementary quantity 1-theta (fraction of empty sites) and mislabels it as theta. Option D has a sign error in the denominator, producing a nonphysical negative coverage."
+      "correct_index": 3,
+      "explanation": "Correctly applying theta = bP/(1+bP) gives (2)/(1+2) = 2/3 ~ 0.667, a physically valid coverage between 0 and 1. Option C forgets the denominator entirely, giving an impossible coverage greater than 1 (this is the classic 'proportional-only' misconception that ignores site saturation). Option A computes the complementary quantity 1-theta (fraction of empty sites) and mislabels it as theta. Option B has a sign error in the denominator, producing a nonphysical negative coverage."
     },
     {
       "kc": "langmuir-adsorption-isotherm",
@@ -657,13 +657,13 @@
       "prompt": "A researcher collects nitrogen gas adsorption data on a porous alumina sample across relative pressures P/P0 from 0.05 to 0.35 and finds the adsorbed volume keeps climbing steadily rather than leveling off at a plateau. Why is the BET isotherm the appropriate model here rather than the Langmuir isotherm?",
       "source": "Atkins Physical Chemistry, Ch. 22 (BET theory) style",
       "options": [
-        "BET explicitly accounts for multiple stacked layers of adsorbate above the first monolayer, whereas Langmuir assumes adsorption stops after a single monolayer, so BET is needed whenever uptake continues climbing past monolayer capacity",
         "BET and Langmuir are mathematically identical models with different names, so either can be used interchangeably on any adsorption dataset",
-        "Langmuir should always be used for gas-solid systems and BET is reserved only for liquid-liquid interfaces",
-        "BET is used because it requires fewer fitting parameters than Langmuir, making it simpler to apply regardless of the shape of the isotherm data"
+        "BET is used because it requires fewer fitting parameters than Langmuir, making it simpler to apply regardless of the shape of the isotherm data",
+        "BET explicitly accounts for multiple stacked layers of adsorbate above the first monolayer, whereas Langmuir assumes adsorption stops after a single monolayer, so BET is needed whenever uptake continues climbing past monolayer capacity",
+        "Langmuir should always be used for gas-solid systems and BET is reserved only for liquid-liquid interfaces"
       ],
-      "correct_index": 0,
-      "explanation": "The continued climb in adsorbed volume without leveling off is a classic multilayer signature -- exactly what BET was built to describe (layer upon layer of physisorbed molecules, with the top layers behaving like the bulk liquid). Option B is the classic 'BET and Langmuir are interchangeable' misconception; they are different models for different physical situations (Langmuir = monolayer only, BET = monolayer plus condensing multilayers). Option C is fabricated and false -- both are gas-solid surface models. Option D is false: BET actually has more parameters (Vm and C) than the simplest Langmuir form and is chosen for physical appropriateness, not simplicity."
+      "correct_index": 2,
+      "explanation": "The continued climb in adsorbed volume without leveling off is a classic multilayer signature -- exactly what BET was built to describe (layer upon layer of physisorbed molecules, with the top layers behaving like the bulk liquid). Option A is the classic 'BET and Langmuir are interchangeable' misconception; they are different models for different physical situations (Langmuir = monolayer only, BET = monolayer plus condensing multilayers). Option D is fabricated and false -- both are gas-solid surface models. Option B is false: BET actually has more parameters (Vm and C) than the simplest Langmuir form and is chosen for physical appropriateness, not simplicity."
     },
     {
       "kc": "bet-isotherm-and-multilayer-adsorption",
@@ -673,13 +673,13 @@
       "prompt": "The linearized BET equation is written as P/(V*(P0-P)) = 1/(Vm*C) + [(C-1)/(Vm*C)]*(P/P0), where V is volume adsorbed at pressure P, P0 is the saturation vapor pressure, Vm is the monolayer capacity, and C is the BET constant. If a plot of the left-hand side versus P/P0 is a straight line with slope m and intercept c, which combination correctly recovers the monolayer capacity Vm?",
       "source": "Atkins Physical Chemistry, Ch. 22 (BET plot) style",
       "options": [
+        "Vm = 1/c, ignoring the slope term entirely since only the intercept involves 1/Vm",
         "Vm = 1/(m+c), since slope + intercept = (C-1)/(Vm*C) + 1/(Vm*C) = C/(Vm*C) = 1/Vm",
-        "Vm = c/m, since intercept divided by slope should directly give the monolayer volume",
         "Vm = m - c, treating monolayer capacity as the difference between the multilayer and monolayer terms",
-        "Vm = 1/c, ignoring the slope term entirely since only the intercept involves 1/Vm"
+        "Vm = c/m, since intercept divided by slope should directly give the monolayer volume"
       ],
-      "correct_index": 0,
-      "explanation": "Adding slope and intercept: m + c = (C-1)/(Vm*C) + 1/(Vm*C) = [(C-1)+1]/(Vm*C) = C/(Vm*C) = 1/Vm, so Vm = 1/(m+c) -- this is the standard BET plot relationship. Option B (c/m) actually gives 1/(C-1), a different quantity (related to C, not directly Vm). Option C has no basis in the algebra. Option D ignores that the intercept alone equals 1/(Vm*C), not 1/Vm -- you need both the slope and intercept together to isolate Vm."
+      "correct_index": 1,
+      "explanation": "Adding slope and intercept: m + c = (C-1)/(Vm*C) + 1/(Vm*C) = [(C-1)+1]/(Vm*C) = C/(Vm*C) = 1/Vm, so Vm = 1/(m+c) -- this is the standard BET plot relationship. Option D (c/m) actually gives 1/(C-1), a different quantity (related to C, not directly Vm). Option C has no basis in the algebra. Option A ignores that the intercept alone equals 1/(Vm*C), not 1/Vm -- you need both the slope and intercept together to isolate Vm."
     },
     {
       "kc": "bet-isotherm-and-multilayer-adsorption",
@@ -726,13 +726,13 @@
       "prompt": "In the BET model, the constant C is related to the difference between the heat of adsorption of the first layer (E1) and the heat of liquefaction of the adsorbate (EL), roughly as C is proportional to exp[(E1-EL)/(R*T)]. If a BET analysis on two different adsorbents (same gas, same T) gives C = 5 for adsorbent X and C = 150 for adsorbent Y, what does this comparison suggest?",
       "source": "Atkins Physical Chemistry, Ch. 22 (BET constant interpretation) style",
       "options": [
-        "Adsorbent Y binds the first monolayer much more strongly relative to the adsorbate's own liquefaction energy than adsorbent X does, giving Y a sharper, more well-defined knee in its isotherm",
         "C has no physical meaning beyond being a curve-fitting parameter and cannot be compared between adsorbents",
+        "Adsorbent Y binds the first monolayer much more strongly relative to the adsorbate's own liquefaction energy than adsorbent X does, giving Y a sharper, more well-defined knee in its isotherm",
         "A larger C value means adsorbent Y has a larger specific surface area than adsorbent X",
         "C = 150 means adsorbent Y is undergoing chemisorption rather than physisorption"
       ],
-      "correct_index": 0,
-      "explanation": "Since C is proportional to exp[(E1-EL)/RT], a much larger C for adsorbent Y means E1-EL is larger for Y -- the first layer binds relatively more strongly compared to the adsorbate condensing on itself, producing a more sharply defined monolayer 'knee' in the isotherm (this is why large C values make Vm easier to determine accurately). Option B is wrong; C is physically meaningful. Option C confuses C (an energetic/shape parameter) with Vm and surface area (independent capacity parameters) -- a sample can have small Vm/area but large C, or vice versa. Option D is wrong: BET describes physisorption exclusively; even a large C (up to a few hundred) still reflects a physisorption energy scale, not the tens-to-hundreds-of-kJ/mol chemisorption regime."
+      "correct_index": 1,
+      "explanation": "Since C is proportional to exp[(E1-EL)/RT], a much larger C for adsorbent Y means E1-EL is larger for Y -- the first layer binds relatively more strongly compared to the adsorbate condensing on itself, producing a more sharply defined monolayer 'knee' in the isotherm (this is why large C values make Vm easier to determine accurately). Option A is wrong; C is physically meaningful. Option C confuses C (an energetic/shape parameter) with Vm and surface area (independent capacity parameters) -- a sample can have small Vm/area but large C, or vice versa. Option D is wrong: BET describes physisorption exclusively; even a large C (up to a few hundred) still reflects a physisorption energy scale, not the tens-to-hundreds-of-kJ/mol chemisorption regime."
     },
     {
       "kc": "surface-tension-and-capillarity",
@@ -743,12 +743,12 @@
       "source": "Atkins Physical Chemistry, Ch. 22 (Kelvin equation / capillarity) style",
       "options": [
         "A positive h, i.e., capillary rise, because cos(30 deg) is positive",
-        "A negative h, i.e., capillary depression, because any nonzero contact angle produces depression",
         "No effect at all, since only theta_c = 0 exactly produces any capillary action",
+        "A negative h, i.e., capillary depression, because any nonzero contact angle produces depression",
         "The formula cannot be evaluated because gamma must be zero for wetting liquids"
       ],
       "correct_index": 0,
-      "explanation": "cos(30 deg) = 0.866, a positive number, so h comes out positive: the liquid rises in the tube. This is consistent with theta_c < 90 deg meaning wetting/rise. Option B incorrectly claims any nonzero angle causes depression -- it is specifically theta_c > 90 deg (cos negative) that produces depression. Option C is wrong; rise occurs for the whole range 0 <= theta_c < 90 deg, not only at exactly 0. Option D is a fabricated constraint with no basis -- gamma is a positive physical property of the liquid, not tied to wetting behavior being zero."
+      "explanation": "cos(30 deg) = 0.866, a positive number, so h comes out positive: the liquid rises in the tube. This is consistent with theta_c < 90 deg meaning wetting/rise. Option C incorrectly claims any nonzero angle causes depression -- it is specifically theta_c > 90 deg (cos negative) that produces depression. Option B is wrong; rise occurs for the whole range 0 <= theta_c < 90 deg, not only at exactly 0. Option D is a fabricated constraint with no basis -- gamma is a positive physical property of the liquid, not tied to wetting behavior being zero."
     },
     {
       "kc": "surface-tension-and-capillarity",
@@ -758,13 +758,13 @@
       "prompt": "Mercury in a glass capillary tube has a contact angle of theta_c = 140 degrees (non-wetting). A student computes the capillary height change using h = 2*gamma*cos(theta_c)/(rho*g*r) and gets a certain numeric magnitude, but reports it as a rise. What is the correct interpretation, and what error did the student make?",
       "source": "Smith Van Ness Abbott 8e, interfacial phenomena style; classic mercury-in-glass capillary problem",
       "options": [
-        "The result should be reported as a depression (mercury level drops below the outside reservoir level), because cos(140 deg) is negative, making h negative in this sign convention",
+        "The contact angle should have been taken as its supplement (40 degrees) to fix the sign, since contact angles greater than 90 degrees are not physically valid",
         "The student is correct: mercury always rises in glass capillaries because mercury has an unusually high surface tension",
-        "The result should be a rise because the magnitude of h is what matters, and sign has no physical meaning in this formula",
-        "The contact angle should have been taken as its supplement (40 degrees) to fix the sign, since contact angles greater than 90 degrees are not physically valid"
+        "The result should be reported as a depression (mercury level drops below the outside reservoir level), because cos(140 deg) is negative, making h negative in this sign convention",
+        "The result should be a rise because the magnitude of h is what matters, and sign has no physical meaning in this formula"
       ],
-      "correct_index": 0,
-      "explanation": "cos(140 deg) = -0.766, a negative value, so h comes out negative under the standard sign convention -- meaning the mercury level in the capillary sits BELOW the free surface outside, i.e., capillary depression, which is the well-known behavior of non-wetting mercury in glass. The student's error was likely dropping the sign of cosine or misreading a negative h as a magnitude-only rise. Option B is factually wrong: mercury depresses in glass precisely because it does not wet glass (theta_c > 90 deg), regardless of its high surface tension value. Option C is wrong -- the sign of h carries essential physical meaning (rise vs. depression). Option D is wrong; contact angles greater than 90 degrees are entirely physical and expected for non-wetting liquid-solid pairs such as Hg-glass."
+      "correct_index": 2,
+      "explanation": "cos(140 deg) = -0.766, a negative value, so h comes out negative under the standard sign convention -- meaning the mercury level in the capillary sits BELOW the free surface outside, i.e., capillary depression, which is the well-known behavior of non-wetting mercury in glass. The student's error was likely dropping the sign of cosine or misreading a negative h as a magnitude-only rise. Option B is factually wrong: mercury depresses in glass precisely because it does not wet glass (theta_c > 90 deg), regardless of its high surface tension value. Option D is wrong -- the sign of h carries essential physical meaning (rise vs. depression). Option A is wrong; contact angles greater than 90 degrees are entirely physical and expected for non-wetting liquid-solid pairs such as Hg-glass."
     },
     {
       "kc": "surface-tension-and-capillarity",
@@ -811,13 +811,13 @@
       "prompt": "A droplet of liquid is placed on a flat solid surface and forms a contact angle of theta_c = 25 degrees at the three-phase (solid-liquid-vapor) contact line. How should this liquid-solid pair be classified?",
       "source": "Atkins Physical Chemistry, Ch. 22 (wetting) style",
       "options": [
-        "Wetting (the liquid spreads readily on the solid), since theta_c < 90 degrees",
-        "Non-wetting, since any measurable finite contact angle indicates the liquid does not wet the surface",
         "Wetting only if theta_c is exactly 0 degrees; any other value counts as non-wetting",
-        "Non-wetting, since wetting requires the droplet to have zero surface tension"
+        "Non-wetting, since wetting requires the droplet to have zero surface tension",
+        "Non-wetting, since any measurable finite contact angle indicates the liquid does not wet the surface",
+        "Wetting (the liquid spreads readily on the solid), since theta_c < 90 degrees"
       ],
-      "correct_index": 0,
-      "explanation": "The standard convention is theta_c < 90 deg = wetting (liquid tends to spread, adhesive forces with the solid dominate), and theta_c > 90 deg = non-wetting (liquid tends to bead up, cohesive forces within the liquid dominate). theta_c = 90 deg is the boundary case. At 25 degrees the liquid is clearly wetting. Option B wrongly demands a perfectly zero angle for any wetting classification -- that would make 'wetting' essentially never occur in practice, which is not how the term is used. Option C is the same overly strict error. Option D is a fabricated and false condition; all real liquids have nonzero surface tension, wetting or not."
+      "correct_index": 3,
+      "explanation": "The standard convention is theta_c < 90 deg = wetting (liquid tends to spread, adhesive forces with the solid dominate), and theta_c > 90 deg = non-wetting (liquid tends to bead up, cohesive forces within the liquid dominate). theta_c = 90 deg is the boundary case. At 25 degrees the liquid is clearly wetting. Option C wrongly demands a perfectly zero angle for any wetting classification -- that would make 'wetting' essentially never occur in practice, which is not how the term is used. Option A is the same overly strict error. Option B is a fabricated and false condition; all real liquids have nonzero surface tension, wetting or not."
     },
     {
       "kc": "wetting-and-contact-angle",
@@ -827,13 +827,13 @@
       "prompt": "A liquid forms a contact angle of theta_c = 110 degrees with a particular capillary tube material. Without doing any numeric calculation, what does this contact angle predict about the liquid's behavior in a narrow vertical capillary made of that material?",
       "source": "Atkins Physical Chemistry, Ch. 22 (wetting/contact angle) style",
       "options": [
-        "Capillary depression: since theta_c > 90 degrees, cos(theta_c) is negative, so h = 2*gamma*cos(theta_c)/(rho*g*r) is negative",
-        "Capillary rise: any contact angle less than 180 degrees still produces a positive rise",
         "No prediction is possible from contact angle alone; the sign of h depends only on the sign of gamma",
-        "Capillary rise, because surface tension gamma is always positive regardless of contact angle"
+        "Capillary depression: since theta_c > 90 degrees, cos(theta_c) is negative, so h = 2*gamma*cos(theta_c)/(rho*g*r) is negative",
+        "Capillary rise, because surface tension gamma is always positive regardless of contact angle",
+        "Capillary rise: any contact angle less than 180 degrees still produces a positive rise"
       ],
-      "correct_index": 0,
-      "explanation": "theta_c = 110 deg is greater than 90 deg, meaning cos(theta_c) is negative (cos(110 deg) = -0.342), which makes the entire capillary height h negative under the standard formula and sign convention -- predicting depression, not rise. This liquid is non-wetting on this solid. Option B is wrong: it is precisely angles greater than 90 degrees (up to 180 degrees) that give depression, not rise. Option C is wrong because gamma is always positive by definition (it is a magnitude), so it can never by itself flip the sign of h -- the sign is entirely controlled by cos(theta_c). Option D repeats that same error."
+      "correct_index": 1,
+      "explanation": "theta_c = 110 deg is greater than 90 deg, meaning cos(theta_c) is negative (cos(110 deg) = -0.342), which makes the entire capillary height h negative under the standard formula and sign convention -- predicting depression, not rise. This liquid is non-wetting on this solid. Option D is wrong: it is precisely angles greater than 90 degrees (up to 180 degrees) that give depression, not rise. Option A is wrong because gamma is always positive by definition (it is a magnitude), so it can never by itself flip the sign of h -- the sign is entirely controlled by cos(theta_c). Option C repeats that same error."
     },
     {
       "kc": "wetting-and-contact-angle",
@@ -843,13 +843,13 @@
       "prompt": "What is the physical significance of a contact angle of exactly theta_c = 90 degrees between a liquid and a solid surface?",
       "source": "Levine, Physical Chemistry, interfacial phenomena style",
       "options": [
-        "It is the boundary between wetting and non-wetting behavior; in a capillary tube it predicts essentially zero capillary rise or depression, since cos(90 deg) = 0",
         "It means the liquid perfectly wets the surface with maximum possible spreading",
+        "It is physically impossible; contact angles can only take values strictly less than 90 degrees or strictly greater than 90 degrees",
         "It means the surface tension of the liquid is exactly zero at that temperature",
-        "It is physically impossible; contact angles can only take values strictly less than 90 degrees or strictly greater than 90 degrees"
+        "It is the boundary between wetting and non-wetting behavior; in a capillary tube it predicts essentially zero capillary rise or depression, since cos(90 deg) = 0"
       ],
-      "correct_index": 0,
-      "explanation": "At theta_c = 90 deg, cos(theta_c) = 0, so the capillary formula h = 2*gamma*cos(theta_c)/(rho*g*r) predicts h = 0: no net rise or depression, marking the transition point between wetting (theta_c < 90 deg, rise) and non-wetting (theta_c > 90 deg, depression) regimes. Option B describes theta_c = 0 (perfect/complete wetting), not 90 degrees. Option C is a fabricated, unrelated claim -- gamma is a separate physical property unrelated to the angle value. Option D is simply false; theta_c = 90 deg is a perfectly valid, physically observed value for many liquid-solid pairs."
+      "correct_index": 3,
+      "explanation": "At theta_c = 90 deg, cos(theta_c) = 0, so the capillary formula h = 2*gamma*cos(theta_c)/(rho*g*r) predicts h = 0: no net rise or depression, marking the transition point between wetting (theta_c < 90 deg, rise) and non-wetting (theta_c > 90 deg, depression) regimes. Option A describes theta_c = 0 (perfect/complete wetting), not 90 degrees. Option C is a fabricated, unrelated claim -- gamma is a separate physical property unrelated to the angle value. Option B is simply false; theta_c = 90 deg is a perfectly valid, physically observed value for many liquid-solid pairs."
     },
     {
       "kc": "wetting-and-contact-angle",
@@ -859,13 +859,13 @@
       "prompt": "A lotus leaf surface causes water droplets to form contact angles greater than 150 degrees and roll off carrying dirt particles with them (the 'lotus effect'), used as inspiration for self-cleaning engineered coatings. Which statement correctly explains why such a surface is called superhydrophobic and how this relates to the contact-angle classification framework?",
       "source": "Atkins Physical Chemistry, Ch. 22 (wetting) style; biomimetic surface engineering context",
       "options": [
+        "The lotus effect is unrelated to contact angle and is caused entirely by the leaf's chemical composition rather than its surface geometry or wetting behavior",
         "It is an extreme case of non-wetting (theta_c well above 90 degrees, approaching the maximum of 180 degrees), so water strongly beads into near-spherical droplets rather than spreading, minimizing solid-liquid contact area",
         "It is an extreme case of wetting, since a very large contact angle means the water is spreading over an unusually large area of leaf surface",
-        "Superhydrophobicity means the leaf surface has zero surface tension, preventing any liquid contact",
-        "The lotus effect is unrelated to contact angle and is caused entirely by the leaf's chemical composition rather than its surface geometry or wetting behavior"
+        "Superhydrophobicity means the leaf surface has zero surface tension, preventing any liquid contact"
       ],
-      "correct_index": 0,
-      "explanation": "theta_c > 150 degrees is far into the non-wetting regime (theta_c > 90 deg), representing near-minimal solid-liquid contact area and strongly beaded droplets -- exactly the behavior that lets droplets roll off easily, picking up loose surface particles as they go (the self-cleaning effect). Option B inverts the relationship: large contact angle means LESS spreading, not more. Option C is a fabricated claim -- surface tension belongs to the liquid (water) and is never literally zero; what changes is the effective solid-liquid interaction represented by the contact angle. Option D is wrong: the lotus effect is a textbook illustration that both surface chemistry (low-energy waxy coating) AND micro/nano-scale surface roughness combine to push the effective/apparent contact angle to superhydrophobic extremes, so it is very much a contact-angle phenomenon."
+      "correct_index": 1,
+      "explanation": "theta_c > 150 degrees is far into the non-wetting regime (theta_c > 90 deg), representing near-minimal solid-liquid contact area and strongly beaded droplets -- exactly the behavior that lets droplets roll off easily, picking up loose surface particles as they go (the self-cleaning effect). Option C inverts the relationship: large contact angle means LESS spreading, not more. Option D is a fabricated claim -- surface tension belongs to the liquid (water) and is never literally zero; what changes is the effective solid-liquid interaction represented by the contact angle. Option A is wrong: the lotus effect is a textbook illustration that both surface chemistry (low-energy waxy coating) AND micro/nano-scale surface roughness combine to push the effective/apparent contact angle to superhydrophobic extremes, so it is very much a contact-angle phenomenon."
     },
     {
       "kc": "wetting-and-contact-angle",
@@ -885,12 +885,12 @@
       "source": "Atkins Physical Chemistry, Ch. 22 (Gibbs adsorption isotherm) style",
       "options": [
         "Gamma is positive, meaning the surfactant accumulates preferentially at the surface relative to the bulk (positive surface excess)",
-        "Gamma is negative, meaning the surfactant is depleted at the surface relative to the bulk",
         "Gamma is undefined whenever gamma changes with concentration, since the isotherm only applies to constant-gamma systems",
-        "Gamma must be exactly zero because surface tension changes are unrelated to adsorption according to this isotherm"
+        "Gamma must be exactly zero because surface tension changes are unrelated to adsorption according to this isotherm",
+        "Gamma is negative, meaning the surfactant is depleted at the surface relative to the bulk"
       ],
       "correct_index": 0,
-      "explanation": "With d(gamma)/d(ln C) negative, the isotherm gives Gamma = -(1/RT)*(negative number) = positive. A positive surface excess is exactly what is physically expected for a surfactant: it preferentially populates the interface (lowering surface tension there) relative to its bulk concentration. Option B has the sign backwards. Option C misunderstands the isotherm -- it is specifically designed to relate a CHANGING gamma (as a function of C) to Gamma; a constant gamma would instead imply zero surface excess. Option D contradicts the entire physical basis of the equation, which directly links surface tension's concentration-dependence to adsorption."
+      "explanation": "With d(gamma)/d(ln C) negative, the isotherm gives Gamma = -(1/RT)*(negative number) = positive. A positive surface excess is exactly what is physically expected for a surfactant: it preferentially populates the interface (lowering surface tension there) relative to its bulk concentration. Option D has the sign backwards. Option B misunderstands the isotherm -- it is specifically designed to relate a CHANGING gamma (as a function of C) to Gamma; a constant gamma would instead imply zero surface excess. Option C contradicts the entire physical basis of the equation, which directly links surface tension's concentration-dependence to adsorption."
     },
     {
       "kc": "gibbs-adsorption-isotherm",
@@ -953,13 +953,13 @@
       "prompt": "In a galvanic (voltaic) cell, at which electrode does oxidation occur, and what is that electrode called?",
       "source": "Smith Van Ness Abbott 8e, electrochemistry appendix style; standard general chemistry convention",
       "options": [
-        "Oxidation occurs at the anode; electrons are released there and flow through the external circuit to the other electrode",
-        "Oxidation occurs at the cathode; this is the standard convention in all electrochemical cells",
+        "Oxidation occurs at the anode only in electrolytic cells, but at the cathode in galvanic cells",
         "Oxidation occurs at both electrodes simultaneously in a galvanic cell",
-        "Oxidation occurs at the anode only in electrolytic cells, but at the cathode in galvanic cells"
+        "Oxidation occurs at the anode; electrons are released there and flow through the external circuit to the other electrode",
+        "Oxidation occurs at the cathode; this is the standard convention in all electrochemical cells"
       ],
-      "correct_index": 0,
-      "explanation": "By universal convention (memorized as 'AN OX, RED CAT' -- anode oxidation, cathode reduction), oxidation (loss of electrons) always occurs at the anode, and those released electrons travel through the external wire toward the cathode where reduction occurs. This convention holds for BOTH galvanic and electrolytic cells (option D's claim that it flips between cell types is a common but false generalization) -- what changes between galvanic and electrolytic cells is which electrode ends up at higher or lower potential/polarity, not which one hosts oxidation. Option B reverses the correct assignment. Option C is physically wrong; oxidation and reduction are spatially separated in an electrochemical cell (that separation is precisely what allows the electrons to be captured as useful current)."
+      "correct_index": 2,
+      "explanation": "By universal convention (memorized as 'AN OX, RED CAT' -- anode oxidation, cathode reduction), oxidation (loss of electrons) always occurs at the anode, and those released electrons travel through the external wire toward the cathode where reduction occurs. This convention holds for BOTH galvanic and electrolytic cells (option A's claim that it flips between cell types is a common but false generalization) -- what changes between galvanic and electrolytic cells is which electrode ends up at higher or lower potential/polarity, not which one hosts oxidation. Option D reverses the correct assignment. Option B is physically wrong; oxidation and reduction are spatially separated in an electrochemical cell (that separation is precisely what allows the electrons to be captured as useful current)."
     },
     {
       "kc": "electrochemical-cell-fundamentals",
@@ -969,13 +969,13 @@
       "prompt": "A galvanic cell is written in standard cell notation as: Zn(s) | Zn^2+(aq) || Cu^2+(aq) | Cu(s). What does this notation tell you about the cell?",
       "source": "Smith Van Ness Abbott 8e, cell notation convention style",
       "options": [
-        "Zn is the anode (oxidized, written on the left), Cu is the cathode (reduced, written on the right), and the double vertical line || represents the salt bridge (or porous barrier) separating the two half-cells",
         "Cu is the anode because it is written using the metal-first convention, and Zn is the cathode",
-        "The single vertical lines represent salt bridges, and the double line separates two different solutions of the same metal ion",
-        "This notation describes an electrolytic cell, not a galvanic cell, because two different metals are shown"
+        "This notation describes an electrolytic cell, not a galvanic cell, because two different metals are shown",
+        "Zn is the anode (oxidized, written on the left), Cu is the cathode (reduced, written on the right), and the double vertical line || represents the salt bridge (or porous barrier) separating the two half-cells",
+        "The single vertical lines represent salt bridges, and the double line separates two different solutions of the same metal ion"
       ],
-      "correct_index": 0,
-      "explanation": "By convention, standard cell notation is written anode | anode solution || cathode solution | cathode, reading left to right in the direction electrons conceptually flow through the circuit (oxidation on the left, reduction on the right), with the double line || specifically denoting the salt bridge or porous membrane connecting the two half-cells. So Zn is oxidized (anode) and Cu^2+ is reduced (cathode), matching that Zn is a more active/less noble metal than Cu. Option B reverses the anode/cathode assignment and invents a nonexistent 'metal-first convention.' Option C swaps the meaning of single vs. double lines (single lines denote phase boundaries within a half-cell, not salt bridges). Option D is a non sequitur; having two different metals is entirely normal for both galvanic and electrolytic cells and does not by itself indicate cell type."
+      "correct_index": 2,
+      "explanation": "By convention, standard cell notation is written anode | anode solution || cathode solution | cathode, reading left to right in the direction electrons conceptually flow through the circuit (oxidation on the left, reduction on the right), with the double line || specifically denoting the salt bridge or porous membrane connecting the two half-cells. So Zn is oxidized (anode) and Cu^2+ is reduced (cathode), matching that Zn is a more active/less noble metal than Cu. Option A reverses the anode/cathode assignment and invents a nonexistent 'metal-first convention.' Option D swaps the meaning of single vs. double lines (single lines denote phase boundaries within a half-cell, not salt bridges). Option B is a non sequitur; having two different metals is entirely normal for both galvanic and electrolytic cells and does not by itself indicate cell type."
     },
     {
       "kc": "electrochemical-cell-fundamentals",
@@ -985,13 +985,13 @@
       "prompt": "In an operating galvanic cell connected by an external wire and a salt bridge, which statement correctly describes the flow of charge carriers?",
       "source": "Atkins Physical Chemistry, Ch. 6 (electrochemistry) style; common misconception check",
       "options": [
-        "Electrons flow through the external wire from the anode to the cathode; ions flow through the salt bridge (cations toward the cathode compartment, anions toward the anode compartment) to maintain electrical neutrality",
-        "Electrons flow through the salt bridge directly from the anode to the cathode, while ions flow only through the external wire",
+        "Electrons flow from the cathode to the anode through the external wire, opposite to the conventional current direction",
         "Both electrons and ions flow exclusively through the external wire; the salt bridge only provides mechanical support",
-        "Electrons flow from the cathode to the anode through the external wire, opposite to the conventional current direction"
+        "Electrons flow through the salt bridge directly from the anode to the cathode, while ions flow only through the external wire",
+        "Electrons flow through the external wire from the anode to the cathode; ions flow through the salt bridge (cations toward the cathode compartment, anions toward the anode compartment) to maintain electrical neutrality"
       ],
-      "correct_index": 0,
-      "explanation": "Electrons, being confined to the metallic/wire phase, travel through the external circuit only, from the electrode where they are released (anode, oxidation) to the electrode where they are consumed (cathode, reduction). Ions cannot travel through the wire; they move through the ionic (salt bridge/electrolyte) pathway instead, with cations migrating toward the cathode compartment and anions toward the anode compartment to neutralize the charge buildup that oxidation/reduction would otherwise create. Option B is a fabricated and physically impossible reversal -- electrons never travel through an ionic salt bridge. Option C is also wrong; ions cannot travel through a metal wire. Option D reverses the correct electron-flow direction (electrons flow anode-to-cathode, not cathode-to-anode) -- note conventional current, by definition opposite to electron flow, does go from cathode to anode externally, but the statement as worded incorrectly claims this IS the electron flow direction."
+      "correct_index": 3,
+      "explanation": "Electrons, being confined to the metallic/wire phase, travel through the external circuit only, from the electrode where they are released (anode, oxidation) to the electrode where they are consumed (cathode, reduction). Ions cannot travel through the wire; they move through the ionic (salt bridge/electrolyte) pathway instead, with cations migrating toward the cathode compartment and anions toward the anode compartment to neutralize the charge buildup that oxidation/reduction would otherwise create. Option C is a fabricated and physically impossible reversal -- electrons never travel through an ionic salt bridge. Option B is also wrong; ions cannot travel through a metal wire. Option A reverses the correct electron-flow direction (electrons flow anode-to-cathode, not cathode-to-anode) -- note conventional current, by definition opposite to electron flow, does go from cathode to anode externally, but the statement as worded incorrectly claims this IS the electron flow direction."
     },
     {
       "kc": "electrochemical-cell-fundamentals",
@@ -1010,13 +1010,13 @@
       "prompt": "If the salt bridge connecting the two half-cells of a galvanic cell is removed while the external wire remains connected, what happens to the cell's operation, and why?",
       "source": "Atkins Physical Chemistry, Ch. 6 (electrochemistry) style; salt-bridge function conceptual check",
       "options": [
-        "The current quickly drops to zero, because without the salt bridge, charge cannot be neutralized in the two half-cells -- the anode compartment builds up excess positive charge (from the cations produced by oxidation) and the cathode compartment builds up excess negative charge (from anions left behind as cations are reduced/deposited), which halts further electron flow through the wire",
         "The cell continues operating exactly as before, since the salt bridge only provides physical support between the two beakers and carries no electrical function",
-        "The current actually increases without the salt bridge, since removing it eliminates an extra resistance in the circuit",
-        "Removing the salt bridge reverses which electrode is the anode and which is the cathode"
+        "Removing the salt bridge reverses which electrode is the anode and which is the cathode",
+        "The current quickly drops to zero, because without the salt bridge, charge cannot be neutralized in the two half-cells -- the anode compartment builds up excess positive charge (from the cations produced by oxidation) and the cathode compartment builds up excess negative charge (from anions left behind as cations are reduced/deposited), which halts further electron flow through the wire",
+        "The current actually increases without the salt bridge, since removing it eliminates an extra resistance in the circuit"
       ],
-      "correct_index": 0,
-      "explanation": "The salt bridge (or an equivalent porous barrier) completes the electrical circuit through the solution phase, allowing ions to migrate and neutralize the charge imbalance that oxidation/reduction would otherwise create in each compartment. Without it, the anode compartment would rapidly become net positively charged (extra cations produced there with no way to leave) and the cathode compartment net negatively charged (anions left behind as cations are consumed) -- this buildup opposes further electron transfer and current stops almost immediately, even though the external wire is intact. Option B is the classic misconception that the salt bridge is merely structural; it is essential to the circuit's ionic (non-electronic) branch. Option C misunderstands circuit continuity -- without the ionic pathway, the circuit is broken, not merely made lower-resistance. Option D is a fabricated and unrelated claim; removing the salt bridge does not change which chemical species is oxidized or reduced."
+      "correct_index": 2,
+      "explanation": "The salt bridge (or an equivalent porous barrier) completes the electrical circuit through the solution phase, allowing ions to migrate and neutralize the charge imbalance that oxidation/reduction would otherwise create in each compartment. Without it, the anode compartment would rapidly become net positively charged (extra cations produced there with no way to leave) and the cathode compartment net negatively charged (anions left behind as cations are consumed) -- this buildup opposes further electron transfer and current stops almost immediately, even though the external wire is intact. Option A is the classic misconception that the salt bridge is merely structural; it is essential to the circuit's ionic (non-electronic) branch. Option D misunderstands circuit continuity -- without the ionic pathway, the circuit is broken, not merely made lower-resistance. Option B is a fabricated and unrelated claim; removing the salt bridge does not change which chemical species is oxidized or reduced."
     },
     {
       "kc": "standard-electrode-potentials",
@@ -1027,12 +1027,12 @@
       "source": "Smith Van Ness Abbott 8e, standard electrode potential table style",
       "options": [
         "F2(g), because a more positive standard reduction potential indicates a greater tendency to be reduced (i.e., to oxidize something else)",
-        "Li^+(aq), because a more negative standard reduction potential indicates a stronger pull on electrons",
         "Both are equally strong oxidizing agents since oxidizing strength does not depend on E-degree values",
+        "Li^+(aq), because a more negative standard reduction potential indicates a stronger pull on electrons",
         "Li(s), because metals are generally strong oxidizing agents"
       ],
       "correct_index": 0,
-      "explanation": "The more positive a species' standard reduction potential, the greater its thermodynamic tendency to be reduced (gain electrons), which is exactly the definition of a strong oxidizing agent. F2 at +2.87 V is one of the strongest oxidizing agents on the entire table. Option B has the relationship backwards -- a very negative E-degree (like Li+) indicates Li+ has very little tendency to be reduced, making Li+ a weak oxidizing agent (and correspondingly, Li metal a very strong reducing agent). Option C is simply false; E-degree values are specifically tabulated to rank oxidizing/reducing strength. Option D confuses the metal (Li, a strong reducing agent, easily oxidized) with its oxidizing-agent counterpart."
+      "explanation": "The more positive a species' standard reduction potential, the greater its thermodynamic tendency to be reduced (gain electrons), which is exactly the definition of a strong oxidizing agent. F2 at +2.87 V is one of the strongest oxidizing agents on the entire table. Option C has the relationship backwards -- a very negative E-degree (like Li+) indicates Li+ has very little tendency to be reduced, making Li+ a weak oxidizing agent (and correspondingly, Li metal a very strong reducing agent). Option B is simply false; E-degree values are specifically tabulated to rank oxidizing/reducing strength. Option D confuses the metal (Li, a strong reducing agent, easily oxidized) with its oxidizing-agent counterpart."
     },
     {
       "kc": "standard-electrode-potentials",
@@ -1042,13 +1042,13 @@
       "prompt": "Cell A has a standard cell potential of E-degree_cell = +0.10 V. Cell B has a standard cell potential of E-degree_cell = +2.50 V. Both reactions are thermodynamically spontaneous as written. Which statement about the two cells is correct?",
       "source": "Atkins Physical Chemistry, Ch. 6 style; thermodynamics vs. kinetics conceptual check",
       "options": [
-        "Cell B releases more free energy per mole of reaction (larger driving force, more negative Delta G-degree = -nFE-degree), but this alone says nothing about how fast either reaction actually proceeds, since rate is a kinetic property governed by activation energy, not by E-degree",
-        "Cell B's reaction must proceed faster than Cell A's, since a larger E-degree_cell always means a faster reaction rate",
         "Cell A cannot be spontaneous if its E-degree_cell is smaller than Cell B's",
-        "E-degree_cell values cannot be compared between different chemical reactions at all"
+        "E-degree_cell values cannot be compared between different chemical reactions at all",
+        "Cell B's reaction must proceed faster than Cell A's, since a larger E-degree_cell always means a faster reaction rate",
+        "Cell B releases more free energy per mole of reaction (larger driving force, more negative Delta G-degree = -nFE-degree), but this alone says nothing about how fast either reaction actually proceeds, since rate is a kinetic property governed by activation energy, not by E-degree"
       ],
-      "correct_index": 0,
-      "explanation": "This targets a known misconception for this course: a larger (more positive) standard cell potential means a larger thermodynamic driving force (via Delta G-degree = -nFE-degree, a more negative Delta G-degree), but says nothing directly about reaction RATE, which depends on activation energy and kinetic pathway, not on the thermodynamic potential difference. A reaction can be highly spontaneous (large positive E-degree) yet extremely slow if it faces a large activation barrier. Option B directly states the misconception being tested and is false. Option C is wrong: E-degree_cell = +0.10 V is still positive, meaning Cell A is spontaneous as written; nothing about Cell B's larger value affects that. Option D is an overcorrection -- E-degree_cell values absolutely can and are routinely compared across different reactions (that comparison IS what determines relative oxidizing/reducing strength and combinations of half-reactions), just not as a proxy for rate."
+      "correct_index": 3,
+      "explanation": "This targets a known misconception for this course: a larger (more positive) standard cell potential means a larger thermodynamic driving force (via Delta G-degree = -nFE-degree, a more negative Delta G-degree), but says nothing directly about reaction RATE, which depends on activation energy and kinetic pathway, not on the thermodynamic potential difference. A reaction can be highly spontaneous (large positive E-degree) yet extremely slow if it faces a large activation barrier. Option C directly states the misconception being tested and is false. Option A is wrong: E-degree_cell = +0.10 V is still positive, meaning Cell A is spontaneous as written; nothing about Cell B's larger value affects that. Option B is an overcorrection -- E-degree_cell values absolutely can and are routinely compared across different reactions (that comparison IS what determines relative oxidizing/reducing strength and combinations of half-reactions), just not as a proxy for rate."
     },
     {
       "kc": "standard-electrode-potentials",
@@ -1096,12 +1096,12 @@
       "source": "Atkins Physical Chemistry, Ch. 6 (Nernst equation) style",
       "options": [
         "E_cell decreases below E-degree_cell, because decreasing a reactant (Cu^2+) concentration increases the reaction quotient Q = [Zn^2+]/[Cu^2+], and E_cell = E-degree_cell - (RT/nF)ln(Q) decreases as Q increases",
+        "E_cell becomes negative immediately, since any deviation from standard conditions makes a cell non-spontaneous",
         "E_cell increases above E-degree_cell, because removing product... err reactant should always help a spontaneous reaction proceed further and raise its voltage",
-        "E_cell is completely unaffected by concentration changes since E-degree_cell is a fixed constant for the reaction",
-        "E_cell becomes negative immediately, since any deviation from standard conditions makes a cell non-spontaneous"
+        "E_cell is completely unaffected by concentration changes since E-degree_cell is a fixed constant for the reaction"
       ],
       "correct_index": 0,
-      "explanation": "For this reaction Q = [Zn^2+]/[Cu^2+] (products over reactants in the reaction quotient convention). Decreasing [Cu^2+] increases Q, and since E_cell = E-degree_cell - (RT/nF)ln(Q), a larger Q subtracts more from E-degree_cell, decreasing E_cell below the standard value. Option B's reasoning is backwards and internally inconsistent. Option C confuses E-degree_cell (a fixed reference value at standard 1 M/1 atm conditions) with E_cell (the actual, concentration-dependent cell potential) -- this is exactly the distinction the Nernst equation exists to capture. Option D is a wild overstatement; small deviations from standard conditions produce correspondingly small, continuous shifts in E_cell, not an abrupt sign flip."
+      "explanation": "For this reaction Q = [Zn^2+]/[Cu^2+] (products over reactants in the reaction quotient convention). Decreasing [Cu^2+] increases Q, and since E_cell = E-degree_cell - (RT/nF)ln(Q), a larger Q subtracts more from E-degree_cell, decreasing E_cell below the standard value. Option C's reasoning is backwards and internally inconsistent. Option D confuses E-degree_cell (a fixed reference value at standard 1 M/1 atm conditions) with E_cell (the actual, concentration-dependent cell potential) -- this is exactly the distinction the Nernst equation exists to capture. Option B is a wild overstatement; small deviations from standard conditions produce correspondingly small, continuous shifts in E_cell, not an abrupt sign flip."
     },
     {
       "kc": "nernst-equation",
@@ -1111,13 +1111,13 @@
       "prompt": "For a cell with n = 2 electrons transferred, E-degree_cell = 1.10 V, and reaction quotient Q = 0.10 at 25 degC, which calculation correctly applies the Nernst equation in its base-10 logarithm form, E_cell = E-degree_cell - (0.0592/n)*log10(Q)?",
       "source": "Smith Van Ness Abbott 8e, Nernst equation 25 degC simplified form style",
       "options": [
-        "E_cell = 1.10 - (0.0592/2)*log10(0.10) = 1.10 - (0.0296)*(-1) = 1.10 + 0.0296 = 1.1296 V",
         "E_cell = 1.10 - (0.0592/2)*ln(0.10) = 1.10 - (0.0296)*(-2.303) = 1.10 + 0.0681 = 1.1681 V (mistakenly using natural log with the base-10 coefficient)",
+        "E_cell = 1.10 - (0.0592/2)*log10(0.10) = 1.10 - (0.0296)*(-1) = 1.10 + 0.0296 = 1.1296 V",
         "E_cell = 1.10 - 0.0592*n*log10(Q) = 1.10 - (0.0592)(2)(-1) = 1.10 + 0.1184 = 1.2184 V (multiplying by n instead of dividing)",
         "E_cell = 1.10 + (0.0592/2)*log10(0.10) = 1.10 + (0.0296)*(-1) = 1.10 - 0.0296 = 1.0704 V (sign error on the whole Nernst term)"
       ],
-      "correct_index": 0,
-      "explanation": "The correct 25 degC form is E_cell = E-degree_cell - (0.0592/n)*log10(Q). With log10(0.10) = -1: E_cell = 1.10 - (0.0296)(-1) = 1.10 + 0.0296 = 1.1296 V, matching option A. Option B incorrectly mixes the base-10 coefficient (0.0592, which already has the ln-to-log10 conversion factor 2.303 baked in) with an actual ln() calculation, effectively double-applying the conversion. Option C incorrectly multiplies by n instead of dividing by n, inverting how electron count affects the correction term's size. Option D flips the overall sign of the correction term, which would be the wrong direction for this Q value."
+      "correct_index": 1,
+      "explanation": "The correct 25 degC form is E_cell = E-degree_cell - (0.0592/n)*log10(Q). With log10(0.10) = -1: E_cell = 1.10 - (0.0296)(-1) = 1.10 + 0.0296 = 1.1296 V, matching option B. Option A incorrectly mixes the base-10 coefficient (0.0592, which already has the ln-to-log10 conversion factor 2.303 baked in) with an actual ln() calculation, effectively double-applying the conversion. Option C incorrectly multiplies by n instead of dividing by n, inverting how electron count affects the correction term's size. Option D flips the overall sign of the correction term, which would be the wrong direction for this Q value."
     },
     {
       "kc": "nernst-equation",
@@ -1164,13 +1164,13 @@
       "prompt": "In an electrolysis experiment, a constant current of I amperes is passed through a cell for a time t seconds. Which expression correctly gives the total electric charge Q passed, and what is its SI unit?",
       "source": "Smith Van Ness Abbott 8e, Faraday's laws of electrolysis style",
       "options": [
-        "Q = I*t, with units of coulombs (C), since 1 ampere = 1 coulomb per second",
+        "Q = I*t*F, with units of coulombs per mole, requiring the Faraday constant to compute charge",
         "Q = I/t, with units of amperes per second",
-        "Q = t/I, with units of seconds per ampere",
-        "Q = I*t*F, with units of coulombs per mole, requiring the Faraday constant to compute charge"
+        "Q = I*t, with units of coulombs (C), since 1 ampere = 1 coulomb per second",
+        "Q = t/I, with units of seconds per ampere"
       ],
-      "correct_index": 0,
-      "explanation": "By definition, current I is the rate of charge flow (I = dQ/dt), so for constant current, total charge Q = I*t. Since 1 ampere = 1 coulomb/second, multiplying amperes by seconds gives coulombs, the SI unit of charge. Option B inverts the relationship into a nonstandard, meaningless unit. Option C is also an inverted, meaningless expression. Option D incorrectly inserts the Faraday constant F, which is used later to convert charge (coulombs) into moles of electrons, not to compute charge itself from current and time."
+      "correct_index": 2,
+      "explanation": "By definition, current I is the rate of charge flow (I = dQ/dt), so for constant current, total charge Q = I*t. Since 1 ampere = 1 coulomb/second, multiplying amperes by seconds gives coulombs, the SI unit of charge. Option B inverts the relationship into a nonstandard, meaningless unit. Option D is also an inverted, meaningless expression. Option A incorrectly inserts the Faraday constant F, which is used later to convert charge (coulombs) into moles of electrons, not to compute charge itself from current and time."
     },
     {
       "kc": "faradays-laws-and-electrolysis",
@@ -1180,13 +1180,13 @@
       "prompt": "During electrolysis, 0.0500 mol of electrons pass through a cell containing Al^3+ ions (reduction: Al^3+ + 3e^- -> Al, molar mass of Al = 26.98 g/mol). Which calculation correctly gives the mass of aluminum metal deposited?",
       "source": "Smith Van Ness Abbott 8e, Faraday's law stoichiometry style",
       "options": [
-        "mass = (0.0500 mol e^- / 3 mol e^- per mol Al) * 26.98 g/mol = 0.01667 mol Al * 26.98 g/mol = 0.4497 g",
-        "mass = 0.0500 mol e^- * 26.98 g/mol = 1.349 g (forgetting to divide by the charge number z = 3 for Al^3+)",
         "mass = 0.0500 mol e^- * 3 * 26.98 g/mol = 4.047 g (multiplying by z instead of dividing by it)",
-        "mass = (0.0500 mol e^- * 26.98 g/mol) / 1 = 1.349 g, since one mole of electrons always deposits one mole of any metal regardless of its ionic charge"
+        "mass = (0.0500 mol e^- * 26.98 g/mol) / 1 = 1.349 g, since one mole of electrons always deposits one mole of any metal regardless of its ionic charge",
+        "mass = 0.0500 mol e^- * 26.98 g/mol = 1.349 g (forgetting to divide by the charge number z = 3 for Al^3+)",
+        "mass = (0.0500 mol e^- / 3 mol e^- per mol Al) * 26.98 g/mol = 0.01667 mol Al * 26.98 g/mol = 0.4497 g"
       ],
-      "correct_index": 0,
-      "explanation": "Each Al^3+ ion requires 3 electrons to be reduced to Al metal, so moles of Al deposited = moles of electrons / 3 = 0.0500/3 = 0.01667 mol, giving mass = 0.01667 * 26.98 = 0.4497 g. Option B is the classic error of treating the mole ratio between electrons and metal atoms as always 1:1, ignoring the ion's actual charge (z = 3 for Al^3+). Option C makes the opposite mistake, multiplying by z instead of dividing. Option D repeats option B's flawed 1:1 assumption with an explicit (and false) general claim -- the electron-to-metal mole ratio depends entirely on the charge of the ion being reduced (it is 1:1 only for singly-charged ions like Ag+ or Na+)."
+      "correct_index": 3,
+      "explanation": "Each Al^3+ ion requires 3 electrons to be reduced to Al metal, so moles of Al deposited = moles of electrons / 3 = 0.0500/3 = 0.01667 mol, giving mass = 0.01667 * 26.98 = 0.4497 g. Option C is the classic error of treating the mole ratio between electrons and metal atoms as always 1:1, ignoring the ion's actual charge (z = 3 for Al^3+). Option A makes the opposite mistake, multiplying by z instead of dividing. Option B repeats option C's flawed 1:1 assumption with an explicit (and false) general claim -- the electron-to-metal mole ratio depends entirely on the charge of the ion being reduced (it is 1:1 only for singly-charged ions like Ag+ or Na+)."
     },
     {
       "kc": "faradays-laws-and-electrolysis",
@@ -1233,13 +1233,13 @@
       "prompt": "A galvanic cell has a positive standard cell potential, E-degree_cell = +0.80 V. Using the relationship Delta G-degree = -n*F*E-degree_cell, what does this imply about the sign of Delta G-degree and the spontaneity of the reaction under standard conditions?",
       "source": "Atkins Physical Chemistry, Ch. 6 (electrochemical thermodynamics) style",
       "options": [
-        "Delta G-degree is negative, since n and F are always positive, so a positive E-degree_cell makes -nFE-degree_cell negative -- the reaction is spontaneous as written under standard conditions",
+        "The sign of E-degree_cell has no bearing on the sign of Delta G-degree; they are independent thermodynamic quantities",
         "Delta G-degree is positive, since a positive voltage requires positive free energy input to sustain it",
-        "Delta G-degree cannot be determined without knowing the equilibrium constant K first",
-        "The sign of E-degree_cell has no bearing on the sign of Delta G-degree; they are independent thermodynamic quantities"
+        "Delta G-degree is negative, since n and F are always positive, so a positive E-degree_cell makes -nFE-degree_cell negative -- the reaction is spontaneous as written under standard conditions",
+        "Delta G-degree cannot be determined without knowing the equilibrium constant K first"
       ],
-      "correct_index": 0,
-      "explanation": "Both n (moles of electrons transferred) and F (Faraday's constant) are positive quantities, so Delta G-degree = -n*F*E-degree_cell has a sign exactly opposite to E-degree_cell. A positive E-degree_cell (+0.80 V here) therefore gives a negative Delta G-degree, confirming the reaction is spontaneous under standard conditions -- consistent with the general thermodynamic spontaneity criterion Delta G < 0. Option B reverses this relationship (a spontaneous, voltage-producing galvanic cell releases free energy, it does not require free energy input -- that describes an electrolytic, non-spontaneous cell instead). Option C is wrong; Delta G-degree can be computed directly from E-degree_cell without first finding K (in fact the reverse is more common -- K is found FROM E-degree_cell via Delta G-degree = -RT ln K). Option D is false; this equation is precisely the direct, quantitative link between the two."
+      "correct_index": 2,
+      "explanation": "Both n (moles of electrons transferred) and F (Faraday's constant) are positive quantities, so Delta G-degree = -n*F*E-degree_cell has a sign exactly opposite to E-degree_cell. A positive E-degree_cell (+0.80 V here) therefore gives a negative Delta G-degree, confirming the reaction is spontaneous under standard conditions -- consistent with the general thermodynamic spontaneity criterion Delta G < 0. Option B reverses this relationship (a spontaneous, voltage-producing galvanic cell releases free energy, it does not require free energy input -- that describes an electrolytic, non-spontaneous cell instead). Option D is wrong; Delta G-degree can be computed directly from E-degree_cell without first finding K (in fact the reverse is more common -- K is found FROM E-degree_cell via Delta G-degree = -RT ln K). Option A is false; this equation is precisely the direct, quantitative link between the two."
     },
     {
       "kc": "electrochemical-thermodynamics",
@@ -1249,13 +1249,13 @@
       "prompt": "An electrochemical reaction has Delta G-degree = -190 kJ/mol and equilibrium constant K = 2.1 x 10^33 at 298 K. A catalyst is added to the electrode surface that speeds up the reaction considerably. What happens to Delta G-degree and K as a result of adding the catalyst?",
       "source": "Atkins Physical Chemistry, Ch. 6 style; catalyst/thermodynamics misconception check",
       "options": [
-        "Delta G-degree and K remain unchanged; a catalyst only lowers the activation energy (increasing rate), it does not alter the thermodynamic state functions of reactants and products or the equilibrium position",
-        "Delta G-degree becomes more negative and K increases, since a faster reaction must also be more thermodynamically favorable",
         "Delta G-degree becomes less negative (closer to zero) because the catalyst allows the system to reach equilibrium via a lower-energy pathway",
+        "Delta G-degree becomes more negative and K increases, since a faster reaction must also be more thermodynamically favorable",
+        "Delta G-degree and K remain unchanged; a catalyst only lowers the activation energy (increasing rate), it does not alter the thermodynamic state functions of reactants and products or the equilibrium position",
         "K decreases because the catalyst speeds up the reverse reaction more than the forward reaction, shifting equilibrium toward reactants"
       ],
-      "correct_index": 0,
-      "explanation": "This directly targets a documented misconception for this course: catalysts change reaction kinetics (they provide a lower-activation-energy pathway, speeding up how fast equilibrium is reached) but never change the reaction's thermodynamics -- Delta G-degree, K, and E-degree_cell all depend only on the initial and final states (reactants and products), which a catalyst does not alter. A catalyst speeds up the forward AND reverse reactions equally, so the equilibrium position (and thus K) is completely unchanged. Options B, C, and D all incorrectly assume some thermodynamic quantity shifts due to the catalyst; all are false for exactly this reason."
+      "correct_index": 2,
+      "explanation": "This directly targets a documented misconception for this course: catalysts change reaction kinetics (they provide a lower-activation-energy pathway, speeding up how fast equilibrium is reached) but never change the reaction's thermodynamics -- Delta G-degree, K, and E-degree_cell all depend only on the initial and final states (reactants and products), which a catalyst does not alter. A catalyst speeds up the forward AND reverse reactions equally, so the equilibrium position (and thus K) is completely unchanged. Options B, A, and D all incorrectly assume some thermodynamic quantity shifts due to the catalyst; all are false for exactly this reason."
     },
     {
       "kc": "electrochemical-thermodynamics",
@@ -1302,13 +1302,13 @@
       "prompt": "On a corroding piece of iron exposed to moist air, iron metal is oxidized (Fe -> Fe^2+ + 2e^-) at certain regions of the surface, while dissolved oxygen is reduced (O2 + 2H2O + 4e^- -> 4OH^-) at other regions of the same piece of metal. What does this describe?",
       "source": "Atkins Physical Chemistry, Ch. 6 (corrosion) style",
       "options": [
-        "A coupled electrochemical (galvanic) cell operating on a single piece of metal, with the Fe-oxidation regions acting as local anodes and the O2-reduction regions acting as local cathodes, connected by electron flow through the metal itself and ion flow through the surface moisture film",
-        "A purely chemical (non-electrochemical) reaction, since only one piece of metal is involved rather than two separate electrodes",
+        "Simple physical dissolution of iron with no electron transfer occurring at all",
         "An electrolytic cell, since an external power source must be driving the iron oxidation",
-        "Simple physical dissolution of iron with no electron transfer occurring at all"
+        "A purely chemical (non-electrochemical) reaction, since only one piece of metal is involved rather than two separate electrodes",
+        "A coupled electrochemical (galvanic) cell operating on a single piece of metal, with the Fe-oxidation regions acting as local anodes and the O2-reduction regions acting as local cathodes, connected by electron flow through the metal itself and ion flow through the surface moisture film"
       ],
-      "correct_index": 0,
-      "explanation": "Corrosion of iron is a textbook example of a short-circuited galvanic cell operating entirely on one piece of metal: microscopic or macroscopic regions of the surface act as local anodes (Fe oxidation) and others as local cathodes (O2 reduction), with electrons conducted through the metal itself (no external wire needed, since anode and cathode are electronically connected directly) and ions migrating through the thin moisture/electrolyte film on the surface. Option B is wrong; corrosion is fundamentally an electron-transfer (redox) process, which makes it electrochemical by definition, and it does not require two physically separate electrodes -- one continuous piece of metal can host both half-reactions at different spots. Option C is wrong; corrosion is spontaneous (galvanic), requiring no external power source (that describes electrolytic processes, like electroplating or electrowinning, not corrosion). Option D is false; electron transfer (2 electrons per Fe atom oxidized) is the entire basis of the process."
+      "correct_index": 3,
+      "explanation": "Corrosion of iron is a textbook example of a short-circuited galvanic cell operating entirely on one piece of metal: microscopic or macroscopic regions of the surface act as local anodes (Fe oxidation) and others as local cathodes (O2 reduction), with electrons conducted through the metal itself (no external wire needed, since anode and cathode are electronically connected directly) and ions migrating through the thin moisture/electrolyte film on the surface. Option C is wrong; corrosion is fundamentally an electron-transfer (redox) process, which makes it electrochemical by definition, and it does not require two physically separate electrodes -- one continuous piece of metal can host both half-reactions at different spots. Option B is wrong; corrosion is spontaneous (galvanic), requiring no external power source (that describes electrolytic processes, like electroplating or electrowinning, not corrosion). Option A is false; electron transfer (2 electrons per Fe atom oxidized) is the entire basis of the process."
     },
     {
       "kc": "corrosion-and-engineering-applications",
@@ -1318,13 +1318,13 @@
       "prompt": "To protect an underground steel pipeline from corrosion, engineers attach blocks of zinc metal to the pipeline at intervals and electrically connect them to the steel. Zinc has a more negative standard reduction potential than iron (E-degree(Zn^2+/Zn) = -0.76 V vs. E-degree(Fe^2+/Fe) = -0.44 V). Why does this 'sacrificial anode' protect the steel?",
       "source": "Atkins Physical Chemistry, Ch. 6 (corrosion protection) style; Smith Van Ness Abbott 8e engineering applications",
       "options": [
-        "Zinc is more easily oxidized (less noble, more negative E-degree) than iron, so when the two metals are electrically connected, zinc preferentially becomes the anode and is oxidized (sacrificed) instead of the steel, forcing the steel to act as the protected cathode",
         "Zinc physically coats and seals the pipeline surface, preventing any water or oxygen from reaching the steel at all, similar to a paint coating",
+        "Zinc slows down the corrosion reaction kinetically by acting as a catalyst inhibitor, without involving any electron transfer between the metals",
         "Zinc has a higher standard reduction potential than iron, making it preferentially oxidized",
-        "Zinc slows down the corrosion reaction kinetically by acting as a catalyst inhibitor, without involving any electron transfer between the metals"
+        "Zinc is more easily oxidized (less noble, more negative E-degree) than iron, so when the two metals are electrically connected, zinc preferentially becomes the anode and is oxidized (sacrificed) instead of the steel, forcing the steel to act as the protected cathode"
       ],
-      "correct_index": 0,
-      "explanation": "Because zinc's standard reduction potential is more negative than iron's, zinc has a greater thermodynamic tendency to be oxidized (lose electrons) than iron does. When electrically connected, the whole coupled system behaves like a galvanic cell in which zinc is forced to be the anode (oxidized, i.e., 'sacrificed') while the steel pipeline becomes the cathode, where only reduction (not the pipeline's own oxidation) occurs -- protecting the iron from corroding. Option B describes a barrier-coating mechanism (like paint or a physical zinc coating without electrical sacrificial action), which is a different (and less robust, since a scratch exposes bare steel) protection strategy; true sacrificial anode protection continues working even if the surface is scratched, precisely because it relies on the electrochemical potential difference, not a physical seal. Option C states the wrong direction of comparison (zinc's reduction potential is LOWER/more negative, not higher). Option D is wrong; the mechanism is fundamentally electrochemical (real electron transfer through the metal connection and ion transport through the electrolyte), not a kinetic catalyst-inhibitor effect."
+      "correct_index": 3,
+      "explanation": "Because zinc's standard reduction potential is more negative than iron's, zinc has a greater thermodynamic tendency to be oxidized (lose electrons) than iron does. When electrically connected, the whole coupled system behaves like a galvanic cell in which zinc is forced to be the anode (oxidized, i.e., 'sacrificed') while the steel pipeline becomes the cathode, where only reduction (not the pipeline's own oxidation) occurs -- protecting the iron from corroding. Option A describes a barrier-coating mechanism (like paint or a physical zinc coating without electrical sacrificial action), which is a different (and less robust, since a scratch exposes bare steel) protection strategy; true sacrificial anode protection continues working even if the surface is scratched, precisely because it relies on the electrochemical potential difference, not a physical seal. Option C states the wrong direction of comparison (zinc's reduction potential is LOWER/more negative, not higher). Option B is wrong; the mechanism is fundamentally electrochemical (real electron transfer through the metal connection and ion transport through the electrolyte), not a kinetic catalyst-inhibitor effect."
     },
     {
       "kc": "corrosion-and-engineering-applications",
@@ -1334,13 +1334,13 @@
       "prompt": "Galvanized steel (steel coated with a thin layer of zinc) is scratched, exposing bare steel underneath in a humid environment. Compared to steel coated only with an ordinary (non-sacrificial) paint layer that gets the same scratch, why does the galvanized coating continue to protect the exposed steel while the painted coating does not?",
       "source": "Atkins Physical Chemistry, Ch. 6 (galvanizing vs. barrier coatings) style",
       "options": [
-        "Zinc remaining around the scratch continues to act as a sacrificial anode (being oxidized preferentially since it is less noble than iron), electrochemically protecting the exposed steel even though the physical barrier is broken, whereas ordinary paint provides only a physical barrier with no compensating electrochemical protection once breached",
+        "Both coatings behave identically once scratched, since any exposed steel corrodes at the same rate regardless of what coating originally surrounded it",
         "Zinc mechanically fills in the scratch by melting and re-sealing it at ambient temperature, restoring the physical barrier",
-        "Paint would actually offer equal or better protection than zinc once scratched, since paint is chemically inert while zinc actively reacts with the environment",
-        "Both coatings behave identically once scratched, since any exposed steel corrodes at the same rate regardless of what coating originally surrounded it"
+        "Zinc remaining around the scratch continues to act as a sacrificial anode (being oxidized preferentially since it is less noble than iron), electrochemically protecting the exposed steel even though the physical barrier is broken, whereas ordinary paint provides only a physical barrier with no compensating electrochemical protection once breached",
+        "Paint would actually offer equal or better protection than zinc once scratched, since paint is chemically inert while zinc actively reacts with the environment"
       ],
-      "correct_index": 0,
-      "explanation": "This is the key engineering advantage of galvanizing over a purely physical barrier coating: because zinc is intrinsically more easily oxidized than iron, it keeps functioning as an active sacrificial anode around a scratch or defect, continuing to protect the exposed steel electrochemically. A barrier coating like ordinary paint has no such electrochemical relationship to iron -- once its physical seal is broken, it offers zero additional protection, and the exposed steel corrodes as if unprotected. Option B is a fabricated, physically incorrect mechanism (zinc does not melt/reflow at ambient conditions to reseal a scratch). Option C is backwards; paint's chemical inertness is exactly why it provides no active protection once its physical barrier fails. Option D ignores the very real difference the sacrificial electrochemical mechanism makes -- this is precisely why galvanizing is specified in preference to plain paint for many corrosion-critical structural steel applications."
+      "correct_index": 2,
+      "explanation": "This is the key engineering advantage of galvanizing over a purely physical barrier coating: because zinc is intrinsically more easily oxidized than iron, it keeps functioning as an active sacrificial anode around a scratch or defect, continuing to protect the exposed steel electrochemically. A barrier coating like ordinary paint has no such electrochemical relationship to iron -- once its physical seal is broken, it offers zero additional protection, and the exposed steel corrodes as if unprotected. Option B is a fabricated, physically incorrect mechanism (zinc does not melt/reflow at ambient conditions to reseal a scratch). Option D is backwards; paint's chemical inertness is exactly why it provides no active protection once its physical barrier fails. Option A ignores the very real difference the sacrificial electrochemical mechanism makes -- this is precisely why galvanizing is specified in preference to plain paint for many corrosion-critical structural steel applications."
     },
     {
       "kc": "corrosion-and-engineering-applications",
@@ -1350,13 +1350,13 @@
       "prompt": "Two cathodic protection strategies exist for a large buried steel pipeline: (1) sacrificial anodes (e.g., zinc or magnesium blocks connected directly to the pipeline) and (2) impressed current cathodic protection (ICCP), where an external DC power supply forces current from an inert or consumable anode through the soil to the pipeline, deliberately making the pipeline the cathode. What is the key operational difference between these two methods?",
       "source": "Atkins Physical Chemistry, Ch. 6 style; NACE/engineering corrosion-control literature style",
       "options": [
-        "Sacrificial anode protection relies purely on the natural potential difference between two dissimilar metals (a spontaneous galvanic cell) and requires no external power, while ICCP uses an external power source to force protective current, allowing much larger currents and protection over larger structures, at the cost of needing power infrastructure and monitoring/control",
+        "Sacrificial anodes require an external power supply, while ICCP occurs spontaneously without any power source",
         "Sacrificial anodes and ICCP are two names for exactly the same underlying process with no meaningful operational difference",
         "ICCP works by physically coating the pipeline in a protective layer, while sacrificial anodes work purely through electron transfer",
-        "Sacrificial anodes require an external power supply, while ICCP occurs spontaneously without any power source"
+        "Sacrificial anode protection relies purely on the natural potential difference between two dissimilar metals (a spontaneous galvanic cell) and requires no external power, while ICCP uses an external power source to force protective current, allowing much larger currents and protection over larger structures, at the cost of needing power infrastructure and monitoring/control"
       ],
-      "correct_index": 0,
-      "explanation": "The key distinction is the power source: sacrificial anode protection is entirely a spontaneous galvanic process, driven only by the intrinsic potential difference between the sacrificial metal and the structure being protected -- no external power is needed, but the protective current available is limited by that natural potential difference and the anode's consumption rate. ICCP instead uses an external DC power supply to force (impress) a current through the circuit, which allows engineers to protect much larger or more demanding structures (long pipelines, ship hulls, large tanks) with a controllable, adjustable current, at the cost of requiring power infrastructure, wiring, and ongoing monitoring. Option B incorrectly claims no difference, ignoring the fundamental spontaneous-vs.-driven distinction. Option C is fabricated; both methods work through genuine electrochemical (electron-transfer) mechanisms, not physical coating. Option D exactly reverses the correct assignment of which method needs external power."
+      "correct_index": 3,
+      "explanation": "The key distinction is the power source: sacrificial anode protection is entirely a spontaneous galvanic process, driven only by the intrinsic potential difference between the sacrificial metal and the structure being protected -- no external power is needed, but the protective current available is limited by that natural potential difference and the anode's consumption rate. ICCP instead uses an external DC power supply to force (impress) a current through the circuit, which allows engineers to protect much larger or more demanding structures (long pipelines, ship hulls, large tanks) with a controllable, adjustable current, at the cost of requiring power infrastructure, wiring, and ongoing monitoring. Option B incorrectly claims no difference, ignoring the fundamental spontaneous-vs.-driven distinction. Option C is fabricated; both methods work through genuine electrochemical (electron-transfer) mechanisms, not physical coating. Option A exactly reverses the correct assignment of which method needs external power."
     },
     {
       "kc": "corrosion-and-engineering-applications",

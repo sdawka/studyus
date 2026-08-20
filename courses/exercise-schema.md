@@ -47,6 +47,10 @@ study material with a full solution.
   block; show the arithmetic in `solution`.
 - MCQ distractor quality beats quantity: 4 options with 3 diagnostic
   distractors > 5 filler options.
+- **Vary `correct_index`** — never default the right answer to position 0
+  (the 2026-08-20 wave authored 323/392 MCQs answer-first and needed a
+  post-hoc shuffle). Prefer referencing options by CONTENT in explanations;
+  letter references ("Option B") break silently if options are ever reordered.
 
 ## Identity & seeding
 

@@ -9,12 +9,12 @@
       "prompt": "A biomolecule is built from amino acid monomers linked by peptide bonds (formed by condensation between the carboxyl group of one amino acid and the amino group of the next). What class of biomolecule is this?",
       "source": "OpenStax Biology 2e \u00a73.4 style",
       "options": [
+        "Nucleic acid",
         "Protein",
         "Carbohydrate (polysaccharide)",
-        "Lipid",
-        "Nucleic acid"
+        "Lipid"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "Amino acid monomers joined by peptide bonds define a protein (polypeptide). Carbohydrates use glycosidic bonds between sugar monomers, lipids use ester bonds between glycerol and fatty acids (and are not true monomer-polymer chains), and nucleic acids use phosphodiester bonds between nucleotides."
     },
     {
@@ -25,12 +25,12 @@
       "prompt": "Glucose monomers are linked together by glycosidic bonds (formed by condensation between the hydroxyl groups of adjacent sugar rings) to form a long branched chain. What class of biomolecule is this?",
       "source": "OpenStax Biology 2e \u00a73.2 style",
       "options": [
-        "Carbohydrate (polysaccharide, e.g. glycogen or starch)",
-        "Protein",
         "Nucleic acid",
-        "Lipid"
+        "Lipid",
+        "Protein",
+        "Carbohydrate (polysaccharide, e.g. glycogen or starch)"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "Glucose monomers linked by glycosidic bonds form polysaccharides such as starch, glycogen, or cellulose. Proteins use peptide bonds between amino acids, nucleic acids use phosphodiester bonds between nucleotides, and lipids are joined by ester bonds and are not sugar-based."
     },
     {
@@ -41,12 +41,12 @@
       "prompt": "A molecule consists of nucleotide monomers (each a sugar, a phosphate, and a nitrogenous base) joined in a chain by phosphodiester bonds linking the 3'-carbon of one sugar to the 5'-phosphate of the next. What class of biomolecule is this?",
       "source": "OpenStax Biology 2e \u00a73.5 style",
       "options": [
-        "Nucleic acid (DNA or RNA)",
         "Protein",
         "Carbohydrate",
+        "Nucleic acid (DNA or RNA)",
         "Lipid"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "Nucleotide monomers linked by phosphodiester bonds form the sugar-phosphate backbone of DNA or RNA, i.e. a nucleic acid. Proteins are linked by peptide bonds, carbohydrates by glycosidic bonds, and lipids by ester bonds -- none of those monomer/bond combinations match nucleotides with phosphodiester linkages."
     },
     {
@@ -57,12 +57,12 @@
       "prompt": "A molecule is formed by condensation of one glycerol backbone with three fatty acid chains, each attached to glycerol by an ester bond (between a fatty acid's carboxyl group and one of glycerol's hydroxyl groups). A student argues this cannot be classified by the usual 'monomer + repeating bond' rule because there is no long repeating polymer chain. Which classification is correct, and why does the monomer-repetition rule not disqualify it?",
       "source": "OpenStax Biology 2e \u00a73.3 style",
       "options": [
-        "It is a lipid (triglyceride); lipids are defined by their building-block chemistry (glycerol + fatty acids joined by ester bonds), not by forming a repeating polymer, unlike proteins/carbohydrates/nucleic acids",
         "It cannot be classified as any of the four macromolecule classes since it lacks a repeating polymer backbone",
         "It is a carbohydrate, since glycerol is a 3-carbon sugar alcohol",
-        "It is a protein, since fatty acid condensation onto glycerol resembles peptide bond formation"
+        "It is a protein, since fatty acid condensation onto glycerol resembles peptide bond formation",
+        "It is a lipid (triglyceride); lipids are defined by their building-block chemistry (glycerol + fatty acids joined by ester bonds), not by forming a repeating polymer, unlike proteins/carbohydrates/nucleic acids"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "Lipids (e.g. triglycerides) are the one major biomolecule class that is not a true polymer of repeating monomers -- they are classified by their characteristic building blocks (glycerol + fatty acids) and ester linkages, not by chain repetition. Saying it can't be classified ignores this well-documented exception; calling glycerol a carbohydrate confuses a small metabolic intermediate with a polysaccharide; and ester bonds are chemically distinct from peptide bonds (no amino/carboxyl amide linkage)."
     },
     {
@@ -82,12 +82,12 @@
       "prompt": "A microbiologist observes a bacterial cell (E. coli) under high magnification: its DNA is a single circular chromosome located in a nucleoid region with no surrounding membrane, and it contains 70S ribosomes. Is this cell a prokaryote or a eukaryote?",
       "source": "OpenStax Biology 2e \u00a74.2 style",
       "options": [
-        "Prokaryote -- no membrane-bound nucleus, circular chromosome, 70S ribosomes",
         "Eukaryote -- all cells with ribosomes are eukaryotic",
-        "Eukaryote -- circular DNA is characteristic of eukaryotic mitochondria",
-        "Prokaryote is incorrect because bacteria must have a nucleus to survive"
+        "Prokaryote -- no membrane-bound nucleus, circular chromosome, 70S ribosomes",
+        "Prokaryote is incorrect because bacteria must have a nucleus to survive",
+        "Eukaryote -- circular DNA is characteristic of eukaryotic mitochondria"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "Absence of a membrane-bound nucleus, a single circular chromosome, and 70S ribosomes are the classic defining features of a prokaryote. Ribosomes are present in all cells (prokaryote and eukaryote), so their mere presence doesn't distinguish the two; circular DNA in mitochondria is a eukaryotic organelle feature but does not make the whole cell eukaryotic; and prokaryotic cells clearly do survive without a nucleus (that is the definition)."
     },
     {
@@ -99,8 +99,8 @@
       "source": "OpenStax Biology 2e \u00a74.3 style",
       "options": [
         "Eukaryote -- membrane-bound nucleus, linear chromosomes with histones, 80S ribosomes",
-        "Prokaryote -- yeast is a single-celled microbe, and all single-celled microbes are prokaryotes",
         "Eukaryote is wrong; 80S ribosomes indicate a prokaryotic cell",
+        "Prokaryote -- yeast is a single-celled microbe, and all single-celled microbes are prokaryotes",
         "Cannot be determined without checking for a cell wall"
       ],
       "correct_index": 0,
@@ -114,12 +114,12 @@
       "prompt": "A researcher isolates ribosomes from purified mitochondria taken from a human (eukaryotic) liver cell and finds they sediment at 70S, matching the size typically used to identify prokaryotic ribosomes. Does this finding mean the liver cell is actually prokaryotic?",
       "source": "OpenStax Biology 2e \u00a74.4 style (endosymbiotic theory)",
       "options": [
-        "No -- mitochondria retain 70S ribosomes as a legacy of their endosymbiotic bacterial origin, but the cell's own cytoplasmic ribosomes are 80S and it has a membrane-bound nucleus, so it is eukaryotic",
         "Yes -- any 70S ribosome found anywhere in a cell means the whole cell must be classified as prokaryotic",
-        "No -- 70S ribosomes are actually the eukaryotic size and 80S is the prokaryotic size",
-        "Yes -- mitochondria are themselves classified as separate prokaryotic organisms living freely in the cytoplasm"
+        "Yes -- mitochondria are themselves classified as separate prokaryotic organisms living freely in the cytoplasm",
+        "No -- mitochondria retain 70S ribosomes as a legacy of their endosymbiotic bacterial origin, but the cell's own cytoplasmic ribosomes are 80S and it has a membrane-bound nucleus, so it is eukaryotic",
+        "No -- 70S ribosomes are actually the eukaryotic size and 80S is the prokaryotic size"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "Per endosymbiotic theory, mitochondria (and chloroplasts) descended from engulfed bacteria and retain bacterial-like 70S ribosomes, but this organelle-level feature doesn't override the cell's overall eukaryotic classification (membrane-bound nucleus, 80S cytoplasmic ribosomes). Classifying the whole cell by one organelle's ribosome size, swapping the 70S/80S convention, or treating mitochondria as free-living prokaryotes within the cell are all incorrect."
     },
     {
@@ -130,12 +130,12 @@
       "prompt": "Cell type X carries its main genome as a single circular chromosome plus several small circular plasmids, all free in the cytoplasm with no nucleus. Cell type Y carries its genome as multiple linear chromosomes, each condensed with histone proteins and enclosed within a double-membrane nucleus. Which genome-organization pattern is characteristic of a prokaryote versus a eukaryote?",
       "source": "OpenStax Biology 2e \u00a74.2 style",
       "options": [
-        "Cell X (circular chromosome + plasmids, no nucleus) is prokaryotic; Cell Y (linear chromosomes + histones + nucleus) is eukaryotic",
-        "Cell X is eukaryotic because plasmids are only found in eukaryotic cells",
         "Cell Y is prokaryotic because linear chromosomes are simpler than circular ones",
-        "Both patterns are equally likely in either prokaryotes or eukaryotes, so genome shape gives no information"
+        "Both patterns are equally likely in either prokaryotes or eukaryotes, so genome shape gives no information",
+        "Cell X (circular chromosome + plasmids, no nucleus) is prokaryotic; Cell Y (linear chromosomes + histones + nucleus) is eukaryotic",
+        "Cell X is eukaryotic because plasmids are only found in eukaryotic cells"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "Prokaryotes typically carry a single circular chromosome (often with extrachromosomal circular plasmids) free in the cytoplasm, while eukaryotes carry multiple linear chromosomes complexed with histones inside a membrane-bound nucleus. Plasmids are a prokaryotic (and some fungal/yeast) feature, not exclusively eukaryotic; chromosome shape doesn't correlate with 'simplicity'; and genome organization is in fact one of the most reliable prokaryote/eukaryote discriminators."
     },
     {
@@ -156,9 +156,9 @@
       "source": "OpenStax Biology 2e \u00a715.1 style",
       "options": [
         "DNA replication (DNA to DNA) -> transcription (DNA to RNA) -> translation (RNA to protein)",
-        "DNA -> protein directly, with RNA produced afterward as a byproduct",
         "Protein -> RNA -> DNA, since proteins are assembled first in the ribosome",
-        "Transcription (DNA to RNA) -> DNA replication (RNA to DNA) -> translation (RNA to protein)"
+        "Transcription (DNA to RNA) -> DNA replication (RNA to DNA) -> translation (RNA to protein)",
+        "DNA -> protein directly, with RNA produced afterward as a byproduct"
       ],
       "correct_index": 0,
       "explanation": "The central dogma flow is DNA replication (copies DNA), transcription (DNA -> RNA), then translation (RNA -> protein). Skipping straight from DNA to protein omits the required RNA intermediate (a documented misconception); reversing the flow (protein -> RNA -> DNA) violates the directionality of information flow; and swapping the definitions of replication and transcription mislabels which step converts DNA to RNA."
@@ -172,9 +172,9 @@
       "source": "OpenStax Biology 2e \u00a715.2 style",
       "options": [
         "No -- translation is performed by ribosomes reading mRNA, not DNA directly; transcription (DNA to mRNA) is an obligatory step for protein synthesis, not optional",
+        "No -- but only because DNA is too large to fit into the ribosome; otherwise direct DNA translation would occur",
         "Yes -- ribosomes can bind DNA directly in prokaryotes, though not in eukaryotes",
-        "Yes -- transcription only matters for genes that will be spliced, so most genes go straight from DNA to protein",
-        "No -- but only because DNA is too large to fit into the ribosome; otherwise direct DNA translation would occur"
+        "Yes -- transcription only matters for genes that will be spliced, so most genes go straight from DNA to protein"
       ],
       "correct_index": 0,
       "explanation": "Ribosomes translate mRNA (not DNA) into protein; transcription is a required step for every protein-coding gene, not an optional backup. Claiming ribosomes can read prokaryotic DNA directly, that only spliced genes need transcription, or that size alone prevents direct DNA translation are all incorrect -- the ribosome's translation machinery is built to read RNA codons, full stop."
@@ -187,12 +187,12 @@
       "prompt": "HIV, a retrovirus, uses reverse transcriptase to convert its RNA genome into DNA inside a host cell, which then integrates into the host chromosome and is transcribed and translated normally. A student argues this proves 'information can flow backward from protein to nucleic acid, breaking the central dogma.' Is this reasoning correct?",
       "source": "OpenStax Biology 2e \u00a715.1 style (retrovirus exception)",
       "options": [
+        "No -- HIV does not actually use reverse transcription; it is transcribed and translated exactly like a normal eukaryotic gene",
         "No -- reverse transcription is RNA to DNA (nucleic acid to nucleic acid), a documented exception to the DNA-to-RNA direction; the central dogma's stricter rule (that protein cannot flow back into nucleic acid) is not violated because reverse transcriptase acts on RNA, not protein",
         "Yes -- reverse transcriptase directly converts viral capsid protein sequence back into DNA sequence",
-        "No -- HIV does not actually use reverse transcription; it is transcribed and translated exactly like a normal eukaryotic gene",
         "Yes -- because HIV is retroviral, the central dogma does not apply to it at all"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "Reverse transcription (RNA -> DNA) is a real, well-documented exception to the default DNA -> RNA direction, but it is still nucleic-acid-to-nucleic-acid -- it does not violate the deeper and essentially universal rule that protein sequence cannot be reverse-translated back into nucleic acid sequence (there is no known 'protein reverse transcriptase'). The other options either misdescribe reverse transcriptase's substrate (protein, not RNA) or incorrectly claim HIV bypasses reverse transcription or the central dogma entirely."
     },
     {
@@ -212,12 +212,12 @@
       "prompt": "In a eukaryotic cell, a gene is transcribed into a pre-mRNA transcript inside the nucleus. Which of the following correctly orders the subsequent steps before a functional protein is produced?",
       "source": "OpenStax Biology 2e \u00a715.2 style",
       "options": [
-        "Pre-mRNA is processed (5' cap, poly-A tail, splicing) in the nucleus -> mature mRNA exported to cytoplasm -> ribosome translates mRNA into protein",
-        "Pre-mRNA is exported to the cytoplasm first, then spliced by ribosomes, then translated",
         "The pre-mRNA is directly translated in the nucleus before any processing occurs",
-        "Translation occurs first in the nucleus, and splicing occurs afterward in the cytoplasm to correct the protein"
+        "Pre-mRNA is exported to the cytoplasm first, then spliced by ribosomes, then translated",
+        "Translation occurs first in the nucleus, and splicing occurs afterward in the cytoplasm to correct the protein",
+        "Pre-mRNA is processed (5' cap, poly-A tail, splicing) in the nucleus -> mature mRNA exported to cytoplasm -> ribosome translates mRNA into protein"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "In eukaryotes, pre-mRNA processing (capping, polyadenylation, splicing to remove introns) occurs in the nucleus before the mature mRNA is exported to the cytoplasm, where ribosomes translate it into protein. Ribosomes do not splice RNA (splicing is done by the spliceosome, not the ribosome); translation cannot occur in the nucleus in eukaryotes; and 'correcting a protein' after translation via splicing reverses the correct order and confuses RNA splicing with a post-translational process."
     },
     {
@@ -229,9 +229,9 @@
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.3 style",
       "options": [
         "Anaerobic fermentation -- glucose is only partially oxidized, yielding a low ATP amount per glucose",
-        "Aerobic respiration -- full oxidation of glucose to CO2 and water with the theoretical maximum ATP yield",
+        "Beta-oxidation -- fatty acid breakdown pathway unrelated to glucose metabolism",
         "Photosynthesis -- light-driven ATP production independent of oxygen",
-        "Beta-oxidation -- fatty acid breakdown pathway unrelated to glucose metabolism"
+        "Aerobic respiration -- full oxidation of glucose to CO2 and water with the theoretical maximum ATP yield"
       ],
       "correct_index": 0,
       "explanation": "Without oxygen as a terminal electron acceptor, cells shift to fermentation, incompletely oxidizing glucose to organic acids/ethanol and yielding far less ATP per glucose than aerobic respiration (net ~2 ATP via substrate-level phosphorylation in glycolysis, versus a theoretical max of 36-38 ATP aerobically). This scenario has no light and no oxidative phosphorylation, so it is neither aerobic respiration nor photosynthesis, and beta-oxidation is a distinct fatty-acid pathway not implicated here."
@@ -244,12 +244,12 @@
       "prompt": "During anaerobic fermentation, why must pyruvate be converted to lactate or ethanol rather than being left as pyruvate, even though this step produces no additional ATP?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.3 style",
       "options": [
-        "To regenerate NAD+ from the NADH produced in glycolysis, since glycolysis cannot continue (and produce its net ATP) without a supply of NAD+ as an electron acceptor",
+        "Because pyruvate itself is toxic to the cell and must be immediately exported",
         "To produce a second round of substrate-level phosphorylation ATP directly from pyruvate reduction",
         "Because lactate and ethanol are required substrates for the electron transport chain in the absence of oxygen",
-        "Because pyruvate itself is toxic to the cell and must be immediately exported"
+        "To regenerate NAD+ from the NADH produced in glycolysis, since glycolysis cannot continue (and produce its net ATP) without a supply of NAD+ as an electron acceptor"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "Fermentation's real function is regenerating NAD+ (by reducing pyruvate to lactate/ethanol using the NADH from glycolysis) so glycolysis can keep running and keep producing its net 2 ATP per glucose; the reduction step itself yields no ATP. It is not a second ATP-generating step, has nothing to do with the electron transport chain (which requires O2 as the final acceptor and is bypassed in fermentation), and pyruvate accumulation is a metabolic/redox problem, not a toxicity-export issue."
     },
     {
@@ -260,12 +260,12 @@
       "prompt": "A yeast (S. cerevisiae) culture is grown aerobically (oxygen is not limiting) but with a high glucose concentration. Despite oxygen being available, the yeast still produces significant ethanol via fermentation rather than routing all pyruvate through aerobic respiration. What best explains this?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.3 style (Crabtree effect)",
       "options": [
-        "The Crabtree effect: high glucose concentration represses respiratory (oxidative) pathways and induces fermentative metabolism even when oxygen is present, an overflow response independent of O2 availability",
-        "Oxygen must actually be limiting in this culture, since aerobic organisms never ferment when O2 is present",
         "Yeast is incapable of aerobic respiration and always ferments glucose regardless of conditions",
-        "Ethanol production only occurs below pH 4, so this must indicate an unusually acidic culture"
+        "Ethanol production only occurs below pH 4, so this must indicate an unusually acidic culture",
+        "Oxygen must actually be limiting in this culture, since aerobic organisms never ferment when O2 is present",
+        "The Crabtree effect: high glucose concentration represses respiratory (oxidative) pathways and induces fermentative metabolism even when oxygen is present, an overflow response independent of O2 availability"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "The Crabtree effect is a well-documented overflow metabolism response in S. cerevisiae: excess glucose represses mitochondrial respiratory capacity and induces fermentation even under fully aerobic conditions -- this directly contradicts the common misconception that fermentation only happens when O2 is absent. Yeast does perform aerobic respiration under other conditions (low glucose, aerobic), so 'incapable of respiration' is false, and pH is not the causal factor described here."
     },
     {
@@ -300,9 +300,9 @@
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.1 style",
       "options": [
         "Saccharomyces cerevisiae",
-        "Escherichia coli",
+        "Penicillium chrysogenum",
         "Bacillus subtilis",
-        "Penicillium chrysogenum"
+        "Escherichia coli"
       ],
       "correct_index": 0,
       "explanation": "Saccharomyces cerevisiae (baker's/brewer's yeast) is the classic industrial workhorse for fermentation-based ethanol production (brewing, wine, bioethanol) and CO2 production for bread leavening. E. coli is primarily used for recombinant protein production, Bacillus subtilis for industrial enzyme production, and Penicillium chrysogenum for antibiotic (penicillin) production -- none of these are the traditional fermentation organism for alcoholic beverages/bioethanol."
@@ -315,12 +315,12 @@
       "prompt": "Which microorganism was used in the first commercially approved recombinant DNA product, human insulin (Humulin, 1982), by inserting the human insulin gene into a plasmid and expressing it as a recombinant protein?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.1 style",
       "options": [
-        "Escherichia coli",
         "Saccharomyces cerevisiae",
+        "Penicillium chrysogenum",
         "Bacillus subtilis",
-        "Penicillium chrysogenum"
+        "Escherichia coli"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "E. coli was the host organism for the first commercial recombinant protein product, human insulin, due to its fast growth, well-characterized genetics, and ease of plasmid-based genetic engineering. S. cerevisiae is more associated with fermentation/some recombinant proteins requiring eukaryotic post-translational modification, B. subtilis with secreted industrial enzymes, and P. chrysogenum with antibiotic production -- not the original recombinant insulin host."
     },
     {
@@ -332,9 +332,9 @@
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.1 style",
       "options": [
         "Bacillus subtilis",
-        "Escherichia coli",
+        "Penicillium chrysogenum",
         "Saccharomyces cerevisiae",
-        "Penicillium chrysogenum"
+        "Escherichia coli"
       ],
       "correct_index": 0,
       "explanation": "Bacillus subtilis is a preferred host for industrial enzyme (protease, amylase) production because of its strong natural extracellular secretion machinery, simplifying downstream purification. E. coli typically accumulates recombinant protein intracellularly (often as inclusion bodies) rather than secreting large amounts extracellularly; S. cerevisiae is mainly used for fermentation and some secreted recombinant proteins requiring glycosylation; P. chrysogenum is used for antibiotic biosynthesis, not enzyme secretion."
@@ -349,8 +349,8 @@
       "options": [
         "Penicillium chrysogenum",
         "Bacillus subtilis",
-        "Escherichia coli",
-        "Saccharomyces cerevisiae"
+        "Saccharomyces cerevisiae",
+        "Escherichia coli"
       ],
       "correct_index": 0,
       "explanation": "Penicillium chrysogenum is the industrially optimized filamentous fungus used to ferment penicillin at scale (strain-improved from the original Penicillium notatum). Bacillus subtilis and E. coli are bacteria used respectively for enzyme and recombinant protein production, and S. cerevisiae is a yeast used for ethanol fermentation -- none produce penicillin industrially."
@@ -372,12 +372,12 @@
       "prompt": "A bacterial culture is inoculated into fresh medium, and for the first 2 hours the cell density (OD600) stays essentially flat while cells are observed to be synthesizing new enzymes and ribosomes to adapt to the new medium composition, with little to no increase in cell number. Which growth-curve phase does this segment represent?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.6 style",
       "options": [
-        "Lag phase -- cells adapting metabolically to the new environment before rapid division begins",
-        "Exponential phase -- constant maximum specific growth rate",
         "Stationary phase -- nutrient depletion halting net growth",
+        "Exponential phase -- constant maximum specific growth rate",
+        "Lag phase -- cells adapting metabolically to the new environment before rapid division begins",
         "Death phase -- viable cell count declining"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "A flat cell-density segment right after inoculation, with active synthesis of new enzymes/ribosomes but no significant increase in cell number, is the lag phase (adaptation to the new medium). Exponential phase shows a rapidly rising, log-linear increase in density; stationary phase is flat but occurs later due to nutrient depletion/waste accumulation after growth has already occurred, not before it; death phase shows declining density."
     },
     {
@@ -389,9 +389,9 @@
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.6 style",
       "options": [
         "Exponential (log) phase -- constant, maximal mu with unlimited substrate and no growth inhibition",
-        "Lag phase -- cells still adapting to the medium",
         "Stationary phase -- growth rate equals death rate, net zero change",
-        "Death phase -- viable cells declining exponentially"
+        "Death phase -- viable cells declining exponentially",
+        "Lag phase -- cells still adapting to the medium"
       ],
       "correct_index": 0,
       "explanation": "A straight line on a ln(X) vs. t plot with constant positive slope is the signature of exponential (log) phase, where mu is constant and at (or near) mu_max because substrate is not yet limiting and no inhibitory products have accumulated. Lag phase would show a flat or near-zero slope; stationary phase shows a flat ln(X) (net growth rate = 0, not necessarily equal death/growth); death phase shows a straight line with negative slope, not positive."
@@ -404,12 +404,12 @@
       "prompt": "After several hours of rapid growth, a batch culture's cell concentration plateaus and stays roughly constant even though viable cells are still present and metabolically active. Glucose in the medium has dropped to near zero and toxic byproducts (e.g. organic acids) have accumulated. What is the physiological cause of this plateau, and what phase is it?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.6 style",
       "options": [
-        "Stationary phase -- substrate depletion and/or toxic byproduct accumulation reduce the net growth rate to approximately zero (cell division roughly balances cell death)",
-        "Lag phase -- the culture has just been re-inoculated and is adapting again",
         "Exponential phase -- mu remains at mu_max but is simply being measured incorrectly",
-        "Death phase -- all cells are non-viable and lysing rapidly"
+        "Lag phase -- the culture has just been re-inoculated and is adapting again",
+        "Death phase -- all cells are non-viable and lysing rapidly",
+        "Stationary phase -- substrate depletion and/or toxic byproduct accumulation reduce the net growth rate to approximately zero (cell division roughly balances cell death)"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "Stationary phase occurs when substrate depletion and/or accumulated inhibitory byproducts drive the net growth rate toward zero, with cell division approximately balancing cell death, holding total (or viable) count roughly constant. This is not lag phase (which occurs at the start with fresh medium, not depleted medium), not exponential phase (mu is not at its maximum when substrate is limiting -- this is a direct restatement of the Monod-based, not-fixed-mu concept), and not death phase (which shows declining, not constant, cell counts)."
     },
     {
@@ -421,9 +421,9 @@
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.6 style",
       "options": [
         "Sample 1 (constant viable count) is in stationary phase; Sample 2 (log-linear declining viable count) is in death phase",
+        "Both samples are in exponential phase, since both show a straight-line pattern on some kind of plot",
         "Sample 1 is in death phase because glucose is already depleted, which always triggers death phase immediately",
-        "Sample 2 is in stationary phase because a straight line on a semi-log plot indicates growth is still balanced",
-        "Both samples are in exponential phase, since both show a straight-line pattern on some kind of plot"
+        "Sample 2 is in stationary phase because a straight line on a semi-log plot indicates growth is still balanced"
       ],
       "correct_index": 0,
       "explanation": "Stationary phase is characterized by a roughly constant viable cell count (growth rate ~ death rate), while death phase is characterized by a declining viable count that is often log-linear (first-order decay) on a semi-log plot -- matching Sample 1 to stationary and Sample 2 to death phase. Glucose depletion alone does not force immediate death phase (stationary phase intervenes first); a log-linear declining count is the signature of death, not balanced growth; and 'straight line on a plot' alone is not sufficient to call something exponential phase without checking the sign of the slope and which variable (viable vs. total count) is plotted."
@@ -445,12 +445,12 @@
       "prompt": "The Monod equation relates specific growth rate mu to substrate concentration S as mu = mu_max * S / (Ks + S), where mu_max is the maximum specific growth rate and Ks is the half-saturation constant. What shape does mu take as a function of increasing S?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.6 style",
       "options": [
-        "A saturating (hyperbolic) curve that rises steeply at low S and asymptotically approaches mu_max at high S",
-        "A straight line through the origin with slope mu_max/Ks for all values of S",
         "A curve that keeps increasing without bound as S increases, with no upper limit",
-        "A constant value equal to mu_max regardless of S, since mu is a fixed property of the organism"
+        "A constant value equal to mu_max regardless of S, since mu is a fixed property of the organism",
+        "A straight line through the origin with slope mu_max/Ks for all values of S",
+        "A saturating (hyperbolic) curve that rises steeply at low S and asymptotically approaches mu_max at high S"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "The Monod equation produces a saturating (Michaelis-Menten-shaped) hyperbolic curve: mu rises steeply when S is small (S << Ks) and flattens out, asymptotically approaching mu_max, as S becomes large (S >> Ks). It is only approximately linear at very low S (S << Ks), it has a hard asymptotic ceiling at mu_max (it does not increase without bound), and treating mu as a fixed organism property regardless of S is exactly the documented misconception the Monod equation is meant to correct -- mu is a function of S, not a constant."
     },
     {
@@ -461,12 +461,12 @@
       "prompt": "For an organism with mu_max = 0.6 /h and Ks = 0.25 g/L, at what substrate concentration S does mu equal exactly half of mu_max (i.e. mu = 0.3 /h)?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.6 style",
       "options": [
-        "S = 0.25 g/L (S = Ks, by definition of the half-saturation constant)",
+        "S = 1.2 g/L (S = 2*mu_max)",
         "S = 0.6 g/L (S = mu_max)",
         "S = 0.125 g/L (S = Ks/2)",
-        "S = 1.2 g/L (S = 2*mu_max)"
+        "S = 0.25 g/L (S = Ks, by definition of the half-saturation constant)"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "By definition, Ks is the substrate concentration at which mu = mu_max/2: setting S = Ks in the Monod equation gives mu = mu_max*Ks/(Ks+Ks) = mu_max/2. Here that means S = Ks = 0.25 g/L gives mu = 0.3 /h. The other options confuse Ks's units/role with mu_max's value, or apply arbitrary arithmetic (Ks/2, 2*mu_max) that has no basis in the Monod equation's definition of Ks."
     },
     {
@@ -514,12 +514,12 @@
       "prompt": "A continuous stirred-tank chemostat is operated at steady state (constant volume, constant feed and outflow rate F, constant biomass concentration X). What is the relationship between the specific growth rate mu and the dilution rate D = F/V at this steady state?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.9 style",
       "options": [
+        "D has no relationship to mu; D only affects substrate concentration, not growth rate",
         "mu = D exactly, since at steady state the biomass balance dX/dt = (mu - D)*X = 0 requires mu = D",
-        "mu is always equal to mu_max at steady state, regardless of D",
         "mu = D/2, because half the cells are washed out at any dilution rate",
-        "D has no relationship to mu; D only affects substrate concentration, not growth rate"
+        "mu is always equal to mu_max at steady state, regardless of D"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "The biomass balance in a chemostat at steady state is dX/dt = (mu - D)*X = 0; since X is not zero (unless washed out), this forces mu = D exactly at steady state -- a direct, load-bearing chemostat design fact. mu equals mu_max only in the special/limiting case where S is very large relative to Ks, not generally; there is no factor-of-2 relationship; and D directly sets mu (via forcing the organism to a specific steady-state S, per Monod), so D and mu are tightly linked, not independent."
     },
     {
@@ -531,8 +531,8 @@
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.9 style",
       "options": [
         "X drops toward zero (washout) and S rises toward the feed concentration S0, because the outflow rate exceeds the maximum rate at which cells can reproduce to replace themselves",
-        "X increases without bound as D approaches mu_max, since higher dilution always means more nutrient supply and more cells",
         "S drops to zero and stays there regardless of D, since Monod kinetics guarantee complete substrate consumption at any D",
+        "X increases without bound as D approaches mu_max, since higher dilution always means more nutrient supply and more cells",
         "Nothing changes; X and S are independent of D as long as the feed concentration S0 is constant"
       ],
       "correct_index": 0,
@@ -583,12 +583,12 @@
       "prompt": "In a batch E. coli fermentation with all glucose added up front at a high initial concentration, cells rapidly overflow excess glucose flux into acetate production (overflow metabolism) even though oxygen is available, reducing biomass and product yield. Why does switching to a fed-batch strategy (slowly feeding glucose in over time) typically avoid this problem?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.10 style",
       "options": [
+        "Fed-batch has no effect on overflow metabolism; it is only used to increase final reactor volume",
         "Fed-batch keeps the instantaneous substrate concentration S low throughout the run (by controlling the feed rate), keeping mu below the threshold where overflow metabolism/acetate production is triggered, unlike a batch's high initial S",
         "Fed-batch works because it adds more total glucose than a batch process, giving cells more energy to avoid overflow",
-        "Fed-batch prevents overflow metabolism by removing oxygen from the reactor entirely, forcing purely fermentative metabolism",
-        "Fed-batch has no effect on overflow metabolism; it is only used to increase final reactor volume"
+        "Fed-batch prevents overflow metabolism by removing oxygen from the reactor entirely, forcing purely fermentative metabolism"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "Fed-batch's core advantage is controlling the instantaneous S (and therefore mu) at a low, sub-maximal level via the feed rate, which keeps glucose flux below the threshold that triggers overflow metabolism (acetate formation) in E. coli and analogous phenomena (e.g. Crabtree effect) in other organisms. It is not simply about adding more total glucose (that could make overflow worse, not better, if added all at once); removing oxygen would push toward fermentation, not avoid overflow; and controlling growth rate/substrate flux -- not simply maximizing final volume -- is fed-batch's defining purpose."
     },
     {
@@ -599,12 +599,12 @@
       "prompt": "A trainee describes fed-batch fermentation as: 'You just run a batch, and whenever you notice the substrate is running low, you dump in more glucose to top it back up, then let the cells go again -- fed-batch is just repeated topping-up.' What is wrong with this description?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.10 style",
       "options": [
-        "Fed-batch deliberately maintains a low, continuously controlled substrate concentration via a calculated feed-rate profile (e.g. exponential feed to hold mu at a chosen sub-maximal target) to avoid substrate inhibition, overflow metabolism, and catabolite repression -- it is not reactive topping-up after S has already run low and mu has already dropped",
-        "The description is fully correct; fed-batch and 'topping up whenever low' are the same strategy under different names",
         "Fed-batch is actually the opposite: it deliberately lets S spike very high after each addition to maximize mu transiently",
+        "The description is fully correct; fed-batch and 'topping up whenever low' are the same strategy under different names",
+        "Fed-batch deliberately maintains a low, continuously controlled substrate concentration via a calculated feed-rate profile (e.g. exponential feed to hold mu at a chosen sub-maximal target) to avoid substrate inhibition, overflow metabolism, and catabolite repression -- it is not reactive topping-up after S has already run low and mu has already dropped",
         "Fed-batch never involves adding substrate after the initial charge; all substrate must be present from time zero"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "True fed-batch uses a deliberately calculated, typically continuous or near-continuous feed-rate profile (often exponential, matched to a target growth rate below mu_max) to keep S low and controlled throughout the run, specifically to avoid substrate inhibition, overflow metabolism, and catabolite repression -- it is a proactive control strategy, not reactive 'topping up' after S has already dropped (which would let mu fluctuate uncontrolled and periodically spike S high right after each addition, potentially re-triggering the very problems fed-batch is meant to avoid)."
     },
     {
@@ -652,13 +652,13 @@
       "prompt": "For an enzyme obeying Michaelis-Menten kinetics, v = Vmax*[S]/(Km+[S]). Which statement about Vmax is correct?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.4 style",
       "options": [
+        "Vmax changes value depending on the substrate concentration used in the assay",
         "Vmax is a horizontal asymptote that the reaction rate approaches but never exactly reaches at any finite [S]",
         "Vmax is reached exactly when [S] = Km",
-        "Vmax is reached exactly when [S] is about 10 times Km",
-        "Vmax changes value depending on the substrate concentration used in the assay"
+        "Vmax is reached exactly when [S] is about 10 times Km"
       ],
-      "correct_index": 0,
-      "explanation": "As [S] -> infinity, v -> Vmax, but for any finite [S] the rate is strictly less than Vmax (v = Vmax*[S]/(Km+[S]) < Vmax whenever Km > 0). Option B confuses the half-saturation point (v = Vmax/2 at [S]=Km) with saturation itself. Option C describes a rate close to Vmax (about 91% at [S]=10*Km) but still not equal to it. Option D is wrong because Vmax is an intrinsic property of the enzyme/enzyme concentration, not of the assay [S] chosen."
+      "correct_index": 1,
+      "explanation": "As [S] -> infinity, v -> Vmax, but for any finite [S] the rate is strictly less than Vmax (v = Vmax*[S]/(Km+[S]) < Vmax whenever Km > 0). Option C confuses the half-saturation point (v = Vmax/2 at [S]=Km) with saturation itself. Option D describes a rate close to Vmax (about 91% at [S]=10*Km) but still not equal to it. Option A is wrong because Vmax is an intrinsic property of the enzyme/enzyme concentration, not of the assay [S] chosen."
     },
     {
       "kc": "michaelis-menten-kinetics",
@@ -696,13 +696,13 @@
       "prompt": "An enzyme-catalyzed reaction is operating at [S] = Km, so v = Vmax/2. If [S] is then doubled to 2*Km (with Km and Vmax unchanged), what happens to v?",
       "source": "Doran, Bioprocess Engineering Principles 2e, Ch.5 style",
       "options": [
-        "v increases from Vmax/2 to (2/3)*Vmax -- less than a doubling, because the rate curve is flattening as it approaches the Vmax asymptote",
-        "v exactly doubles to Vmax, since rate is proportional to [S]",
         "v stays at Vmax/2 because Km is unchanged",
+        "v exactly doubles to Vmax, since rate is proportional to [S]",
+        "v increases from Vmax/2 to (2/3)*Vmax -- less than a doubling, because the rate curve is flattening as it approaches the Vmax asymptote",
         "v decreases, because increasing [S] beyond Km causes substrate inhibition in all Michaelis-Menten enzymes"
       ],
-      "correct_index": 0,
-      "explanation": "v = Vmax*(2Km)/(Km+2Km) = Vmax*(2Km)/(3Km) = (2/3)*Vmax, which is a 33% increase, not a doubling -- rate is only proportional to [S] in the low-[S] linear regime ([S] << Km), not near or above Km. Option B wrongly assumes first-order (linear) kinetics hold everywhere. Option C ignores that v does still increase with [S]. Option D wrongly invokes substrate inhibition, which is a separate phenomenon not implied by standard Michaelis-Menten kinetics and not indicated here."
+      "correct_index": 2,
+      "explanation": "v = Vmax*(2Km)/(Km+2Km) = Vmax*(2Km)/(3Km) = (2/3)*Vmax, which is a 33% increase, not a doubling -- rate is only proportional to [S] in the low-[S] linear regime ([S] << Km), not near or above Km. Option B wrongly assumes first-order (linear) kinetics hold everywhere. Option A ignores that v does still increase with [S]. Option D wrongly invokes substrate inhibition, which is a separate phenomenon not implied by standard Michaelis-Menten kinetics and not indicated here."
     },
     {
       "kc": "michaelis-menten-kinetics",
@@ -721,13 +721,13 @@
       "prompt": "In the Lineweaver-Burk (double-reciprocal) linearization of Michaelis-Menten kinetics, 1/v = (Km/Vmax)*(1/[S]) + 1/Vmax. What are plotted on the y-axis and x-axis, and what do the slope and y-intercept represent?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.4 style",
       "options": [
+        "y-axis is 1/v, x-axis is [S]; slope = Km and y-intercept = Vmax",
         "y-axis is 1/v, x-axis is 1/[S]; slope = Km/Vmax and y-intercept = 1/Vmax",
-        "y-axis is v, x-axis is [S]; slope = Vmax and y-intercept = Km",
         "y-axis is 1/[S], x-axis is 1/v; slope = Vmax/Km and y-intercept = 1/Km",
-        "y-axis is 1/v, x-axis is [S]; slope = Km and y-intercept = Vmax"
+        "y-axis is v, x-axis is [S]; slope = Vmax and y-intercept = Km"
       ],
-      "correct_index": 0,
-      "explanation": "The Lineweaver-Burk equation is a straight line of the form y = mx + b with y = 1/v, x = 1/[S], slope m = Km/Vmax, and intercept b = 1/Vmax. Option B describes the untransformed hyperbolic Michaelis-Menten plot, not the linearization. Option C swaps which reciprocal goes on which axis. Option D mixes a reciprocal y-axis with a non-reciprocal x-axis, which is not the double-reciprocal transform."
+      "correct_index": 1,
+      "explanation": "The Lineweaver-Burk equation is a straight line of the form y = mx + b with y = 1/v, x = 1/[S], slope m = Km/Vmax, and intercept b = 1/Vmax. Option D describes the untransformed hyperbolic Michaelis-Menten plot, not the linearization. Option C swaps which reciprocal goes on which axis. Option A mixes a reciprocal y-axis with a non-reciprocal x-axis, which is not the double-reciprocal transform."
     },
     {
       "kc": "enzyme-kinetics-data-linearization",
@@ -765,13 +765,13 @@
       "prompt": "Before nonlinear regression software was widely available, researchers linearized Michaelis-Menten data (e.g., via Lineweaver-Burk) to extract Km and Vmax by simple linear regression. What is the key statistical weakness of the Lineweaver-Burk transformation?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.4 style",
       "options": [
-        "Taking reciprocals disproportionately magnifies the scatter of low-[S]/low-v data points (which become large 1/[S] and 1/v values), so the regression overweights the least precise measurements",
-        "The Lineweaver-Burk plot cannot be used to estimate Vmax, only Km",
         "The Lineweaver-Burk transformation only works for competitive inhibition data, not uninhibited kinetics",
-        "Reciprocal plots require at least 20 data points to give a valid regression, unlike direct nonlinear fits"
+        "Reciprocal plots require at least 20 data points to give a valid regression, unlike direct nonlinear fits",
+        "The Lineweaver-Burk plot cannot be used to estimate Vmax, only Km",
+        "Taking reciprocals disproportionately magnifies the scatter of low-[S]/low-v data points (which become large 1/[S] and 1/v values), so the regression overweights the least precise measurements"
       ],
-      "correct_index": 0,
-      "explanation": "Because 1/v and 1/[S] are reciprocals, small absolute errors in v measured at low [S] (where v is small) become greatly amplified when inverted, pulling the regression line disproportionately toward those noisy, high-leverage points -- distorting the fit compared to nonlinear (direct) regression on v vs [S]. Option B is false; the plot yields both Km and Vmax. Option C is false; linearization applies broadly, including to inhibition studies (which is precisely how inhibition types are classified). Option D fabricates a minimum data point requirement that isn't the actual limitation."
+      "correct_index": 3,
+      "explanation": "Because 1/v and 1/[S] are reciprocals, small absolute errors in v measured at low [S] (where v is small) become greatly amplified when inverted, pulling the regression line disproportionately toward those noisy, high-leverage points -- distorting the fit compared to nonlinear (direct) regression on v vs [S]. Option C is false; the plot yields both Km and Vmax. Option A is false; linearization applies broadly, including to inhibition studies (which is precisely how inhibition types are classified). Option B fabricates a minimum data point requirement that isn't the actual limitation."
     },
     {
       "kc": "enzyme-kinetics-data-linearization",
@@ -790,13 +790,13 @@
       "prompt": "On a Lineweaver-Burk plot (1/v vs 1/[S]), lines for an enzyme with and without inhibitor are compared. The inhibited line has the SAME y-intercept as the uninhibited line, but a steeper slope (crossing the x-axis closer to the origin). What type of inhibition does this indicate?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.4 style",
       "options": [
-        "Competitive inhibition -- Vmax unchanged (same y-intercept = 1/Vmax), Km increased (steeper slope = Km/Vmax with Vmax fixed)",
         "Noncompetitive inhibition -- Vmax decreased, Km unchanged",
         "Uncompetitive inhibition -- both Vmax and Km decreased proportionally",
+        "Competitive inhibition -- Vmax unchanged (same y-intercept = 1/Vmax), Km increased (steeper slope = Km/Vmax with Vmax fixed)",
         "This pattern is impossible for any real inhibitor"
       ],
-      "correct_index": 0,
-      "explanation": "Same y-intercept (1/Vmax) means Vmax is unaffected by the inhibitor -- at saturating [S], enough substrate outcompetes the inhibitor for the active site. A steeper slope (Km/Vmax) with Vmax fixed means Km must have increased -- the classic competitive-inhibition signature, since the inhibitor competes with substrate for the same active site and its effect can be overcome at high [S]. Option B describes noncompetitive inhibition (Vmax down, Km unchanged, so lines share the same x-intercept, not the same y-intercept). Option C describes uncompetitive inhibition, which produces parallel LB lines (same slope, different intercepts), not what's described. Option D is wrong; this is the textbook competitive pattern."
+      "correct_index": 2,
+      "explanation": "Same y-intercept (1/Vmax) means Vmax is unaffected by the inhibitor -- at saturating [S], enough substrate outcompetes the inhibitor for the active site. A steeper slope (Km/Vmax) with Vmax fixed means Km must have increased -- the classic competitive-inhibition signature, since the inhibitor competes with substrate for the same active site and its effect can be overcome at high [S]. Option A describes noncompetitive inhibition (Vmax down, Km unchanged, so lines share the same x-intercept, not the same y-intercept). Option B describes uncompetitive inhibition, which produces parallel LB lines (same slope, different intercepts), not what's described. Option D is wrong; this is the textbook competitive pattern."
     },
     {
       "kc": "enzyme-inhibition-types",
@@ -807,12 +807,12 @@
       "source": "OpenStax Biology 2e Ch.6 style",
       "options": [
         "No -- reversibility only indicates the inhibitor binds noncovalently and can dissociate; it says nothing about whether the inhibitor competes with substrate for the active site. Reversible inhibitors can be competitive, noncompetitive, or uncompetitive",
-        "Yes -- by definition, all reversible inhibitors are competitive, and all irreversible inhibitors are noncompetitive",
         "No -- reversible inhibitors are always uncompetitive, never competitive",
+        "Yes -- by definition, all reversible inhibitors are competitive, and all irreversible inhibitors are noncompetitive",
         "Yes, because noncompetitive and uncompetitive inhibitors always bind covalently and permanently"
       ],
       "correct_index": 0,
-      "explanation": "Reversibility (can the inhibitor dissociate, e.g. under dialysis or dilution) and mechanism (where/how it binds relative to substrate: competitive at the active site, noncompetitive at an allosteric site regardless of substrate binding, or uncompetitive only to the enzyme-substrate complex) are independent classification axes. A reversible inhibitor could show any of the three kinetic patterns. Options B, C, and D each wrongly collapse the two independent axes into a single one-to-one mapping."
+      "explanation": "Reversibility (can the inhibitor dissociate, e.g. under dialysis or dilution) and mechanism (where/how it binds relative to substrate: competitive at the active site, noncompetitive at an allosteric site regardless of substrate binding, or uncompetitive only to the enzyme-substrate complex) are independent classification axes. A reversible inhibitor could show any of the three kinetic patterns. Options C, B, and D each wrongly collapse the two independent axes into a single one-to-one mapping."
     },
     {
       "kc": "enzyme-inhibition-types",
@@ -822,13 +822,13 @@
       "prompt": "Kinetic data show that adding an inhibitor decreases an enzyme's Vmax from 100 to 40 umol/min but leaves Km unchanged at 5 mM. On the corresponding Lineweaver-Burk plot, how do the inhibited and uninhibited lines relate to each other?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.4 style",
       "options": [
+        "The inhibited line has a lower y-intercept than the uninhibited line",
         "They intersect exactly on the x-axis (same x-intercept = -1/Km), since Km is unchanged, but the inhibited line has a higher y-intercept (1/Vmax is larger since Vmax is smaller)",
         "They are parallel lines that never intersect",
-        "They intersect exactly on the y-axis, since Vmax is unchanged",
-        "The inhibited line has a lower y-intercept than the uninhibited line"
+        "They intersect exactly on the y-axis, since Vmax is unchanged"
       ],
-      "correct_index": 0,
-      "explanation": "This is the noncompetitive pattern: Km unchanged means the lines share the same x-intercept (-1/Km). Vmax decreased means 1/Vmax increased, so the inhibited line has a higher y-intercept and a steeper slope, but the two lines still cross at the same point on the x-axis. Option B describes uncompetitive inhibition (parallel lines, same slope). Option C is wrong because Vmax changed here, so the y-intercepts differ, not the x-intercepts. Option D has the direction backward -- smaller Vmax gives a larger 1/Vmax, i.e., a higher, not lower, y-intercept."
+      "correct_index": 1,
+      "explanation": "This is the noncompetitive pattern: Km unchanged means the lines share the same x-intercept (-1/Km). Vmax decreased means 1/Vmax increased, so the inhibited line has a higher y-intercept and a steeper slope, but the two lines still cross at the same point on the x-axis. Option C describes uncompetitive inhibition (parallel lines, same slope). Option D is wrong because Vmax changed here, so the y-intercepts differ, not the x-intercepts. Option A has the direction backward -- smaller Vmax gives a larger 1/Vmax, i.e., a higher, not lower, y-intercept."
     },
     {
       "kc": "enzyme-inhibition-types",
@@ -847,13 +847,13 @@
       "prompt": "An enzyme is trapped inside the pores of a calcium alginate gel bead, physically enclosed within a polymer matrix rather than being chemically attached to it. Which immobilization method does this describe?",
       "source": "Doran, Bioprocess Engineering Principles 2e, Ch.7 style",
       "options": [
+        "Encapsulation -- the enzyme is enclosed within a semi-permeable membrane capsule or liposome",
         "Entrapment -- the enzyme is physically caged within a polymer gel matrix formed around it",
         "Adsorption -- the enzyme sticks to a support surface via weak physical forces",
-        "Covalent binding -- the enzyme is chemically bonded to a support surface",
-        "Encapsulation -- the enzyme is enclosed within a semi-permeable membrane capsule or liposome"
+        "Covalent binding -- the enzyme is chemically bonded to a support surface"
       ],
-      "correct_index": 0,
-      "explanation": "Entrapment (e.g., alginate, agar, or polyacrylamide gel beads) physically traps the enzyme within a three-dimensional polymer network formed in situ around it, rather than binding it to a pre-formed surface. Adsorption (option B) involves weak, reversible physical attachment (van der Waals, ionic, hydrogen bonding) to a pre-existing support surface -- no gel matrix forms around the enzyme. Covalent binding (option C) forms actual chemical bonds to a support and is a distinct, typically irreversible method. Encapsulation (option D) confines the enzyme behind a discrete semi-permeable membrane or shell (like a capsule wall), which is a related but distinct concept from a continuous gel matrix."
+      "correct_index": 1,
+      "explanation": "Entrapment (e.g., alginate, agar, or polyacrylamide gel beads) physically traps the enzyme within a three-dimensional polymer network formed in situ around it, rather than binding it to a pre-formed surface. Adsorption (option C) involves weak, reversible physical attachment (van der Waals, ionic, hydrogen bonding) to a pre-existing support surface -- no gel matrix forms around the enzyme. Covalent binding (option D) forms actual chemical bonds to a support and is a distinct, typically irreversible method. Encapsulation (option A) confines the enzyme behind a discrete semi-permeable membrane or shell (like a capsule wall), which is a related but distinct concept from a continuous gel matrix."
     },
     {
       "kc": "immobilized-enzymes-and-biocatalyst-reuse",
@@ -863,13 +863,13 @@
       "prompt": "A process engineer proposes immobilizing an enzyme by entrapment in gel beads to enable reuse across many batches, arguing this is a strict improvement over free (soluble) enzyme with no downsides. What is the most important flaw in this claim?",
       "source": "Doran, Bioprocess Engineering Principles 2e, Ch.7 style",
       "options": [
-        "Immobilization typically introduces diffusional resistance for substrate reaching the enzyme within the matrix, which raises the apparent Km (lowers apparent affinity) and can also cause some activity loss from the immobilization procedure itself, even though it enables reuse and easier separation",
+        "Immobilized enzymes cannot be reused more than once, so entrapment offers no reuse benefit over free enzyme",
         "Immobilized enzymes always have a higher Vmax than free enzymes because the matrix concentrates substrate near the active site",
-        "Immobilization has no effect on kinetics at all -- it only changes how the enzyme is physically handled, so there is no flaw in the claim",
-        "Immobilized enzymes cannot be reused more than once, so entrapment offers no reuse benefit over free enzyme"
+        "Immobilization typically introduces diffusional resistance for substrate reaching the enzyme within the matrix, which raises the apparent Km (lowers apparent affinity) and can also cause some activity loss from the immobilization procedure itself, even though it enables reuse and easier separation",
+        "Immobilization has no effect on kinetics at all -- it only changes how the enzyme is physically handled, so there is no flaw in the claim"
       ],
-      "correct_index": 0,
-      "explanation": "Reuse and easier downstream separation from product are real benefits of immobilization, but they come at a cost: substrate must now diffuse through the gel/support to reach the enzyme, which can become rate-limiting and manifests kinetically as an increased apparent Km; the immobilization chemistry or gel-forming conditions can also denature or block some active sites, lowering activity. Option B is factually backward -- diffusional limitation typically does not increase Vmax and often effectively lowers observed rates. Option C denies well-documented kinetic effects of immobilization. Option D contradicts the entire premise of immobilization, whose primary benefit is enabling multiple reuse cycles."
+      "correct_index": 2,
+      "explanation": "Reuse and easier downstream separation from product are real benefits of immobilization, but they come at a cost: substrate must now diffuse through the gel/support to reach the enzyme, which can become rate-limiting and manifests kinetically as an increased apparent Km; the immobilization chemistry or gel-forming conditions can also denature or block some active sites, lowering activity. Option B is factually backward -- diffusional limitation typically does not increase Vmax and often effectively lowers observed rates. Option D denies well-documented kinetic effects of immobilization. Option A contradicts the entire premise of immobilization, whose primary benefit is enabling multiple reuse cycles."
     },
     {
       "kc": "immobilized-enzymes-and-biocatalyst-reuse",
@@ -879,13 +879,13 @@
       "prompt": "A company wants to run a continuous packed-bed reactor for months, requires easy, low-cost immobilization of a robust industrial enzyme, and can tolerate a moderate increase in apparent Km due to diffusional resistance, but needs the immobilized enzyme to resist being washed off by continuous buffer flow. Adsorption alone (via weak physical binding to a support) is deemed too weak for this application. Which immobilization strategy is the better choice, and why?",
       "source": "Doran, Bioprocess Engineering Principles 2e, Ch.7 style",
       "options": [
-        "Covalent binding to a support -- forms strong, stable chemical bonds that resist leaching/washout under continuous flow, better suited to long-duration continuous operation than weak adsorption, despite requiring more complex, costly chemistry and some risk of active-site damage during coupling",
         "Adsorption is still the better choice because it is reversible and therefore easier to reverse if something goes wrong",
+        "Entrapment is guaranteed to eliminate all diffusional limitation, making it strictly superior to covalent binding for this application",
         "No immobilization method can prevent enzyme washout in a packed-bed reactor, so a batch stirred-tank reactor should be used instead",
-        "Entrapment is guaranteed to eliminate all diffusional limitation, making it strictly superior to covalent binding for this application"
+        "Covalent binding to a support -- forms strong, stable chemical bonds that resist leaching/washout under continuous flow, better suited to long-duration continuous operation than weak adsorption, despite requiring more complex, costly chemistry and some risk of active-site damage during coupling"
       ],
-      "correct_index": 0,
-      "explanation": "Given the requirement to resist washout over months of continuous flow, covalent attachment's strong, essentially permanent chemical bond is the appropriate trade-off: it sacrifices some activity (due to coupling chemistry potentially affecting active sites) and adds cost/complexity, but provides the mechanical/chemical stability adsorption cannot. Option B ignores the stated constraint that adsorption is 'too weak' for this application -- reversibility is actually the liability here, not an advantage. Option C is an overreaction; packed-bed continuous enzyme reactors are standard industrial practice with properly immobilized (e.g., covalently bound) enzyme. Option D is false -- entrapment also introduces diffusional limitation (often more than covalent binding, since substrate must penetrate a gel matrix), so it does not 'eliminate' diffusion limitation."
+      "correct_index": 3,
+      "explanation": "Given the requirement to resist washout over months of continuous flow, covalent attachment's strong, essentially permanent chemical bond is the appropriate trade-off: it sacrifices some activity (due to coupling chemistry potentially affecting active sites) and adds cost/complexity, but provides the mechanical/chemical stability adsorption cannot. Option A ignores the stated constraint that adsorption is 'too weak' for this application -- reversibility is actually the liability here, not an advantage. Option C is an overreaction; packed-bed continuous enzyme reactors are standard industrial practice with properly immobilized (e.g., covalently bound) enzyme. Option B is false -- entrapment also introduces diffusional limitation (often more than covalent binding, since substrate must penetrate a gel matrix), so it does not 'eliminate' diffusion limitation."
     },
     {
       "kc": "immobilized-enzymes-and-biocatalyst-reuse",
@@ -904,13 +904,13 @@
       "prompt": "A researcher needs to cut double-stranded DNA at a specific, sequence-recognized site to generate fragments with defined ends for cloning. Which tool should they use?",
       "source": "Addgene.org blog, 'Molecular Biology Reference' style",
       "options": [
-        "Restriction enzyme -- recognizes a specific DNA sequence and cleaves at or near that site",
+        "Plasmid vector -- a small circular DNA molecule used to carry and propagate an insert in a host cell",
         "DNA ligase -- joins two DNA fragments together by forming a phosphodiester bond",
-        "Taq polymerase (PCR) -- amplifies a target DNA sequence exponentially",
-        "Plasmid vector -- a small circular DNA molecule used to carry and propagate an insert in a host cell"
+        "Restriction enzyme -- recognizes a specific DNA sequence and cleaves at or near that site",
+        "Taq polymerase (PCR) -- amplifies a target DNA sequence exponentially"
       ],
-      "correct_index": 0,
-      "explanation": "Restriction enzymes (restriction endonucleases) recognize specific short DNA sequences and cut the DNA backbone there, which is exactly what's needed to generate defined-end fragments for cloning. DNA ligase (option B) does the opposite job -- joining/sealing fragments, not cutting them. PCR/Taq polymerase (option C) amplifies (copies) DNA, it does not cut it. A plasmid vector (option D) is a carrier/propagation vehicle, not a cutting tool."
+      "correct_index": 2,
+      "explanation": "Restriction enzymes (restriction endonucleases) recognize specific short DNA sequences and cut the DNA backbone there, which is exactly what's needed to generate defined-end fragments for cloning. DNA ligase (option B) does the opposite job -- joining/sealing fragments, not cutting them. PCR/Taq polymerase (option D) amplifies (copies) DNA, it does not cut it. A plasmid vector (option A) is a carrier/propagation vehicle, not a cutting tool."
     },
     {
       "kc": "genetic-engineering-tools-and-vectors",
@@ -921,12 +921,12 @@
       "source": "Addgene.org blog, 'Molecular Biology Reference' style",
       "options": [
         "(1) DNA ligase, (2) PCR (polymerase chain reaction)",
-        "(1) Restriction enzyme, (2) DNA ligase",
         "(1) PCR, (2) DNA ligase",
+        "(1) Restriction enzyme, (2) DNA ligase",
         "(1) Plasmid vector, (2) Restriction enzyme"
       ],
       "correct_index": 0,
-      "explanation": "DNA ligase catalyzes formation of a phosphodiester bond that seals/joins two DNA pieces into one continuous strand -- exactly step (1). PCR, using primers and a thermostable polymerase (like Taq), exponentially amplifies a targeted DNA region -- exactly step (2). Option B assigns restriction enzyme (a cutting tool) to a joining step, which is backward. Option C assigns PCR (amplification) to the joining step and ligase (joining) to the amplification step -- both swapped. Option D confuses a vector (a carrier molecule, not an enzymatic tool) and a restriction enzyme (a cutting tool) with the joining and amplification roles described."
+      "explanation": "DNA ligase catalyzes formation of a phosphodiester bond that seals/joins two DNA pieces into one continuous strand -- exactly step (1). PCR, using primers and a thermostable polymerase (like Taq), exponentially amplifies a targeted DNA region -- exactly step (2). Option C assigns restriction enzyme (a cutting tool) to a joining step, which is backward. Option B assigns PCR (amplification) to the joining step and ligase (joining) to the amplification step -- both swapped. Option D confuses a vector (a carrier molecule, not an enzymatic tool) and a restriction enzyme (a cutting tool) with the joining and amplification roles described."
     },
     {
       "kc": "genetic-engineering-tools-and-vectors",
@@ -936,13 +936,13 @@
       "prompt": "What is the primary purpose of a plasmid vector in a recombinant DNA cloning protocol?",
       "source": "Addgene.org blog, 'Molecular Biology Reference' style",
       "options": [
-        "To serve as a small, self-replicating circular DNA carrier that propagates the inserted gene of interest inside a host cell (e.g., bacteria) and typically carries a selectable marker",
+        "To directly translate the inserted gene into protein outside of any host cell",
         "To physically cut the gene of interest out of genomic DNA",
         "To exponentially amplify the gene of interest via thermal cycling",
-        "To directly translate the inserted gene into protein outside of any host cell"
+        "To serve as a small, self-replicating circular DNA carrier that propagates the inserted gene of interest inside a host cell (e.g., bacteria) and typically carries a selectable marker"
       ],
-      "correct_index": 0,
-      "explanation": "A plasmid vector's core role is to carry an insert and replicate autonomously within a host cell, propagating many copies of the recombinant DNA as the host divides; vectors also commonly carry a selectable marker (e.g., antibiotic resistance) to identify successfully transformed cells. Option B describes a restriction enzyme's job, not a vector's. Option C describes PCR, an entirely separate amplification method that doesn't require a host cell. Option D is incorrect because a vector does not itself perform translation, and translation of a cloned gene occurs inside a living host cell (or an in vitro transcription/translation system), not as an intrinsic property of the vector."
+      "correct_index": 3,
+      "explanation": "A plasmid vector's core role is to carry an insert and replicate autonomously within a host cell, propagating many copies of the recombinant DNA as the host divides; vectors also commonly carry a selectable marker (e.g., antibiotic resistance) to identify successfully transformed cells. Option B describes a restriction enzyme's job, not a vector's. Option C describes PCR, an entirely separate amplification method that doesn't require a host cell. Option A is incorrect because a vector does not itself perform translation, and translation of a cloned gene occurs inside a living host cell (or an in vitro transcription/translation system), not as an intrinsic property of the vector."
     },
     {
       "kc": "genetic-engineering-tools-and-vectors",
@@ -961,12 +961,12 @@
       "prompt": "Recombinant DNA cloning follows a standard four-step workflow. Which of the following lists the four steps in the correct order?",
       "source": "Addgene.org blog, 'Molecular Cloning Basics' style",
       "options": [
-        "Cut -> ligate -> transform -> select",
+        "Ligate -> cut -> transform -> select",
         "Transform -> cut -> select -> ligate",
         "Select -> cut -> ligate -> transform",
-        "Ligate -> cut -> transform -> select"
+        "Cut -> ligate -> transform -> select"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "The gene of interest and vector must first be cut (with restriction enzymes) to create compatible ends, then ligated (joined with DNA ligase) into a recombinant plasmid, then transformed into host cells (introducing the plasmid), and finally selected (e.g., grown on antibiotic-containing medium) to identify cells that successfully took up the recombinant plasmid. Any ordering that ligates before cutting, transforms before the DNA is assembled, or selects before transformation has occurred is logically out of sequence, since each step's input requires the product of the previous step."
     },
     {
@@ -977,13 +977,13 @@
       "prompt": "After transforming bacteria with a ligation mixture containing a plasmid carrying an ampicillin-resistance gene plus the gene of interest, why is it necessary to grow the transformed cells on agar plates containing ampicillin, rather than on plain (antibiotic-free) agar?",
       "source": "Addgene.org blog, 'Molecular Cloning Basics' style",
       "options": [
-        "Because transformation is inefficient -- only a small fraction of cells actually take up the plasmid, and plain agar would let both transformed and untransformed cells grow indistinguishably, making it impossible to identify which colonies carry the plasmid",
         "Because ampicillin is required as a nutrient for E. coli to grow at all, transformed or not",
         "Because ampicillin directly increases the transformation efficiency of the ligation mixture",
+        "Because transformation is inefficient -- only a small fraction of cells actually take up the plasmid, and plain agar would let both transformed and untransformed cells grow indistinguishably, making it impossible to identify which colonies carry the plasmid",
         "Because plain agar without antibiotic causes plasmid DNA to degrade before colonies can form"
       ],
-      "correct_index": 0,
-      "explanation": "Only a subset of bacterial cells successfully take up the recombinant plasmid during transformation. Since the plasmid carries an antibiotic-resistance marker, plating on ampicillin-containing medium kills untransformed cells (which lack the resistance gene) while letting only plasmid-containing (transformed) cells grow into visible colonies -- this is the selection step. Option B is false; ampicillin is an antibiotic, not a nutrient, and untransformed E. coli would grow fine without it. Option C confuses selection (which happens after transformation) with actually causing transformation to occur -- ampicillin plays no role in getting DNA into cells. Option D fabricates a degradation mechanism that isn't the actual reason for antibiotic selection."
+      "correct_index": 2,
+      "explanation": "Only a subset of bacterial cells successfully take up the recombinant plasmid during transformation. Since the plasmid carries an antibiotic-resistance marker, plating on ampicillin-containing medium kills untransformed cells (which lack the resistance gene) while letting only plasmid-containing (transformed) cells grow into visible colonies -- this is the selection step. Option A is false; ampicillin is an antibiotic, not a nutrient, and untransformed E. coli would grow fine without it. Option B confuses selection (which happens after transformation) with actually causing transformation to occur -- ampicillin plays no role in getting DNA into cells. Option D fabricates a degradation mechanism that isn't the actual reason for antibiotic selection."
     },
     {
       "kc": "recombinant-dna-workflow",
@@ -1016,13 +1016,13 @@
       "prompt": "In the absence of lactose (or another inducer), what is the default state of the lac operon in E. coli?",
       "source": "OpenStax Biology 2e Ch.16 style",
       "options": [
-        "The lac repressor protein is bound to the operator, physically blocking RNA polymerase from transcribing the lac genes",
-        "RNA polymerase actively transcribes the lac genes at a high, constant rate regardless of lactose",
         "The lac genes are permanently deleted from the genome until lactose is present",
-        "The repressor protein directly binds RNA polymerase and pulls it onto the promoter"
+        "The repressor protein directly binds RNA polymerase and pulls it onto the promoter",
+        "RNA polymerase actively transcribes the lac genes at a high, constant rate regardless of lactose",
+        "The lac repressor protein is bound to the operator, physically blocking RNA polymerase from transcribing the lac genes"
       ],
-      "correct_index": 0,
-      "explanation": "By default (no lactose/inducer present), the lac repressor is active and bound to the operator sequence, sterically blocking RNA polymerase from transcribing the downstream lac genes -- transcription is OFF. Option B describes constitutive (always-on) expression, which is the opposite of the regulated lac operon's default state. Option C is biologically nonsensical; genes are not deleted and re-inserted based on environmental conditions. Option D inverts the repressor's actual mechanism -- it blocks/hinders RNA polymerase, it does not recruit or help it."
+      "correct_index": 3,
+      "explanation": "By default (no lactose/inducer present), the lac repressor is active and bound to the operator sequence, sterically blocking RNA polymerase from transcribing the downstream lac genes -- transcription is OFF. Option C describes constitutive (always-on) expression, which is the opposite of the regulated lac operon's default state. Option A is biologically nonsensical; genes are not deleted and re-inserted based on environmental conditions. Option B inverts the repressor's actual mechanism -- it blocks/hinders RNA polymerase, it does not recruit or help it."
     },
     {
       "kc": "lac-operon-and-inducible-gene-expression",
@@ -1032,13 +1032,13 @@
       "prompt": "IPTG (isopropyl beta-D-1-thiogalactopyranoside) is commonly used in labs to induce expression of a recombinant gene cloned under lac operon control. Mechanistically, how does IPTG turn on transcription?",
       "source": "OpenStax Biology 2e Ch.16 style; Addgene.org blog style",
       "options": [
-        "IPTG binds to the lac repressor protein, changing its shape so it can no longer bind the operator; this releases the operator, allowing RNA polymerase to transcribe the gene (a double-negative: inactivating an inhibitor, not directly activating transcription)",
         "IPTG binds directly to RNA polymerase, activating it to begin transcription",
+        "IPTG is metabolized into a transcription factor that binds the promoter and recruits RNA polymerase",
         "IPTG binds directly to the operator DNA sequence, physically displacing the repressor by DNA-DNA competition",
-        "IPTG is metabolized into a transcription factor that binds the promoter and recruits RNA polymerase"
+        "IPTG binds to the lac repressor protein, changing its shape so it can no longer bind the operator; this releases the operator, allowing RNA polymerase to transcribe the gene (a double-negative: inactivating an inhibitor, not directly activating transcription)"
       ],
-      "correct_index": 0,
-      "explanation": "IPTG is a non-hydrolyzable lactose analog that binds the lac repressor, causing a conformational change that releases the repressor from the operator -- this is inactivation of an inhibitor (a double-negative), not direct activation of transcription. Option B wrongly gives IPTG a role in directly stimulating RNA polymerase, which it does not bind. Option C is a common but incorrect mental model -- IPTG is a small molecule that binds a protein (the repressor), not DNA, so there is no DNA-DNA competition. Option D fabricates a metabolic conversion of IPTG into a separate transcription factor; IPTG itself (unmetabolized, since it's non-hydrolyzable) is the active inducer molecule."
+      "correct_index": 3,
+      "explanation": "IPTG is a non-hydrolyzable lactose analog that binds the lac repressor, causing a conformational change that releases the repressor from the operator -- this is inactivation of an inhibitor (a double-negative), not direct activation of transcription. Option A wrongly gives IPTG a role in directly stimulating RNA polymerase, which it does not bind. Option C is a common but incorrect mental model -- IPTG is a small molecule that binds a protein (the repressor), not DNA, so there is no DNA-DNA competition. Option B fabricates a metabolic conversion of IPTG into a separate transcription factor; IPTG itself (unmetabolized, since it's non-hydrolyzable) is the active inducer molecule."
     },
     {
       "kc": "lac-operon-and-inducible-gene-expression",
@@ -1074,12 +1074,12 @@
       "source": "Addgene.org, 'CRISPR 101' guide style",
       "options": [
         "A guide RNA (gRNA) base-pairs with a complementary DNA sequence adjacent to a PAM (protospacer adjacent motif), directing Cas9 to that specific site",
-        "Cas9 randomly scans and cuts the genome at any location with roughly equal probability",
         "Cas9 only cuts at telomeres, regardless of the guide RNA sequence used",
-        "The PAM sequence alone, without any guide RNA, is sufficient to direct Cas9 to the correct site"
+        "The PAM sequence alone, without any guide RNA, is sufficient to direct Cas9 to the correct site",
+        "Cas9 randomly scans and cuts the genome at any location with roughly equal probability"
       ],
       "correct_index": 0,
-      "explanation": "The gRNA is designed to be complementary to the target DNA sequence; it directs Cas9 to bind there, but only if that target sequence is immediately adjacent to a short PAM sequence (required by Cas9 as a licensing signal) -- both the gRNA complementarity AND PAM proximity are required for cutting. Option B ignores the entire targeting mechanism that makes CRISPR precise rather than random. Option C fabricates an incorrect fixed target (telomeres); Cas9's cut site is programmable via the gRNA, not fixed to any particular chromosomal feature. Option D is wrong because PAM alone (without a matching gRNA) is not sufficient -- Cas9 still needs the guide RNA to identify the correct complementary sequence next to the PAM."
+      "explanation": "The gRNA is designed to be complementary to the target DNA sequence; it directs Cas9 to bind there, but only if that target sequence is immediately adjacent to a short PAM sequence (required by Cas9 as a licensing signal) -- both the gRNA complementarity AND PAM proximity are required for cutting. Option D ignores the entire targeting mechanism that makes CRISPR precise rather than random. Option B fabricates an incorrect fixed target (telomeres); Cas9's cut site is programmable via the gRNA, not fixed to any particular chromosomal feature. Option C is wrong because PAM alone (without a matching gRNA) is not sufficient -- Cas9 still needs the guide RNA to identify the correct complementary sequence next to the PAM."
     },
     {
       "kc": "crispr-gene-editing-mechanism",
@@ -1089,14 +1089,14 @@
       "prompt": "After Cas9 creates a double-strand DNA break, the cell's own repair machinery fixes the cut. Two major repair pathways can occur. Which statement correctly distinguishes them?",
       "source": "Addgene.org, 'CRISPR 101' guide style",
       "options": [
-        "NHEJ (non-homologous end joining) is error-prone and often introduces small insertions/deletions, useful for creating gene knockouts; HDR (homology-directed repair) uses a supplied DNA template to make a precise, defined edit",
-        "NHEJ requires a donor DNA template and makes precise edits; HDR is error-prone and randomly disrupts the gene",
-        "Both NHEJ and HDR always produce identical, precise edits regardless of whether a template is supplied",
         "NHEJ and HDR are two names for the same repair pathway used interchangeably in the literature",
-        "HDR occurs far more frequently than NHEJ in most cell types, making it the default outcome after any Cas9 cut"
+        "NHEJ requires a donor DNA template and makes precise edits; HDR is error-prone and randomly disrupts the gene",
+        "HDR occurs far more frequently than NHEJ in most cell types, making it the default outcome after any Cas9 cut",
+        "NHEJ (non-homologous end joining) is error-prone and often introduces small insertions/deletions, useful for creating gene knockouts; HDR (homology-directed repair) uses a supplied DNA template to make a precise, defined edit",
+        "Both NHEJ and HDR always produce identical, precise edits regardless of whether a template is supplied"
       ],
-      "correct_index": 0,
-      "explanation": "NHEJ directly rejoins the two broken DNA ends without needing a template, but this process is imprecise and frequently introduces small insertions or deletions (indels) that can shift the reading frame and knock out gene function -- useful when the goal is simply to disrupt a gene. HDR instead uses a homologous DNA template (supplied by the researcher, alongside the cell's natural homologous chromosome/sister chromatid machinery) to copy a precise, defined sequence into the break site, enabling exact edits (e.g., correcting a point mutation) but requiring a donor template. Option B swaps the two pathways' defining features. Option C is false since only HDR is templated/precise; NHEJ is not. Option D is false; NHEJ and HDR are mechanistically distinct pathways. Option E is factually backward for most cell types (especially non-dividing cells) -- NHEJ is typically the dominant, more frequent repair pathway, and HDR is comparatively rare and generally restricted to actively dividing cells (S/G2 phase)."
+      "correct_index": 3,
+      "explanation": "NHEJ directly rejoins the two broken DNA ends without needing a template, but this process is imprecise and frequently introduces small insertions or deletions (indels) that can shift the reading frame and knock out gene function -- useful when the goal is simply to disrupt a gene. HDR instead uses a homologous DNA template (supplied by the researcher, alongside the cell's natural homologous chromosome/sister chromatid machinery) to copy a precise, defined sequence into the break site, enabling exact edits (e.g., correcting a point mutation) but requiring a donor template. Option B swaps the two pathways' defining features. Option E is false since only HDR is templated/precise; NHEJ is not. Option A is false; NHEJ and HDR are mechanistically distinct pathways. Option C is factually backward for most cell types (especially non-dividing cells) -- NHEJ is typically the dominant, more frequent repair pathway, and HDR is comparatively rare and generally restricted to actively dividing cells (S/G2 phase)."
     },
     {
       "kc": "crispr-gene-editing-mechanism",
@@ -1107,12 +1107,12 @@
       "source": "Addgene.org, 'CRISPR 101' guide style",
       "options": [
         "Design a gRNA targeting the mutation site AND supply a donor DNA template with the corrected sequence, relying on HDR to incorporate the precise correction",
+        "Target a completely unrelated gene, since the repair pathway used doesn't depend on which gene is targeted",
         "Design a gRNA targeting the mutation site and rely on NHEJ alone, since NHEJ makes precise, defined base-pair-level corrections",
-        "No donor template is needed for any type of edit; Cas9 alone will always restore the correct sequence after cutting",
-        "Target a completely unrelated gene, since the repair pathway used doesn't depend on which gene is targeted"
+        "No donor template is needed for any type of edit; Cas9 alone will always restore the correct sequence after cutting"
       ],
       "correct_index": 0,
-      "explanation": "Achieving a precise, defined sequence correction (not just disruption) requires HDR, which in turn requires supplying an appropriate donor DNA template alongside a correctly targeted gRNA and Cas9. Option B misapplies NHEJ, which is error-prone and produces essentially random indels, not a defined single-base correction. Option C is false -- without a donor template, NHEJ (the dominant repair pathway) will act on the break and typically produce indels rather than restoring the original sequence, let alone correcting a mutation. Option D is irrelevant/nonsensical to the stated goal; targeting the wrong gene would not correct the disease mutation at all, and repair pathway choice is a cellular/experimental-design matter, not gene-identity-dependent in the way implied."
+      "explanation": "Achieving a precise, defined sequence correction (not just disruption) requires HDR, which in turn requires supplying an appropriate donor DNA template alongside a correctly targeted gRNA and Cas9. Option C misapplies NHEJ, which is error-prone and produces essentially random indels, not a defined single-base correction. Option D is false -- without a donor template, NHEJ (the dominant repair pathway) will act on the break and typically produce indels rather than restoring the original sequence, let alone correcting a mutation. Option B is irrelevant/nonsensical to the stated goal; targeting the wrong gene would not correct the disease mutation at all, and repair pathway choice is a cellular/experimental-design matter, not gene-identity-dependent in the way implied."
     },
     {
       "kc": "crispr-gene-editing-mechanism",
@@ -1131,13 +1131,13 @@
       "prompt": "A recombinant protein process performs excellently in a 2-L bench-scale bioreactor, achieving high cell density and product titer with no apparent growth limitations. When the same process (same medium, same organism, same nominal aeration rate per unit volume) is scaled up to a 10,000-L industrial fermenter, cell growth plateaus far below the expected density. What is the most likely fundamental cause of this scale-up failure?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.10 style",
       "options": [
-        "Oxygen mass-transfer limitation -- as reactor volume increases, the surface-area-to-volume ratio for gas transfer decreases and mixing becomes harder, making it increasingly difficult to supply oxygen fast enough to meet the aerobic culture's demand at high density",
         "The organism's genetic sequence changes spontaneously at larger reactor volumes",
-        "Larger reactors always have lower nutrient concentrations in the same medium formulation",
-        "Scale-up failures are due only to differences in reactor material (glass vs. stainless steel), not to physical transport phenomena"
+        "Oxygen mass-transfer limitation -- as reactor volume increases, the surface-area-to-volume ratio for gas transfer decreases and mixing becomes harder, making it increasingly difficult to supply oxygen fast enough to meet the aerobic culture's demand at high density",
+        "Scale-up failures are due only to differences in reactor material (glass vs. stainless steel), not to physical transport phenomena",
+        "Larger reactors always have lower nutrient concentrations in the same medium formulation"
       ],
-      "correct_index": 0,
-      "explanation": "Oxygen transfer rate depends on interfacial area, mixing intensity, and bubble residence time, all of which scale poorly (non-linearly) with reactor volume -- a large fermenter has proportionally less surface area per unit volume and typically less intense mixing than a small bench vessel, making it much harder to keep dissolved oxygen from becoming limiting as cell density (and thus oxygen demand) rises. This is one of the classic, most cited bioprocess scale-up challenges. Option B is biologically implausible; reactor volume does not spontaneously alter genetic sequence. Option C is false; medium formulation (nutrient concentration) is typically kept the same, per the problem statement, when scaling up. Option D dismisses real transport-phenomena effects (mixing, mass transfer, heat transfer) that are the actual documented drivers of scale-up problems, in favor of an implausible materials-only explanation."
+      "correct_index": 1,
+      "explanation": "Oxygen transfer rate depends on interfacial area, mixing intensity, and bubble residence time, all of which scale poorly (non-linearly) with reactor volume -- a large fermenter has proportionally less surface area per unit volume and typically less intense mixing than a small bench vessel, making it much harder to keep dissolved oxygen from becoming limiting as cell density (and thus oxygen demand) rises. This is one of the classic, most cited bioprocess scale-up challenges. Option A is biologically implausible; reactor volume does not spontaneously alter genetic sequence. Option D is false; medium formulation (nutrient concentration) is typically kept the same, per the problem statement, when scaling up. Option C dismisses real transport-phenomena effects (mixing, mass transfer, heat transfer) that are the actual documented drivers of scale-up problems, in favor of an implausible materials-only explanation."
     },
     {
       "kc": "bioprocessing-scale-up-considerations",
@@ -1147,13 +1147,13 @@
       "prompt": "An engineer scales up a bioreactor design by keeping all vessel dimension ratios identical (geometric similarity: same height-to-diameter ratio, same impeller-to-tank diameter ratio, etc.) between the 5-L pilot unit and the 5000-L production unit. Is geometric similarity alone sufficient to guarantee equivalent process performance (growth rate, product yield) at both scales?",
       "source": "Doran, Bioprocess Engineering Principles 2e, Ch.9 style",
       "options": [
-        "No -- geometric similarity does not guarantee equivalent mixing time, oxygen transfer rate, or shear environment, because these depend on additional factors (e.g., power input per unit volume, impeller tip speed, mixing time) that do not scale linearly with size even when shapes are held proportional",
         "Yes -- as long as all length ratios are identical, all fluid dynamics and mass transfer behaviors scale perfectly and performance is guaranteed to match",
-        "Yes, but only for anaerobic processes; aerobic processes are unaffected by scale under geometric similarity",
-        "No -- geometric similarity is completely irrelevant to bioreactor design and provides no useful design guidance at any scale"
+        "No -- geometric similarity is completely irrelevant to bioreactor design and provides no useful design guidance at any scale",
+        "No -- geometric similarity does not guarantee equivalent mixing time, oxygen transfer rate, or shear environment, because these depend on additional factors (e.g., power input per unit volume, impeller tip speed, mixing time) that do not scale linearly with size even when shapes are held proportional",
+        "Yes, but only for anaerobic processes; aerobic processes are unaffected by scale under geometric similarity"
       ],
-      "correct_index": 0,
-      "explanation": "Geometric similarity is a useful starting point for reactor design but is not sufficient on its own: parameters like power per unit volume (P/V), impeller tip speed, and mixing/circulation time do not automatically stay constant or equivalent across scales just because shape ratios are preserved -- typically only one or two of these criteria (e.g., constant P/V, or constant tip speed) can be matched simultaneously, forcing engineers to choose which criterion matters most for their specific process (e.g., oxygen transfer vs. shear sensitivity). Option B overstates geometric similarity's guarantees -- this is precisely the misconception the KC targets. Option C incorrectly claims aerobic vs. anaerobic distinction changes whether geometric similarity is sufficient; scale effects on mixing and mass transfer are relevant to both, though oxygen transfer specifically matters most for aerobic processes. Option D goes too far in the other direction; geometric similarity is a real and useful (if incomplete) design principle, not irrelevant."
+      "correct_index": 2,
+      "explanation": "Geometric similarity is a useful starting point for reactor design but is not sufficient on its own: parameters like power per unit volume (P/V), impeller tip speed, and mixing/circulation time do not automatically stay constant or equivalent across scales just because shape ratios are preserved -- typically only one or two of these criteria (e.g., constant P/V, or constant tip speed) can be matched simultaneously, forcing engineers to choose which criterion matters most for their specific process (e.g., oxygen transfer vs. shear sensitivity). Option A overstates geometric similarity's guarantees -- this is precisely the misconception the KC targets. Option D incorrectly claims aerobic vs. anaerobic distinction changes whether geometric similarity is sufficient; scale effects on mixing and mass transfer are relevant to both, though oxygen transfer specifically matters most for aerobic processes. Option B goes too far in the other direction; geometric similarity is a real and useful (if incomplete) design principle, not irrelevant."
     },
     {
       "kc": "bioprocessing-scale-up-considerations",
@@ -1163,13 +1163,13 @@
       "prompt": "During scale-up of a shear-sensitive mammalian cell culture process from a 10-L bioreactor to a 2000-L bioreactor, engineers must balance two competing physical demands. What are these two competing demands, and why do they create a design tension at large scale?",
       "source": "Doran, Bioprocess Engineering Principles 2e, Ch.9 style",
       "options": [
-        "Adequate mixing and oxygen transfer (which typically require higher agitation/aeration intensity) versus limiting hydrodynamic shear stress on fragile cells (which requires gentler agitation) -- at larger scale, achieving the mixing/mass-transfer intensity needed can impose more shear than delicate cells tolerate, unlike at small bench scale where both goals are easier to satisfy simultaneously",
-        "There is no real tension; increasing agitation always improves both mixing and cell viability equally at any scale",
         "The only competing demand at scale-up is cost versus vessel color, which has no effect on shear or mixing",
+        "There is no real tension; increasing agitation always improves both mixing and cell viability equally at any scale",
+        "Adequate mixing and oxygen transfer (which typically require higher agitation/aeration intensity) versus limiting hydrodynamic shear stress on fragile cells (which requires gentler agitation) -- at larger scale, achieving the mixing/mass-transfer intensity needed can impose more shear than delicate cells tolerate, unlike at small bench scale where both goals are easier to satisfy simultaneously",
         "Heat removal becomes trivially easy at larger scale because more metal surface area is available for cooling, eliminating any need to consider agitation intensity"
       ],
-      "correct_index": 0,
-      "explanation": "Vigorous agitation and aeration improve bulk mixing and oxygen transfer, but the same higher impeller speeds/turbulence and bubble bursting at the surface generate hydrodynamic shear forces that can damage shear-sensitive cells (notably mammalian cells, which lack a rigid cell wall). At larger scale, achieving adequate mixing/mass transfer throughout a much larger fluid volume often demands more aggressive agitation than would be needed at bench scale, intensifying the shear-vs-mixing trade-off that is comparatively easy to avoid in a small, well-mixed bench vessel. Option B denies a well-documented, real trade-off. Option C is a non-sequitur; vessel color is not a meaningful process variable. Option D is incorrect: heat removal actually becomes MORE challenging (not trivially easy) at larger scale, because heat generation scales with volume (proportional to r^3) while heat-transfer surface area scales more slowly (proportional to r^2), so the surface-to-volume ratio for cooling actually decreases at larger scale -- the opposite of what this option claims."
+      "correct_index": 2,
+      "explanation": "Vigorous agitation and aeration improve bulk mixing and oxygen transfer, but the same higher impeller speeds/turbulence and bubble bursting at the surface generate hydrodynamic shear forces that can damage shear-sensitive cells (notably mammalian cells, which lack a rigid cell wall). At larger scale, achieving adequate mixing/mass transfer throughout a much larger fluid volume often demands more aggressive agitation than would be needed at bench scale, intensifying the shear-vs-mixing trade-off that is comparatively easy to avoid in a small, well-mixed bench vessel. Option B denies a well-documented, real trade-off. Option A is a non-sequitur; vessel color is not a meaningful process variable. Option D is incorrect: heat removal actually becomes MORE challenging (not trivially easy) at larger scale, because heat generation scales with volume (proportional to r^3) while heat-transfer surface area scales more slowly (proportional to r^2), so the surface-to-volume ratio for cooling actually decreases at larger scale -- the opposite of what this option claims."
     },
     {
       "kc": "bioprocessing-scale-up-considerations",
@@ -1188,13 +1188,13 @@
       "prompt": "When performing an aseptic transfer of a microbial culture with an inoculation loop near an open flame (or in a laminar flow hood), which sequence of actions correctly minimizes contamination risk?",
       "source": "OpenStax Biology 2e, Lab Techniques style",
       "options": [
-        "Flame-sterilize the loop, briefly open the culture tube near the flame/hood airflow, transfer a sample quickly, re-cap the tube immediately, then flame the loop again before setting it down",
-        "Leave the culture tube open on the bench for the duration of the experiment so it's ready whenever needed",
+        "Sterilize the loop only after all transfers for the day are complete, not before or between individual transfers",
         "Use the same unsterilized loop for multiple different cultures in a row to save time between transfers",
-        "Sterilize the loop only after all transfers for the day are complete, not before or between individual transfers"
+        "Flame-sterilize the loop, briefly open the culture tube near the flame/hood airflow, transfer a sample quickly, re-cap the tube immediately, then flame the loop again before setting it down",
+        "Leave the culture tube open on the bench for the duration of the experiment so it's ready whenever needed"
       ],
-      "correct_index": 0,
-      "explanation": "Proper aseptic technique flame-sterilizes the loop immediately before AND after use, minimizes the time any container is open to the environment (reducing airborne contamination exposure), and works within a protected airflow zone (laminar flow hood or near a flame's convective updraft) when transferring. Option B dramatically increases contamination risk by leaving a culture open far longer than necessary. Option C risks cross-contaminating cultures with organisms from a previous unsterilized transfer. Option D fails to sterilize the loop before each individual transfer, meaning early transfers in the day are done with a non-sterile loop, risking contamination from the very first transfer onward."
+      "correct_index": 2,
+      "explanation": "Proper aseptic technique flame-sterilizes the loop immediately before AND after use, minimizes the time any container is open to the environment (reducing airborne contamination exposure), and works within a protected airflow zone (laminar flow hood or near a flame's convective updraft) when transferring. Option D dramatically increases contamination risk by leaving a culture open far longer than necessary. Option B risks cross-contaminating cultures with organisms from a previous unsterilized transfer. Option A fails to sterilize the loop before each individual transfer, meaning early transfers in the day are done with a non-sterile loop, risking contamination from the very first transfer onward."
     },
     {
       "kc": "aseptic-technique-and-experimental-design",
@@ -1206,11 +1206,11 @@
       "options": [
         "A negative control (bacteria with no compound added, expected to grow normally, ruling out that the growth medium/conditions themselves are inhibitory) and a positive control (bacteria treated with a known effective antimicrobial, expected to show inhibition, confirming the assay itself is capable of detecting inhibition when it is truly present)",
         "Two positive controls only, since negative controls are unnecessary when testing an antimicrobial compound",
-        "Two negative controls only, since a positive control would bias the student toward expecting inhibition",
-        "No controls are needed if the compound is expected to work, since a single treated plate is sufficient to prove efficacy"
+        "No controls are needed if the compound is expected to work, since a single treated plate is sufficient to prove efficacy",
+        "Two negative controls only, since a positive control would bias the student toward expecting inhibition"
       ],
       "correct_index": 0,
-      "explanation": "A negative control (no compound) confirms that any observed inhibition in the treated group is due to the compound and not the baseline growth medium or plating procedure. A positive control (a known antimicrobial with well-established inhibitory activity) confirms that the experimental system (bacteria, plates, incubation conditions, zone-of-inhibition detection method) is actually capable of revealing inhibition when it's genuinely present -- ruling out a false-negative assay. Option B and C each omit one of the two necessary, functionally distinct controls. Option D ignores that a single treated plate with no controls and no replicates cannot distinguish a real effect from experimental artifact, contamination, or chance."
+      "explanation": "A negative control (no compound) confirms that any observed inhibition in the treated group is due to the compound and not the baseline growth medium or plating procedure. A positive control (a known antimicrobial with well-established inhibitory activity) confirms that the experimental system (bacteria, plates, incubation conditions, zone-of-inhibition detection method) is actually capable of revealing inhibition when it's genuinely present -- ruling out a false-negative assay. Option B and D each omit one of the two necessary, functionally distinct controls. Option C ignores that a single treated plate with no controls and no replicates cannot distinguish a real effect from experimental artifact, contamination, or chance."
     },
     {
       "kc": "aseptic-technique-and-experimental-design",
@@ -1220,13 +1220,13 @@
       "prompt": "A researcher runs a single fermentation flask per experimental condition (one replicate each) and observes that the condition with an added nutrient supplement produced 15% more biomass than the condition without. Why might a reviewer be skeptical of concluding the supplement caused the improvement, purely from an experimental-design standpoint (setting aside biological plausibility)?",
       "source": "OpenStax Biology 2e, Experimental Design style",
       "options": [
-        "With only one replicate per condition, there is no way to distinguish a true treatment effect from ordinary run-to-run variability (e.g., slight differences in inoculum, minor contamination, temperature fluctuation) -- multiple replicates per condition are needed to assess whether the observed 15% difference is larger than typical random variation",
         "A single flask per condition is always sufficient because fermentation is a perfectly deterministic, noise-free process",
+        "With only one replicate per condition, there is no way to distinguish a true treatment effect from ordinary run-to-run variability (e.g., slight differences in inoculum, minor contamination, temperature fluctuation) -- multiple replicates per condition are needed to assess whether the observed 15% difference is larger than typical random variation",
         "The 15% difference is definitely real and reproducible, since any measured difference in a controlled lab setting reflects a true biological effect",
         "Replicates are only needed when testing more than two conditions, not for a simple two-condition comparison"
       ],
-      "correct_index": 0,
-      "explanation": "Biological and process systems have inherent run-to-run variability (inoculum differences, minor environmental fluctuations, measurement noise); without replicate flasks per condition, a single observed difference could easily be within the range of normal variability rather than a genuine effect of the supplement -- replicates allow estimation of variability (e.g., standard deviation) so the observed difference can be judged as meaningful (or not) relative to expected noise. Option B is false; real fermentation processes have run-to-run variability, not perfect determinism. Option C overstates certainty that isn't justified by a single unreplicated comparison. Option D incorrectly claims replication needs depend on the number of conditions being compared, when in fact any comparison (two conditions or more) benefits from replication to characterize variability."
+      "correct_index": 1,
+      "explanation": "Biological and process systems have inherent run-to-run variability (inoculum differences, minor environmental fluctuations, measurement noise); without replicate flasks per condition, a single observed difference could easily be within the range of normal variability rather than a genuine effect of the supplement -- replicates allow estimation of variability (e.g., standard deviation) so the observed difference can be judged as meaningful (or not) relative to expected noise. Option A is false; real fermentation processes have run-to-run variability, not perfect determinism. Option C overstates certainty that isn't justified by a single unreplicated comparison. Option D incorrectly claims replication needs depend on the number of conditions being compared, when in fact any comparison (two conditions or more) benefits from replication to characterize variability."
     },
     {
       "kc": "aseptic-technique-and-experimental-design",
@@ -1245,13 +1245,13 @@
       "prompt": "A recombinant protein of interest accumulates INSIDE the host E. coli cells (it is not secreted into the culture broth). After harvesting the cell mass by centrifugation, what must be done before any purification chromatography can begin?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.11 style",
       "options": [
+        "The product must first be secreted by adding a secretion-inducing chemical after the cells are already dead and harvested",
         "Cell disruption -- the cells must be physically or chemically lysed (e.g., by homogenization, sonication, or bead milling) to release the intracellular product into a soluble extract before it can be purified",
         "Chromatography can be applied directly to intact whole cells without any prior disruption step",
-        "The product must first be secreted by adding a secretion-inducing chemical after the cells are already dead and harvested",
         "Precipitation is always the very first step for any intracellular product, before disruption"
       ],
-      "correct_index": 0,
-      "explanation": "Since the product is trapped inside intact cells, it is physically inaccessible to purification steps like chromatography until the cells are disrupted (lysed) to release their contents into a crude extract. Option B is incorrect because chromatography resins interact with soluble molecules in solution, not intact cells that still enclose the product. Option C is not a real or standard method; secretion is a property of the living cell's export machinery, not something inducible post-harvest/post-death. Option D is out of order; precipitation is a downstream purification step performed on the released, soluble product after disruption, not before it -- there is nothing to precipitate while the product is still enclosed within intact cells."
+      "correct_index": 1,
+      "explanation": "Since the product is trapped inside intact cells, it is physically inaccessible to purification steps like chromatography until the cells are disrupted (lysed) to release their contents into a crude extract. Option C is incorrect because chromatography resins interact with soluble molecules in solution, not intact cells that still enclose the product. Option A is not a real or standard method; secretion is a property of the living cell's export machinery, not something inducible post-harvest/post-death. Option D is out of order; precipitation is a downstream purification step performed on the released, soluble product after disruption, not before it -- there is nothing to precipitate while the product is still enclosed within intact cells."
     },
     {
       "kc": "downstream-processing-and-product-recovery",
@@ -1261,13 +1261,13 @@
       "prompt": "A different recombinant protein is engineered with a secretion signal so that the host cells actively export it into the surrounding culture broth (an extracellular product). Compared to the intracellular case, how does this change the early downstream processing steps?",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.11 style",
       "options": [
-        "Cell disruption can be skipped entirely -- after removing cells (e.g., by centrifugation or filtration), the product is already present in the clarified broth and can proceed directly to concentration/purification steps",
-        "Cell disruption is still mandatory for extracellular products, exactly as for intracellular products, with no difference in workflow",
         "Extracellular products require an additional disruption step beyond what intracellular products need",
+        "Cell disruption is still mandatory for extracellular products, exactly as for intracellular products, with no difference in workflow",
+        "Cell disruption can be skipped entirely -- after removing cells (e.g., by centrifugation or filtration), the product is already present in the clarified broth and can proceed directly to concentration/purification steps",
         "Extracellular secretion means no downstream processing of any kind is needed since the product is already 'pure' upon secretion"
       ],
-      "correct_index": 0,
-      "explanation": "Because the product is already outside the cells, simple cell removal (centrifugation or filtration to separate biomass from broth) yields a clarified liquid already containing the target product -- no cell lysis is needed to access it, which simplifies and often reduces the cost of early downstream steps. Option B incorrectly claims disruption is still required, ignoring the whole point of engineering secretion. Option C fabricates an extra step that isn't needed; if anything, extracellular products typically require FEWER early steps than intracellular ones. Option D is a significant overstatement -- clarified broth still contains many other secreted proteins, media components, and impurities, so purification (concentration, chromatography, etc.) is still very much needed to reach the required purity."
+      "correct_index": 2,
+      "explanation": "Because the product is already outside the cells, simple cell removal (centrifugation or filtration to separate biomass from broth) yields a clarified liquid already containing the target product -- no cell lysis is needed to access it, which simplifies and often reduces the cost of early downstream steps. Option B incorrectly claims disruption is still required, ignoring the whole point of engineering secretion. Option A fabricates an extra step that isn't needed; if anything, extracellular products typically require FEWER early steps than intracellular ones. Option D is a significant overstatement -- clarified broth still contains many other secreted proteins, media components, and impurities, so purification (concentration, chromatography, etc.) is still very much needed to reach the required purity."
     },
     {
       "kc": "downstream-processing-and-product-recovery",
@@ -1293,13 +1293,13 @@
       "prompt": "A process needs to purify an intracellular enzyme from bacterial cells to high purity for pharmaceutical use. Put the following unit operations in a logical order for this scenario: chromatography (final polishing), cell disruption, centrifugation (cell harvest and debris removal), and precipitation (initial concentration/impurity removal).",
       "source": "Shuler & Kargi, Bioprocess Engineering 2e, Ch.11 style",
       "options": [
+        "Precipitation -> chromatography -> cell disruption -> centrifugation",
         "Centrifugation (harvest whole cells) -> cell disruption (release intracellular product) -> centrifugation (remove cell debris from lysate) -> precipitation (concentrate/remove bulk impurities) -> chromatography (final high-resolution polishing)",
         "Chromatography (polishing) -> cell disruption -> centrifugation -> precipitation",
-        "Precipitation -> chromatography -> cell disruption -> centrifugation",
         "Cell disruption is unnecessary if centrifugation is performed first, so it can be skipped entirely"
       ],
-      "correct_index": 0,
-      "explanation": "The logical order follows accessibility and resolution: first harvest whole cells from the broth (centrifugation), then disrupt them to release the intracellular product (cell disruption), then remove insoluble cell debris from the resulting lysate (a second centrifugation or filtration step), then use a comparatively cheap, high-capacity method like precipitation to remove bulk impurities and concentrate the product, and finally apply the most expensive, highest-resolution technique (chromatography) last, as a polishing step, since running expensive chromatography resin on a crude, debris-laden, dilute lysate would be inefficient and could foul the column. Options B and C place the expensive, high-resolution chromatography step before the crude cell material has even been clarified, which is both economically wasteful and technically likely to damage/foul the column. Option D incorrectly claims disruption is unnecessary; centrifugation alone only harvests intact cells, it cannot release intracellular content without prior lysis."
+      "correct_index": 1,
+      "explanation": "The logical order follows accessibility and resolution: first harvest whole cells from the broth (centrifugation), then disrupt them to release the intracellular product (cell disruption), then remove insoluble cell debris from the resulting lysate (a second centrifugation or filtration step), then use a comparatively cheap, high-capacity method like precipitation to remove bulk impurities and concentrate the product, and finally apply the most expensive, highest-resolution technique (chromatography) last, as a polishing step, since running expensive chromatography resin on a crude, debris-laden, dilute lysate would be inefficient and could foul the column. Options C and A place the expensive, high-resolution chromatography step before the crude cell material has even been clarified, which is both economically wasteful and technically likely to damage/foul the column. Option D incorrectly claims disruption is unnecessary; centrifugation alone only harvests intact cells, it cannot release intracellular content without prior lysis."
     },
     {
       "kc": "downstream-processing-and-product-recovery",

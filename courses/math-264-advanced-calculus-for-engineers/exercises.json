@@ -9,13 +9,13 @@
       "prompt": "For f(x,y) = x^3 y^2 + sin(xy), which expression correctly gives partial f/partial x?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 14.3)",
       "options": [
-        "3x^2 y^2 + y cos(xy)",
         "3x^2 y^2 + cos(xy)",
         "3x^2 y + y cos(xy)",
+        "3x^2 y^2 + y cos(xy)",
         "x^3 y^2 + y cos(xy)"
       ],
-      "correct_index": 0,
-      "explanation": "Differentiate term by term holding y constant: d/dx[x^3 y^2] = 3x^2 y^2. For sin(xy), the chain rule gives cos(xy) times d/dx(xy) = y, so the term is y cos(xy). Option B drops the chain-rule factor y. Option C differentiates y^2 incorrectly (treats it like x^2, dropping a factor of y). Option D forgets to differentiate the x^3 term at all."
+      "correct_index": 2,
+      "explanation": "Differentiate term by term holding y constant: d/dx[x^3 y^2] = 3x^2 y^2. For sin(xy), the chain rule gives cos(xy) times d/dx(xy) = y, so the term is y cos(xy). Option A drops the chain-rule factor y. Option B differentiates y^2 incorrectly (treats it like x^2, dropping a factor of y). Option D forgets to differentiate the x^3 term at all."
     },
     {
       "kc": "partial-derivatives",
@@ -25,13 +25,13 @@
       "prompt": "For a function f(x,y) with continuous second partial derivatives on an open region, what does Clairaut's theorem guarantee about partial^2 f/partial x partial y and partial^2 f/partial y partial x?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 14.3)",
       "options": [
-        "They are always equal",
         "They differ by a constant depending on f",
+        "They are equal only at critical points",
         "They are equal only if f is a polynomial",
-        "They are equal only at critical points"
+        "They are always equal"
       ],
-      "correct_index": 0,
-      "explanation": "Clairaut's theorem states that if the mixed second partials are continuous, the order of differentiation does not matter -- they are equal everywhere on the region, not just at special points or for special classes of functions. Options B, C, and D all describe restrictions that don't exist in the theorem's actual statement."
+      "correct_index": 3,
+      "explanation": "Clairaut's theorem states that if the mixed second partials are continuous, the order of differentiation does not matter -- they are equal everywhere on the region, not just at special points or for special classes of functions. Options A, C, and B all describe restrictions that don't exist in the theorem's actual statement."
     },
     {
       "kc": "partial-derivatives",
@@ -45,7 +45,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "partial f/partial y = 3x^2 y^2 + x e^(xy). Differentiate with respect to x: partial^2 f/(partial x partial y) = 6xy^2 + e^(xy) + xy e^(xy) = 6xy^2 + (1+xy) e^(xy). At (1,1): 6(1)(1) + (1+1) e^1 = 6 + 2e \u2248 6 + 5.4366 = 11.4366."
+      "solution": "partial f/partial y = 3x^2 y^2 + x e^(xy). Differentiate with respect to x: partial^2 f/(partial x partial y) = 6xy^2 + e^(xy) + xy e^(xy) = 6xy^2 + (1+xy) e^(xy). At (1,1): 6(1)(1) + (1+1) e^1 = 6 + 2e approx.  6 + 5.4366 = 11.4366."
     },
     {
       "kc": "partial-derivatives",
@@ -74,9 +74,9 @@
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 14.6)",
       "options": [
         "Normalize v to a unit vector u = v/|v|",
-        "Nothing -- use v directly as u",
         "Take the reciprocal of each component of v",
-        "Rotate v by 90 degrees"
+        "Rotate v by 90 degrees",
+        "Nothing -- use v directly as u"
       ],
       "correct_index": 0,
       "explanation": "The directional derivative formula D_u f = grad f . u is only valid when u is a UNIT vector; using an unnormalized vector like (6,8) (which has magnitude 10) would scale the result by 10x too large. Normalize: u = (6,8)/10 = (3/5, 4/5). The other options don't correspond to any valid operation for this formula."
@@ -90,9 +90,9 @@
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 14.6)",
       "options": [
         "In the direction of grad f(P)",
+        "In the direction of decreasing y, always",
         "In the direction of the x-axis, always",
-        "In the direction perpendicular to grad f(P)",
-        "In the direction of decreasing y, always"
+        "In the direction perpendicular to grad f(P)"
       ],
       "correct_index": 0,
       "explanation": "D_u f = grad f . u = |grad f| cos(theta), which is maximized when theta = 0, i.e. when u points in the same direction as grad f. The direction perpendicular to grad f gives D_u f = 0 (rate of change along a level curve), not the maximum. The coordinate-axis options are wrong in general -- they only coincide with grad f's direction in special cases."
@@ -137,12 +137,12 @@
       "prompt": "At a point P on the level curve f(x,y)=k, how is grad f(P) oriented relative to the level curve?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 14.6)",
       "options": [
+        "Parallel to the x-axis, always",
         "Orthogonal (perpendicular) to the level curve",
         "Tangent to the level curve",
-        "Parallel to the x-axis, always",
         "At a fixed 45-degree angle to the level curve"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "Along the level curve, f is constant, so the directional derivative in the tangent direction is zero: grad f . (tangent) = 0, which means grad f is perpendicular to the tangent, i.e. orthogonal to the level curve. It is not generally tangent to the curve (that would make f change along the curve), and there's no reason for it to align with a coordinate axis or a fixed angle in general."
     },
     {
@@ -153,13 +153,13 @@
       "prompt": "What does |grad f(P)| represent?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 14.6)",
       "options": [
-        "The maximum possible value of the directional derivative D_u f at P, over all unit directions u",
         "The average rate of change of f over the whole domain",
+        "The minimum possible value of D_u f at P",
         "The value of f itself at P",
-        "The minimum possible value of D_u f at P"
+        "The maximum possible value of the directional derivative D_u f at P, over all unit directions u"
       ],
-      "correct_index": 0,
-      "explanation": "Since D_u f = grad f . u = |grad f| cos(theta), the maximum over all unit u occurs at theta=0 (u parallel to grad f) and equals |grad f| exactly. It is not related to f's value at P, and the MINIMUM of D_u f is actually -|grad f| (in the opposite direction), not what's described in option D."
+      "correct_index": 3,
+      "explanation": "Since D_u f = grad f . u = |grad f| cos(theta), the maximum over all unit u occurs at theta=0 (u parallel to grad f) and equals |grad f| exactly. It is not related to f's value at P, and the MINIMUM of D_u f is actually -|grad f| (in the opposite direction), not what's described in option B."
     },
     {
       "kc": "gradient-as-steepest-ascent",
@@ -173,7 +173,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "grad f = (2xy^3, 3x^2y^2). At (2,1): grad f = (2(2)(1), 3(4)(1)) = (4,12).\n\n|grad f| = sqrt(4^2+12^2) = sqrt(16+144) = sqrt(160) = 4 sqrt(10) \u2248 12.6491. This is the maximum possible directional derivative at (2,1), achieved in the direction of grad f itself."
+      "solution": "grad f = (2xy^3, 3x^2y^2). At (2,1): grad f = (2(2)(1), 3(4)(1)) = (4,12).\n\n|grad f| = sqrt(4^2+12^2) = sqrt(16+144) = sqrt(160) = 4 sqrt(10) approx.  12.6491. This is the maximum possible directional derivative at (2,1), achieved in the direction of grad f itself."
     },
     {
       "kc": "gradient-as-steepest-ascent",
@@ -192,12 +192,12 @@
       "prompt": "At a critical point, the second-derivative discriminant is D = f_xx f_yy - (f_xy)^2 = 12 and f_xx = 6. What type of critical point is this?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 14.7)",
       "options": [
-        "Local minimum",
-        "Local maximum",
+        "Cannot be determined from this information",
         "Saddle point",
-        "Cannot be determined from this information"
+        "Local minimum",
+        "Local maximum"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "When D > 0, the point is either a local min or local max, distinguished by the sign of f_xx: f_xx > 0 means local minimum (concave up in the x-direction), f_xx < 0 means local maximum. Here D=12>0 and f_xx=6>0, so it's a local minimum. D<0 would indicate a saddle point (not the case here), and D=0 is the genuinely inconclusive case -- but D=12 is conclusive."
     },
     {
@@ -208,12 +208,12 @@
       "prompt": "In the method of Lagrange multipliers for extremizing f(x,y) subject to g(x,y)=c, what does the condition grad f = lambda grad g mean geometrically at the extremum?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 14.8)",
       "options": [
-        "The gradient of f is parallel to the gradient of the constraint g -- the level curve of f is tangent to the constraint curve",
         "f and g are equal at that point",
+        "The gradient of f is parallel to the gradient of the constraint g -- the level curve of f is tangent to the constraint curve",
         "The gradient of f is zero at that point",
         "f is at a global maximum over the entire plane"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "grad f = lambda grad g means the two gradient vectors are parallel (scalar multiples of each other), which geometrically means the level curve of f through that point is tangent to the constraint curve g=c -- exactly the condition for f to have a local extremum along the constraint. It does not mean f=g, nor that grad f=0 (that would be an unconstrained critical point, generally not on the constraint curve), nor a global claim over the whole plane (only along the constraint)."
     },
     {
@@ -246,7 +246,7 @@
       "difficulty": 3,
       "prompt": "Use Lagrange multipliers to find the point(s) on the ellipse x^2/4 + y^2 = 1 that are closest to the origin, and give the minimum distance.",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 14.8)",
-      "solution": "Minimize the squared distance D(x,y)=x^2+y^2 (easier than distance itself) subject to g(x,y)=x^2/4+y^2=1.\n\ngrad D = (2x,2y), grad g = (x/2, 2y). Lagrange: 2x = lambda(x/2), 2y = lambda(2y).\n\nFrom the second equation: either y=0, or lambda=1.\n\nCase y=0: constraint gives x^2/4=1, x=\u00b12. Points (\u00b12,0), distance = 2.\n\nCase lambda=1: first equation becomes 2x = x/2 -> (3/2)x=0 -> x=0. Constraint gives y^2=1, y=\u00b11. Points (0,\u00b11), distance=1.\n\nComparing distances 2 and 1, the closest points are (0,1) and (0,-1), at minimum distance 1 from the origin (the ellipse's semi-minor axis)."
+      "solution": "Minimize the squared distance D(x,y)=x^2+y^2 (easier than distance itself) subject to g(x,y)=x^2/4+y^2=1.\n\ngrad D = (2x,2y), grad g = (x/2, 2y). Lagrange: 2x = lambda(x/2), 2y = lambda(2y).\n\nFrom the second equation: either y=0, or lambda=1.\n\nCase y=0: constraint gives x^2/4=1, x=+/-2. Points (+/-2,0), distance = 2.\n\nCase lambda=1: first equation becomes 2x = x/2 -> (3/2)x=0 -> x=0. Constraint gives y^2=1, y=+/-1. Points (0,+/-1), distance=1.\n\nComparing distances 2 and 1, the closest points are (0,1) and (0,-1), at minimum distance 1 from the origin (the ellipse's semi-minor axis)."
     },
     {
       "kc": "implicit-differentiation-multivariable",
@@ -256,13 +256,13 @@
       "prompt": "If F(x,y,z) = c defines z implicitly as a function of x and y, which formula correctly gives partial z/partial x?",
       "source": "Kreyszig, Advanced Engineering Mathematics, style problem (Ch. 9.6)",
       "options": [
+        "partial z/partial x = F_x * F_z",
         "partial z/partial x = -F_x / F_z",
-        "partial z/partial x = F_x / F_z",
         "partial z/partial x = -F_x / F_y",
-        "partial z/partial x = F_x * F_z"
+        "partial z/partial x = F_x / F_z"
       ],
-      "correct_index": 0,
-      "explanation": "Differentiating F(x,y,z)=c with respect to x and applying the chain rule (since z depends on x): F_x + F_z (partial z/partial x) = 0, which rearranges to partial z/partial x = -F_x/F_z. Option B is missing the essential negative sign. Option C incorrectly uses F_y instead of F_z. Option D isn't even dimensionally the right kind of operation (multiplying instead of dividing)."
+      "correct_index": 1,
+      "explanation": "Differentiating F(x,y,z)=c with respect to x and applying the chain rule (since z depends on x): F_x + F_z (partial z/partial x) = 0, which rearranges to partial z/partial x = -F_x/F_z. Option D is missing the essential negative sign. Option C incorrectly uses F_y instead of F_z. Option A isn't even dimensionally the right kind of operation (multiplying instead of dividing)."
     },
     {
       "kc": "implicit-differentiation-multivariable",
@@ -272,12 +272,12 @@
       "prompt": "A student computes F_x=6, F_z=3 for a relation F(x,y,z)=c and concludes partial z/partial x = 2. What error did they make?",
       "source": "Kreyszig, Advanced Engineering Mathematics, style problem (Ch. 9.6)",
       "options": [
-        "They dropped the negative sign; the correct value is -2",
-        "They divided in the wrong order; the correct value is 1/2",
         "They should have used F_y instead of F_z; more information is needed",
-        "No error -- 2 is correct"
+        "They divided in the wrong order; the correct value is 1/2",
+        "No error -- 2 is correct",
+        "They dropped the negative sign; the correct value is -2"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "partial z/partial x = -F_x/F_z = -6/3 = -2, not +2. The student computed the magnitude correctly (6/3=2) but dropped the required negative sign from the implicit-differentiation formula -- this is the single most common execution error on this skill."
     },
     {
@@ -320,13 +320,13 @@
       "prompt": "For the region R bounded by y=0, y=x^2, and x=2 (in the first quadrant), which iterated integral in the order dy dx correctly computes the double integral of f(x,y) over R?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 15.2)",
       "options": [
-        "integral_{x=0}^{2} integral_{y=0}^{x^2} f(x,y) dy dx",
-        "integral_{x=0}^{2} integral_{y=0}^{2} f(x,y) dy dx",
         "integral_{y=0}^{4} integral_{x=0}^{2} f(x,y) dx dy",
+        "integral_{x=0}^{2} integral_{y=0}^{2} f(x,y) dy dx",
+        "integral_{x=0}^{2} integral_{y=0}^{x^2} f(x,y) dy dx",
         "integral_{x=0}^{x^2} integral_{y=0}^{2} f(x,y) dy dx"
       ],
-      "correct_index": 0,
-      "explanation": "For each fixed x between 0 and 2, y ranges from the lower boundary y=0 up to the upper boundary y=x^2 (the parabola). Option B uses a constant upper bound of 2 for y, which is wrong except at x=2 itself. Option C has the bounds and order confused (dx dy with y going to a fixed x-value doesn't describe this region correctly). Option D has a variable (x^2) as an outer integration bound, which is not allowed."
+      "correct_index": 2,
+      "explanation": "For each fixed x between 0 and 2, y ranges from the lower boundary y=0 up to the upper boundary y=x^2 (the parabola). Option B uses a constant upper bound of 2 for y, which is wrong except at x=2 itself. Option A has the bounds and order confused (dx dy with y going to a fixed x-value doesn't describe this region correctly). Option D has a variable (x^2) as an outer integration bound, which is not allowed."
     },
     {
       "kc": "multiple-integrals",
@@ -336,12 +336,12 @@
       "prompt": "If a double integral over a region R is set up correctly in the order dy dx, and then correctly rewritten in the order dx dy over the same region R, how do the two resulting numeric values compare?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 15.2)",
       "options": [
-        "They are exactly equal",
-        "The dx dy order always gives a larger value",
+        "They can only be compared if R is a rectangle",
         "The dy dx order always gives a larger value",
-        "They can only be compared if R is a rectangle"
+        "They are exactly equal",
+        "The dx dy order always gives a larger value"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "Both iterated integrals represent the same double integral over the same region, just computed by slicing the region in a different order (Fubini's theorem) -- they must give exactly the same numeric value whenever both are set up correctly, regardless of the region's shape."
     },
     {
@@ -356,7 +356,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "integral_{x=0}^{2} integral_{y=0}^{x^2} xy dy dx = integral_0^2 x * [y^2/2]_0^{x^2} dx = integral_0^2 x * (x^4/2) dx = integral_0^2 (x^5/2) dx = [x^6/12]_0^2 = 64/12 = 16/3 \u2248 5.3333."
+      "solution": "integral_{x=0}^{2} integral_{y=0}^{x^2} xy dy dx = integral_0^2 x * [y^2/2]_0^{x^2} dx = integral_0^2 x * (x^4/2) dx = integral_0^2 (x^5/2) dx = [x^6/12]_0^2 = 64/12 = 16/3 approx.  5.3333."
     },
     {
       "kc": "multiple-integrals",
@@ -374,7 +374,7 @@
       "difficulty": 3,
       "prompt": "Reverse the order of integration for integral_{x=0}^{1} integral_{y=x}^{1} f(x,y) dy dx, then evaluate the resulting integral for f(x,y)=e^(y^2).",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 15.2 -- classic e^(x^2)-type reversal)",
-      "solution": "Original region: 0<=x<=1, x<=y<=1, i.e. the triangle with vertices (0,0),(0,1),(1,1).\n\nReversed order (dx dy): for fixed y between 0 and 1, x ranges from 0 to y. So the integral becomes integral_{y=0}^{1} integral_{x=0}^{y} e^(y^2) dx dy.\n\nThe inner integral over x is trivial since the integrand doesn't depend on x: integral_0^y e^(y^2) dx = y e^(y^2).\n\nSo the integral becomes integral_0^1 y e^(y^2) dy. Substitute w=y^2, dw=2y dy: = (1/2) integral_0^1 e^w dw = (1/2)(e-1) \u2248 0.8591. This reversal is exactly the standard trick for making an otherwise-unintegrable-in-x integrand tractable."
+      "solution": "Original region: 0<=x<=1, x<=y<=1, i.e. the triangle with vertices (0,0),(0,1),(1,1).\n\nReversed order (dx dy): for fixed y between 0 and 1, x ranges from 0 to y. So the integral becomes integral_{y=0}^{1} integral_{x=0}^{y} e^(y^2) dx dy.\n\nThe inner integral over x is trivial since the integrand doesn't depend on x: integral_0^y e^(y^2) dx = y e^(y^2).\n\nSo the integral becomes integral_0^1 y e^(y^2) dy. Substitute w=y^2, dw=2y dy: = (1/2) integral_0^1 e^w dw = (1/2)(e-1) approx.  0.8591. This reversal is exactly the standard trick for making an otherwise-unintegrable-in-x integrand tractable."
     },
     {
       "kc": "coordinate-changes-for-integration",
@@ -384,13 +384,13 @@
       "prompt": "What is the correct volume element (Jacobian factor) when converting a triple integral to spherical coordinates (rho, phi, theta)?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 15.8)",
       "options": [
-        "dV = rho^2 sin(phi) d(rho) d(phi) d(theta)",
         "dV = rho sin(phi) d(rho) d(phi) d(theta)",
         "dV = rho^2 cos(phi) d(rho) d(phi) d(theta)",
-        "dV = rho d(rho) d(phi) d(theta)"
+        "dV = rho d(rho) d(phi) d(theta)",
+        "dV = rho^2 sin(phi) d(rho) d(phi) d(theta)"
       ],
-      "correct_index": 0,
-      "explanation": "The spherical Jacobian is rho^2 sin(phi), giving dV = rho^2 sin(phi) d(rho) d(phi) d(theta). Option B is the cylindrical Jacobian factor's structure misapplied (missing the extra rho and using sin instead of matching cylindrical's r). Option C uses cos(phi) instead of sin(phi) -- a common mix-up with the coordinate that measures polar angle from the z-axis. Option D is the cylindrical Jacobian (r dr d(theta) dz form), not spherical."
+      "correct_index": 3,
+      "explanation": "The spherical Jacobian is rho^2 sin(phi), giving dV = rho^2 sin(phi) d(rho) d(phi) d(theta). Option A is the cylindrical Jacobian factor's structure misapplied (missing the extra rho and using sin instead of matching cylindrical's r). Option B uses cos(phi) instead of sin(phi) -- a common mix-up with the coordinate that measures polar angle from the z-axis. Option C is the cylindrical Jacobian (r dr d(theta) dz form), not spherical."
     },
     {
       "kc": "coordinate-changes-for-integration",
@@ -400,12 +400,12 @@
       "prompt": "Which coordinate system is generally best suited to evaluate a double integral over a disk of radius 3 centered at the origin?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 15.4)",
       "options": [
-        "Polar coordinates",
         "Rectangular coordinates",
-        "Spherical coordinates",
-        "Cylindrical coordinates"
+        "Polar coordinates",
+        "Cylindrical coordinates",
+        "Spherical coordinates"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "A disk has circular symmetry about the origin, which polar coordinates (r, theta) describe with constant bounds (0<=r<=3, 0<=theta<=2pi) -- vastly simpler than the variable, symmetric-but-awkward rectangular bounds. Spherical and cylindrical coordinates are 3D systems, not needed for a purely 2D region."
     },
     {
@@ -420,7 +420,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "Convert to polar: x^2+y^2 = r^2, dA = r dr dtheta. Integral = integral_0^{2pi} integral_0^3 r^2 * r dr dtheta = integral_0^{2pi} integral_0^3 r^3 dr dtheta = 2pi * [r^4/4]_0^3 = 2pi * (81/4) = 81pi/2 \u2248 127.235."
+      "solution": "Convert to polar: x^2+y^2 = r^2, dA = r dr dtheta. Integral = integral_0^{2pi} integral_0^3 r^2 * r dr dtheta = integral_0^{2pi} integral_0^3 r^3 dr dtheta = 2pi * [r^4/4]_0^3 = 2pi * (81/4) = 81pi/2 approx.  127.235."
     },
     {
       "kc": "coordinate-changes-for-integration",
@@ -440,12 +440,12 @@
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 15.5)",
       "options": [
         "x-bar = [integral integral_R x*rho(x,y) dA] / [integral integral_R rho(x,y) dA]",
-        "x-bar = integral integral_R x*rho(x,y) dA",
         "x-bar = [integral integral_R x*rho(x,y) dA] / [Area of R]",
-        "x-bar = [integral integral_R rho(x,y) dA] / [integral integral_R x dA]"
+        "x-bar = [integral integral_R rho(x,y) dA] / [integral integral_R x dA]",
+        "x-bar = integral integral_R x*rho(x,y) dA"
       ],
       "correct_index": 0,
-      "explanation": "x-bar is the moment about the y-axis (integral integral x*rho dA) divided by the TOTAL MASS (integral integral rho dA), not the plain area. Option B is just the moment, missing the normalization by mass. Option C incorrectly normalizes by plain geometric area instead of mass -- only correct for constant density where mass = (density)(area), but wrong as a general formula. Option D has the numerator and denominator backwards."
+      "explanation": "x-bar is the moment about the y-axis (integral integral x*rho dA) divided by the TOTAL MASS (integral integral rho dA), not the plain area. Option D is just the moment, missing the normalization by mass. Option B incorrectly normalizes by plain geometric area instead of mass -- only correct for constant density where mass = (density)(area), but wrong as a general formula. Option C has the numerator and denominator backwards."
     },
     {
       "kc": "applications-of-multiple-integrals",
@@ -455,13 +455,13 @@
       "prompt": "For a lamina with density rho(x,y) occupying region R, which integral gives the moment of inertia about the z-axis (I_z, i.e. about an axis through the origin perpendicular to the plane)?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 15.5)",
       "options": [
-        "integral integral_R (x^2+y^2) rho(x,y) dA",
-        "integral integral_R (x+y) rho(x,y) dA",
         "integral integral_R rho(x,y) dA",
-        "integral integral_R x^2 rho(x,y) dA"
+        "integral integral_R (x+y) rho(x,y) dA",
+        "integral integral_R x^2 rho(x,y) dA",
+        "integral integral_R (x^2+y^2) rho(x,y) dA"
       ],
-      "correct_index": 0,
-      "explanation": "Moment of inertia about the z-axis (polar moment) weights each mass element by the SQUARE of its distance from the axis, r^2=x^2+y^2, times the density: I_z = integral integral (x^2+y^2) rho dA. Option C is just the total mass (zeroth moment). Option D (I_y, using only x^2) is the moment of inertia about the y-axis, not the z-axis. Option B isn't a standard moment of inertia formula at all."
+      "correct_index": 3,
+      "explanation": "Moment of inertia about the z-axis (polar moment) weights each mass element by the SQUARE of its distance from the axis, r^2=x^2+y^2, times the density: I_z = integral integral (x^2+y^2) rho dA. Option A is just the total mass (zeroth moment). Option C (I_y, using only x^2) is the moment of inertia about the y-axis, not the z-axis. Option B isn't a standard moment of inertia formula at all."
     },
     {
       "kc": "applications-of-multiple-integrals",
@@ -484,7 +484,7 @@
       "difficulty": 3,
       "prompt": "For the lamina in the previous problem (rectangle 0<=x<=2, 0<=y<=3, density rho(x,y)=x+y, total mass 15 kg), find the x-coordinate of the center of mass, x-bar.",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 15.5)",
-      "solution": "M_y (moment about the y-axis) = integral_0^2 integral_0^3 x(x+y) dy dx = integral_0^2 integral_0^3 (x^2+xy) dy dx = integral_0^2 [x^2 y + xy^2/2]_0^3 dx = integral_0^2 (3x^2 + 4.5x) dx = [x^3 + 2.25x^2]_0^2 = 8 + 9 = 17.\n\nx-bar = M_y / mass = 17/15 \u2248 1.1333 m. Note this is slightly right of the rectangle's geometric center (x=1), which makes sense since density increases with x, pulling the mass-weighted center rightward."
+      "solution": "M_y (moment about the y-axis) = integral_0^2 integral_0^3 x(x+y) dy dx = integral_0^2 integral_0^3 (x^2+xy) dy dx = integral_0^2 [x^2 y + xy^2/2]_0^3 dx = integral_0^2 (3x^2 + 4.5x) dx = [x^3 + 2.25x^2]_0^2 = 8 + 9 = 17.\n\nx-bar = M_y / mass = 17/15 approx.  1.1333 m. Note this is slightly right of the rectangle's geometric center (x=1), which makes sense since density increases with x, pulling the mass-weighted center rightward."
     },
     {
       "kc": "general-change-of-variables-jacobian",
@@ -494,13 +494,13 @@
       "prompt": "When changing a double integral from (x,y) to new variables (u,v) via x=x(u,v), y=y(u,v), what is the correct expression for dA in terms of du dv?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 15.9)",
       "options": [
-        "dA = |partial(x,y)/partial(u,v)| du dv",
-        "dA = partial(x,y)/partial(u,v) du dv (no absolute value needed)",
         "dA = |partial(u,v)/partial(x,y)| du dv",
-        "dA = du dv (unchanged)"
+        "dA = |partial(x,y)/partial(u,v)| du dv",
+        "dA = du dv (unchanged)",
+        "dA = partial(x,y)/partial(u,v) du dv (no absolute value needed)"
       ],
-      "correct_index": 0,
-      "explanation": "dA must be re-expressed using the Jacobian of the OLD variables (x,y) with respect to the NEW ones (u,v), taken as an absolute value (area scaling is a magnitude, never signed): dA=|partial(x,y)/partial(u,v)| du dv. Option B forgets the absolute value, which can introduce a wrong sign into the final answer. Option C uses the Jacobian of the wrong direction (that would need to be inverted first). Option D ignores that a substitution generally does rescale area."
+      "correct_index": 1,
+      "explanation": "dA must be re-expressed using the Jacobian of the OLD variables (x,y) with respect to the NEW ones (u,v), taken as an absolute value (area scaling is a magnitude, never signed): dA=|partial(x,y)/partial(u,v)| du dv. Option D forgets the absolute value, which can introduce a wrong sign into the final answer. Option A uses the Jacobian of the wrong direction (that would need to be inverted first). Option C ignores that a substitution generally does rescale area."
     },
     {
       "kc": "general-change-of-variables-jacobian",
@@ -510,12 +510,12 @@
       "prompt": "A student sets u=x+y, v=x-y, correctly computes partial(u,v)/partial(x,y) = -2, and concludes dA = -2 du dv. What is wrong with this reasoning?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 15.9)",
       "options": [
-        "They should use the reciprocal, |1/(-2)| = 1/2, since dA needs partial(x,y)/partial(u,v), and must take the absolute value",
         "Nothing is wrong, dA=-2 du dv is correct",
-        "They should have used partial(x,y)/partial(u,v) without taking a reciprocal, giving dA=-2 du dv still",
-        "The Jacobian should be squared before use"
+        "They should use the reciprocal, |1/(-2)| = 1/2, since dA needs partial(x,y)/partial(u,v), and must take the absolute value",
+        "The Jacobian should be squared before use",
+        "They should have used partial(x,y)/partial(u,v) without taking a reciprocal, giving dA=-2 du dv still"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "dA requires partial(x,y)/partial(u,v), which is the RECIPROCAL of the computed partial(u,v)/partial(x,y) = -2, i.e. -1/2; then take the absolute value: dA = |-1/2| du dv = (1/2) du dv. The two errors compound here: using the wrong-direction Jacobian AND keeping a negative sign, both of which the correct approach fixes."
     },
     {
@@ -530,7 +530,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "With u=x+y, v=x-y: x=(u+v)/2, y=(u-v)/2. Jacobian partial(x,y)/partial(u,v) = -1/2, so dA=(1/2) du dv. The region becomes the rectangle 0<=u<=2, 0<=v<=3.\n\nIntegrand becomes u*e^v. Integral = (1/2) integral_0^2 u du * integral_0^3 e^v dv = (1/2)(2)(e^3-1) = e^3-1 \u2248 19.0855."
+      "solution": "With u=x+y, v=x-y: x=(u+v)/2, y=(u-v)/2. Jacobian partial(x,y)/partial(u,v) = -1/2, so dA=(1/2) du dv. The region becomes the rectangle 0<=u<=2, 0<=v<=3.\n\nIntegrand becomes u*e^v. Integral = (1/2) integral_0^2 u du * integral_0^3 e^v dv = (1/2)(2)(e^3-1) = e^3-1 approx.  19.0855."
     },
     {
       "kc": "general-change-of-variables-jacobian",
@@ -539,7 +539,7 @@
       "difficulty": 1,
       "prompt": "Evaluate the double integral of f(x,y)=(x-2y) over the parallelogram R bounded by x-2y=0, x-2y=4, x+y=1, x+y=3, using u=x-2y, v=x+y.",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 15.9)",
-      "solution": "R maps to the rectangle 0<=u<=4, 1<=v<=3 in the uv-plane, since u and v are each constant along a pair of the region's boundary lines.\n\nSolve for x,y: from u=x-2y, v=x+y, subtract: u-v = -3y -> y=(v-u)/3. Then x = v-y = v-(v-u)/3 = (2v+u)/3.\n\nJacobian: partial x/partial u=1/3, partial x/partial v=2/3, partial y/partial u=-1/3, partial y/partial v=1/3. Determinant = (1/3)(1/3)-(2/3)(-1/3) = 1/9+2/9=3/9=1/3. So dA = (1/3) du dv.\n\nIntegrand x-2y = u (by definition). Integral = integral_0^4 integral_1^3 u * (1/3) dv du = (1/3) * [u^2/2]_0^4 * [v]_1^3 = (1/3)(8)(2) = 16/3 \u2248 5.333."
+      "solution": "R maps to the rectangle 0<=u<=4, 1<=v<=3 in the uv-plane, since u and v are each constant along a pair of the region's boundary lines.\n\nSolve for x,y: from u=x-2y, v=x+y, subtract: u-v = -3y -> y=(v-u)/3. Then x = v-y = v-(v-u)/3 = (2v+u)/3.\n\nJacobian: partial x/partial u=1/3, partial x/partial v=2/3, partial y/partial u=-1/3, partial y/partial v=1/3. Determinant = (1/3)(1/3)-(2/3)(-1/3) = 1/9+2/9=3/9=1/3. So dA = (1/3) du dv.\n\nIntegrand x-2y = u (by definition). Integral = integral_0^4 integral_1^3 u * (1/3) dv du = (1/3) * [u^2/2]_0^4 * [v]_1^3 = (1/3)(8)(2) = 16/3 approx.  5.333."
     },
     {
       "kc": "general-change-of-variables-jacobian",
@@ -548,7 +548,7 @@
       "difficulty": 3,
       "prompt": "Evaluate the double integral of f(x,y)=xy over the region R in the first quadrant bounded by xy=1, xy=3, y=x, y=4x, using u=xy, v=y/x. (You may take the Jacobian partial(x,y)/partial(u,v) = 1/(2v) as given.)",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 15.9, classic hyperbolic-region substitution)",
-      "solution": "R maps to the rectangle 1<=u<=3, 1<=v<=4 (since u=xy and v=y/x are each constant on a pair of the boundary curves).\n\nThe integrand xy equals u directly (by definition of u). Using the given Jacobian, dA=|1/(2v)| du dv = (1/(2v)) du dv (v>0 in the first quadrant).\n\nIntegral = integral_{u=1}^{3} integral_{v=1}^{4} u * (1/(2v)) dv du = [integral_1^3 u du] * [integral_1^4 1/(2v) dv] = [u^2/2]_1^3 * (1/2)[ln v]_1^4 = (9/2-1/2) * (1/2)(ln4) = 4 * (1/2)ln4 = 2 ln4 \u2248 2.7726."
+      "solution": "R maps to the rectangle 1<=u<=3, 1<=v<=4 (since u=xy and v=y/x are each constant on a pair of the boundary curves).\n\nThe integrand xy equals u directly (by definition of u). Using the given Jacobian, dA=|1/(2v)| du dv = (1/(2v)) du dv (v>0 in the first quadrant).\n\nIntegral = integral_{u=1}^{3} integral_{v=1}^{4} u * (1/(2v)) dv du = [integral_1^3 u du] * [integral_1^4 1/(2v) dv] = [u^2/2]_1^3 * (1/2)[ln v]_1^4 = (9/2-1/2) * (1/2)(ln4) = 4 * (1/2)ln4 = 2 ln4 approx.  2.7726."
     },
     {
       "kc": "vector-calculus",
@@ -558,12 +558,12 @@
       "prompt": "The vector field F(x,y) = (-y, x) has arrows that swirl counterclockwise around the origin at every point. Which description best characterizes this field?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 16.1)",
       "options": [
-        "Rotational (circulating) -- it is NOT a gradient field",
         "Gradient-like (radiates outward/inward) -- it IS a gradient field",
-        "Constant in every direction",
-        "Zero everywhere"
+        "Rotational (circulating) -- it is NOT a gradient field",
+        "Zero everywhere",
+        "Constant in every direction"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "F=(-y,x) circulates around the origin (it's the classic 'rigid rotation' field) rather than pointing radially outward or inward from a source/sink, which is the visual signature of a rotational (non-conservative) field -- indeed its curl is nonzero (curl F = 2k), confirming it is not a gradient field. A gradient-like field such as F=(x,y) instead radiates directly outward from the origin."
     },
     {
@@ -574,13 +574,13 @@
       "prompt": "Which parametrization correctly describes the circle x^2+y^2=9 traversed counterclockwise starting at (3,0)?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 16.2)",
       "options": [
+        "r(t) = (9cos t, 9 sin t), 0<=t<=2pi",
         "r(t) = (3cos t, 3 sin t), 0<=t<=2pi",
         "r(t) = (3cos t, -3 sin t), 0<=t<=2pi",
-        "r(t) = (3t, 3t), 0<=t<=2pi",
-        "r(t) = (9cos t, 9 sin t), 0<=t<=2pi"
+        "r(t) = (3t, 3t), 0<=t<=2pi"
       ],
-      "correct_index": 0,
-      "explanation": "r(t)=(3cos t, 3 sin t) traces the circle of radius 3 (since (3cos t)^2+(3sin t)^2=9) counterclockwise starting at t=0 giving (3,0). Option B has a negative sign on the y-component, which reverses the direction to clockwise. Option C traces a straight line, not a circle. Option D uses radius 9, giving the wrong circle (x^2+y^2=81)."
+      "correct_index": 1,
+      "explanation": "r(t)=(3cos t, 3 sin t) traces the circle of radius 3 (since (3cos t)^2+(3sin t)^2=9) counterclockwise starting at t=0 giving (3,0). Option C has a negative sign on the y-component, which reverses the direction to clockwise. Option D traces a straight line, not a circle. Option A uses radius 9, giving the wrong circle (x^2+y^2=81)."
     },
     {
       "kc": "vector-calculus",
@@ -594,7 +594,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "F(2,1) = (2^2-1, 2*1) = (3,2). |F(2,1)| = sqrt(3^2+2^2) = sqrt(13) \u2248 3.6056."
+      "solution": "F(2,1) = (2^2-1, 2*1) = (3,2). |F(2,1)| = sqrt(3^2+2^2) = sqrt(13) approx.  3.6056."
     },
     {
       "kc": "vector-calculus",
@@ -613,13 +613,13 @@
       "prompt": "For any vector field F with continuous second partial derivatives, what is div(curl F) always equal to?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 16.5)",
       "options": [
-        "0, always",
-        "|F|, the magnitude of F",
         "curl(div F), a nonzero vector field in general",
-        "1, always"
+        "0, always",
+        "1, always",
+        "|F|, the magnitude of F"
       ],
-      "correct_index": 0,
-      "explanation": "div(curl F) = 0 is a standard vector calculus identity, following directly from Clairaut's theorem (the mixed partials that appear when you expand div(curl F) cancel in pairs). Note div F is a scalar, so 'curl(div F)' in option C isn't even a well-formed operation (curl only applies to vector fields). Options B and D don't correspond to any general identity."
+      "correct_index": 1,
+      "explanation": "div(curl F) = 0 is a standard vector calculus identity, following directly from Clairaut's theorem (the mixed partials that appear when you expand div(curl F) cancel in pairs). Note div F is a scalar, so 'curl(div F)' in option A isn't even a well-formed operation (curl only applies to vector fields). Options D and C don't correspond to any general identity."
     },
     {
       "kc": "gradient-divergence-curl",
@@ -629,12 +629,12 @@
       "prompt": "Compute curl F for F(x,y,z) = (yz, xz, xy).",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 16.5)",
       "options": [
-        "(0,0,0)",
-        "(x,y,z)",
         "(2yz,2xz,2xy)",
-        "(1,1,1)"
+        "(0,0,0)",
+        "(1,1,1)",
+        "(x,y,z)"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "curl F = (partial R/partial y - partial Q/partial z, partial P/partial z - partial R/partial x, partial Q/partial x - partial P/partial y) with P=yz,Q=xz,R=xy: component 1 = x-x=0, component 2=y-y=0, component 3=z-z=0. So curl F=(0,0,0) -- this field is in fact conservative (it's the gradient of f=xyz), consistent with curl F=0 for conservative fields."
     },
     {
@@ -668,13 +668,13 @@
       "prompt": "To evaluate the line integral of a vector field F along the curve C given by y=x^2 from (0,0) to (1,1), which parametrization is most natural?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 16.2)",
       "options": [
-        "r(t) = (t, t^2), 0<=t<=1",
         "r(t) = (t^2, t), 0<=t<=1",
-        "r(t) = (t,t), 0<=t<=1",
-        "r(t) = (1,1), 0<=t<=1, constant"
+        "r(t) = (1,1), 0<=t<=1, constant",
+        "r(t) = (t, t^2), 0<=t<=1",
+        "r(t) = (t,t), 0<=t<=1"
       ],
-      "correct_index": 0,
-      "explanation": "Using x=t directly as the parameter and y=x^2=t^2 satisfies the curve equation automatically and covers (0,0) to (1,1) as t goes 0 to 1. Option B swaps which coordinate is 't' and would trace a different curve (x=y^2, not y=x^2). Option C traces the line y=x, not the parabola. Option D is a single fixed point, not a curve."
+      "correct_index": 2,
+      "explanation": "Using x=t directly as the parameter and y=x^2=t^2 satisfies the curve equation automatically and covers (0,0) to (1,1) as t goes 0 to 1. Option A swaps which coordinate is 't' and would trace a different curve (x=y^2, not y=x^2). Option D traces the line y=x, not the parabola. Option B is a single fixed point, not a curve."
     },
     {
       "kc": "line-and-surface-integrals",
@@ -684,13 +684,13 @@
       "prompt": "Which integral correctly defines the flux of a vector field F through an oriented surface S?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 16.7)",
       "options": [
-        "integral integral_S F . n dS, where n is the unit normal",
-        "integral integral_S |F| dS",
+        "integral_S F . dr (a line integral, not a surface integral)",
         "integral integral_S F dS (vector-valued, no dot product)",
-        "integral_S F . dr (a line integral, not a surface integral)"
+        "integral integral_S F . n dS, where n is the unit normal",
+        "integral integral_S |F| dS"
       ],
-      "correct_index": 0,
-      "explanation": "Flux measures the component of F passing THROUGH the surface, which requires dotting F with the unit normal vector n before integrating: integral integral_S F.n dS. Option B discards direction information entirely (just integrates the magnitude). Option C isn't a well-defined scalar surface integral as written. Option D is the formula for a line integral (circulation), not a surface flux integral."
+      "correct_index": 2,
+      "explanation": "Flux measures the component of F passing THROUGH the surface, which requires dotting F with the unit normal vector n before integrating: integral integral_S F.n dS. Option D discards direction information entirely (just integrates the magnitude). Option B isn't a well-defined scalar surface integral as written. Option A is the formula for a line integral (circulation), not a surface flux integral."
     },
     {
       "kc": "line-and-surface-integrals",
@@ -713,7 +713,7 @@
       "difficulty": 2,
       "prompt": "Compute the flux of F(x,y,z)=(0,0,z) upward through the flat disk of radius 2 centered on the z-axis at height z=4 (i.e., the disk x^2+y^2<=4 in the plane z=4).",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 16.7)",
-      "solution": "Since the surface is the flat, horizontal disk z=4, the upward unit normal is n=(0,0,1) everywhere, and dS=dA (no tilt correction needed for a horizontal plane).\n\nF . n = (0,0,z).(0,0,1) = z. On the surface, z=4 everywhere, so F.n = 4 (a constant).\n\nFlux = integral integral_{disk, r<=2} 4 dA = 4 * (Area of disk) = 4 * pi(2)^2 = 4*4pi = 16pi \u2248 50.265."
+      "solution": "Since the surface is the flat, horizontal disk z=4, the upward unit normal is n=(0,0,1) everywhere, and dS=dA (no tilt correction needed for a horizontal plane).\n\nF . n = (0,0,z).(0,0,1) = z. On the surface, z=4 everywhere, so F.n = 4 (a constant).\n\nFlux = integral integral_{disk, r<=2} 4 dA = 4 * (Area of disk) = 4 * pi(2)^2 = 4*4pi = 16pi approx.  50.265."
     },
     {
       "kc": "line-and-surface-integrals",
@@ -722,7 +722,7 @@
       "difficulty": 3,
       "prompt": "Evaluate the line integral of F(x,y)=(x^2, xy) along the straight line segment from (0,0) to (2,4) (i.e., along y=2x).",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 16.2)",
-      "solution": "Parametrize r(t) = (t, 2t), 0<=t<=2 (so that at t=2 we reach (2,4)). r'(t)=(1,2).\n\nF(r(t)) = (t^2, t*2t) = (t^2, 2t^2).\n\nF . r'(t) = t^2*1 + 2t^2*2 = t^2+4t^2 = 5t^2.\n\nIntegral = integral_0^2 5t^2 dt = 5*[t^3/3]_0^2 = 5*(8/3) = 40/3 \u2248 13.333."
+      "solution": "Parametrize r(t) = (t, 2t), 0<=t<=2 (so that at t=2 we reach (2,4)). r'(t)=(1,2).\n\nF(r(t)) = (t^2, t*2t) = (t^2, 2t^2).\n\nF . r'(t) = t^2*1 + 2t^2*2 = t^2+4t^2 = 5t^2.\n\nIntegral = integral_0^2 5t^2 dt = 5*[t^3/3]_0^2 = 5*(8/3) = 40/3 approx.  13.333."
     },
     {
       "kc": "conservative-fields-and-path-independence",
@@ -732,13 +732,13 @@
       "prompt": "For F(x,y)=(P,Q) with continuous partial derivatives on a simply connected domain, what test confirms F is conservative?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 16.3)",
       "options": [
-        "partial P/partial y = partial Q/partial x",
         "P = Q everywhere",
+        "|F| is constant",
         "partial P/partial x = partial Q/partial y",
-        "|F| is constant"
+        "partial P/partial y = partial Q/partial x"
       ],
-      "correct_index": 0,
-      "explanation": "On a simply connected domain, F=(P,Q) is conservative if and only if partial P/partial y = partial Q/partial x (equivalently, curl F=0 in the 2D sense). Option C mismatches the cross-partial pattern (it should be P differentiated by y and Q by x, not each by its own variable). Options B and D don't correspond to any conservative-field criterion."
+      "correct_index": 3,
+      "explanation": "On a simply connected domain, F=(P,Q) is conservative if and only if partial P/partial y = partial Q/partial x (equivalently, curl F=0 in the 2D sense). Option C mismatches the cross-partial pattern (it should be P differentiated by y and Q by x, not each by its own variable). Options A and B don't correspond to any conservative-field criterion."
     },
     {
       "kc": "conservative-fields-and-path-independence",
@@ -750,11 +750,11 @@
       "options": [
         "integral_C F . dr = f(B) - f(A), regardless of the specific path taken from A to B",
         "integral_C F . dr = f(A) - f(B)",
-        "integral_C F . dr depends on the specific path's length",
-        "integral_C F . dr = 0 always for any conservative field"
+        "integral_C F . dr = 0 always for any conservative field",
+        "integral_C F . dr depends on the specific path's length"
       ],
       "correct_index": 0,
-      "explanation": "The theorem states integral_C F.dr = f(B)-f(A) for any path C from A to B when F is conservative with potential f -- this is exactly why the integral is path-independent (it only depends on the endpoints). Option B has the endpoints swapped. Option D is only true when A=B (a closed loop), not for a general path with different start/end points."
+      "explanation": "The theorem states integral_C F.dr = f(B)-f(A) for any path C from A to B when F is conservative with potential f -- this is exactly why the integral is path-independent (it only depends on the endpoints). Option B has the endpoints swapped. Option C is only true when A=B (a closed loop), not for a general path with different start/end points."
     },
     {
       "kc": "conservative-fields-and-path-independence",
@@ -787,12 +787,12 @@
       "prompt": "Physically, what does the Divergence (Gauss) theorem say about the flux of F through a closed surface S enclosing a solid region E?",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 16.9)",
       "options": [
-        "The net outward flux through S equals the integral of div F over the enclosed volume E -- sources/sinks inside accumulate to give the net outflow",
         "The net outward flux through S is always zero",
         "The net outward flux equals the surface area of S",
+        "The net outward flux through S equals the integral of div F over the enclosed volume E -- sources/sinks inside accumulate to give the net outflow",
         "The net outward flux equals the line integral of F around the boundary curve of S"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "The divergence theorem converts a flux (surface) integral into a volume integral of the divergence: integral integral_S F.n dS = integral integral integral_E div F dV. Physically, positive divergence at a point means a local 'source' of the field, and the theorem says all the sources/sinks inside the enclosed volume add up exactly to the net flow crossing the boundary surface. It's not generally zero (only when div F=0 everywhere inside), has nothing to do with surface area by itself, and the boundary-curve line-integral description belongs to Stokes' theorem, not the divergence theorem (a closed surface doesn't even have a boundary curve)."
     },
     {
@@ -804,12 +804,12 @@
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 16.8)",
       "options": [
         "S must be any oriented surface whose boundary is C (with orientation matching the right-hand rule)",
-        "S must be the flat disk enclosed by C, and no other surface works",
         "S must be a closed surface with no boundary",
+        "S must be the flat disk enclosed by C, and no other surface works",
         "S must have the same surface area as the area enclosed by C"
       ],
       "correct_index": 0,
-      "explanation": "Stokes' theorem holds for ANY oriented surface S with boundary curve C (orientations linked by the right-hand rule) -- this is what makes the theorem powerful, since you can choose whichever bounded surface makes the curl integral easiest to compute, not just the flat disk. A closed surface (option C) has no boundary curve at all, so Stokes' theorem wouldn't even apply in that case."
+      "explanation": "Stokes' theorem holds for ANY oriented surface S with boundary curve C (orientations linked by the right-hand rule) -- this is what makes the theorem powerful, since you can choose whichever bounded surface makes the curl integral easiest to compute, not just the flat disk. A closed surface (option B) has no boundary curve at all, so Stokes' theorem wouldn't even apply in that case."
     },
     {
       "kc": "divergence-and-stokes-theorems",
@@ -823,7 +823,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "div F = partial x/partial x + partial y/partial y + partial z/partial z = 1+1+1 = 3 (constant).\n\nBy the Divergence theorem, flux = integral integral integral_E div F dV = 3 * Volume(E) = 3 * (4/3)pi(2)^3 = 3*(4/3)pi(8) = 32pi \u2248 100.53."
+      "solution": "div F = partial x/partial x + partial y/partial y + partial z/partial z = 1+1+1 = 3 (constant).\n\nBy the Divergence theorem, flux = integral integral integral_E div F dV = 3 * Volume(E) = 3 * (4/3)pi(2)^3 = 3*(4/3)pi(8) = 32pi approx.  100.53."
     },
     {
       "kc": "divergence-and-stokes-theorems",
@@ -832,7 +832,7 @@
       "difficulty": 3,
       "prompt": "Use Stokes' theorem to evaluate the circulation integral_C F.dr, where F(x,y,z)=(-y,x,0) and C is the circle x^2+y^2=4 in the plane z=0, oriented counterclockwise when viewed from above.",
       "source": "Stewart, Multivariable Calculus, style problem (Ch. 16.8)",
-      "solution": "Choose S to be the flat disk x^2+y^2<=4 in the plane z=0, with upward unit normal n=(0,0,1) (matching the counterclockwise orientation of C via the right-hand rule).\n\ncurl F: P=-y,Q=x,R=0. curl F=(partial R/partial y - partial Q/partial z, partial P/partial z-partial R/partial x, partial Q/partial x-partial P/partial y) = (0-0,0-0,1-(-1)) = (0,0,2).\n\nStokes: integral_C F.dr = integral integral_S curl F . n dS = integral integral_S (0,0,2).(0,0,1) dS = integral integral_S 2 dS = 2*(Area of disk) = 2*pi(2)^2 = 8pi \u2248 25.133.\n\n(This matches a direct computation via the line integral parametrization r(t)=(2cos t,2 sin t,0): F.dr integrates to 2*Area also, confirming the theorem.)"
+      "solution": "Choose S to be the flat disk x^2+y^2<=4 in the plane z=0, with upward unit normal n=(0,0,1) (matching the counterclockwise orientation of C via the right-hand rule).\n\ncurl F: P=-y,Q=x,R=0. curl F=(partial R/partial y - partial Q/partial z, partial P/partial z-partial R/partial x, partial Q/partial x-partial P/partial y) = (0-0,0-0,1-(-1)) = (0,0,2).\n\nStokes: integral_C F.dr = integral integral_S curl F . n dS = integral integral_S (0,0,2).(0,0,1) dS = integral integral_S 2 dS = 2*(Area of disk) = 2*pi(2)^2 = 8pi approx.  25.133.\n\n(This matches a direct computation via the line integral parametrization r(t)=(2cos t,2 sin t,0): F.dr integrates to 2*Area also, confirming the theorem.)"
     },
     {
       "kc": "pde-classification-and-setup",
@@ -842,12 +842,12 @@
       "prompt": "The equation u_t = k*u_xx (k>0 constant) is classified as which type of PDE?",
       "source": "Kreyszig, Advanced Engineering Mathematics, style problem (Ch. 12.1)",
       "options": [
-        "Parabolic (heat/diffusion equation), first order in time, second order in space",
         "Hyperbolic (wave equation), second order in both variables",
         "Elliptic (Laplace's equation), steady-state with no time dependence",
+        "Parabolic (heat/diffusion equation), first order in time, second order in space",
         "First-order linear PDE"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "u_t = k u_xx is the classic 1D heat/diffusion equation: first-order in time (one time derivative) and second-order in space (u_xx), classified as parabolic. The wave equation u_tt=c^2 u_xx is hyperbolic (second order in TIME), and Laplace's equation u_xx+u_yy=0 has no time dependence at all (elliptic, steady-state)."
     },
     {
@@ -858,12 +858,12 @@
       "prompt": "Which of the following is Laplace's equation in two spatial dimensions?",
       "source": "Kreyszig, Advanced Engineering Mathematics, style problem (Ch. 12.1)",
       "options": [
-        "u_xx + u_yy = 0",
-        "u_tt = c^2 u_xx",
+        "u_x + u_y = 0",
         "u_t = k u_xx",
-        "u_x + u_y = 0"
+        "u_tt = c^2 u_xx",
+        "u_xx + u_yy = 0"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "Laplace's equation is u_xx+u_yy=0 (or the sum of second spatial partials equals zero, in any number of dimensions) -- it describes steady-state (time-independent) distributions. u_tt=c^2 u_xx is the wave equation (hyperbolic), u_t=k u_xx is the heat equation (parabolic), and u_x+u_y=0 is a first-order linear PDE, not Laplace's equation."
     },
     {
@@ -893,9 +893,9 @@
       "source": "Kreyszig, Advanced Engineering Mathematics, style problem (Ch. 12.3)",
       "options": [
         "G'(t)/(k*G(t)) = X''(x)/X(x) = -lambda (a separation constant)",
-        "G'(t) = X''(x), with no separation constant needed",
         "X(x) = G(t), directly",
-        "G'(t)/G(t) = k*X''(x), no division by X(x) needed"
+        "G'(t)/G(t) = k*X''(x), no division by X(x) needed",
+        "G'(t) = X''(x), with no separation constant needed"
       ],
       "correct_index": 0,
       "explanation": "Dividing X(x)G'(t)=kX''(x)G(t) by kX(x)G(t) gives G'(t)/(kG(t)) = X''(x)/X(x). The left side depends only on t and the right only on x, so both must equal the same constant (conventionally written -lambda) for the equation to hold for all x and t simultaneously. This is the defining move of separation of variables."
@@ -908,12 +908,12 @@
       "prompt": "In the separated ODE X''(x) + lambda*X(x) = 0 with homogeneous boundary conditions X(0)=X(L)=0, which sign of lambda produces nontrivial (non-zero) solutions?",
       "source": "Kreyszig, Advanced Engineering Mathematics, style problem (Ch. 12.3)",
       "options": [
-        "lambda > 0, giving oscillatory sine solutions that can satisfy both zero boundary conditions",
-        "lambda < 0, giving exponential solutions",
         "lambda = 0 always works",
+        "lambda < 0, giving exponential solutions",
+        "lambda > 0, giving oscillatory sine solutions that can satisfy both zero boundary conditions",
         "Any sign of lambda works equally well"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "With lambda>0, X''+lambda X=0 has oscillatory solutions X=A cos(sqrt(lambda) x) + B sin(sqrt(lambda) x), which CAN satisfy X(0)=0 (forcing A=0) and X(L)=0 (forcing sin(sqrt(lambda) L)=0, giving discrete eigenvalues) without being identically zero. With lambda<=0, the general solution is exponential/hyperbolic or linear, and the only way to satisfy both zero boundary conditions is the trivial solution X=0 -- no nontrivial eigenfunctions exist for lambda<=0 in this classic setup."
     },
     {
@@ -928,7 +928,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "lambda_3 = (3*pi/2)^2 = 9*pi^2/4 \u2248 9(9.8696)/4 \u2248 88.826/4 \u2248 22.2066."
+      "solution": "lambda_3 = (3*pi/2)^2 = 9*pi^2/4 approx.  9(9.8696)/4 approx.  88.826/4 approx.  22.2066."
     },
     {
       "kc": "separation-of-variables",
@@ -956,12 +956,12 @@
       "prompt": "For a regular Sturm-Liouville problem, what is true about eigenfunctions X_m and X_n corresponding to distinct eigenvalues lambda_m != lambda_n?",
       "source": "Kreyszig, Advanced Engineering Mathematics, style problem (Ch. 11.5)",
       "options": [
+        "Their eigenvalues must be equal",
         "They are orthogonal with respect to the weight function: integral X_m(x) X_n(x) w(x) dx = 0 over the domain",
         "They are always equal to each other",
-        "Their eigenvalues must be equal",
         "They cannot both satisfy the same boundary conditions"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "A cornerstone result for Sturm-Liouville problems: eigenfunctions belonging to different eigenvalues are automatically orthogonal with respect to the problem's weight function w(x) over the domain. This orthogonality is exactly what makes it possible to expand an arbitrary function as a (generalized Fourier) series in the eigenfunctions, with coefficients found by simple projection integrals."
     },
     {
@@ -972,12 +972,12 @@
       "prompt": "Which of the following is written in standard Sturm-Liouville form, d/dx[p(x) y'] + [q(x)+lambda*w(x)] y = 0?",
       "source": "Kreyszig, Advanced Engineering Mathematics, style problem (Ch. 11.5)",
       "options": [
-        "(x*y')' + lambda*y = 0, i.e. p(x)=x, q(x)=0, w(x)=1",
         "y'' + y' + lambda*y = 0, without rewriting the y' term",
         "x*y'' + lambda*y = 0, left as-is",
+        "(x*y')' + lambda*y = 0, i.e. p(x)=x, q(x)=0, w(x)=1",
         "y' + lambda*y = 0 (first order)"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "(x y')' + lambda y = 0 already matches d/dx[p(x)y'] + [q(x)+lambda w(x)]y=0 directly with p(x)=x, q(x)=0, w(x)=1 -- no further manipulation needed. The other options are either first-order (not Sturm-Liouville, which requires the second-order self-adjoint structure) or need an integrating factor first to be put into the (p y')' form before they'd qualify."
     },
     {
@@ -992,7 +992,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "lambda_2 = (2*pi/3)^2 = 4*pi^2/9 \u2248 4(9.8696)/9 \u2248 39.478/9 \u2248 4.3865."
+      "solution": "lambda_2 = (2*pi/3)^2 = 4*pi^2/9 approx.  4(9.8696)/9 approx.  39.478/9 approx.  4.3865."
     },
     {
       "kc": "sturm-liouville-eigenproblems",
@@ -1012,9 +1012,9 @@
       "source": "Kreyszig, Advanced Engineering Mathematics, style problem (Ch. 11.3)",
       "options": [
         "Fourier SINE series -- the eigenfunctions from zero-Dirichlet conditions are sin(n*pi*x/L)",
-        "Fourier COSINE series -- always used regardless of boundary type",
         "Full Fourier series with both sines and cosines, always",
-        "No series expansion is needed for Dirichlet conditions"
+        "No series expansion is needed for Dirichlet conditions",
+        "Fourier COSINE series -- always used regardless of boundary type"
       ],
       "correct_index": 0,
       "explanation": "Zero-Dirichlet boundary conditions (u=0 at both ends) produce the eigenvalue problem X(0)=X(L)=0, whose eigenfunctions are sin(n*pi*x/L) -- so the initial condition must be expanded in a Fourier SINE series to match. Insulated (Neumann, u_x=0) ends instead produce cosine eigenfunctions, requiring a cosine series -- the boundary condition TYPE determines which series is appropriate, not a fixed default."
@@ -1027,13 +1027,13 @@
       "prompt": "For the Fourier sine series f(x) = sum_{n=1}^infty b_n sin(n*pi*x/L) on [0,L], which formula correctly gives b_n?",
       "source": "Kreyszig, Advanced Engineering Mathematics, style problem (Ch. 11.3)",
       "options": [
-        "b_n = (2/L) integral_0^L f(x) sin(n*pi*x/L) dx",
         "b_n = (1/L) integral_0^L f(x) dx",
         "b_n = (2/L) integral_0^L f(x) cos(n*pi*x/L) dx",
+        "b_n = (2/L) integral_0^L f(x) sin(n*pi*x/L) dx",
         "b_n = integral_0^L f(x) sin(n*pi*x/L) dx, with no normalization factor"
       ],
-      "correct_index": 0,
-      "explanation": "The sine-series coefficient formula is b_n=(2/L) integral_0^L f(x) sin(n*pi*x/L) dx, derived by multiplying both sides of the series by sin(m*pi*x/L), integrating over [0,L], and using orthogonality (all terms vanish except n=m) plus the normalization integral_0^L sin^2(n*pi*x/L) dx = L/2. Option C uses cosine instead of sine (that's the cosine-series formula pattern). Option D is missing the essential 2/L normalization factor."
+      "correct_index": 2,
+      "explanation": "The sine-series coefficient formula is b_n=(2/L) integral_0^L f(x) sin(n*pi*x/L) dx, derived by multiplying both sides of the series by sin(m*pi*x/L), integrating over [0,L], and using orthogonality (all terms vanish except n=m) plus the normalization integral_0^L sin^2(n*pi*x/L) dx = L/2. Option B uses cosine instead of sine (that's the cosine-series formula pattern). Option D is missing the essential 2/L normalization factor."
     },
     {
       "kc": "fourier-series-expansion",
@@ -1047,7 +1047,7 @@
         "unit": null,
         "tolerance_pct": 1
       },
-      "solution": "b_n = (2/L) integral_0^L 1*sin(n*pi*x/L) dx with L=2: b_n = (2/2) integral_0^2 sin(n*pi*x/2) dx = [-2/(n*pi) cos(n*pi*x/2)]_0^2 = (2/(n*pi))(1-cos(n*pi)).\n\nFor n=1: b_1 = (2/pi)(1-cos(pi)) = (2/pi)(1-(-1)) = (2/pi)(2) = 4/pi \u2248 1.2732."
+      "solution": "b_n = (2/L) integral_0^L 1*sin(n*pi*x/L) dx with L=2: b_n = (2/2) integral_0^2 sin(n*pi*x/2) dx = [-2/(n*pi) cos(n*pi*x/2)]_0^2 = (2/(n*pi))(1-cos(n*pi)).\n\nFor n=1: b_1 = (2/pi)(1-cos(pi)) = (2/pi)(1-(-1)) = (2/pi)(2) = 4/pi approx.  1.2732."
     },
     {
       "kc": "fourier-series-expansion",
@@ -1066,12 +1066,12 @@
       "prompt": "At a point x_0 where f is continuous, what does the Fourier series of f converge to?",
       "source": "Kreyszig, Advanced Engineering Mathematics, style problem (Ch. 11.4)",
       "options": [
-        "f(x_0), the actual function value",
         "Always 0",
-        "The average of f over the whole interval",
-        "It never converges at continuity points"
+        "f(x_0), the actual function value",
+        "It never converges at continuity points",
+        "The average of f over the whole interval"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "At any point of continuity (with mild smoothness conditions, e.g. piecewise smooth f), the Fourier series converges exactly to f(x_0), the function's actual value there. The midpoint-of-jump behavior only applies AT a discontinuity, not at continuous points."
     },
     {
@@ -1082,12 +1082,12 @@
       "prompt": "Near a jump discontinuity, a truncated Fourier series exhibits the Gibbs phenomenon. Which statement correctly describes it?",
       "source": "Kreyszig, Advanced Engineering Mathematics, style problem (Ch. 11.4)",
       "options": [
+        "The series fails to converge anywhere near a jump discontinuity",
         "A fixed-percentage overshoot (about 9%) appears near the jump and does not vanish as more terms are added, though the region where it's visible shrinks toward the jump point",
-        "The overshoot completely disappears once at least 100 terms are included",
         "Gibbs phenomenon only happens for even functions",
-        "The series fails to converge anywhere near a jump discontinuity"
+        "The overshoot completely disappears once at least 100 terms are included"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "The Gibbs phenomenon is a persistent roughly-9%-of-the-jump-size overshoot that appears just before and after a jump discontinuity in every partial sum, no matter how many terms are included -- what changes with more terms is that the OSCILLATING region shrinks closer to the discontinuity, not that the overshoot magnitude disappears. The series still converges pointwise (to the midpoint average at the jump itself), just not uniformly near the jump."
     },
     {
@@ -1122,9 +1122,9 @@
       "source": "Kreyszig, Advanced Engineering Mathematics, style problem (Ch. 12.10)",
       "options": [
         "The y-direction, since it has the two homogeneous boundary conditions that define the eigenvalue problem",
-        "The x-direction, since it has the non-homogeneous condition",
+        "Neither direction gets oscillatory solutions for Laplace's equation",
         "Either direction works equally well",
-        "Neither direction gets oscillatory solutions for Laplace's equation"
+        "The x-direction, since it has the non-homogeneous condition"
       ],
       "correct_index": 0,
       "explanation": "The eigenvalue problem (which produces the discrete, oscillatory sine/cosine eigenfunctions) always comes from whichever variable has TWO homogeneous boundary conditions -- here, y has u(x,0)=u(x,b)=0, so Y(0)=Y(b)=0 becomes the eigenvalue problem giving Y_n(y)=sin(n*pi*y/b). The x-direction, with only one homogeneous condition (at x=0) and the non-homogeneous data at x=a, gets the hyperbolic sinh/cosh solution instead."
@@ -1137,12 +1137,12 @@
       "prompt": "For a rectangle 0<=x<=a, 0<=y<=b with u(0,y)=u(a,y)=0 (homogeneous in x) and u(x,0)=0, u(x,b)=f(x), what is the correct eigenfunction basis in x?",
       "source": "Kreyszig, Advanced Engineering Mathematics, style problem (Ch. 12.10)",
       "options": [
-        "X_n(x) = sin(n*pi*x/a), from the eigenvalue problem X(0)=X(a)=0",
         "X_n(x) = cos(n*pi*x/a), since Laplace's equation always uses cosine",
-        "X_n(x) = sinh(n*pi*x/a), since it's Laplace's equation, not the heat equation",
-        "X_n(x) = e^(n*pi*x/a), an exponential basis"
+        "X_n(x) = sin(n*pi*x/a), from the eigenvalue problem X(0)=X(a)=0",
+        "X_n(x) = e^(n*pi*x/a), an exponential basis",
+        "X_n(x) = sinh(n*pi*x/a), since it's Laplace's equation, not the heat equation"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "With two homogeneous Dirichlet conditions X(0)=X(a)=0 in the x-direction, the eigenvalue problem X''+lambda X=0 with those boundary conditions produces exactly the same sine eigenfunctions as in the 1D heat/wave cases: X_n(x)=sin(n*pi*x/a). The hyperbolic sinh/cosh functions instead appear in the OTHER (non-homogeneous-paired) direction, here y, not x."
     },
     {
@@ -1157,7 +1157,7 @@
         "unit": null,
         "tolerance_pct": 2
       },
-      "solution": "Matching u(x,1)=sum B_n sin(n*pi*x/2) sinh(n*pi/2) to 3*sin(3*pi*x/2): since the right side has only an n=3 term, every B_n=0 except B_3, and B_3*sinh(3*pi/2) = 3.\n\nB_3 = 3/sinh(3*pi/2) \u2248 3/55.65 \u2248 0.0539."
+      "solution": "Matching u(x,1)=sum B_n sin(n*pi*x/2) sinh(n*pi/2) to 3*sin(3*pi*x/2): since the right side has only an n=3 term, every B_n=0 except B_3, and B_3*sinh(3*pi/2) = 3.\n\nB_3 = 3/sinh(3*pi/2) approx.  3/55.65 approx.  0.0539."
     },
     {
       "kc": "laplaces-equation-two-dimensional-steady-state",
@@ -1166,7 +1166,7 @@
       "difficulty": 2,
       "prompt": "A rectangular plate occupies 0<=x<=3, 0<=y<=2. Three sides are held at zero: u(0,y)=u(3,y)=0, u(x,0)=0. The top side is held at u(x,2)=5*sin(2*pi*x/3). Find the complete steady-state solution u(x,y).",
       "source": "Kreyszig, Advanced Engineering Mathematics, style problem (Ch. 12.10)",
-      "solution": "Steady state: u_xx+u_yy=0. Separate u=X(x)Y(y): X''/X = -Y''/Y = -lambda.\n\nThe two homogeneous conditions u(0,y)=u(3,y)=0 give X(0)=X(3)=0, the eigenvalue problem: lambda_n=(n*pi/3)^2, X_n(x)=sin(n*pi*x/3).\n\nThe Y-equation becomes Y''-(n*pi/3)^2 Y=0, general solution Y_n(y)=A_n cosh(n*pi*y/3)+B_n sinh(n*pi*y/3). The homogeneous condition u(x,0)=0 forces Y_n(0)=0, so A_n=0: Y_n(y)=B_n sinh(n*pi*y/3).\n\nGeneral solution: u(x,y)=sum B_n sin(n*pi*x/3) sinh(n*pi*y/3). Apply u(x,2)=5 sin(2*pi*x/3): since the right side is a single n=2 sine term, B_2*sinh(4*pi/3)=5 and every other B_n=0.\n\nB_2 = 5/sinh(4*pi/3) \u2248 5/32.97 \u2248 0.1517.\n\nFinal answer: u(x,y) = [5/sinh(4*pi/3)] * sin(2*pi*x/3) * sinh(2*pi*y/3) \u2248 0.1517 * sin(2*pi*x/3) * sinh(2*pi*y/3)."
+      "solution": "Steady state: u_xx+u_yy=0. Separate u=X(x)Y(y): X''/X = -Y''/Y = -lambda.\n\nThe two homogeneous conditions u(0,y)=u(3,y)=0 give X(0)=X(3)=0, the eigenvalue problem: lambda_n=(n*pi/3)^2, X_n(x)=sin(n*pi*x/3).\n\nThe Y-equation becomes Y''-(n*pi/3)^2 Y=0, general solution Y_n(y)=A_n cosh(n*pi*y/3)+B_n sinh(n*pi*y/3). The homogeneous condition u(x,0)=0 forces Y_n(0)=0, so A_n=0: Y_n(y)=B_n sinh(n*pi*y/3).\n\nGeneral solution: u(x,y)=sum B_n sin(n*pi*x/3) sinh(n*pi*y/3). Apply u(x,2)=5 sin(2*pi*x/3): since the right side is a single n=2 sine term, B_2*sinh(4*pi/3)=5 and every other B_n=0.\n\nB_2 = 5/sinh(4*pi/3) approx.  5/32.97 approx.  0.1517.\n\nFinal answer: u(x,y) = [5/sinh(4*pi/3)] * sin(2*pi*x/3) * sinh(2*pi*y/3) approx.  0.1517 * sin(2*pi*x/3) * sinh(2*pi*y/3)."
     }
   ]
 }

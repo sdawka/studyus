@@ -165,4 +165,8 @@ A single **global** file (not per-course, unlike `content.json`) authoring seed-
 - Target **3-5 competencies**, each genuinely crossing at least two courses (a competency scoped to one course's KCs is just a branch — model it as one instead) — aim for real integrative reasoning, not an arbitrary bundle.
 - Unresolvable `ref`s warn and are skipped (same posture as `content.json`'s prereq/kc_slugs refs), not a hard abort — a typo in one competency shouldn't block the rest of the seed.
 - Seeded rows carry `source: 'seed'` on `capabilities`; `source: 'user'` is schema-ready for a future user-authored-competency UI, but nothing writes it yet.
+
+## Exercises (`courses/<slug>/exercises.json`) — v2.0, sibling file
+
+Another sibling to `content.json`, one per course: auto-gradeable/self-checkable exercise banks attached to this course's KCs (`mcq`, `numeric`, `worked`) — the complement to `content.json`'s scaffolds, which teach but carry no answer. Frozen contract, own schema: `courses/exercise-schema.md`.
 - Idempotent across reseeds: `scripts/seed.ts` upserts by a deterministic id derived from `(userId, slug)`, and purges any `capability_kcs` row (or whole seed-sourced `capabilities` row) no longer present in this file — editing membership or removing a competency here and re-running the seed reflects the change, it doesn't just accumulate.

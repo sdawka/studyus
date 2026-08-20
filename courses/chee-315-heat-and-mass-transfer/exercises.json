@@ -8,7 +8,11 @@
       "difficulty": 1,
       "prompt": "A plane wall (k=1.4 W/(m*K)) is 0.15 m thick, with one face at 350 K and the other at 310 K, area 2.0 m^2. Find the total steady-state heat transfer rate through the wall.",
       "source": "Incropera, Fundamentals of Heat and Mass Transfer 7e, Ch.2 style",
-      "answer": { "value": 746.7, "unit": "W", "tolerance_pct": 1 },
+      "answer": {
+        "value": 746.7,
+        "unit": "W",
+        "tolerance_pct": 1
+      },
       "solution": "q'' = k*(T1-T2)/L = 1.4*(350-310)/0.15 = 1.4*40/0.15 = 373.3 W/m^2. Q = q''*A = 373.3*2.0 = 746.7 W."
     },
     {
@@ -18,7 +22,12 @@
       "difficulty": 1,
       "prompt": "Temperature increases from left to right across a solid slab (dT/dx > 0). In which direction does the conductive heat flux point?",
       "source": "Fourier's law sign convention, misconception-targeted",
-      "options": ["To the left (opposite the temperature gradient)", "To the right (along the temperature gradient)", "Heat flux has no defined direction in conduction", "It depends only on the material's conductivity sign"],
+      "options": [
+        "To the left (opposite the temperature gradient)",
+        "To the right (along the temperature gradient)",
+        "Heat flux has no defined direction in conduction",
+        "It depends only on the material's conductivity sign"
+      ],
       "correct_index": 0,
       "explanation": "Fourier's law q = -k*dT/dx carries a negative sign because heat flows from high to low temperature, i.e. down the gradient, not along it. Since dT/dx>0 (temperature rising to the right), the heat flux points to the left, toward lower temperature."
     },
@@ -30,12 +39,12 @@
       "prompt": "A steel block and an aluminum block of equal mass each receive the same amount of heat energy (in joules). Will they reach the same final temperature?",
       "source": "heat vs temperature misconception, thermal-science conceptual",
       "options": [
-        "No -- temperature rise depends on mass and specific heat capacity (deltaT=Q/(m*c)), which differ between the two materials",
-        "Yes -- equal heat input always produces equal temperature rise",
         "Only if both blocks start at the same initial temperature",
-        "Only if both blocks have the same thermal conductivity"
+        "No -- temperature rise depends on mass and specific heat capacity (deltaT=Q/(m*c)), which differ between the two materials",
+        "Only if both blocks have the same thermal conductivity",
+        "Yes -- equal heat input always produces equal temperature rise"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "Heat is energy in transit (joules); temperature rise from a given heat input depends on the object's mass and specific heat capacity via deltaT=Q/(m*c). Steel and aluminum have different specific heat capacities, so equal heat input produces different temperature rises -- conductivity (which governs the RATE of heat transfer, not the final equilibrium temperature) is irrelevant to this comparison."
     },
     {
@@ -54,7 +63,11 @@
       "difficulty": 2,
       "prompt": "A composite wall has convection inside (h_in=10 W/(m^2*K)) and outside (h_out=20 W/(m^2*K)), plus two solid layers in series: layer 1 (k1=0.72 W/(m*K), L1=0.20 m) and layer 2 (k2=1.7 W/(m*K), L2=0.10 m), area 1 m^2. Inside air is 25 degC, outside air is -10 degC. Find the heat transfer rate.",
       "source": "series thermal resistance network, standard drill",
-      "answer": { "value": 71.9, "unit": "W", "tolerance_pct": 2 },
+      "answer": {
+        "value": 71.9,
+        "unit": "W",
+        "tolerance_pct": 2
+      },
       "solution": "R_in=1/10=0.10, R1=0.20/0.72=0.278, R2=0.10/1.7=0.0588, R_out=1/20=0.05. R_tot=0.10+0.278+0.0588+0.05=0.4868 K/W (per unit area, so units are K/W here since A=1 m^2). Q=(25-(-10))/0.4868=35/0.4868=71.9 W."
     },
     {
@@ -65,12 +78,12 @@
       "prompt": "A wall has two layers side by side (in parallel, e.g. a stud and insulation occupying different fractions of the wall area) rather than stacked in series. How do their thermal resistances combine?",
       "source": "parallel vs series resistance network, conceptual",
       "options": [
-        "As reciprocals (1/R_total = 1/R_a + 1/R_b), the same rule as parallel electrical resistors",
         "By simple addition, the same rule as series resistors",
         "Parallel paths cannot be analyzed with the resistance-network method at all",
-        "The larger of the two resistances always determines the total"
+        "The larger of the two resistances always determines the total",
+        "As reciprocals (1/R_total = 1/R_a + 1/R_b), the same rule as parallel electrical resistors"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "Parallel heat-flow paths (like a stud and insulation side by side) combine as reciprocals, exactly like parallel electrical resistors, because heat can flow through either path independently -- series resistances (stacked layers each carrying the full heat flow) add directly instead."
     },
     {
@@ -81,12 +94,12 @@
       "prompt": "A metal rod has one end in boiling water and the other in ice water. After a while, temperature at every point along the rod stops changing with time. Is the rod at thermal equilibrium?",
       "source": "steady state vs equilibrium misconception, Thermal and Transport Concept Inventory style",
       "options": [
-        "No -- a nonzero temperature gradient and a sustained heat flux persist along the rod, which is incompatible with true equilibrium",
+        "It depends on whether the rod is copper or steel",
         "Yes -- unchanging temperature at every point is the definition of equilibrium",
-        "Yes, but only if the rod is a perfect insulator",
-        "It depends on whether the rod is copper or steel"
+        "No -- a nonzero temperature gradient and a sustained heat flux persist along the rod, which is incompatible with true equilibrium",
+        "Yes, but only if the rod is a perfect insulator"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "Steady state means properties at each location are constant in TIME, but driving forces and fluxes can remain nonzero indefinitely (sustained by the boiling-water and ice-water boundary conditions). True thermodynamic equilibrium requires ALL net fluxes to be zero everywhere, which this rod never reaches as long as the two ends are held at different temperatures."
     },
     {
@@ -105,7 +118,11 @@
       "difficulty": 2,
       "prompt": "A small steel sphere (k=50 W/(m*K)) with characteristic length Lc=0.01 m is quenched in oil with h=20 W/(m^2*K). Compute the Biot number and state whether lumped capacitance is valid.",
       "source": "Biot number validity check, standard drill",
-      "answer": { "value": 0.004, "unit": null, "tolerance_pct": 2 },
+      "answer": {
+        "value": 0.004,
+        "unit": null,
+        "tolerance_pct": 2
+      },
       "solution": "Bi = h*Lc/k = 20*0.01/50 = 0.004. Since Bi << 0.1, lumped capacitance (spatially uniform temperature within the sphere at any instant) is an excellent approximation here."
     },
     {
@@ -116,12 +133,12 @@
       "prompt": "A student computes Bi=0.25 for a transient conduction problem and then tries to solve for the object's temperature directly from the Bi value alone. What is the correct role of the Biot number here?",
       "source": "Biot number as a diagnostic check, procedural discipline",
       "options": [
-        "Bi is a diagnostic check that tells you WHICH SOLUTION METHOD to use (lumped capacitance vs. a spatially resolved method); it isn't solved for temperature directly",
+        "Bi only matters for steady-state problems, not transient ones",
         "Bi can always be substituted directly into a formula to get the object's temperature at any time",
         "Bi=0.25 means the object is at exactly 25% of its way to thermal equilibrium",
-        "Bi only matters for steady-state problems, not transient ones"
+        "Bi is a diagnostic check that tells you WHICH SOLUTION METHOD to use (lumped capacitance vs. a spatially resolved method); it isn't solved for temperature directly"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "The Biot number is a diagnostic ratio (internal conduction resistance vs. surface convection resistance) used to decide whether the simpler lumped-capacitance model applies (Bi<0.1) or a spatially resolved method (Heisler charts, PDE solution) is needed (Bi>0.1) -- it is not itself a variable to solve for temperature, and has no percentage-progress interpretation."
     },
     {
@@ -141,12 +158,12 @@
       "prompt": "A hot pipe loses heat to still room air purely because the warmed air near the pipe becomes less dense and rises. Which type of convection is this, and which dimensionless groups set h?",
       "source": "forced vs natural convection classification",
       "options": [
-        "Natural (free) convection; h correlates via Nu=f(Gr,Pr)",
-        "Forced convection; h correlates via Nu=f(Re,Pr)",
         "Natural convection; h correlates via Nu=f(Re,Pr)",
-        "Neither -- radiation dominates whenever there is no fan"
+        "Natural (free) convection; h correlates via Nu=f(Gr,Pr)",
+        "Neither -- radiation dominates whenever there is no fan",
+        "Forced convection; h correlates via Nu=f(Re,Pr)"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "Buoyancy from the temperature-induced density difference (not an external fan or pump) drives this flow, making it natural (free) convection, correlated via the Grashof and Prandtl numbers (Nu=f(Gr,Pr)) rather than Reynolds number, since there is no externally imposed velocity."
     },
     {
@@ -157,12 +174,12 @@
       "prompt": "The same air is blown over a flat plate at 2 m/s and then at 8 m/s. A student expects the same value of h in both cases 'since it's the same fluid.' What's wrong with that expectation?",
       "source": "h is not a fluid property, misconception-targeted",
       "options": [
-        "h depends on velocity (through Re) and geometry, not just the fluid, so changing velocity changes h even with the same fluid",
-        "The expectation is correct; h is a fixed property of air",
+        "h would only change if the plate material changed",
         "h only depends on temperature, not velocity",
-        "h would only change if the plate material changed"
+        "The expectation is correct; h is a fixed property of air",
+        "h depends on velocity (through Re) and geometry, not just the fluid, so changing velocity changes h even with the same fluid"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "The convective heat-transfer coefficient h is an empirically correlated, flow-and-geometry-dependent parameter (Nu=f(Re,Pr) for forced convection), not a tabulated material constant like conductivity -- changing velocity changes Re and therefore h, even though the fluid itself is unchanged."
     },
     {
@@ -172,7 +189,11 @@
       "difficulty": 3,
       "prompt": "Air (rho=1.2 kg/m^3, mu=1.8e-5 Pa*s, k=0.026 W/(m*K), Pr=0.71) flows at 5 m/s over a flat plate. Using the laminar correlation Nu=0.664*Re^0.5*Pr^(1/3), find h at x=0.3 m from the leading edge.",
       "source": "flat-plate laminar convection correlation, Incropera style",
-      "answer": { "value": 16.2, "unit": "W/(m^2*K)", "tolerance_pct": 3 },
+      "answer": {
+        "value": 16.2,
+        "unit": "W/(m^2*K)",
+        "tolerance_pct": 3
+      },
       "solution": "Re_x = rho*v*x/mu = 1.2*5*0.3/1.8e-5 = 1.8/1.8e-5 = 100,000. Nu = 0.664*(100,000)^0.5*(0.71)^(1/3) = 0.664*316.23*0.8926 = 187.3. h = Nu*k/x = 187.3*0.026/0.3 = 16.23 W/(m^2*K)."
     },
     {
@@ -191,7 +212,11 @@
       "difficulty": 2,
       "prompt": "A small object (emissivity 0.9, area 0.3 m^2, surface temperature 500 K) radiates to large surroundings acting as a blackbody enclosure at 300 K. Find the net radiative heat transfer rate.",
       "source": "Stefan-Boltzmann law, small-object-in-large-enclosure",
-      "answer": { "value": 832.8, "unit": "W", "tolerance_pct": 2 },
+      "answer": {
+        "value": 832.8,
+        "unit": "W",
+        "tolerance_pct": 2
+      },
       "solution": "Q = eps*sigma*A*(Ts^4 - Tsurr^4) = 0.9*5.67e-8*0.3*(500^4-300^4) = 0.9*5.67e-8*0.3*(6.25e10-8.1e9) = 0.9*5.67e-8*0.3*5.44e10 = 832.8 W."
     },
     {
@@ -203,9 +228,9 @@
       "source": "absolute-temperature requirement, radiation calculation error",
       "options": [
         "The Stefan-Boltzmann law requires absolute temperature (Kelvin); using Celsius directly gives a badly wrong answer because of the T^4 dependence",
+        "The error only matters if the temperature difference exceeds 500 degrees",
         "Nothing is wrong -- Celsius and Kelvin give the same answer since it's a temperature difference",
-        "The formula only works in Fahrenheit for English-unit problems",
-        "The error only matters if the temperature difference exceeds 500 degrees"
+        "The formula only works in Fahrenheit for English-unit problems"
       ],
       "correct_index": 0,
       "explanation": "Radiative heat transfer depends on ABSOLUTE temperature raised to the fourth power, not on temperature differences (unlike conduction/convection, which are linear in deltaT and so are insensitive to the Celsius/Kelvin offset). Using Celsius directly in T^4 produces a drastically wrong result because 0 degC is not the true zero-point of thermal radiation."
@@ -226,7 +251,11 @@
       "difficulty": 2,
       "prompt": "A counterflow heat exchanger has hot fluid entering at 100 degC, leaving at 60 degC; cold fluid entering at 25 degC, leaving at 40 degC. Required duty is 150 kW, U=400 W/(m^2*K). Find the required area.",
       "source": "counterflow LMTD sizing, standard drill",
-      "answer": { "value": 8.08, "unit": "m^2", "tolerance_pct": 2 },
+      "answer": {
+        "value": 8.08,
+        "unit": "m^2",
+        "tolerance_pct": 2
+      },
       "solution": "deltaT1 = 100-40 = 60; deltaT2 = 60-25 = 35. LMTD = (60-35)/ln(60/35) = 25/0.5390 = 46.38 degC. A = Q/(U*LMTD) = 150,000/(400*46.38) = 150,000/18,552 = 8.08 m^2."
     },
     {
@@ -239,8 +268,8 @@
       "options": [
         "Hot inlet paired with cold outlet (they are at the same physical end of a counterflow exchanger)",
         "Hot inlet paired with cold inlet",
-        "Hot outlet paired with cold outlet",
-        "Any pairing gives the same LMTD, since the formula is symmetric"
+        "Any pairing gives the same LMTD, since the formula is symmetric",
+        "Hot outlet paired with cold outlet"
       ],
       "correct_index": 0,
       "explanation": "In counterflow, the two streams move in opposite directions, so the hot inlet is physically at the SAME end as the cold outlet (and hot outlet is at the same end as cold inlet) -- pairing hot-inlet-with-cold-inlet (as if parallel-flow) uses the wrong physical end-temperature difference and gives an incorrect LMTD."
@@ -261,7 +290,11 @@
       "difficulty": 3,
       "prompt": "A counterflow exchanger has C_min=1500 W/K, C_max=3000 W/K, UA=2000 W/K. Hot fluid enters at 180 degC, cold fluid enters at 25 degC. Find the actual heat duty Q.",
       "source": "effectiveness-NTU rating problem, standard drill",
-      "answer": { "value": 152200, "unit": "W", "tolerance_pct": 2 },
+      "answer": {
+        "value": 152200,
+        "unit": "W",
+        "tolerance_pct": 2
+      },
       "solution": "Cr = Cmin/Cmax = 1500/3000 = 0.5. NTU = UA/Cmin = 2000/1500 = 1.333. Counterflow effectiveness: eps = (1-exp(-NTU*(1-Cr)))/(1-Cr*exp(-NTU*(1-Cr))) = (1-exp(-0.667))/(1-0.5*exp(-0.667)) = (1-0.5134)/(1-0.2567) = 0.4866/0.7433 = 0.6546. Qmax = Cmin*(180-25) = 1500*155 = 232,500 W. Q = eps*Qmax = 0.6546*232,500 = 152,200 W."
     },
     {
@@ -272,12 +305,12 @@
       "prompt": "An engineer needs to predict the heat duty of an EXISTING exchanger (known UA, known inlet temperatures, but both outlet temperatures unknown). Which method avoids iteration?",
       "source": "method-selection discipline, LMTD vs effectiveness-NTU",
       "options": [
+        "Both methods require identical iteration in this case",
         "Effectiveness-NTU, since it computes Q directly from NTU and Cr without needing outlet temperatures as inputs",
         "LMTD, applied directly with the given inlet temperatures alone",
-        "Neither method can be used without at least one outlet temperature",
-        "Both methods require identical iteration in this case"
+        "Neither method can be used without at least one outlet temperature"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "LMTD requires all four terminal temperatures to compute the log-mean driving force -- with both outlets unknown, using LMTD would require guessing outlet temperatures and iterating. Effectiveness-NTU sidesteps this entirely: NTU and Cr are computed from known quantities (UA, capacity rates), effectiveness follows from a correlation, and Q = eps*Qmax follows directly with no outlet temperature needed as an input."
     },
     {
@@ -296,7 +329,11 @@
       "difficulty": 3,
       "prompt": "An aluminum fin (k=200 W/(m*K)), thickness 3 mm, length 25 mm, extends from a base at 80 degC into air at 20 degC with h=15 W/(m^2*K). Find the fin's heat transfer rate per meter of width.",
       "source": "rectangular fin heat rate, Incropera 7e style",
-      "answer": { "value": 47.1, "unit": "W", "tolerance_pct": 3 },
+      "answer": {
+        "value": 47.1,
+        "unit": "W",
+        "tolerance_pct": 3
+      },
       "solution": "m = sqrt(h*2/(k*t)) = sqrt(15*2/(200*0.003)) = sqrt(50) = 7.071 /m. L_c = L+t/2 = 0.025+0.0015 = 0.0265 m. m*Lc = 0.1874. eta = tanh(0.1874)/0.1874 = 0.989. A_fin = 2*Lc*(1 m width) = 0.053 m^2/m. Q = eta*h*A_fin*(80-20) = 0.989*15*0.053*60 = 47.1 W per meter width."
     },
     {
@@ -307,12 +344,12 @@
       "prompt": "A student proposes adding thin steel fins (k~15 W/(m*K)) to a surface submerged in boiling water (h~10,000 W/(m^2*K)), reasoning that fins 'obviously' boost heat transfer the same way they help air-cooled heat sinks. Is this reasoning safe?",
       "source": "fin effectiveness limit, misconception-targeted",
       "options": [
-        "No -- fin effectiveness requires large k relative to h; with low-conductivity steel and very high h, the fin's internal conduction resistance can make it barely better or even worse than no fin",
-        "Yes -- fins always improve heat transfer regardless of h or fin material",
         "Yes, as long as the fin is long enough",
-        "No, because fins cannot be used with liquids at all"
+        "No, because fins cannot be used with liquids at all",
+        "No -- fin effectiveness requires large k relative to h; with low-conductivity steel and very high h, the fin's internal conduction resistance can make it barely better or even worse than no fin",
+        "Yes -- fins always improve heat transfer regardless of h or fin material"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "Fin effectiveness is large only when the fin's conductivity is high relative to the surface's convective coefficient (large k, small h) -- exactly the air-cooled case. In boiling water (very large h) with a comparatively low-conductivity fin material, the fin cannot conduct heat to its tip fast enough to keep pace with the surface's high convective demand, so effectiveness can be poor; this must be checked, not assumed."
     },
     {
@@ -331,7 +368,11 @@
       "difficulty": 1,
       "prompt": "A solute diffuses through a stagnant liquid film of thickness 3 mm with diffusivity 1.5e-9 m^2/s. Concentration is 80 mol/m^3 at one face and 20 mol/m^3 at the other. Find the steady-state flux.",
       "source": "Fick's first law, steady-state film diffusion drill",
-      "answer": { "value": 3.0e-5, "unit": "mol/(m^2*s)", "tolerance_pct": 2 },
+      "answer": {
+        "value": 3e-05,
+        "unit": "mol/(m^2*s)",
+        "tolerance_pct": 2
+      },
       "solution": "N = D*(C1-C2)/L = 1.5e-9*(80-20)/0.003 = 1.5e-9*20,000 = 3.0e-5 mol/(m^2*s)."
     },
     {
@@ -344,8 +385,8 @@
       "options": [
         "No -- Fick's first law carries a negative sign, so flux points opposite the gradient, from high to low concentration (leftward here)",
         "Yes -- flux always follows the direction of increasing concentration",
-        "It depends on the diffusivity's sign",
-        "Flux direction cannot be determined without knowing the diffusing species"
+        "Flux direction cannot be determined without knowing the diffusing species",
+        "It depends on the diffusivity's sign"
       ],
       "correct_index": 0,
       "explanation": "Fick's first law J=-D*dC/dx carries a negative sign because mass diffuses DOWN the concentration gradient, from high to low concentration -- the opposite of the gradient vector's direction (which points toward increasing concentration by definition)."
@@ -366,7 +407,11 @@
       "difficulty": 3,
       "prompt": "Water (rho=1000 kg/m^3, mu=1.0e-3 Pa*s, D=1.2e-9 m^2/s) flows at 0.5 m/s over a flat dissolving surface. Using Sh=0.664*Re^0.5*Sc^(1/3), find the mass-transfer coefficient k_c at x=0.2 m.",
       "source": "flat-plate mass-transfer coefficient, Sherwood correlation analog to Nusselt",
-      "answer": { "value": 1.19e-5, "unit": "m/s", "tolerance_pct": 3 },
+      "answer": {
+        "value": 1.19e-05,
+        "unit": "m/s",
+        "tolerance_pct": 3
+      },
       "solution": "Re = rho*v*x/mu = 1000*0.5*0.2/1.0e-3 = 100,000. Sc = mu/(rho*D) = 1.0e-3/(1000*1.2e-9) = 833.3. Sh = 0.664*(100,000)^0.5*(833.3)^(1/3) = 0.664*316.23*9.415 = 1975.9. k_c = Sh*D/x = 1975.9*1.2e-9/0.2 = 1.186e-5 m/s."
     },
     {
@@ -376,8 +421,13 @@
       "difficulty": 2,
       "prompt": "In the Chilton-Colburn heat-and-mass-transfer analogy, which dimensionless number replaces the Prandtl number when moving from a Nusselt-number correlation (heat) to a Sherwood-number correlation (mass)?",
       "source": "Chilton-Colburn analogy, structural parallel drill",
-      "options": ["Schmidt number", "Grashof number", "Biot number", "Nusselt number"],
-      "correct_index": 0,
+      "options": [
+        "Nusselt number",
+        "Grashof number",
+        "Schmidt number",
+        "Biot number"
+      ],
+      "correct_index": 2,
       "explanation": "The Prandtl number (momentum diffusivity/thermal diffusivity) is replaced by the Schmidt number (momentum diffusivity/mass diffusivity) when moving from heat- to mass-transfer correlations -- both play the same structural role of comparing momentum diffusion to the transported quantity's diffusion, with Reynolds number common to both."
     },
     {
@@ -396,7 +446,11 @@
       "difficulty": 2,
       "prompt": "A gas stream (G_s=8 mol/s inert) with Y_in=0.04 must leave at Y_out=0.004. Pure solvent (L_s=50 mol/s) enters with X_in=0. Find X_out.",
       "source": "absorption column overall mass balance, standard drill",
-      "answer": { "value": 0.00576, "unit": null, "tolerance_pct": 2 },
+      "answer": {
+        "value": 0.00576,
+        "unit": null,
+        "tolerance_pct": 2
+      },
       "solution": "Overall solute balance: G_s*(Y_in-Y_out) = L_s*(X_out-X_in). 8*(0.04-0.004) = 50*(X_out-0). X_out = 8*0.036/50 = 0.288/50 = 0.00576."
     },
     {
@@ -407,12 +461,12 @@
       "prompt": "Why do you need BOTH the operating line and the equilibrium line to determine the number of stages in an absorption column, rather than the operating line alone?",
       "source": "operating line vs equilibrium line, conceptual distinction",
       "options": [
-        "The operating line encodes only the mass balance (what compositions are consistent with the flow rates); the equilibrium line encodes the physics of how much solute the phases can exchange at each stage -- stages are counted by stepping between the two",
         "The operating line alone is always sufficient; the equilibrium line is only needed as a visual reference",
         "The equilibrium line replaces the mass balance entirely once VLE data is available",
+        "The operating line encodes only the mass balance (what compositions are consistent with the flow rates); the equilibrium line encodes the physics of how much solute the phases can exchange at each stage -- stages are counted by stepping between the two",
         "Both lines contain identical information, so either alone would suffice"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "The operating line comes purely from an overall mass balance and says nothing about equilibrium physics; the equilibrium line comes from VLE data and says nothing about the column's flow rates. Counting stages requires stepping the 'staircase' between the two lines precisely because they carry genuinely different, complementary information."
     },
     {
@@ -431,7 +485,11 @@
       "difficulty": 2,
       "prompt": "Air at 30 degC and 50% relative humidity is at atmospheric pressure (101.325 kPa). The saturation vapor pressure of water at 30 degC is 4.246 kPa. Find the humidity ratio Y.",
       "source": "psychrometric humidity ratio calculation, standard drill",
-      "answer": { "value": 0.01331, "unit": "kg/kg", "tolerance_pct": 2 },
+      "answer": {
+        "value": 0.01331,
+        "unit": "kg/kg",
+        "tolerance_pct": 2
+      },
       "solution": "p_v = RH*p_sat = 0.50*4.246 = 2.123 kPa. Y = 0.622*p_v/(P-p_v) = 0.622*2.123/(101.325-2.123) = 1.321/99.202 = 0.01331 kg water/kg dry air."
     },
     {
@@ -442,12 +500,12 @@
       "prompt": "A student looks up the adiabatic saturation temperature formula to find the wet-bulb temperature for a volatile organic solvent evaporating into air, assuming the two temperatures must be identical 'like for water.' Is this assumption safe?",
       "source": "Lewis number assumption limitation, misconception-targeted",
       "options": [
-        "No -- wet-bulb and adiabatic saturation temperatures coincide only when the Lewis number (Le=alpha/D) is close to 1, which happens to be true for air-water but not necessarily for other vapor-gas systems",
-        "Yes -- these two temperatures are identical by definition for any evaporating liquid into any gas",
         "Yes, as long as the gas is air, regardless of the liquid",
-        "No -- the two temperatures are never numerically close for any system"
+        "No -- the two temperatures are never numerically close for any system",
+        "Yes -- these two temperatures are identical by definition for any evaporating liquid into any gas",
+        "No -- wet-bulb and adiabatic saturation temperatures coincide only when the Lewis number (Le=alpha/D) is close to 1, which happens to be true for air-water but not necessarily for other vapor-gas systems"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "Wet-bulb temperature (a measured wick steady state) and adiabatic saturation temperature (a theoretical adiabatic-contact endpoint) are conceptually different quantities that coincide numerically only when Le~1, a coincidence specific to air-water; for a different vapor-gas pair with Le far from 1, the two temperatures can diverge meaningfully."
     },
     {
@@ -466,7 +524,11 @@
       "difficulty": 2,
       "prompt": "A solid (50 kg dry basis, drying area 2.0 m^2) dries at a constant rate of 1.2e-3 kg/(m^2*s) from a moisture content of 0.35 to 0.15 kg water/kg dry solid (both above the critical moisture content). Find the drying time for this constant-rate period.",
       "source": "constant-rate period drying time, standard drill",
-      "answer": { "value": 4167, "unit": "s", "tolerance_pct": 2 },
+      "answer": {
+        "value": 4167,
+        "unit": "s",
+        "tolerance_pct": 2
+      },
       "solution": "t = (solid mass)*(X1-X2)/(area*rate) = 50*(0.35-0.15)/(2.0*1.2e-3) = 50*0.20/(2.4e-3) = 10/2.4e-3 = 4166.7 s (about 69.4 minutes)."
     },
     {
@@ -476,7 +538,12 @@
       "difficulty": 1,
       "prompt": "A wet solid's surface stays saturated with unbound moisture while it dries, and the drying rate is controlled by heat/mass transfer through the surrounding air film. Which period is this?",
       "source": "drying curve period classification, standard drill",
-      "options": ["Constant-rate period", "Falling-rate period", "Neither -- this describes equilibrium moisture content", "This describes bound-water diffusion, which never has a defined rate"],
+      "options": [
+        "Constant-rate period",
+        "This describes bound-water diffusion, which never has a defined rate",
+        "Neither -- this describes equilibrium moisture content",
+        "Falling-rate period"
+      ],
       "correct_index": 0,
       "explanation": "A saturated surface with surface-evaporation-controlled (external air-film) drying is the defining condition of the constant-rate period. The falling-rate period begins once moisture content drops below the critical value and internal diffusion to the surface becomes limiting instead."
     },
@@ -522,12 +589,12 @@
       "prompt": "A solid's surface loses heat to moving air at a known bulk temperature via a known convective coefficient h. What type of boundary condition is this?",
       "source": "boundary condition classification, convective/Robin condition",
       "options": [
-        "Convective (Robin) condition: -k*dT/dx|surface = h*(T_surface - T_infinity)",
         "Dirichlet condition: T_surface is directly specified",
+        "No boundary condition is needed if h is known",
         "Neumann condition: the surface flux is specified as a fixed known number",
-        "No boundary condition is needed if h is known"
+        "Convective (Robin) condition: -k*dT/dx|surface = h*(T_surface - T_infinity)"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "A convective surface relates the conductive flux AT the surface to the DRIVING DIFFERENCE between surface and bulk fluid temperature via h -- this mixed (Robin) condition is neither a directly specified temperature (Dirichlet) nor a directly specified fixed flux value (Neumann), since the flux itself depends on the (unknown, to be solved for) surface temperature."
     },
     {
@@ -547,12 +614,12 @@
       "prompt": "Which situation is most likely to cause the Chilton-Colburn heat-and-mass-transfer analogy to break down?",
       "source": "heat-and-mass-transfer analogy breakdown conditions",
       "options": [
-        "A chemical reaction consuming the diffusing species right at the surface, altering the mass-transfer boundary condition in a way with no direct heat-transfer counterpart",
         "The fluid being water instead of air",
+        "A chemical reaction consuming the diffusing species right at the surface, altering the mass-transfer boundary condition in a way with no direct heat-transfer counterpart",
         "The flow being laminar instead of turbulent",
         "The Reynolds number being unusually large"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "A surface reaction changes the species boundary condition (e.g. introducing a Damkohler-number-dependent effective flux) in a way that has no parallel on the heat-transfer side unless an analogous heat generation/consumption occurs -- this breaks the assumed structural symmetry between the two problems. Fluid choice, flow regime, and Re alone don't inherently break the analogy; they just shift where the correlation applies."
     },
     {
@@ -571,7 +638,11 @@
       "difficulty": 3,
       "prompt": "A process cools 3 kg/s of oil (cp=4180 J/(kg*K)) from 95 degC to 45 degC using cooling water entering at 15 degC and leaving at 40 degC, counterflow, U=600 W/(m^2*K). Find the required heat-exchanger area.",
       "source": "heat exchanger sizing from a process duty, design-direction drill",
-      "answer": { "value": 25.3, "unit": "m^2", "tolerance_pct": 3 },
+      "answer": {
+        "value": 25.3,
+        "unit": "m^2",
+        "tolerance_pct": 3
+      },
       "solution": "Q = m*cp*deltaT = 3*4180*(95-45) = 3*4180*50 = 627,000 W. deltaT1 = 95-40 = 55; deltaT2 = 45-15 = 30. LMTD = (55-30)/ln(55/30) = 25/0.6061 = 41.24 degC. A = Q/(U*LMTD) = 627,000/(600*41.24) = 627,000/24,747 = 25.34 m^2."
     },
     {
@@ -582,12 +653,12 @@
       "prompt": "Real industrial equipment-sizing problems are almost always posed working backward from a required duty to a sizing variable (area, column height). Why is this direction different from typical early homework problems?",
       "source": "design vs analysis problem direction, engineering-practice conceptual",
       "options": [
-        "Early homework often gives you the equipment's size and asks you to predict its performance (a rating/analysis problem); real design starts from a required specification and solves for the size needed to achieve it",
-        "There is no real difference; both directions require identical calculation steps",
         "Design problems never require LMTD or effectiveness-NTU, only rating problems do",
+        "There is no real difference; both directions require identical calculation steps",
+        "Early homework often gives you the equipment's size and asks you to predict its performance (a rating/analysis problem); real design starts from a required specification and solves for the size needed to achieve it",
         "Design-direction problems can always be solved with less information than rating problems"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "Analysis/rating problems (given equipment, find performance) and design/sizing problems (given a required performance target, find the equipment size) use the same underlying relationships but solve for different unknowns -- design problems in industry are posed in the sizing direction because the equipment doesn't exist yet and must be specified to meet a process requirement."
     },
     {
@@ -606,8 +677,13 @@
       "difficulty": 1,
       "prompt": "A lab technique measures thermal conductivity by driving a known heat flux through a flat sample and measuring the resulting temperature drop across it, with guard heaters preventing edge losses. What is this technique?",
       "source": "guarded hot-plate method, standard lab-instrumentation drill",
-      "options": ["Guarded hot-plate apparatus", "Wetted-wick evaporation experiment", "Thermocouple array on a heated rod in forced air", "Psychrometric chart reading"],
-      "correct_index": 0,
+      "options": [
+        "Thermocouple array on a heated rod in forced air",
+        "Guarded hot-plate apparatus",
+        "Psychrometric chart reading",
+        "Wetted-wick evaporation experiment"
+      ],
+      "correct_index": 1,
       "explanation": "A guarded hot-plate apparatus is specifically designed to measure thermal conductivity by ensuring 1-D heat flow through a flat sample (guard heaters eliminate lateral losses), then computing k from the known flux, sample thickness, and measured temperature drop via Fourier's law. The other options measure different quantities (mass-transfer coefficient, convective heat-transfer coefficient, and humid-air state, respectively)."
     },
     {
@@ -617,8 +693,13 @@
       "difficulty": 1,
       "prompt": "A lab experiment measures the rate at which a known liquid evaporates from a saturated wick into a flowing air stream to determine a mass-transfer coefficient. What kind of experiment is this?",
       "source": "wetted-wick mass-transfer coefficient measurement",
-      "options": ["Wetted-wick evaporation experiment", "Guarded hot-plate apparatus", "Radiation exchange experiment", "Manometer-based pressure-drop measurement"],
-      "correct_index": 0,
+      "options": [
+        "Manometer-based pressure-drop measurement",
+        "Radiation exchange experiment",
+        "Guarded hot-plate apparatus",
+        "Wetted-wick evaporation experiment"
+      ],
+      "correct_index": 3,
       "explanation": "A wetted-wick evaporation experiment directly yields a mass-transfer coefficient from the measured evaporation rate, air velocity, and the driving concentration difference between the saturated wick surface and the bulk air -- this is the mass-transfer analog of using a heated surface to measure a convective heat-transfer coefficient."
     },
     {
@@ -638,12 +719,12 @@
       "prompt": "A quenching problem yields Bi=3.5. What does this indicate about the appropriate solution method?",
       "source": "Biot number regime, large-Bi case",
       "options": [
-        "Lumped capacitance is NOT valid; significant temperature gradients exist within the solid, requiring a spatially resolved method",
-        "Lumped capacitance is valid, since Bi is a finite number",
         "Bi=3.5 means the object has already reached thermal equilibrium",
-        "Bi values above 1 indicate a calculation error, since Bi must always be below 1"
+        "Bi values above 1 indicate a calculation error, since Bi must always be below 1",
+        "Lumped capacitance is valid, since Bi is a finite number",
+        "Lumped capacitance is NOT valid; significant temperature gradients exist within the solid, requiring a spatially resolved method"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "Bi>0.1 (here, Bi=3.5, well above the threshold) means internal conduction resistance is comparable to or larger than surface convection resistance, so temperature is NOT spatially uniform within the solid -- a spatially resolved method (Heisler charts or a full PDE solution) is required instead of lumped capacitance. Bi has no upper bound of 1; large values are physically valid and simply signal a different regime."
     },
     {
@@ -654,12 +735,12 @@
       "prompt": "As a fin's length L is made very long (m*L >> 1), what does the fin efficiency formula eta = tanh(m*L)/(m*L) approach, and what does this mean physically?",
       "source": "long-fin limiting behavior, fin efficiency asymptote",
       "options": [
-        "eta approaches 1/(m*L), approaching zero -- the far end of a very long fin runs near ambient temperature and contributes little extra heat transfer per unit added length",
+        "eta approaches m*L, growing without bound",
         "eta approaches 1, since more fin length always means more heat transfer at full efficiency",
         "eta becomes undefined for long fins",
-        "eta approaches m*L, growing without bound"
+        "eta approaches 1/(m*L), approaching zero -- the far end of a very long fin runs near ambient temperature and contributes little extra heat transfer per unit added length"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "Since tanh(mL) approaches 1 as mL grows large, eta=tanh(mL)/(mL) approaches 1/(mL), which shrinks toward zero -- physically, the far portions of a very long fin have already cooled to nearly ambient temperature and contribute negligible additional heat transfer, so adding more length past a certain point gives rapidly diminishing returns even though total heat transfer keeps rising slowly."
     },
     {
@@ -671,9 +752,9 @@
       "source": "overall heat transfer coefficient composition, conceptual",
       "options": [
         "Convective resistances on both fluid sides plus the conductive resistance of the wall separating them (all combined in series, analogous to the multilayer-conduction resistance network)",
-        "Only the wall's conductive resistance",
         "Only the two convective resistances, ignoring the wall entirely",
-        "U is an independently measured single resistance unrelated to the individual h and k values"
+        "U is an independently measured single resistance unrelated to the individual h and k values",
+        "Only the wall's conductive resistance"
       ],
       "correct_index": 0,
       "explanation": "U is built from the same series-resistance-network logic as the steady-state-multilayer-conduction KC: 1/(U*A) = 1/(h_hot*A) + R_wall + 1/(h_cold*A), combining both fluid-side convective resistances and the wall's conductive resistance -- omitting any one of these three would understate the total resistance and overstate U."
@@ -687,9 +768,9 @@
       "source": "emissivity effect on radiative exchange",
       "options": [
         "The eps=0.9 surface, since net radiative exchange is directly proportional to emissivity",
-        "The eps=0.3 surface, since lower emissivity means more reflection and thus more net radiation",
+        "Emissivity has no effect on net radiative exchange, only on surface color",
         "Both radiate identically, since emissivity only affects absorption, not emission",
-        "Emissivity has no effect on net radiative exchange, only on surface color"
+        "The eps=0.3 surface, since lower emissivity means more reflection and thus more net radiation"
       ],
       "correct_index": 0,
       "explanation": "Net radiative exchange Q=eps*sigma*A*(Ts^4-Tsurr^4) is directly proportional to emissivity, so the eps=0.9 surface (closer to an ideal blackbody emitter) radiates three times more net heat than the eps=0.3 surface at the same temperature and geometry."
@@ -703,9 +784,9 @@
       "source": "diffusivity order-of-magnitude and unit-consistency check",
       "options": [
         "cm^2/s (typical liquid-phase diffusivities are on the order of 1e-5 cm^2/s)",
+        "kg/(m*s) (this is a viscosity unit, not a diffusivity unit)",
         "m^2/s (this would be a diffusivity roughly 10,000x larger than typical liquid values)",
-        "mol/(m^2*s) (this is a flux unit, not a diffusivity unit)",
-        "kg/(m*s) (this is a viscosity unit, not a diffusivity unit)"
+        "mol/(m^2*s) (this is a flux unit, not a diffusivity unit)"
       ],
       "correct_index": 0,
       "explanation": "Typical liquid-phase molecular diffusivities are of order 1e-5 cm^2/s (equivalently ~1e-9 m^2/s); the value 1.5e-5 is only physically sensible as cm^2/s here, since 1.5e-5 m^2/s would be an implausibly large liquid diffusivity (closer to a gas-phase value). Recognizing dimensionally plausible ranges is a useful sanity check independent of formal unit conversion."
@@ -718,12 +799,12 @@
       "prompt": "Which pairing correctly matches the analogous roles across the heat- and mass-transfer convection correlations?",
       "source": "Nusselt/Sherwood analogy, structural pairing drill",
       "options": [
-        "Nu <-> Sh (both dimensionless transfer coefficients); Pr <-> Sc (both diffusivity-ratio groups); Re is shared by both",
+        "Pr <-> Re; Sc <-> Nu",
         "Nu <-> Re; Sh <-> Pr; Sc is unused in mass transfer",
-        "Nu and Sh are unrelated dimensionless groups with no shared physical basis",
-        "Pr <-> Re; Sc <-> Nu"
+        "Nu <-> Sh (both dimensionless transfer coefficients); Pr <-> Sc (both diffusivity-ratio groups); Re is shared by both",
+        "Nu and Sh are unrelated dimensionless groups with no shared physical basis"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "The Chilton-Colburn analogy pairs Nu (dimensionless h) with Sh (dimensionless k_c), and Pr (momentum/thermal diffusivity ratio) with Sc (momentum/mass diffusivity ratio) -- Reynolds number, built from the shared velocity field, appears identically in both Nu=f(Re,Pr) and Sh=f(Re,Sc)."
     },
     {
@@ -736,8 +817,8 @@
       "options": [
         "Because the inert gas and solvent flow rates (G_s, L_s) stay constant in ratio units even as the total gas/liquid flow rates change along the column due to solute transfer, making the operating line exactly straight",
         "Mole-ratio units are only a historical convention with no calculation advantage",
-        "Mole fractions cannot be used in absorption calculations at all",
-        "Mole-ratio units are required only when the solute concentration exceeds 50%"
+        "Mole-ratio units are required only when the solute concentration exceeds 50%",
+        "Mole fractions cannot be used in absorption calculations at all"
       ],
       "correct_index": 0,
       "explanation": "As solute transfers from gas to liquid along the column, the TOTAL gas and liquid flow rates change, but the INERT gas flow G_s and solvent flow L_s (on a solute-free basis) remain constant -- using ratio units built on these constant quantities keeps the operating-line mass balance exactly linear, which is why absorption problems are set up this way rather than with mole fractions on a total-flow basis."
@@ -750,12 +831,12 @@
       "prompt": "Two air samples have the same relative humidity (60%) but different dry-bulb temperatures (10 degC and 35 degC). Do they have the same humidity ratio Y?",
       "source": "relative humidity vs humidity ratio distinction",
       "options": [
-        "No -- saturation vapor pressure rises sharply with temperature, so the warmer sample has a much higher Y at the same RH",
+        "No -- colder air always has higher Y than warmer air at the same RH",
         "Yes -- equal RH always means equal Y regardless of temperature",
         "Yes, but only if both samples are at the same total pressure",
-        "No -- colder air always has higher Y than warmer air at the same RH"
+        "No -- saturation vapor pressure rises sharply with temperature, so the warmer sample has a much higher Y at the same RH"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "Y depends on the actual partial pressure of water vapor (p_v=RH*p_sat), and p_sat rises sharply (roughly exponentially) with temperature -- so at the same RH, warmer air holds far more water vapor by mass than colder air. Equal RH does NOT imply equal humidity ratio."
     },
     {
@@ -767,8 +848,8 @@
       "source": "critical moisture content physical origin",
       "options": [
         "The point where the rate of internal moisture migration to the surface can no longer keep the surface fully saturated with unbound water",
-        "A fixed universal value (the same for every material) set by the drying air's temperature alone",
         "The point where all bound and unbound water has been completely removed",
+        "A fixed universal value (the same for every material) set by the drying air's temperature alone",
         "The point where the drying air first becomes saturated"
       ],
       "correct_index": 0,
@@ -782,12 +863,12 @@
       "prompt": "In the general shell-balance template (accumulation = in - out + generation), which transport problem specifically requires a nonzero generation term?",
       "source": "generation term applicability, conceptual",
       "options": [
-        "A slab with internal heat generation from, e.g., an embedded electrical resistance heater or a nuclear/chemical reaction",
-        "Simple steady conduction through a wall with no internal heat sources",
         "Any problem at all, since the generation term is always nonzero by convention",
-        "Only mass-transfer problems can have a generation term; heat-transfer problems cannot"
+        "Only mass-transfer problems can have a generation term; heat-transfer problems cannot",
+        "A slab with internal heat generation from, e.g., an embedded electrical resistance heater or a nuclear/chemical reaction",
+        "Simple steady conduction through a wall with no internal heat sources"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "The generation term applies whenever the conserved quantity is created (or destroyed) WITHIN the control volume itself -- an embedded heater or an exothermic/endothermic reaction are classic examples for heat, and a homogeneous chemical reaction is the mass-transfer analog. Simple conduction with no internal source correctly has generation=0, and generation terms are equally valid (and equally optional) for either heat or mass transport."
     },
     {
@@ -798,12 +879,12 @@
       "prompt": "A solid slab is heated identically and symmetrically from both faces. At the slab's midplane, what boundary/matching condition applies by symmetry?",
       "source": "symmetry boundary condition, common simplification",
       "options": [
+        "T must equal the surface temperature exactly at the midplane",
         "dT/dx=0 at the midplane (a symmetry condition, mathematically identical in form to an insulated/Neumann-zero condition)",
-        "T=0 at the midplane",
         "The midplane requires no boundary condition at all",
-        "T must equal the surface temperature exactly at the midplane"
+        "T=0 at the midplane"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "By symmetry, heat flowing toward the midplane from each side must be equal and opposite, so no net heat crosses the midplane -- mathematically this gives dT/dx=0 there, the same FORM as an insulated (Neumann-zero) boundary condition, even though no physical insulation is present; it is a common trick to reduce a symmetric full-slab problem to a half-slab problem with one true boundary and one symmetry 'boundary.'"
     },
     {
@@ -815,9 +896,9 @@
       "source": "Colburn j-factor practical application",
       "options": [
         "A single friction-factor-based correlation (from momentum transfer, which is often easier to measure) can be used to ESTIMATE unmeasured heat- or mass-transfer coefficients for the same geometry and flow, when direct correlations aren't available",
+        "j-factors are purely a historical notation with no predictive value",
         "j-factors eliminate the need for any dimensionless groups altogether",
-        "j-factors apply only to laminar flow and have no turbulent-flow use",
-        "j-factors are purely a historical notation with no predictive value"
+        "j-factors apply only to laminar flow and have no turbulent-flow use"
       ],
       "correct_index": 0,
       "explanation": "Because the Chilton-Colburn analogy links f (friction factor, from momentum transfer) to j_H (heat) and j_M (mass) through the same Reynolds-number dependence, a well-characterized friction-factor correlation for a given geometry can be leveraged to estimate an unmeasured heat- or mass-transfer coefficient for that same geometry -- valuable when direct heat/mass-transfer data is unavailable but pressure-drop data is."
@@ -830,12 +911,12 @@
       "prompt": "An engineer deliberately sizes a heat exchanger's area 20% larger than the minimum calculated requirement. What is the most likely design rationale?",
       "source": "equipment sizing margin, practical design judgment",
       "options": [
-        "To provide margin for fouling (which reduces U over time), measurement/property uncertainty, and future capacity changes",
-        "Larger area always reduces capital cost, so this is purely cost-driven",
+        "Oversizing has no engineering justification and is purely a safety-factor superstition",
         "The minimum calculated area is always wrong by exactly 20%",
-        "Oversizing has no engineering justification and is purely a safety-factor superstition"
+        "To provide margin for fouling (which reduces U over time), measurement/property uncertainty, and future capacity changes",
+        "Larger area always reduces capital cost, so this is purely cost-driven"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "Real exchangers foul over time (scale, deposits reduce U below its clean-surface design value), and property/flow-rate estimates carry uncertainty -- a deliberate design margin (not a fixed 20% rule, but a considered choice) protects against underperformance from these real-world effects. Larger area is a capital COST increase, not a decrease, so cost alone would push toward minimum sizing, not oversizing."
     },
     {
@@ -846,12 +927,12 @@
       "prompt": "An exchanger already operates at NTU=4 with effectiveness eps=0.85 (for some Cr). Doubling the area (roughly doubling NTU to 8) is proposed to increase performance. What should be expected?",
       "source": "diminishing returns at high NTU, effectiveness-NTU behavior",
       "options": [
-        "Effectiveness will increase only slightly, since eps asymptotically approaches its maximum value as NTU grows large -- doubling area yields sharply diminishing performance gains",
-        "Effectiveness will exactly double, to 1.7 (impossible, but illustrating the expected proportional gain)",
         "Effectiveness is independent of NTU once NTU exceeds 1",
-        "Doubling NTU always doubles the heat duty Q regardless of Cr"
+        "Doubling NTU always doubles the heat duty Q regardless of Cr",
+        "Effectiveness will increase only slightly, since eps asymptotically approaches its maximum value as NTU grows large -- doubling area yields sharply diminishing performance gains",
+        "Effectiveness will exactly double, to 1.7 (impossible, but illustrating the expected proportional gain)"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "Effectiveness-NTU relationships are asymptotic: eps rises steeply at low NTU but flattens out as NTU grows large, approaching an upper limit set by Cr (and equal to 1 only for the special Cr=0 case). Since eps=0.85 already sits well up this curve, doubling NTU to 8 buys only a small additional increase in eps -- a classic diminishing-returns pattern also seen in the minimum-reflux/stages tradeoff in CHEE 351."
     },
     {
@@ -870,7 +951,11 @@
       "difficulty": 3,
       "prompt": "A slab has a measured steady-state temperature profile T(x) = 100 - 500*x^2 (T in degC, x in m) and conductivity k=10 W/(m*K). Using the steady 1-D heat-diffusion equation with generation, d/dx(k*dT/dx)+g=0, find the (constant) volumetric generation rate g.",
       "source": "inverse problem: generation rate from a known temperature profile",
-      "answer": { "value": 10000, "unit": "W/m^3", "tolerance_pct": 1 },
+      "answer": {
+        "value": 10000,
+        "unit": "W/m^3",
+        "tolerance_pct": 1
+      },
       "solution": "dT/dx = -1000*x. k*dT/dx = 10*(-1000*x) = -10,000*x. d/dx(k*dT/dx) = -10,000 (a constant, independent of x). From d/dx(k*dT/dx) + g = 0: g = -(-10,000) = 10,000 W/m^3 -- a spatially uniform generation rate, consistent with the profile's constant second derivative (a parabola in x, the classic signature of uniform generation in a slab)."
     },
     {
@@ -881,12 +966,12 @@
       "prompt": "At a solid-liquid interface where a slightly soluble solid dissolves into a liquid, the liquid concentration right at the interface is assumed to equal the solid's saturation concentration C_sat at all times. What type of boundary condition is this?",
       "source": "Dirichlet condition in mass transfer, solubility-limited interface",
       "options": [
-        "Dirichlet condition: the concentration value itself is fixed at the boundary (C=C_sat), the mass-transfer analog of a fixed-temperature boundary",
         "Neumann condition, since a flux is implied by dissolution",
         "Robin condition, since it involves a rate process",
+        "Dirichlet condition: the concentration value itself is fixed at the boundary (C=C_sat), the mass-transfer analog of a fixed-temperature boundary",
         "No boundary condition is needed since dissolution is a bulk-phase phenomenon"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "Specifying the VALUE of concentration directly at the interface (C=C_sat, regardless of what flux that produces) is a Dirichlet condition -- the direct mass-transfer analog of specifying a fixed surface temperature in a conduction problem, such as a surface held in an ice bath."
     },
     {
@@ -896,7 +981,11 @@
       "difficulty": 3,
       "prompt": "Air (rho=1.15 kg/m^3, cp=1007 J/(kg*K), Pr=0.71) flows over a surface with a measured convective heat-transfer coefficient h=120 W/(m^2*K). Using the Chilton-Colburn analogy (j_H=j_M) with Sc=0.6 for the diffusing species, estimate the mass-transfer coefficient k_c.",
       "source": "Chilton-Colburn analogy applied to estimate an unmeasured mass-transfer coefficient",
-      "answer": { "value": 0.0926, "unit": "m/s", "tolerance_pct": 3 },
+      "answer": {
+        "value": 0.0926,
+        "unit": "m/s",
+        "tolerance_pct": 3
+      },
       "solution": "The Chilton-Colburn analogy (j_H=j_M) gives k_c = [h/(rho*cp)] * (Sc/Pr)^(2/3). Substituting: k_c = [120/(1.15*1007)] * (0.6/0.71)^(2/3) = [120/1158.05] * (0.8451)^(2/3) = 0.1036 * 0.8942 = 0.0926 m/s. This lets a mass-transfer coefficient be estimated directly from a measured heat-transfer coefficient for the same flow and geometry, without a separate mass-transfer experiment."
     }
   ]

@@ -9,12 +9,12 @@
       "prompt": "In Quebec, which body grants the legal right to use the title \"engineer\" and to practice engineering?",
       "source": "OIQ -- The Engineer's Role; Engineers Act (CQLR c I-9)",
       "options": [
-        "The Ordre des ingenieurs du Quebec (OIQ)",
-        "The employer that hires the engineer",
+        "Any professional engineering society the individual chooses to join",
         "The Quebec Ministry of Education, upon graduation",
-        "Any professional engineering society the individual chooses to join"
+        "The employer that hires the engineer",
+        "The Ordre des ingenieurs du Quebec (OIQ)"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "\"Engineer\" is a reserved title and practice in Quebec, controlled exclusively by the OIQ under the Engineers Act -- membership (not just a degree, not employer designation, and not membership in any other voluntary society) is what confers the legal right to use the title and practice."
     },
     {
@@ -25,12 +25,12 @@
       "prompt": "A recent engineering graduate, not yet an OIQ member, signs and seals structural drawings for a client using the title \"engineer.\" What is the legal consequence?",
       "source": "OIQ -- The Engineer's Role; Engineers Act (CQLR c I-9)",
       "options": [
-        "This is an offence under the Engineers Act -- practicing engineering or using the reserved title without OIQ membership is illegal, regardless of the person's actual competence or degree",
-        "No consequence, since the person has an engineering degree",
         "It is only a problem if the drawings turn out to be technically incorrect",
-        "It is allowed as long as the client is informed the person isn't yet licensed"
+        "It is allowed as long as the client is informed the person isn't yet licensed",
+        "This is an offence under the Engineers Act -- practicing engineering or using the reserved title without OIQ membership is illegal, regardless of the person's actual competence or degree",
+        "No consequence, since the person has an engineering degree"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "Reserved-title and reserved-practice protection means the ACT of using the title or practicing engineering (e.g. sealing drawings) without OIQ membership is itself the offence -- independent of the person's underlying competence, the technical correctness of the work, or client disclosure. This is a fact to recall, not a judgment call."
     },
     {
@@ -41,12 +41,12 @@
       "prompt": "An engineering-in-training (EIT), holding a junior membership status but not yet a full OIQ member, is asked by their employer to independently seal a set of final design drawings because \"it's just a formality.\" What is the correct response?",
       "source": "OIQ -- The Engineer's Role",
       "options": [
+        "Ask a colleague to co-sign informally by email instead",
         "Decline -- sealing is reserved to full OIQ members, and an EIT cannot substitute for that regardless of the employer's characterization of the request",
-        "Comply, since the EIT did the underlying technical work personally",
         "Comply, but add a disclaimer noting EIT status on the seal",
-        "Ask a colleague to co-sign informally by email instead"
+        "Comply, since the EIT did the underlying technical work personally"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "The reserved right to seal engineering documents belongs to full members of the Order, not to EITs regardless of who performed the underlying technical work or how the employer frames the request -- calling it \"just a formality\" doesn't change the legal reservation of the act itself."
     },
     {
@@ -66,12 +66,12 @@
       "prompt": "An engineer signs a contract to design a bridge, then walks away from the project midway for no stated reason, causing the client significant financial loss but breaking no specific safety rule. Which classification best fits?",
       "source": "OIQ -- Code of Ethics of Engineers (CQLR c I-9, r 6); NSPE Code of Ethics for Engineers",
       "options": [
-        "Primarily a legal/contractual matter (breach of contract), though it may also raise Code concerns about competence and diligence commitments already made",
-        "Purely a Code-of-Ethics matter with no legal dimension",
         "Neither legal nor ethical -- engineers are free to abandon contracts",
-        "A criminal matter requiring police involvement"
+        "A criminal matter requiring police involvement",
+        "Primarily a legal/contractual matter (breach of contract), though it may also raise Code concerns about competence and diligence commitments already made",
+        "Purely a Code-of-Ethics matter with no legal dimension"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "Walking away from a signed contract is fundamentally a contractual/legal breach (civil liability for damages), though the Code of Ethics also has provisions bearing on an engineer's diligence and availability obligations to a client once undertaken -- so the two frameworks overlap here rather than being mutually exclusive, but the primary, most directly applicable framework for an unexcused contract abandonment is contract law."
     },
     {
@@ -83,8 +83,8 @@
       "source": "OIQ -- Code of Ethics of Engineers (CQLR c I-9, r 6)",
       "options": [
         "Legal (no law broken), but arguably falls short of the Code's paramount-safety and competence obligations, which go beyond minimum legal compliance",
-        "Purely illegal, since building codes were violated",
         "No issue at all, since minimum code compliance is definitionally sufficient",
+        "Purely illegal, since building codes were violated",
         "A pure business decision with no ethical dimension"
       ],
       "correct_index": 0,
@@ -107,12 +107,12 @@
       "prompt": "An engineer personally believes eating meat is unethical and refuses, on that personal moral ground, to work on a mandate to design refrigeration equipment for a meat-processing plant, even though the mandate itself involves no safety, competence, or integrity concerns under the Code. How should this be classified?",
       "source": "OIQ -- Code of Ethics of Engineers (CQLR c I-9, r 6)",
       "options": [
-        "A personal ethical/moral preference, not a Code-of-Ethics matter -- the Code governs professional conduct (competence, safety, integrity, client duties), not an engineer's private moral views about a client's industry",
+        "Irrelevant, since engineers must accept every mandate offered regardless of personal views",
         "A Code-of-Ethics violation, since all ethical objections of any kind fall under the Code",
         "A purely legal matter requiring OIQ discipline",
-        "Irrelevant, since engineers must accept every mandate offered regardless of personal views"
+        "A personal ethical/moral preference, not a Code-of-Ethics matter -- the Code governs professional conduct (competence, safety, integrity, client duties), not an engineer's private moral views about a client's industry"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "The Code of Ethics defines a specific, bounded set of professional obligations (competence, public safety, integrity, client duties, etc.) -- a personal moral stance unrelated to any of those professional obligations is a matter of individual conscience, not a Code-of-Ethics classification question, and doesn't by itself make declining the mandate either required or prohibited by the Code."
     },
     {
@@ -123,12 +123,12 @@
       "prompt": "An engineer with 15 years of experience in structural design for low-rise commercial buildings is asked to design the seismic retrofit for a 40-story high-rise, a specialty they have never practiced. What should the engineer do?",
       "source": "OIQ -- Code of Ethics of Engineers (CQLR c I-9, r 6), duty of competence",
       "options": [
+        "Accept it but charge a lower fee to reflect the learning curve",
         "Decline the mandate or refer it to an engineer with genuine high-rise seismic retrofit experience, since it falls outside their actual training and practice experience",
         "Accept it, since any licensed structural engineer is qualified for any structural project by definition of the license",
-        "Accept it but charge a lower fee to reflect the learning curve",
         "Accept it and complete it quickly to avoid drawing attention to the competence gap"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "OIQ membership and a related specialty (low-rise structural design) do not automatically confer competence in a substantially different specialty (high-rise seismic retrofit) -- the duty of competence requires the engineer to honestly assess whether the SPECIFIC mandate matches their actual training and experience, and to decline or refer when it doesn't, regardless of general licensure."
     },
     {
@@ -139,12 +139,12 @@
       "prompt": "An engineer is broadly competent in HVAC system design but is asked to also handle the electrical load calculations for the same building, a task at the edge of their formal training. What is the ethically appropriate path?",
       "source": "OIQ -- Code of Ethics of Engineers (CQLR c I-9, r 6), duty of competence",
       "options": [
-        "Either decline the electrical portion and refer it to an electrical engineer, or -- only if the engineer's actual knowledge genuinely covers the specific calculations needed -- proceed with appropriate care, but not accept it merely because it's adjacent to a familiar domain",
         "Accept the full scope automatically, since HVAC and electrical systems are both 'building systems'",
+        "Decline the entire HVAC project because of the adjacent electrical request",
         "Accept it silently and consult textbooks as needed without informing the client",
-        "Decline the entire HVAC project because of the adjacent electrical request"
+        "Either decline the electrical portion and refer it to an electrical engineer, or -- only if the engineer's actual knowledge genuinely covers the specific calculations needed -- proceed with appropriate care, but not accept it merely because it's adjacent to a familiar domain"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "Adjacency to a familiar domain is not the same as actual competence -- the correct procedure requires an honest, specific assessment of whether the engineer's real training covers the requested calculations, not a blanket accept because the topics seem related, and not an overcorrection of declining unrelated work that IS within scope."
     },
     {
@@ -165,9 +165,9 @@
       "source": "OIQ -- Code of Ethics of Engineers (CQLR c I-9, r 6), duty of competence",
       "options": [
         "No -- OIQ membership confers the legal RIGHT to practice engineering generally, but the Code's duty of competence still requires each specific mandate to match the engineer's actual training and experience",
+        "Yes, as long as the engineer discloses their inexperience to the client first",
         "Yes -- licensure is a universal credential covering every engineering specialty equally",
-        "No, but only for civil engineering specialties -- other branches are unrestricted",
-        "Yes, as long as the engineer discloses their inexperience to the client first"
+        "No, but only for civil engineering specialties -- other branches are unrestricted"
       ],
       "correct_index": 0,
       "explanation": "Licensure and competence are distinct concepts: OIQ membership is the LEGAL gate (who may practice engineering at all), while the duty of competence is a separate, ongoing ETHICAL obligation that scopes what any individual member may responsibly accept, mandate by mandate, based on actual training and experience -- not a blanket credential covering every specialty."
@@ -180,12 +180,12 @@
       "prompt": "An engineer supervises two EITs on a project. One EIT makes a calculation error that the supervising engineer fails to catch during review, and it reaches the final design. Who bears professional responsibility for the error?",
       "source": "OIQ -- Your Obligations: Ethics",
       "options": [
-        "The supervising engineer, since responsibility for supervised work rests with the credentialed engineer of record regardless of which team member made the specific error",
+        "The client, for not double-checking the drawings themselves",
         "Only the EIT who made the calculation error, since they typed the number",
-        "Neither -- errors are considered an unavoidable cost of doing business",
-        "The client, for not double-checking the drawings themselves"
+        "The supervising engineer, since responsibility for supervised work rests with the credentialed engineer of record regardless of which team member made the specific error",
+        "Neither -- errors are considered an unavoidable cost of doing business"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "The public relies on the supervising engineer's seal and credential, not on tracking exactly which team member produced which sub-task -- this is precisely why accountability for supervised work rests with the engineer of record even when a specific delegated task is where the error originated."
     },
     {
@@ -196,12 +196,12 @@
       "prompt": "An engineer argues, after a supervised project fails, \"I delegated that calculation entirely to my EIT, so I'm not responsible.\" Is this argument valid under the Code of Ethics?",
       "source": "OIQ -- Your Obligations: Ethics",
       "options": [
-        "No -- delegating a task does not transfer the underlying professional responsibility away from the supervising engineer, who remains accountable for work performed under their direction",
         "Yes -- delegation fully transfers responsibility to whoever performed the task",
+        "Yes, but only if the EIT has more than 2 years of experience",
         "It depends only on whether the EIT was paid for the work",
-        "Yes, but only if the EIT has more than 2 years of experience"
+        "No -- delegating a task does not transfer the underlying professional responsibility away from the supervising engineer, who remains accountable for work performed under their direction"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "Delegation is a management choice about how work gets done, not a transfer of professional accountability -- the whole point of requiring a licensed engineer's supervision and seal is that the public and client can rely on THAT engineer's responsibility, independent of internal staffing decisions."
     },
     {
@@ -231,8 +231,8 @@
       "source": "OIQ -- Code of Ethics of Engineers (CQLR c I-9, r 6), professional secrecy",
       "options": [
         "A serious and imminent risk of death or serious bodily harm that the disclosure could help prevent",
-        "The engineer personally believes the information would be interesting to colleagues",
         "The engineer has left the client's employ and no longer feels bound",
+        "The engineer personally believes the information would be interesting to colleagues",
         "The information would help the engineer win a new contract"
       ],
       "correct_index": 0,
@@ -246,12 +246,12 @@
       "prompt": "An engineer is served with a valid court subpoena requiring production of confidential project files as evidence in litigation. What should the engineer do?",
       "source": "OIQ -- Code of Ethics of Engineers (CQLR c I-9, r 6), professional secrecy",
       "options": [
-        "Comply with the subpoena -- a requirement of law is a recognized exception to professional secrecy",
-        "Refuse, since professional secrecy is absolute and overrides any court order",
+        "Destroy the files rather than produce them, citing confidentiality",
         "Comply only if the client explicitly consents in addition to the subpoena",
-        "Destroy the files rather than produce them, citing confidentiality"
+        "Refuse, since professional secrecy is absolute and overrides any court order",
+        "Comply with the subpoena -- a requirement of law is a recognized exception to professional secrecy"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "A valid legal requirement, such as a court order or subpoena, is one of the Code's recognized exceptions to professional secrecy -- the engineer must comply, and secrecy is not absolute in the face of a genuine legal compulsion. Refusing or destroying evidence would itself likely constitute a separate serious legal and ethical violation."
     },
     {
@@ -296,12 +296,12 @@
       "prompt": "An engineer is offered a fee to seal a completed drawing set prepared entirely by an unlicensed designer at another firm, with no involvement by the engineer in the design process. What is this practice called, and is it permitted?",
       "source": "OIQ -- Seal and Signature (member obligations); Code of Ethics of Engineers (CQLR c I-9, r 6)",
       "options": [
-        "\"Plan stamping\" -- a serious ethics violation, not permitted regardless of the fee or the underlying work's actual quality",
         "\"Peer review\" -- a permitted and encouraged professional practice",
-        "\"Expedited certification\" -- permitted if the engineer skims the drawings first",
-        "\"Professional courtesy\" -- permitted between firms that regularly collaborate"
+        "\"Professional courtesy\" -- permitted between firms that regularly collaborate",
+        "\"Plan stamping\" -- a serious ethics violation, not permitted regardless of the fee or the underlying work's actual quality",
+        "\"Expedited certification\" -- permitted if the engineer skims the drawings first"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "Sealing another party's unsupervised work for a fee, without personal preparation or genuine immediate supervision, is the textbook definition of plan stamping -- a serious violation regardless of how competent the underlying work might be, how the arrangement is framed, or the amount of the fee."
     },
     {
@@ -331,9 +331,9 @@
       "source": "OIQ -- Continuing Education",
       "options": [
         "A minimum of 30 hours over each 2-year reference period",
+        "There is no fixed hour requirement, only a general expectation of staying current",
         "A minimum of 10 hours per year, with no multi-year accounting",
-        "40 hours once, at the time of initial licensure only",
-        "There is no fixed hour requirement, only a general expectation of staying current"
+        "40 hours once, at the time of initial licensure only"
       ],
       "correct_index": 0,
       "explanation": "The OIQ's mandatory continuing education requirement is 30 hours of eligible professional development activity within each 2-year reference period, for the duration of a member's career (with limited exceptions) -- not a one-time requirement, and not a plain annual figure."
@@ -348,8 +348,8 @@
       "options": [
         "Their right to practice can be restricted, and in persistent cases they can be struck from the roll of the Order",
         "Nothing -- the requirement is only a recommendation with no enforcement",
-        "A small late fee is charged automatically, with no other consequence",
-        "They must retake their engineering degree entirely"
+        "They must retake their engineering degree entirely",
+        "A small late fee is charged automatically, with no other consequence"
       ],
       "correct_index": 0,
       "explanation": "Non-compliance with the mandatory continuing education requirement is enforceable -- it can lead to restrictions on the member's right to practice and, in persistent cases, removal from the Order's roll. It is not merely advisory, not resolved by a simple fee, and does not require redoing a degree."
@@ -371,12 +371,12 @@
       "prompt": "An engineer assumes their continuing-education hours reset every January 1st, like a calendar-year requirement. Is this assumption correct?",
       "source": "OIQ -- Continuing Education",
       "options": [
-        "No -- the reference period does not follow the civil calendar year; it runs on its own fixed 2-year cycle set by the Order, with training reported by a specific deadline shortly after the cycle ends",
-        "Yes -- the period always resets on January 1st for every member",
         "Yes, but only for members who joined in a leap year",
+        "Yes -- the period always resets on January 1st for every member",
+        "No -- the reference period does not follow the civil calendar year; it runs on its own fixed 2-year cycle set by the Order, with training reported by a specific deadline shortly after the cycle ends",
         "No -- the period resets every 6 months, not every 2 years"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "A common execution error is assuming continuing education tracks the calendar year -- it does not. The OIQ's reference period is a fixed multi-year cycle independent of January 1st, and hours must be declared by a specific deadline (in mid-April) following the end of each cycle, not reset at New Year's."
     },
     {
@@ -387,12 +387,12 @@
       "prompt": "According to the Code of Ethics, when an engineer's duties to the public, client/employer, profession, and self come into conflict, which takes precedence?",
       "source": "OIQ -- Code of Ethics of Engineers (CQLR c I-9, r 6), duties towards the public",
       "options": [
-        "The safety, health, and welfare of the public, above all other competing duties",
-        "The client or employer's instructions, since they are paying for the work",
         "The engineer's own professional reputation and career interests",
-        "Whichever duty was established first in time"
+        "Whichever duty was established first in time",
+        "The client or employer's instructions, since they are paying for the work",
+        "The safety, health, and welfare of the public, above all other competing duties"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "Holding paramount the safety, health, and welfare of the public is the Code's foundational, overriding obligation -- it outranks client/employer instructions, the engineer's own interests, and even loyalty to the profession's reputation when these genuinely conflict."
     },
     {
@@ -403,12 +403,12 @@
       "prompt": "An employer instructs an engineer to sign off on a design the engineer believes poses a genuine, non-trivial safety risk, citing schedule pressure. What does the paramountcy principle require?",
       "source": "OIQ -- Code of Ethics of Engineers (CQLR c I-9, r 6), duties towards the public",
       "options": [
-        "The engineer must not sign off -- public safety concerns override the employer's instruction and schedule pressure, regardless of the employer's authority over employment matters",
-        "The engineer must comply, since employers have final authority over technical sign-off decisions",
+        "The engineer should split the difference by approving half the design",
         "The engineer should sign off but add a private note to their personal files as protection",
-        "The engineer should split the difference by approving half the design"
+        "The engineer must comply, since employers have final authority over technical sign-off decisions",
+        "The engineer must not sign off -- public safety concerns override the employer's instruction and schedule pressure, regardless of the employer's authority over employment matters"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "Employer instructions do not override the paramountcy of public safety -- an engineer's employment relationship does not extend to compelling the engineer to certify something they genuinely believe is unsafe. Signing off with a private disclaimer doesn't resolve the underlying safety concern and doesn't satisfy the obligation."
     },
     {
@@ -437,12 +437,12 @@
       "prompt": "A design meets its code-mandated numeric safety factor for static loading, but fails under a dynamic/fatigue loading mode the safety factor was never intended to address, and the engineer had reason to know fatigue was a real risk for this application. Is the engineer negligent despite meeting the numeric safety factor?",
       "source": "Texas A&M -- Negligence, Risk and the Professional Debate Over Responsibility for Design",
       "options": [
-        "Potentially yes -- a numeric safety factor only covers the failure mode(s) it was designed to address; meeting it doesn't excuse ignoring a different, foreseeable failure mode the engineer had reason to anticipate",
+        "Yes, but only if the fatigue failure mode is explicitly named in the same code section as the safety factor",
         "No -- meeting any code-mandated safety factor is automatically a complete defense against negligence",
-        "No, because numeric safety factors are legally binding and override all professional judgment",
-        "Yes, but only if the fatigue failure mode is explicitly named in the same code section as the safety factor"
+        "Potentially yes -- a numeric safety factor only covers the failure mode(s) it was designed to address; meeting it doesn't excuse ignoring a different, foreseeable failure mode the engineer had reason to anticipate",
+        "No, because numeric safety factors are legally binding and override all professional judgment"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "A safety factor is calibrated to a specific failure mode (here, static loading) -- it says nothing about a foreseeable but different failure mode (fatigue) that the engineer had reason to know was relevant. Professional standard of care requires considering foreseeable failure modes beyond just the letter of a numeric safety-factor requirement; meeting the number is necessary but not automatically sufficient."
     },
     {
@@ -488,9 +488,9 @@
       "source": "NSPE -- Engineer's Disclosure of Potential Conflict of Interest (Board of Ethical Review case)",
       "options": [
         "Not necessarily -- disclosure alone doesn't resolve a conflict if the client cannot actually evaluate or counterbalance the engineer's judgment on the specific matter",
+        "Yes, but only because the client said 'okay'",
         "Yes -- any disclosure automatically resolves a conflict of interest",
-        "No -- disclosure makes a conflict of interest worse, not better",
-        "Yes, but only because the client said 'okay'"
+        "No -- disclosure makes a conflict of interest worse, not better"
       ],
       "correct_index": 0,
       "explanation": "A conflict is only properly managed when disclosure lets the client meaningfully evaluate and counterbalance the engineer's judgment -- if the client lacks the technical background to actually assess the recommendation independently, merely acknowledging the disclosure ('okay, thanks') doesn't give them real capacity to counterbalance it, so the conflict remains live in substance even though disclosure technically occurred."
@@ -503,12 +503,12 @@
       "prompt": "An engineer discloses a financial interest in a supplier, and the client responds by hiring an independent third-party reviewer with genuine technical expertise to evaluate the recommendation before proceeding. Is this conflict resolved?",
       "source": "NSPE -- Engineer's Disclosure of Potential Conflict of Interest (Board of Ethical Review case)",
       "options": [
-        "Yes -- disclosure plus a genuine, competent independent check gives the client real capacity to evaluate and counterbalance the engineer's judgment",
-        "No -- once a financial interest exists, no amount of additional process can resolve it",
         "It depends only on the size of the financial interest, not on any review process",
-        "No, because independent reviewers are never trustworthy"
+        "No -- once a financial interest exists, no amount of additional process can resolve it",
+        "No, because independent reviewers are never trustworthy",
+        "Yes -- disclosure plus a genuine, competent independent check gives the client real capacity to evaluate and counterbalance the engineer's judgment"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "This is the contrast case: disclosure PLUS a genuinely competent, independent check that lets the client meaningfully evaluate the recommendation is what actually resolves a conflict -- process matters, not just the initial disclosure. This shows conflicts of interest are manageable, not automatically disqualifying, when handled with real safeguards."
     },
     {
@@ -537,12 +537,12 @@
       "prompt": "An engineer discovers a serious, credible danger to public safety in a completed project. What is the correct FIRST step in the escalation procedure?",
       "source": "Engineers Canada -- Guideline on the Duty to Report; NSPE -- Whistleblowing: City Engineer",
       "options": [
+        "Say nothing until legally compelled to speak",
         "Document the finding with evidence and calculations",
         "Immediately contact the media",
-        "Immediately report to the professional order, skipping internal channels",
-        "Say nothing until legally compelled to speak"
+        "Immediately report to the professional order, skipping internal channels"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "The escalation procedure always begins with documenting the finding -- evidence and calculations -- before raising it anywhere, internally or externally. Skipping straight to the media or the regulator without first documenting and attempting internal resolution undermines both the credibility of the report and the chance to fix the problem efficiently; staying silent entirely abandons the duty to report altogether."
     },
     {
@@ -553,12 +553,12 @@
       "prompt": "An engineer is told by a manager that reporting a safety concern to the professional order, after internal escalation was ignored, would be 'disloyal' to the company. How should the engineer weigh this characterization?",
       "source": "NSPE -- Whistleblowing: Industrial Design (Board of Ethical Review case)",
       "options": [
-        "The characterization is mistaken -- following the proper escalation procedure to protect public safety, after internal channels have failed, fulfills the engineer's paramount professional duty rather than betraying the employer",
-        "The manager is correct, and the engineer should never escalate beyond the company regardless of the risk",
         "Loyalty to the employer always outweighs the duty to report, once internal escalation has been attempted once",
-        "The engineer should resign quietly instead of escalating, to avoid the disloyalty label entirely"
+        "The characterization is mistaken -- following the proper escalation procedure to protect public safety, after internal channels have failed, fulfills the engineer's paramount professional duty rather than betraying the employer",
+        "The engineer should resign quietly instead of escalating, to avoid the disloyalty label entirely",
+        "The manager is correct, and the engineer should never escalate beyond the company regardless of the risk"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "Framing proper, documented escalation as 'disloyalty' inverts the actual professional obligation -- once internal channels have been tried and failed, escalating to protect public safety IS the loyal, correct professional action under the Code's paramountcy principle, not a betrayal. This directly targets the classic misconception that whistleblowing equals disloyalty."
     },
     {
@@ -587,12 +587,12 @@
       "prompt": "A city's flood-risk model uses historical damage-cost data to prioritize infrastructure upgrades, and this data systematically under-represents damage in a lower-income neighborhood because residents there historically filed fewer insurance claims (not because they experienced less actual flooding). Is this a purely neutral technical decision, or does it raise an equity issue?",
       "source": "Equitable behaviour and bias recognition -- engineering ethics education",
       "options": [
+        "It cannot be an equity issue since the same model formula is applied to every neighborhood",
         "It raises a genuine equity issue -- the technical model's input data encodes a historical reporting disparity, causing the 'neutral' prioritization to systematically under-serve a specific population regardless of their actual flood risk",
         "It is purely a neutral technical decision, since the model only uses objective historical data",
-        "It is an equity issue only if the engineer intended to disadvantage the neighborhood",
-        "It cannot be an equity issue since the same model formula is applied to every neighborhood"
+        "It is an equity issue only if the engineer intended to disadvantage the neighborhood"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "Equity issues often hide inside technically neutral-looking methods -- here, applying the identical formula to every neighborhood (which looks fair on its face) still produces a disproportionate outcome because the input data itself reflects a pre-existing disparity (under-reporting, not under-risk). Looking only at whether the formula is applied uniformly, without asking who bears the consequence disproportionately, misses the actual equity problem. Intent is not required for an equity issue to exist."
     },
     {
@@ -605,8 +605,8 @@
       "options": [
         "'Not seeing' demographic factors doesn't guarantee unbiased outcomes -- unexamined criteria (e.g. informal network referrals, pattern-matching to past hires) can still produce systematically unequal results even without conscious intent",
         "This framing is a complete and sufficient equity safeguard on its own",
-        "There is no possible equity concern once intent to discriminate is absent",
-        "Equity concerns only apply to technical engineering decisions, not hiring"
+        "Equity concerns only apply to technical engineering decisions, not hiring",
+        "There is no possible equity concern once intent to discriminate is absent"
       ],
       "correct_index": 0,
       "explanation": "A claim of not consciously considering demographic factors doesn't examine whether the SELECTION CRITERIA themselves (e.g. relying on informal referral networks, unconsciously favoring candidates who resemble past successful hires) produce disproportionate outcomes -- equity analysis requires looking past the stated intent to the actual criteria and their effects."
@@ -639,8 +639,8 @@
       "options": [
         "Normalize each option's embodied impact per unit of service life (impact per service-year) before comparing",
         "Compare the raw total embodied impact numbers directly, ignoring service life differences",
-        "Always choose the option with the lower raw embodied impact number, regardless of service life",
-        "Service life is irrelevant to environmental comparisons"
+        "Service life is irrelevant to environmental comparisons",
+        "Always choose the option with the lower raw embodied impact number, regardless of service life"
       ],
       "correct_index": 0,
       "explanation": "Comparing raw totals without normalizing for service life would unfairly penalize the longer-lived option (B), which delivers twice the years of service -- annualizing (or per-service-year normalizing) both options' embodied impact and cost puts them on a comparable footing before drawing a conclusion."
@@ -687,12 +687,12 @@
       "prompt": "A design meets every applicable environmental permit limit with margin to spare, but the engineer has specific knowledge that a modest additional measure (beyond what's legally required) would meaningfully reduce a known downstream ecological harm at low extra cost. Does meeting the permit limit settle the ethical question?",
       "source": "OIQ -- Code of Ethics of Engineers (CQLR c I-9, r 6); environmental responsibility principle",
       "options": [
-        "No -- the ethical obligation extends beyond minimum regulatory compliance when the engineer has specific knowledge of an avoidable, meaningful harm and a reasonable means to address it",
-        "Yes -- meeting the numeric permit limit is definitionally sufficient for ethical compliance",
         "No, but only if the additional measure is free",
-        "Yes, because engineers have no obligations beyond what regulators explicitly require"
+        "Yes, because engineers have no obligations beyond what regulators explicitly require",
+        "No -- the ethical obligation extends beyond minimum regulatory compliance when the engineer has specific knowledge of an avoidable, meaningful harm and a reasonable means to address it",
+        "Yes -- meeting the numeric permit limit is definitionally sufficient for ethical compliance"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "Permit compliance sets the legal floor, not the ethical ceiling -- when an engineer has specific, actionable knowledge of an avoidable harm and a reasonable (not necessarily free, but proportionate) means to address it, the ethical obligation extends beyond bare regulatory minimums, which is exactly what distinguishes this KC's principle from a simple compliance checklist."
     },
     {
@@ -703,13 +703,13 @@
       "prompt": "Which pair correctly illustrates 'compliant-but-arguably-not-enough' versus 'proactively going beyond compliance'?",
       "source": "OIQ -- Code of Ethics of Engineers (CQLR c I-9, r 6); environmental responsibility principle",
       "options": [
+        "Compliant-but-not-enough describes illegal designs; going beyond describes designs that are merely legal",
         "Compliant-but-not-enough: meeting a permit's discharge limit while ignoring a known, low-cost mitigation for a specific downstream harm. Going beyond: voluntarily adding that mitigation despite no legal requirement to do so",
-        "Compliant-but-not-enough: any design that violates its permit. Going beyond: any design that also violates its permit",
         "Both categories describe the same thing -- there is no meaningful distinction",
-        "Compliant-but-not-enough describes illegal designs; going beyond describes designs that are merely legal"
+        "Compliant-but-not-enough: any design that violates its permit. Going beyond: any design that also violates its permit"
       ],
-      "correct_index": 0,
-      "explanation": "The distinction is specifically about VOLUNTARY action beyond a legally satisfied baseline -- a design that violates its permit isn't 'compliant' at all (that's a separate, more basic problem), so option A correctly frames the contrast as compliant-minimum vs. compliant-plus-voluntary-improvement."
+      "correct_index": 1,
+      "explanation": "The distinction is specifically about VOLUNTARY action beyond a legally satisfied baseline -- a design that violates its permit isn't 'compliant' at all (that's a separate, more basic problem), so option B correctly frames the contrast as compliant-minimum vs. compliant-plus-voluntary-improvement."
     },
     {
       "kc": "environmental-responsibility-principle",
@@ -737,12 +737,12 @@
       "prompt": "According to good risk-communication practice, what four elements should a risk communication to non-expert stakeholders include, in order?",
       "source": "Risk communication to the public -- engineering practice",
       "options": [
-        "Plain-language finding, honest likelihood/consequence framing, what's being done and by whom, and how/when the public will be updated",
-        "Technical jargon, a probability distribution, a legal disclaimer, and a request for no further questions",
         "Only the likelihood, with consequences omitted to avoid alarm",
+        "Technical jargon, a probability distribution, a legal disclaimer, and a request for no further questions",
+        "Plain-language finding, honest likelihood/consequence framing, what's being done and by whom, and how/when the public will be updated",
         "Only reassurance that everything is fine, regardless of the actual finding"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "Effective risk communication hits four elements in order: a plain-language statement of the finding (no jargon), honest framing of likelihood AND consequence (neither overstated nor minimized), a clear account of remediation steps and responsible parties, and a commitment to further updates -- omitting consequences, using technical jargon, or defaulting to blanket reassurance all fail the standard."
     },
     {
@@ -753,12 +753,12 @@
       "prompt": "An engineer, worried about causing public alarm, describes a moderate, well-characterized risk to a community's water supply as 'a very minor technical issue, nothing to be concerned about,' when the actual finding involves a real, non-trivial probability of a specific health-relevant outcome. Is this appropriate risk communication?",
       "source": "Risk communication to the public -- engineering practice",
       "options": [
-        "No -- minimizing or downplaying a real, non-trivial risk to avoid alarm violates the requirement of honest likelihood/consequence framing, even when well-intentioned",
         "Yes -- avoiding public alarm is the top priority, above accuracy",
+        "No, but only because the language used technical words instead of being reassuring enough",
         "Yes, as long as the engineer privately documents the real risk level elsewhere",
-        "No, but only because the language used technical words instead of being reassuring enough"
+        "No -- minimizing or downplaying a real, non-trivial risk to avoid alarm violates the requirement of honest likelihood/consequence framing, even when well-intentioned"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "Good intentions (avoiding alarm) do not justify minimizing a genuinely non-trivial risk -- honest communication of likelihood and consequence is required even when the truth is unwelcome; the goal is accurate, plain-language clarity, not managing public emotion by understating the facts. This is the flip side of overstating risk -- both violate the honesty requirement, just in opposite directions."
     },
     {
@@ -788,9 +788,9 @@
       "source": "Ethics case classification method -- engineering ethics education",
       "options": [
         "Identify the facts, identify stakeholders, identify applicable Code/law provisions, identify where obligations compete and which takes precedence",
-        "Decide the outcome first, then find facts and provisions that support it",
+        "Identify applicable Code provisions first, before establishing any facts",
         "Identify stakeholders only, skipping the facts and provisions steps",
-        "Identify applicable Code provisions first, before establishing any facts"
+        "Decide the outcome first, then find facts and provisions that support it"
       ],
       "correct_index": 0,
       "explanation": "The method proceeds from grounding facts, to who is affected (stakeholders), to what rules apply (Code/law provisions), and finally to resolving genuine conflicts between those rules by priority -- reversing this order (e.g. deciding the outcome first, or citing provisions before establishing facts) undermines the method's whole purpose of catching competing obligations systematically."
@@ -803,12 +803,12 @@
       "prompt": "A student, analyzing a case, immediately jumps to 'this is clearly a safety issue, so the answer is X' without working through the facts, stakeholders, and applicable provisions first. What is the main risk of this shortcut?",
       "source": "Ethics case classification method -- engineering ethics education",
       "options": [
+        "The method is only useful for cases involving multiple engineers, not single-engineer scenarios",
         "The obvious-seeming answer may miss a competing obligation or a stakeholder that changes the analysis -- the method's value is specifically in catching competing obligations that an intuitive first read misses",
-        "There is no risk -- experienced professionals should always skip the formal method",
         "The shortcut is fine as long as the final answer happens to be correct",
-        "The method is only useful for cases involving multiple engineers, not single-engineer scenarios"
+        "There is no risk -- experienced professionals should always skip the formal method"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "Working all four steps in order, even when an answer feels obvious after step one, is exactly what the KC's practice_notes emphasize -- an intuitive 'obviously a safety issue' read can miss a competing obligation (e.g. a confidentiality constraint, or a stakeholder whose interest changes the appropriate remedy) that only surfaces by working through stakeholders and provisions systematically."
     },
     {
@@ -837,12 +837,12 @@
       "prompt": "What is the correct order of the three-stage disciplinary process for a complaint against a Quebec engineer within the professional order?",
       "source": "OIQ -- Your Obligations: Ethics",
       "options": [
-        "Syndic investigation, then discipline committee proceeding, then sanction",
         "Sanction, then discipline committee proceeding, then syndic investigation",
         "Discipline committee proceeding, then sanction, then syndic investigation",
+        "Syndic investigation, then discipline committee proceeding, then sanction",
         "There is no fixed order -- stages happen simultaneously"
       ],
-      "correct_index": 0,
+      "correct_index": 2,
       "explanation": "The disciplinary path proceeds in a specific order: the syndic (the Order's investigative officer) investigates the complaint first, then if warranted the matter proceeds to the discipline committee for a formal proceeding, and only after a finding does a sanction get imposed -- sanctions cannot precede a proceeding, and a proceeding cannot precede investigation."
     },
     {
@@ -853,12 +853,12 @@
       "prompt": "An engineer's negligent design causes property damage. The client sues for damages in civil court, and separately, a complaint is filed with the OIQ's syndic. How do these two tracks relate to each other?",
       "source": "OIQ -- Your Obligations: Ethics",
       "options": [
-        "They are separate, independent processes that can proceed simultaneously -- a civil lawsuit for damages is distinct from the professional disciplinary process, which addresses the engineer's standing within the Order",
-        "The civil lawsuit must conclude before the disciplinary process can even begin",
+        "Only one track can be pursued -- the client must choose between suing and filing a complaint",
         "Filing a disciplinary complaint automatically cancels any civil lawsuit on the same facts",
-        "Only one track can be pursued -- the client must choose between suing and filing a complaint"
+        "The civil lawsuit must conclude before the disciplinary process can even begin",
+        "They are separate, independent processes that can proceed simultaneously -- a civil lawsuit for damages is distinct from the professional disciplinary process, which addresses the engineer's standing within the Order"
       ],
-      "correct_index": 0,
+      "correct_index": 3,
       "explanation": "Civil litigation (compensating the client for damages) and the professional disciplinary process (addressing the engineer's fitness to practice and Code compliance) serve different purposes and run on separate, independent tracks -- they can and often do proceed simultaneously without one blocking or canceling the other."
     },
     {

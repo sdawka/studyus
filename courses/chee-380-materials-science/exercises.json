@@ -7,15 +7,15 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "An element sits in Group 15 (VA) of the periodic table. How many valence electrons does it have?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §2.6 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a72.6 style",
       "options": [
+        "5",
         "3",
         "4",
-        "5",
         "7"
       ],
-      "correct_index": 2,
-      "explanation": "Group number (in the traditional A-group convention) gives the valence electron count directly for main-group elements: Group VA = 5 valence electrons (e.g. N, P, As). Option (a) 3 confuses it with Group IIIA; (b) 4 confuses it with Group IVA (carbon family); (d) 7 confuses it with Group VIIA (halogens)."
+      "correct_index": 0,
+      "explanation": "Group number (in the traditional A-group convention) gives the valence electron count directly for main-group elements: Group VA = 5 valence electrons (e.g. N, P, As). Option (b) 3 confuses it with Group IIIA; (b) 4 confuses it with Group IVA (carbon family); (d) 7 confuses it with Group VIIA (halogens)."
     },
     {
       "kc": "atomic-structure-and-periodic-trends",
@@ -23,15 +23,15 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "Moving from left to right across Period 3 (Na to Cl), what happens to electronegativity and why?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §2.6 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a72.6 style",
       "options": [
         "It increases, because nuclear charge increases while shielding stays roughly constant, pulling bonding electrons in more strongly",
-        "It decreases, because atomic radius increases across the period",
         "It stays constant, since all elements are in the same period",
+        "It decreases, because atomic radius increases across the period",
         "It increases then decreases in a random pattern with no trend"
       ],
       "correct_index": 0,
-      "explanation": "Electronegativity increases across a period because each added proton increases effective nuclear charge while the electrons are added to the same shell (similar shielding), so the nucleus attracts bonding electrons more strongly. Option (b) inverts both the trend and the reasoning (atomic radius actually DECREASES across a period). Option (c) and (d) ignore that periodic trends are systematic, not random or absent."
+      "explanation": "Electronegativity increases across a period because each added proton increases effective nuclear charge while the electrons are added to the same shell (similar shielding), so the nucleus attracts bonding electrons more strongly. Option (c) inverts both the trend and the reasoning (atomic radius actually DECREASES across a period). Option (b) and (d) ignore that periodic trends are systematic, not random or absent."
     },
     {
       "kc": "atomic-structure-and-periodic-trends",
@@ -39,8 +39,8 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "Using only periodic-table position (no electronegativity table), predict which bond is more polar: Si-O or Si-C. Justify from periodic trends alone.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §2.6 style",
-      "solution": "Oxygen is far to the right and near the top of the periodic table, while carbon is in the same group as silicon (Group IVA) — same group means similar electronegativity. Moving right across a period increases electronegativity sharply, and oxygen is several groups to the right of silicon, so the Si-O electronegativity difference is large. Si and C, being in the same group, have a much smaller electronegativity difference. Conclusion: Si-O is the more polar bond — this is exactly why silica (SiO2) is a highly ionic-covalent ceramic while silicon carbide (SiC) is a much more covalent, less polar ceramic."
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a72.6 style",
+      "solution": "Oxygen is far to the right and near the top of the periodic table, while carbon is in the same group as silicon (Group IVA) \u2014 same group means similar electronegativity. Moving right across a period increases electronegativity sharply, and oxygen is several groups to the right of silicon, so the Si-O electronegativity difference is large. Si and C, being in the same group, have a much smaller electronegativity difference. Conclusion: Si-O is the more polar bond \u2014 this is exactly why silica (SiO2) is a highly ionic-covalent ceramic while silicon carbide (SiC) is a much more covalent, less polar ceramic."
     },
     {
       "kc": "atomic-structure-and-periodic-trends",
@@ -48,8 +48,8 @@
       "kind": "worked",
       "difficulty": 1,
       "prompt": "Without consulting a periodic table image, state silicon's group number, its valence electron count, and predict whether it is more likely to form covalent or ionic bonds with another Group IV element.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §2.6 style",
-      "solution": "Silicon is in Group IVA, so it has 4 valence electrons. Bonding with another Group IVA element (e.g. carbon, forming SiC) involves two atoms with identical or nearly identical electronegativity (same group, similar position), so essentially no electron transfer occurs — the bond is covalent (electron sharing), not ionic. This is consistent with silicon's own elemental structure (diamond cubic, fully covalent) and with SiC being a predominantly covalent ceramic."
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a72.6 style",
+      "solution": "Silicon is in Group IVA, so it has 4 valence electrons. Bonding with another Group IVA element (e.g. carbon, forming SiC) involves two atoms with identical or nearly identical electronegativity (same group, similar position), so essentially no electron transfer occurs \u2014 the bond is covalent (electron sharing), not ionic. This is consistent with silicon's own elemental structure (diamond cubic, fully covalent) and with SiC being a predominantly covalent ceramic."
     },
     {
       "kc": "bond-type-classification",
@@ -57,14 +57,14 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "MgO has a melting point of 2852 degC, is an electrical insulator as a solid, and becomes a poor conductor only when molten (it must be dissolved or the temperature raised extremely high). It is hard and brittle. What is the dominant bond type?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §2.7 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a72.7 style",
       "options": [
         "Metallic",
+        "Secondary (van der Waals)",
         "Ionic",
-        "Covalent network",
-        "Secondary (van der Waals)"
+        "Covalent network"
       ],
-      "correct_index": 1,
+      "correct_index": 2,
       "explanation": "Very high melting point, brittleness, and insulating behavior as a solid that only becomes even weakly conductive when molten are the classic ionic signature (large electronegativity difference between Mg and O, ions held by electrostatic attraction). Metallic (a) would conduct well as a solid. Covalent network (c) is close but typically shows even higher melting points via directional bonds without the same distinctive molten-state ionic conduction. Secondary bonding (d) would give a very low melting point, not thousands of degrees."
     },
     {
@@ -73,14 +73,14 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "Solid polyethylene is soft, has a low melting point (~130 degC), is an electrical insulator, and its individual polymer chains are held to neighboring chains only by weak, non-directional forces (the covalent bonds are all WITHIN each chain, not between chains). What is the DOMINANT bond type governing bulk mechanical behavior (softening, melting) of the solid?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §2.7 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a72.7 style",
       "options": [
         "Covalent",
-        "Ionic",
         "Metallic",
-        "Secondary (van der Waals)"
+        "Secondary (van der Waals)",
+        "Ionic"
       ],
-      "correct_index": 3,
+      "correct_index": 2,
       "explanation": "Although the backbone bonds within each polyethylene chain are strong covalent bonds, the BULK mechanical response (why it's soft and melts at low temperature) is governed by the weak secondary (van der Waals) forces BETWEEN chains, which are what has to be overcome for chains to slide past each other or separate. This is a common trap: identifying the strongest bond present (covalent, within the chain) rather than the bond that actually controls the observed bulk property."
     },
     {
@@ -89,8 +89,8 @@
       "kind": "worked",
       "difficulty": 1,
       "prompt": "Tungsten has an extremely high melting point (3422 degC), is ductile enough to be drawn into fine wire (lightbulb filaments), and conducts electricity and heat well even as a solid. Classify its bond type and justify from each clue.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §2.7 style",
-      "solution": "Metallic bonding. High melting point comes from the strong, non-directional attraction between the delocalized 'electron sea' and the positively charged ion cores. Ductility (drawability into wire) is possible because the ion cores can slide past one another without breaking any specific directional bond — the electron sea simply redistributes around the new positions. High electrical and thermal conductivity as a solid comes directly from those delocalized electrons being free to move under an applied field or a temperature gradient, unlike the localized bonding electrons in ionic or covalent solids."
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a72.7 style",
+      "solution": "Metallic bonding. High melting point comes from the strong, non-directional attraction between the delocalized 'electron sea' and the positively charged ion cores. Ductility (drawability into wire) is possible because the ion cores can slide past one another without breaking any specific directional bond \u2014 the electron sea simply redistributes around the new positions. High electrical and thermal conductivity as a solid comes directly from those delocalized electrons being free to move under an applied field or a temperature gradient, unlike the localized bonding electrons in ionic or covalent solids."
     },
     {
       "kc": "bond-type-classification",
@@ -98,8 +98,8 @@
       "kind": "worked",
       "difficulty": 3,
       "prompt": "Solid neon exists only below -246 degC, is extremely soft, and shows no directionality in its atomic arrangement. Identify the bond type and explain, from first principles (electron configuration), why neon can only bond this way and no other.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §2.7 style",
-      "solution": "Secondary (van der Waals / induced-dipole) bonding. Neon is a noble gas with a completely filled valence shell — it has no unpaired electrons to share (ruling out covalent bonding), no tendency to gain or lose electrons to form a stable ion (ruling out ionic bonding), and no delocalized electron sea (ruling out metallic bonding). The only interaction available between neon atoms is a weak, instantaneous-dipole-induced-dipole attraction, which is far weaker than any primary bond — explaining both the softness and the extremely low temperature required to hold neon atoms together as a solid at all."
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a72.7 style",
+      "solution": "Secondary (van der Waals / induced-dipole) bonding. Neon is a noble gas with a completely filled valence shell \u2014 it has no unpaired electrons to share (ruling out covalent bonding), no tendency to gain or lose electrons to form a stable ion (ruling out ionic bonding), and no delocalized electron sea (ruling out metallic bonding). The only interaction available between neon atoms is a weak, instantaneous-dipole-induced-dipole attraction, which is far weaker than any primary bond \u2014 explaining both the softness and the extremely low temperature required to hold neon atoms together as a solid at all."
     },
     {
       "kc": "band-theory-classification",
@@ -107,15 +107,15 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "Gallium nitride (GaN) has a band gap of Eg = 3.4 eV at room temperature. Classify it and predict its conductivity behavior as temperature rises from room temperature.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §12.6 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a712.6 style",
       "options": [
-        "Metal; conductivity decreases slightly with rising temperature",
-        "Semiconductor; conductivity rises exponentially with rising temperature",
+        "Semiconductor; conductivity decreases with rising temperature just like a metal",
         "Insulator, though wide-gap semiconductors like this are still classified and used as semiconductors in practice; conductivity is negligible near room temperature and rises only slowly",
-        "Semiconductor; conductivity decreases with rising temperature just like a metal"
+        "Metal; conductivity decreases slightly with rising temperature",
+        "Semiconductor; conductivity rises exponentially with rising temperature"
       ],
-      "correct_index": 2,
-      "explanation": "3.4 eV is well above the typical 0.5-1.5 eV range for classic semiconductors like Si and Ge, technically placing GaN in the wide-band-gap regime bordering insulators; very few carriers are thermally excited across such a large gap near room temperature. GaN is nonetheless engineered and used as a (wide-gap) semiconductor via heavy doping rather than relying on intrinsic thermal excitation, which is why option (c) is correct over calling it simply an 'insulator' with no further nuance. Option (a) describes metallic behavior (wrong mechanism entirely); (d) incorrectly attributes metal-like negative temperature coefficient to a semiconductor."
+      "correct_index": 1,
+      "explanation": "3.4 eV is well above the typical 0.5-1.5 eV range for classic semiconductors like Si and Ge, technically placing GaN in the wide-band-gap regime bordering insulators; very few carriers are thermally excited across such a large gap near room temperature. GaN is nonetheless engineered and used as a (wide-gap) semiconductor via heavy doping rather than relying on intrinsic thermal excitation, which is why option (b) is correct over calling it simply an 'insulator' with no further nuance. Option (c) describes metallic behavior (wrong mechanism entirely); (d) incorrectly attributes metal-like negative temperature coefficient to a semiconductor."
     },
     {
       "kc": "band-theory-classification",
@@ -123,15 +123,15 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "What structural feature of the electronic band structure distinguishes a metal from a semiconductor or insulator?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §12.6 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a712.6 style",
       "options": [
-        "Metals have overlapping (or partially filled) valence/conduction bands with no gap; semiconductors and insulators have a gap of differing size",
         "Metals have a larger band gap than insulators",
-        "Semiconductors have no band gap at all, identical to metals",
-        "The distinction is entirely about crystal structure, not band structure"
+        "The distinction is entirely about crystal structure, not band structure",
+        "Metals have overlapping (or partially filled) valence/conduction bands with no gap; semiconductors and insulators have a gap of differing size",
+        "Semiconductors have no band gap at all, identical to metals"
       ],
-      "correct_index": 0,
-      "explanation": "The defining feature is whether there's a gap between the valence and conduction bands at all: metals have overlapping bands (or a partially filled band), so electrons are already available for conduction with no activation energy needed. Semiconductors and insulators both have a real gap; they differ only in its size (and hence how easily electrons can be thermally excited across it). Option (b) inverts the metal/insulator relationship; (c) is factually wrong (semiconductors have a real, if moderate, gap); (d) ignores band structure entirely, which is the actual physical basis for the classification."
+      "correct_index": 2,
+      "explanation": "The defining feature is whether there's a gap between the valence and conduction bands at all: metals have overlapping bands (or a partially filled band), so electrons are already available for conduction with no activation energy needed. Semiconductors and insulators both have a real gap; they differ only in its size (and hence how easily electrons can be thermally excited across it). Option (a) inverts the metal/insulator relationship; (c) is factually wrong (semiconductors have a real, if moderate, gap); (d) ignores band structure entirely, which is the actual physical basis for the classification."
     },
     {
       "kc": "band-theory-classification",
@@ -139,8 +139,8 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "Classify each by band gap at room temperature and state the qualitative conductivity trend with rising temperature: (a) Aluminum, no gap. (b) Silicon, Eg=1.12 eV. (c) Gallium arsenide, Eg=1.42 eV. (d) Aluminum oxide, Eg=~9 eV.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §12.6 style",
-      "solution": "(a) Metal — no gap, bands overlap, conductivity high and slightly decreases with rising T (increased phonon scattering). (b) Semiconductor — moderate gap, conductivity rises exponentially with T as more electrons are thermally promoted across the gap. (c) Semiconductor — similar moderate gap to silicon (slightly larger), same exponential rise with T; GaAs's larger, more direct gap also makes it useful for optoelectronics (LEDs, lasers) where Si is not. (d) Insulator — an extremely large gap means essentially no thermal excitation occurs even at elevated (but sub-melting) temperatures, so alumina remains an effective electrical insulator across the normal engineering temperature range."
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a712.6 style",
+      "solution": "(a) Metal \u2014 no gap, bands overlap, conductivity high and slightly decreases with rising T (increased phonon scattering). (b) Semiconductor \u2014 moderate gap, conductivity rises exponentially with T as more electrons are thermally promoted across the gap. (c) Semiconductor \u2014 similar moderate gap to silicon (slightly larger), same exponential rise with T; GaAs's larger, more direct gap also makes it useful for optoelectronics (LEDs, lasers) where Si is not. (d) Insulator \u2014 an extremely large gap means essentially no thermal excitation occurs even at elevated (but sub-melting) temperatures, so alumina remains an effective electrical insulator across the normal engineering temperature range."
     },
     {
       "kc": "band-theory-classification",
@@ -148,8 +148,8 @@
       "kind": "worked",
       "difficulty": 3,
       "prompt": "A student is surprised that heating a copper wire slightly REDUCES its electrical conductivity, since heating a semiconductor increases conductivity. Explain, from band theory, why the two materials respond oppositely to the same change (increasing temperature).",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §12.6 style",
-      "solution": "In a metal, the number of available charge carriers is already fixed and large (electrons occupy states right up to the Fermi level in an overlapping/partially-filled band) — heating does not create more carriers. What heating DOES do is increase lattice vibration (phonon population), which scatters the existing conduction electrons more frequently, reducing their mean free path and mobility — so conductivity drops slightly. In a semiconductor, by contrast, the number of carriers is NOT fixed; carriers must be thermally excited across the band gap to become available at all, and this carrier-generation effect grows exponentially with temperature, completely dominating over any (much smaller) mobility-reduction effect — so semiconductor conductivity rises sharply with heating even though the same phonon-scattering mechanism is also happening in the background."
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a712.6 style",
+      "solution": "In a metal, the number of available charge carriers is already fixed and large (electrons occupy states right up to the Fermi level in an overlapping/partially-filled band) \u2014 heating does not create more carriers. What heating DOES do is increase lattice vibration (phonon population), which scatters the existing conduction electrons more frequently, reducing their mean free path and mobility \u2014 so conductivity drops slightly. In a semiconductor, by contrast, the number of carriers is NOT fixed; carriers must be thermally excited across the band gap to become available at all, and this carrier-generation effect grows exponentially with temperature, completely dominating over any (much smaller) mobility-reduction effect \u2014 so semiconductor conductivity rises sharply with heating even though the same phonon-scattering mechanism is also happening in the background."
     },
     {
       "kc": "semiconductor-carrier-concentration",
@@ -157,15 +157,15 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "Silicon is doped with Na = 5e15 cm^-3 boron (acceptor). Given ni = 1.5e10 cm^-3 at 300K, which statement correctly identifies the regime and majority carrier?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §12.11 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a712.11 style",
       "options": [
         "Intrinsic regime; electrons and holes are equal",
-        "Extrinsic p-type; majority carrier is holes, p approx Na",
         "Extrinsic n-type; majority carrier is electrons, n approx Na",
-        "Cannot be determined without the mass-action law"
+        "Cannot be determined without the mass-action law",
+        "Extrinsic p-type; majority carrier is holes, p approx Na"
       ],
-      "correct_index": 1,
-      "explanation": "Since Na = 5e15 is many orders of magnitude larger than ni = 1.5e10, the material is firmly extrinsic. Boron is an acceptor, producing p-type material where holes are the majority carrier and p approx Na (nearly full ionization at 300K). Option (a) ignores that Na >> ni. Option (c) mixes up donor/acceptor behavior (boron is an acceptor, not a donor). Option (d) is wrong -- the regime CAN be determined immediately just by comparing Na to ni, without needing the mass-action law (that's only needed for the minority carrier)."
+      "correct_index": 3,
+      "explanation": "Since Na = 5e15 is many orders of magnitude larger than ni = 1.5e10, the material is firmly extrinsic. Boron is an acceptor, producing p-type material where holes are the majority carrier and p approx Na (nearly full ionization at 300K). Option (a) ignores that Na >> ni. Option (b) mixes up donor/acceptor behavior (boron is an acceptor, not a donor). Option (c) is wrong -- the regime CAN be determined immediately just by comparing Na to ni, without needing the mass-action law (that's only needed for the minority carrier)."
     },
     {
       "kc": "semiconductor-carrier-concentration",
@@ -173,15 +173,15 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "A student doping germanium with Nd = 2e15 cm^-3 (ni = 2.4e13 cm^-3 at 300K) computes the minority carrier concentration as p = ni x n instead of p = ni^2 / n. What is the consequence of this error?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §12.11 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a712.11 style",
       "options": [
         "No consequence; both formulas give the same numeric answer",
+        "The error only matters for silicon, not germanium",
         "The student's answer for p will be far too small, since ni x n omits squaring ni and divides nothing out",
-        "The student's answer for p will be far too large and have the wrong units, since the mass-action law requires dividing ni-squared by n, not multiplying ni by n",
-        "The error only matters for silicon, not germanium"
+        "The student's answer for p will be far too large and have the wrong units, since the mass-action law requires dividing ni-squared by n, not multiplying ni by n"
       ],
-      "correct_index": 2,
-      "explanation": "The mass-action law is n*p = ni^2, so p = ni^2/n. Using p = ni*n instead multiplies (rather than divides), giving a wildly inflated, dimensionally-inconsistent result -- for these numbers, ni*n approx (2.4e13)(2e15) = 4.8e28 cm^-6, not even a valid concentration, versus the correct p = ni^2/n = (2.4e13)^2/(2e15) approx 2.88e11 cm^-3. Option (b) has the direction of the error backwards. Option (d) is wrong; the same algebraic error affects any semiconductor."
+      "correct_index": 3,
+      "explanation": "The mass-action law is n*p = ni^2, so p = ni^2/n. Using p = ni*n instead multiplies (rather than divides), giving a wildly inflated, dimensionally-inconsistent result -- for these numbers, ni*n approx (2.4e13)(2e15) = 4.8e28 cm^-6, not even a valid concentration, versus the correct p = ni^2/n = (2.4e13)^2/(2e15) approx 2.88e11 cm^-3. Option (c) has the direction of the error backwards. Option (b) is wrong; the same algebraic error affects any semiconductor."
     },
     {
       "kc": "semiconductor-carrier-concentration",
@@ -189,7 +189,7 @@
       "kind": "numeric",
       "difficulty": 2,
       "prompt": "GaAs is doped with Nd = 1e17 cm^-3 (fully ionized donor) at 300 K, where ni(GaAs) = 2.1e6 cm^-3. Compute the minority carrier (hole) concentration p, in cm^-3.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §12.11 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a712.11 style",
       "answer": {
         "value": 4.41e-05,
         "unit": "cm^-3",
@@ -203,7 +203,7 @@
       "kind": "worked",
       "difficulty": 3,
       "prompt": "Germanium is doped with Nd = 3e16 cm^-3 phosphorus, fully ionized at 300 K, with ni(Ge, 300K) = 2.4e13 cm^-3. Determine the majority and minority carrier concentrations, stating the regime first.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §12.11 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a712.11 style",
       "solution": "Regime check: Nd = 3e16 >> ni = 2.4e13, so this is firmly extrinsic n-type. Majority carriers (electrons): n approx Nd = 3e16 cm^-3. Minority carriers (holes), from n*p = ni^2: p = ni^2/n = (2.4e13)^2/(3e16) = 5.76e26/3e16 = 1.92e10 cm^-3. Result: n = 3e16 cm^-3 (majority electrons), p = 1.92e10 cm^-3 (minority holes) -- note germanium's larger intrinsic concentration (compared to silicon) means its minority carrier suppression, while still dramatic, leaves a higher residual minority population than an equally-doped silicon sample would."
     },
     {
@@ -212,15 +212,15 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "A rubber tire (vulcanized/crosslinked polymer network) is heated well past its normal service temperature. What happens, and why?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §14.4 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a714.4 style",
       "options": [
-        "It melts and can be reshaped, just like a thermoplastic",
-        "It degrades/chars rather than melting, because the covalent crosslinks between chains prevent the material from ever becoming a collection of independently flowing chains",
+        "Nothing changes; crosslinked polymers are completely temperature-insensitive",
         "It becomes MORE crystalline as temperature rises",
-        "Nothing changes; crosslinked polymers are completely temperature-insensitive"
+        "It melts and can be reshaped, just like a thermoplastic",
+        "It degrades/chars rather than melting, because the covalent crosslinks between chains prevent the material from ever becoming a collection of independently flowing chains"
       ],
-      "correct_index": 1,
-      "explanation": "Crosslinked (thermoset/network) polymers cannot melt in the ordinary sense because their chains are permanently, covalently tied together into one giant molecular network -- there is no 'individual chain' left to become mobile and flow. Sufficient heating instead breaks those covalent bonds outright (degradation/charring), an irreversible chemical change, not a reversible phase change. Option (a) describes thermoplastic, not thermoset, behavior. Option (c) confuses heating with crystallization, which generally requires COOLING through a favorable temperature window, not heating past service temperature."
+      "correct_index": 3,
+      "explanation": "Crosslinked (thermoset/network) polymers cannot melt in the ordinary sense because their chains are permanently, covalently tied together into one giant molecular network -- there is no 'individual chain' left to become mobile and flow. Sufficient heating instead breaks those covalent bonds outright (degradation/charring), an irreversible chemical change, not a reversible phase change. Option (c) describes thermoplastic, not thermoset, behavior. Option (b) confuses heating with crystallization, which generally requires COOLING through a favorable temperature window, not heating past service temperature."
     },
     {
       "kc": "polymer-chain-structure",
@@ -228,15 +228,15 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "Two samples of polypropylene have identical molecular weight and identical linear (unbranched) chain architecture. One is atactic, the other is isotactic. Which is more likely to be semicrystalline, and why?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §14.4 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a714.4 style",
       "options": [
-        "The atactic sample, because random side-group placement packs more efficiently",
-        "The isotactic sample, because its side groups are regularly arranged on one side of the chain, allowing chains to pack into an ordered, repeating lattice",
+        "Neither can be crystalline; only crosslinked polymers can be crystalline",
         "Both are equally crystalline, since crystallinity depends only on molecular weight",
-        "Neither can be crystalline; only crosslinked polymers can be crystalline"
+        "The atactic sample, because random side-group placement packs more efficiently",
+        "The isotactic sample, because its side groups are regularly arranged on one side of the chain, allowing chains to pack into an ordered, repeating lattice"
       ],
-      "correct_index": 1,
-      "explanation": "Stereoregularity is exactly what allows efficient, repeatable chain packing: isotactic polypropylene's methyl groups all point the same way, letting adjacent chain segments nest into a periodic arrangement (semicrystalline). Atactic polypropylene's randomly oriented side groups prevent any such repeatable packing, keeping it amorphous. Option (a) has the logic backwards -- randomness disrupts packing, it doesn't improve it. Option (c) ignores stereoregularity's role entirely (molecular weight is a second-order effect here). Option (d) is simply false; many crystalline polymers (HDPE, isotactic PP, nylon) are NOT crosslinked."
+      "correct_index": 3,
+      "explanation": "Stereoregularity is exactly what allows efficient, repeatable chain packing: isotactic polypropylene's methyl groups all point the same way, letting adjacent chain segments nest into a periodic arrangement (semicrystalline). Atactic polypropylene's randomly oriented side groups prevent any such repeatable packing, keeping it amorphous. Option (c) has the logic backwards -- randomness disrupts packing, it doesn't improve it. Option (b) ignores stereoregularity's role entirely (molecular weight is a second-order effect here). Option (a) is simply false; many crystalline polymers (HDPE, isotactic PP, nylon) are NOT crosslinked."
     },
     {
       "kc": "polymer-chain-structure",
@@ -244,7 +244,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "Contrast the property consequences of branching (as in LDPE) versus crosslinking (as in vulcanized rubber or cured epoxy), even though both involve chains connecting to other chains in some sense.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §14.4 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a714.4 style",
       "solution": "Branching creates side-chains growing off a main backbone but does NOT chemically bond one main chain to another -- each molecule is still, in principle, a single (branched) chain that can still move independently of its neighbors when heated, so a branched thermoplastic like LDPE still melts and reflows, just at a lower density/crystallinity/stiffness than its linear counterpart (HDPE) because the branches disrupt packing. Crosslinking, by contrast, forms actual covalent bonds directly BETWEEN separate chains, welding the whole material into one giant interconnected molecule -- this is what prevents melting altogether (see the network-polymer-melt-behavior exercise) and is the key distinguishing feature of a thermoset versus even a heavily branched thermoplastic."
     },
     {
@@ -253,7 +253,7 @@
       "kind": "numeric",
       "difficulty": 2,
       "prompt": "A polyethylene sample has a measured bulk density of 0.925 g/cm^3. The fully amorphous density is 0.870 g/cm^3 and the fully crystalline density is 0.998 g/cm^3. Using %crystallinity = [rho_c(rho_s - rho_a)] / [rho_s(rho_c - rho_a)] x 100, compute the percent crystallinity.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §14.11 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a714.11 style",
       "answer": {
         "value": 46.36,
         "unit": null,
@@ -267,15 +267,15 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "For any real polydisperse polymer sample (not perfectly uniform chain lengths), which is always true?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §14.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a714.5 style",
       "options": [
-        "Mn > Mw always",
         "Mw >= Mn always, with equality only for a perfectly monodisperse sample",
+        "Mw = 2 x Mn always",
         "Mn and Mw are unrelated and either can be larger",
-        "Mw = 2 x Mn always"
+        "Mn > Mw always"
       ],
-      "correct_index": 1,
-      "explanation": "Because Mw weights each size range by its MASS contribution (larger molecules contribute disproportionately more mass than they do in a simple molecule count), Mw is always greater than or equal to Mn for any real distribution, with equality holding only in the idealized case where every chain has exactly the same molecular weight (PDI = 1). Option (a) has the inequality backwards. Option (c) ignores that this relationship is a mathematical consequence of the definitions, not a coincidence. Option (d) invents a fixed ratio that has no general basis."
+      "correct_index": 0,
+      "explanation": "Because Mw weights each size range by its MASS contribution (larger molecules contribute disproportionately more mass than they do in a simple molecule count), Mw is always greater than or equal to Mn for any real distribution, with equality holding only in the idealized case where every chain has exactly the same molecular weight (PDI = 1). Option (d) has the inequality backwards. Option (c) ignores that this relationship is a mathematical consequence of the definitions, not a coincidence. Option (b) invents a fixed ratio that has no general basis."
     },
     {
       "kc": "polymer-molecular-weight-and-degree-of-polymerization",
@@ -283,15 +283,15 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "Two polymer samples have PDI = 1.05 and PDI = 3.80 respectively, both with the same Mn. What does the higher PDI value indicate?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §14.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a714.5 style",
       "options": [
+        "The second sample must have a higher average molecular weight",
         "The second sample has a narrower (more uniform) molecular-weight distribution",
         "The second sample has a broader molecular-weight distribution, containing a wider spread of chain lengths around the same average",
-        "PDI has no relationship to distribution width",
-        "The second sample must have a higher average molecular weight"
+        "PDI has no relationship to distribution width"
       ],
-      "correct_index": 1,
-      "explanation": "PDI = Mw/Mn measures how much the distribution's mass-weighted average (Mw) diverges from its number-weighted average (Mn); a wider spread of chain lengths pulls Mw up relative to Mn (since a few very large chains dominate the mass calculation), raising the PDI. A PDI near 1.0 (like 1.05) indicates a narrow, fairly uniform distribution; PDI = 3.80 indicates a broad distribution. Option (a) reverses the interpretation. Option (d) is a non sequitur -- PDI describes SPREAD, not the AVERAGE value, which was stated to be the same (same Mn) for both samples."
+      "correct_index": 2,
+      "explanation": "PDI = Mw/Mn measures how much the distribution's mass-weighted average (Mw) diverges from its number-weighted average (Mn); a wider spread of chain lengths pulls Mw up relative to Mn (since a few very large chains dominate the mass calculation), raising the PDI. A PDI near 1.0 (like 1.05) indicates a narrow, fairly uniform distribution; PDI = 3.80 indicates a broad distribution. Option (b) reverses the interpretation. Option (a) is a non sequitur -- PDI describes SPREAD, not the AVERAGE value, which was stated to be the same (same Mn) for both samples."
     },
     {
       "kc": "polymer-molecular-weight-and-degree-of-polymerization",
@@ -299,7 +299,7 @@
       "kind": "numeric",
       "difficulty": 2,
       "prompt": "A polypropylene sample has this mole-fraction distribution: 12,000-22,000 g/mol (xi=0.15, Mi=17,000); 22,000-32,000 g/mol (xi=0.40, Mi=27,000); 32,000-42,000 g/mol (xi=0.30, Mi=37,000); 42,000-52,000 g/mol (xi=0.15, Mi=47,000). Compute Mn in g/mol.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §14.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a714.5 style",
       "answer": {
         "value": 31500,
         "unit": "g/mol",
@@ -313,7 +313,7 @@
       "kind": "worked",
       "difficulty": 3,
       "prompt": "A polyethylene sample has distribution: 15,000-25,000 g/mol (xi=0.20, Mi=20,000); 25,000-35,000 g/mol (xi=0.45, Mi=30,000); 35,000-45,000 g/mol (xi=0.35, Mi=40,000). Determine Mn, Mw, PDI, and DP (repeat unit mass m0 = 28.05 g/mol for polyethylene).",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §14.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a714.5 style",
       "solution": "Step 1 -- Mn = sum(xi*Mi) = 0.20(20,000) + 0.45(30,000) + 0.35(40,000) = 4,000 + 13,500 + 14,000 = 31,500 g/mol. Step 2 -- weight fractions wi = xi*Mi/Mn: w1 = 4,000/31,500 = 0.1270, w2 = 13,500/31,500 = 0.4286, w3 = 14,000/31,500 = 0.4444 (sums to 1.000, checks out). Step 3 -- Mw = sum(wi*Mi) = 0.1270(20,000) + 0.4286(30,000) + 0.4444(40,000) = 2,540 + 12,858 + 17,776 = 33,174 g/mol (approx 33,175). Step 4 -- PDI = Mw/Mn = 33,174/31,500 approx 1.053 -- a fairly narrow distribution. Step 5 -- DP = Mn/m0 = 31,500/28.05 approx 1,123 repeat units per average chain."
     },
     {
@@ -322,7 +322,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "A nylon-6,6 sample has Mn = 20,000 g/mol. The repeat unit -[NH-(CH2)6-NH-CO-(CH2)4-CO]- has a formula mass of 226.32 g/mol. Compute the degree of polymerization DP, and explain briefly why using the MONOMER masses (hexamethylenediamine and adipic acid, before condensation) instead of the REPEAT UNIT mass would give a wrong DP.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §14.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a714.5 style",
       "solution": "DP = Mn/m0 = 20,000/226.32 approx 88.4 repeat units. Using the monomer masses directly would be wrong because nylon-6,6 forms by a CONDENSATION reaction: each amide linkage formed between the diamine and diacid monomers releases a small water molecule (18.02 g/mol), so the mass actually incorporated into the chain per linkage (the repeat unit mass, 226.32 g/mol) is LESS than the simple sum of the two starting monomer masses. Using the monomers' pre-reaction masses would overstate the mass per repeat unit and understate DP."
     },
     {
@@ -331,14 +331,14 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "A unit cell has a = b = 0.40 nm, c = 0.60 nm, and alpha = beta = gamma = 90 degrees. Which crystal system is this?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.7 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.7 style",
       "options": [
-        "Cubic",
         "Tetragonal",
+        "Cubic",
         "Orthorhombic",
         "Hexagonal"
       ],
-      "correct_index": 1,
+      "correct_index": 0,
       "explanation": "Tetragonal requires a = b != c with all angles 90 degrees -- exactly matching this cell (two equal axes, one different, all right angles). Cubic (a) requires all three axes equal (a=b=c), which fails here since c != a. Orthorhombic (c) requires all three axes DIFFERENT (a != b != c), but here a = b. Hexagonal (d) requires a 120-degree angle between two axes, not present here."
     },
     {
@@ -347,14 +347,14 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "Which crystal system has the fewest constraints on its lattice parameters (i.e., is the LEAST symmetric, with the most degrees of freedom)?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.7 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.7 style",
       "options": [
+        "Triclinic",
         "Cubic",
         "Hexagonal",
-        "Monoclinic",
-        "Triclinic"
+        "Monoclinic"
       ],
-      "correct_index": 3,
+      "correct_index": 0,
       "explanation": "Triclinic has no equal axes (a != b != c) and no angle constraints at all (alpha != beta != gamma != 90 degrees), making it the least symmetric of the seven systems and the one with the most independent parameters to specify. Cubic (a) is the MOST symmetric (a=b=c, all angles 90). Hexagonal (b) and monoclinic (c) both have more constraints than triclinic (hexagonal fixes two axes equal and one angle at 120; monoclinic fixes two angles at 90)."
     },
     {
@@ -363,7 +363,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "Explain the difference between the rhombohedral (trigonal) and hexagonal crystal systems -- students commonly confuse these since both have some 3-fold or 6-fold-related symmetry.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.7 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.7 style",
       "solution": "Rhombohedral (trigonal): a = b = c (all three axes equal, like cubic), but all three angles are equal to each other and NOT equal to 90 degrees (alpha=beta=gamma != 90). It is essentially a cube stretched or compressed along its body diagonal. Hexagonal: a = b != c, with alpha = beta = 90 degrees but gamma = 120 degrees -- two equal axes in a plane meeting at 120 degrees, plus a third, independent axis perpendicular to that plane. The key distinguishing test: rhombohedral has three EQUAL axis lengths with three EQUAL non-90-degree angles; hexagonal has only two equal axis lengths and a SINGLE 120-degree angle (the rest are 90 degrees)."
     },
     {
@@ -372,7 +372,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "List all seven crystal systems in order of decreasing symmetry, with their axis-length and angle constraints, without looking anything up.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.7 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.7 style",
       "solution": "1. Cubic: a=b=c, all angles 90. 2. Tetragonal: a=b!=c, all angles 90. 3. Orthorhombic: a!=b!=c, all angles 90. 4. Rhombohedral (trigonal): a=b=c, all angles equal but !=90. 5. Hexagonal: a=b!=c, alpha=beta=90, gamma=120. 6. Monoclinic: a!=b!=c, two angles =90, one !=90. 7. Triclinic: a!=b!=c, no angles equal or =90 -- least symmetric, most degrees of freedom."
     },
     {
@@ -381,12 +381,12 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "A student computing the density of BCC chromium mistakenly uses the FCC relation r = a*sqrt(2)/4 instead of the correct BCC relation r = a*sqrt(3)/4. What is the direct consequence?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.5 style",
       "options": [
         "No consequence; the two relations give the same numeric value",
         "The computed atomic radius will be too small, since sqrt(2) < sqrt(3), throwing off any downstream calculation that uses r",
-        "The computed density will still be correct because density doesn't depend on r",
-        "The error only affects APF, not density"
+        "The error only affects APF, not density",
+        "The computed density will still be correct because density doesn't depend on r"
       ],
       "correct_index": 1,
       "explanation": "sqrt(2) approx 1.414 is smaller than sqrt(3) approx 1.732, so using the FCC relation for a BCC structure UNDERSTATES the atomic radius. This error would primarily corrupt any calculation that starts from a KNOWN radius r to find the lattice parameter a (or APF calculations that use r directly) -- density itself (which uses n, A, and a, not r) would be unaffected IF a is known independently, but the question specifically tests recognizing that mixing up structure-specific r-to-a relations is the single most common error in this KC, as noted in the practice guidance."
@@ -397,15 +397,15 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "How many atoms per unit cell does an FCC (face-centered cubic) structure contain?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.5 style",
       "options": [
+        "8",
         "1",
-        "2",
         "4",
-        "8"
+        "2"
       ],
       "correct_index": 2,
-      "explanation": "FCC contributes: 8 corner atoms x 1/8 each = 1, plus 6 face atoms x 1/2 each = 3, total = 4 atoms per unit cell. Option (a) 1 is the count for simple cubic. Option (b) 2 is the count for BCC (8 corners x 1/8 = 1, plus 1 full body-center atom = 1, total 2). Option (d) 8 would be the count if every atom (corner and face) were counted as a whole atom without applying the sharing fractions -- a common raw-counting error."
+      "explanation": "FCC contributes: 8 corner atoms x 1/8 each = 1, plus 6 face atoms x 1/2 each = 3, total = 4 atoms per unit cell. Option (b) 1 is the count for simple cubic. Option (d) 2 is the count for BCC (8 corners x 1/8 = 1, plus 1 full body-center atom = 1, total 2). Option (a) 8 would be the count if every atom (corner and face) were counted as a whole atom without applying the sharing fractions -- a common raw-counting error."
     },
     {
       "kc": "unit-cell-calculations",
@@ -413,7 +413,7 @@
       "kind": "numeric",
       "difficulty": 2,
       "prompt": "Nickel is FCC with lattice parameter a = 0.3524 nm and atomic mass A = 58.69 g/mol (4 atoms per unit cell). Compute the theoretical density in g/cm^3.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.5 style",
       "answer": {
         "value": 8.91,
         "unit": "g/cm^3",
@@ -427,7 +427,7 @@
       "kind": "worked",
       "difficulty": 3,
       "prompt": "Chromium is BCC with a = 0.2885 nm, r = a*sqrt(3)/4, 2 atoms per unit cell, A = 52.00 g/mol. Compute the atomic packing factor APF and the theoretical density, showing every step (do not just quote the standard BCC APF value from memory -- derive it from these numbers).",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.5 style",
       "solution": "Step 1 -- radius: r = a*sqrt(3)/4 = 0.2885 x 1.732/4 = 0.4997/4 = 0.1249 nm. Step 2 -- APF = n(4/3)*pi*r^3/a^3 = 2 x (4/3)*pi*(0.1249)^3 / (0.2885)^3 = 2 x 4.1888 x 0.001949 / 0.02401 = 0.01633/0.02401 approx 0.680 (68.0%), matching the standard BCC packing efficiency. Step 3 -- density: a in cm = 2.885e-8 cm, Vc = (2.885e-8)^3 = 2.402e-23 cm^3. rho = nA/(Vc*NA) = (2 x 52.00)/(2.402e-23 x 6.022e23) = 104.00/14.47 approx 7.19 g/cm^3, matching chromium's known density (7.19 g/cm^3)."
     },
     {
@@ -436,7 +436,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "Aluminum is FCC with a = 0.4046 nm, r = a*sqrt(2)/4, 4 atoms per unit cell, A = 26.98 g/mol. Verify the theoretical density against the known value of 2.70 g/cm^3.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.5 style",
       "solution": "r = a*sqrt(2)/4 = 0.4046 x 1.4142/4 = 0.5722/4 = 0.1431 nm. Convert a to cm: 4.046e-8 cm, Vc = (4.046e-8)^3 = 6.622e-23 cm^3. rho = nA/(Vc*NA) = (4 x 26.98)/(6.622e-23 x 6.022e23) = 107.92/39.88 approx 2.71 g/cm^3 -- matches the known value of 2.70 g/cm^3 within rounding, confirming the FCC model and given lattice parameter are consistent with aluminum's real measured density."
     },
     {
@@ -445,15 +445,15 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "Which statement correctly describes the difference between finding Miller indices for a PLANE versus a DIRECTION?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.9 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.9 style",
       "options": [
+        "Directions require taking reciprocals; planes do not",
         "Both procedures are identical: take reciprocals then clear fractions",
         "Planes: take reciprocals of intercepts, then clear fractions. Directions: clear fractions on the coordinates directly, with NO reciprocal step",
-        "Directions require taking reciprocals; planes do not",
         "Neither procedure ever involves clearing fractions"
       ],
-      "correct_index": 1,
-      "explanation": "This is exactly the distinction the KC's practice notes flag as the most common error: plane indices come from taking the RECIPROCAL of each axis intercept and then clearing any fractions, while direction indices come directly from the coordinates of the endpoint (relative to the origin), clearing fractions WITHOUT ever taking a reciprocal. Option (c) reverses which one uses reciprocals. Option (a) and (d) both ignore that the two procedures are genuinely different."
+      "correct_index": 2,
+      "explanation": "This is exactly the distinction the KC's practice notes flag as the most common error: plane indices come from taking the RECIPROCAL of each axis intercept and then clearing any fractions, while direction indices come directly from the coordinates of the endpoint (relative to the origin), clearing fractions WITHOUT ever taking a reciprocal. Option (a) reverses which one uses reciprocals. Option (b) and (d) both ignore that the two procedures are genuinely different."
     },
     {
       "kc": "miller-indices",
@@ -461,15 +461,15 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "A plane intercepts the a-axis at -1 (on the negative side of the origin), the b-axis at 1, and is parallel to the c-axis. How should the negative index be written?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.9 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.9 style",
       "options": [
-        "(1-1 0)",
         "(-1 1 0), written with a standard minus sign",
+        "Negative intercepts are not allowed in Miller index notation",
         "With a bar over the digit: (1bar 1 0)",
-        "Negative intercepts are not allowed in Miller index notation"
+        "(1-1 0)"
       ],
       "correct_index": 2,
-      "explanation": "The crystallographic convention places a bar OVER the index (rather than a minus sign in front) to indicate a negative intercept, e.g. (1-bar,1,0), often typeset as (1 with an overbar, 1, 0). This distinguishes it visually and typographically from a a three-digit sequence that could be misread. Option (a) mangles the notation entirely. Option (b) uses a convention (leading minus sign) that is common in some contexts but not the standard crystallographic bar notation this course uses. Option (d) is simply false -- negative intercepts are common and fully supported by the notation."
+      "explanation": "The crystallographic convention places a bar OVER the index (rather than a minus sign in front) to indicate a negative intercept, e.g. (1-bar,1,0), often typeset as (1 with an overbar, 1, 0). This distinguishes it visually and typographically from a a three-digit sequence that could be misread. Option (d) mangles the notation entirely. Option (a) uses a convention (leading minus sign) that is common in some contexts but not the standard crystallographic bar notation this course uses. Option (b) is simply false -- negative intercepts are common and fully supported by the notation."
     },
     {
       "kc": "miller-indices",
@@ -477,7 +477,7 @@
       "kind": "numeric",
       "difficulty": 2,
       "prompt": "A plane intercepts the axes at a = 1, b = 1/3, c = 1/2. After taking reciprocals and clearing fractions to the smallest integer set, what is the value of the FIRST Miller index (h)?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.9 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.9 style",
       "answer": {
         "value": 1,
         "unit": null,
@@ -491,7 +491,7 @@
       "kind": "worked",
       "difficulty": 3,
       "prompt": "Determine the Miller indices [uvw] of the direction from the origin to the point (1/2, 1, 3/4). Show the fraction-clearing step explicitly (no reciprocal step is used for directions).",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.9 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.9 style",
       "solution": "Coordinates: (1/2, 1, 3/4). Directions use the coordinates directly -- clear fractions by finding the smallest common multiplier. The denominators present are 2 and 4, so multiply all three coordinates by 4: 4(1/2)=2, 4(1)=4, 4(3/4)=3. Result: [2 4 3]. Check that 2, 4, 3 share no common factor (they don't), so [2 4 3] is the final, fully reduced set of direction indices."
     },
     {
@@ -500,7 +500,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "(a) A plane intercepts the axes at a=2, b=1, c=1. Find its Miller indices. (b) A direction runs from the origin to (1, 1/2, 1). Find its indices. Work each using the CORRECT procedure for its type.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.9 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.9 style",
       "solution": "(a) Plane: reciprocals of 2, 1, 1 are 1/2, 1, 1. Clear fractions by multiplying by 2: 1, 2, 2. Indices: (1 2 2). (b) Direction: coordinates (1, 1/2, 1) -- NO reciprocal step. Clear the fraction by multiplying by 2: 2, 1, 2. Indices: [2 1 2]. Note both problems happened to use the same multiplier (2) for different reasons -- (a) because reciprocals of the given intercepts introduced a 1/2, and (b) because the coordinate itself had a 1/2 -- this is coincidental, not evidence the two procedures are the same."
     },
     {
@@ -509,10 +509,10 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "A crystal contains a defect where, following a circuit around the defect line, the lattice appears to spiral upward like a ramp rather than closing on itself in a single plane. What is this defect?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §4.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a74.5 style",
       "options": [
-        "Vacancy",
         "Edge dislocation",
+        "Vacancy",
         "Screw dislocation",
         "Substitutional impurity"
       ],
@@ -525,15 +525,15 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "In an ionic crystal, a cation leaves its regular lattice site and lodges in a nearby interstitial site, leaving a vacancy behind -- the cation is not lost from the crystal, just displaced. What is this defect pair called?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §4.2 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a74.2 style",
       "options": [
-        "Schottky defect",
-        "Frenkel defect",
+        "Substitutional impurity",
         "Edge dislocation",
-        "Substitutional impurity"
+        "Frenkel defect",
+        "Schottky defect"
       ],
-      "correct_index": 1,
-      "explanation": "A Frenkel defect is exactly this: an ion (commonly the smaller cation) displaced from its regular site into an interstitial position, creating a vacancy-interstitial pair while conserving the total number of ions in the crystal. A Schottky defect (a) instead involves a stoichiometric pair of vacancies (one cation vacancy AND one anion vacancy) with no accompanying interstitial, keeping the crystal electrically neutral a different way. Options (c) and (d) are unrelated defect categories (line defect, and a foreign-atom point defect, respectively)."
+      "correct_index": 2,
+      "explanation": "A Frenkel defect is exactly this: an ion (commonly the smaller cation) displaced from its regular site into an interstitial position, creating a vacancy-interstitial pair while conserving the total number of ions in the crystal. A Schottky defect (a) instead involves a stoichiometric pair of vacancies (one cation vacancy AND one anion vacancy) with no accompanying interstitial, keeping the crystal electrically neutral a different way. Options (b) and (a) are unrelated defect categories (line defect, and a foreign-atom point defect, respectively)."
     },
     {
       "kc": "crystal-defect-classification",
@@ -541,7 +541,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "Explain, in terms of the atoms' behavior, why the equilibrium vacancy concentration in a crystal increases with temperature, rather than staying fixed or decreasing.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §4.2 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a74.2 style",
       "solution": "Creating a vacancy costs energy (breaking bonds to remove an atom from its lattice site and relocate it, typically to the crystal surface), but it also increases the crystal's configurational entropy, since there are many equivalent ways to distribute a given number of vacancies among the available lattice sites. At higher temperature, the entropy term (which scales with kT) becomes more significant relative to the fixed energy cost, so the free-energy-minimizing equilibrium vacancy concentration increases -- this is captured quantitatively by the Arrhenius-type relation Nv/N = exp(-Qv/kT), where the exponential term grows toward 1 as T increases."
     },
     {
@@ -550,7 +550,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "Classify each described imperfection as a point defect (specify type) or a line defect: (1) A silicon atom occupying a lattice site normally held by germanium, in a Si-Ge alloy where the two atoms are similar in size. (2) A hydrogen atom lodged between the regular lattice sites of a palladium crystal. (3) An extra half-plane of atoms terminating partway through a crystal.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §4.2-4.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a74.2-4.5 style",
       "solution": "(1) Substitutional impurity -- a foreign atom of comparable size replacing a host atom on a regular lattice site (silicon and germanium are both Group IV, similar atomic radii, and indeed form a continuous solid solution). (2) Interstitial impurity -- hydrogen is far too small to occupy a regular lattice site, so it sits in the interstitial space between palladium atoms (this is exactly the mechanism behind hydrogen embrittlement and hydrogen storage in palladium). (3) Edge dislocation -- a line defect whose motion (glide) is the microscopic mechanism of plastic slip."
     },
     {
@@ -559,15 +559,15 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "A researcher wants to find the STEADY-STATE flux of hydrogen through a metal membrane with a constant concentration difference across it (concentration profile no longer changing with time). Which law applies?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §5.3 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a75.3 style",
       "options": [
-        "Fick's first law",
         "Fick's second law",
         "The Arrhenius equation alone, without either Fick's law",
+        "Fick's first law",
         "Neither -- steady-state problems require the error function"
       ],
-      "correct_index": 0,
-      "explanation": "Fick's first law (J = -D dC/dx) is specifically the steady-state flux relation -- once the concentration profile has stopped changing with time, Fick's first law directly relates flux to the concentration gradient. Fick's second law (b) is for TRANSIENT (time-varying) concentration profiles, the opposite situation. Option (c) ignores that Fick's law (not just Arrhenius, which only gives D's temperature dependence) is needed to relate flux to concentration. Option (d) incorrectly associates the error function (used in Fick's second law's transient solution) with steady-state problems."
+      "correct_index": 2,
+      "explanation": "Fick's first law (J = -D dC/dx) is specifically the steady-state flux relation -- once the concentration profile has stopped changing with time, Fick's first law directly relates flux to the concentration gradient. Fick's second law (b) is for TRANSIENT (time-varying) concentration profiles, the opposite situation. Option (b) ignores that Fick's law (not just Arrhenius, which only gives D's temperature dependence) is needed to relate flux to concentration. Option (d) incorrectly associates the error function (used in Fick's second law's transient solution) with steady-state problems."
     },
     {
       "kc": "diffusion-ficks-laws",
@@ -575,14 +575,14 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "A student computes 2*sqrt(D*t) using D in m^2/s and t in HOURS without converting to seconds. What is the direct consequence?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §5.4 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a75.4 style",
       "options": [
+        "Fick's second law does not require consistent units",
         "No consequence, since D and t are both time-related quantities",
         "The result will be numerically wrong (too small) since D*t requires t in seconds to match D's units of m^2/s",
-        "The result is only affected if x is also in the wrong units",
-        "Fick's second law does not require consistent units"
+        "The result is only affected if x is also in the wrong units"
       ],
-      "correct_index": 1,
+      "correct_index": 2,
       "explanation": "D's units (m^2/s) require t to be in SECONDS for the product D*t to have units of m^2 (matching x^2, so the ratio x/(2*sqrt(Dt)) is dimensionless as required by the erf argument). Using t in hours without converting makes D*t roughly 3600x too small, which propagates directly into an incorrect similarity variable and a wrong final concentration or time. This is exactly the unit-consistency check flagged in this KC's practice notes."
     },
     {
@@ -591,7 +591,7 @@
       "kind": "numeric",
       "difficulty": 2,
       "prompt": "A steel part is carburized with D = 2.5e-11 m^2/s, Cs = 1.0 wt%, C0 = 0.1 wt%. Using erf(0.272) approx 0.300, find the carbon concentration (wt%) at depth x = 0.4 mm after t = 6 hours (21,600 s).",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §5.4 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a75.4 style",
       "answer": {
         "value": 0.73,
         "unit": "wt%",
@@ -605,7 +605,7 @@
       "kind": "worked",
       "difficulty": 3,
       "prompt": "A steel is gas-nitrided with Cs = 0.8 wt% N, C0 approx 0 wt% N, and D = 1.5e-11 m^2/s. Determine the approximate time (in hours) required to reach 0.3 wt% N at a depth of 0.35 mm, using the approximation erf(z) approx 1 - exp(-1.128z - 0.79z^2) to invert the error function if needed, or by iterating toward the target erf value.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §5.4 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a75.4 style",
       "solution": "Target: (Cs - Cx)/(Cs - C0) = (0.8 - 0.3)/(0.8 - 0) = 0.5/0.8 = 0.625 = erf(z). From an error-function table, erf(z) = 0.625 corresponds to z approx 0.616. Then z = x/(2*sqrt(Dt)) means 2*sqrt(Dt) = x/z = 0.00035/0.616 = 5.682e-4 m, so sqrt(Dt) = 2.841e-4, Dt = 8.07e-8 m^2. t = 8.07e-8/1.5e-11 = 5,380 s approx 1.49 hours."
     },
     {
@@ -614,7 +614,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "Compare D at 800 K versus D at 900 K for a diffusing species with D0 = 2.0e-5 m^2/s and Q = 150 kJ/mol, using D = D0*exp(-Q/(RT)) with R = 8.314 J/mol-K. By what factor does D increase?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §5.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a75.5 style",
       "solution": "At 800 K: exponent = -150,000/(8.314 x 800) = -150,000/6,651.2 = -22.55, so D(800) = 2.0e-5 x exp(-22.55) approx 2.0e-5 x 1.60e-10 = 3.2e-15 m^2/s. At 900 K: exponent = -150,000/(8.314 x 900) = -150,000/7,482.6 = -20.05, D(900) = 2.0e-5 x exp(-20.05) approx 2.0e-5 x 1.96e-9 = 3.92e-14 m^2/s. Factor increase = 3.92e-14/3.2e-15 approx 12.3x -- a mere 100 K temperature increase produces more than an order-of-magnitude jump in D, the exponential Arrhenius sensitivity this course emphasizes."
     },
     {
@@ -623,15 +623,15 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "For any binary alloy composition, what phase(s) are present at a temperature ABOVE the liquidus line?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §9.8 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a79.8 style",
       "options": [
-        "Fully solid",
+        "Depends only on cooling rate, not temperature",
         "Solid + liquid two-phase mixture",
-        "Fully liquid",
-        "Depends only on cooling rate, not temperature"
+        "Fully solid",
+        "Fully liquid"
       ],
-      "correct_index": 2,
-      "explanation": "By definition, the liquidus is the boundary above which the alloy is entirely liquid, for any overall composition. Below the liquidus (but above the solidus) is the two-phase (solid+liquid) region (b); below the solidus is fully solid (a). Option (d) is incorrect -- phase diagrams describe EQUILIBRIUM states as a function of composition and temperature, independent of cooling rate (cooling rate effects, like undercooling, are a separate, kinetic topic)."
+      "correct_index": 3,
+      "explanation": "By definition, the liquidus is the boundary above which the alloy is entirely liquid, for any overall composition. Below the liquidus (but above the solidus) is the two-phase (solid+liquid) region (b); below the solidus is fully solid (a). Option (a) is incorrect -- phase diagrams describe EQUILIBRIUM states as a function of composition and temperature, independent of cooling rate (cooling rate effects, like undercooling, are a separate, kinetic topic)."
     },
     {
       "kc": "phase-diagram-reading",
@@ -639,15 +639,15 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "At the eutectic point of a binary phase diagram, what happens upon cooling through that exact temperature at the eutectic composition?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §9.11 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a79.11 style",
       "options": [
-        "The liquid transforms directly and completely into a single solid solution phase",
         "The liquid transforms simultaneously into two distinct solid phases at a single, invariant temperature",
         "Nothing happens; the eutectic point is just a labeling convention",
-        "The liquid becomes fully solid gradually over a wide temperature range, like an isomorphous alloy"
+        "The liquid becomes fully solid gradually over a wide temperature range, like an isomorphous alloy",
+        "The liquid transforms directly and completely into a single solid solution phase"
       ],
-      "correct_index": 1,
-      "explanation": "The eutectic reaction is L -> alpha + beta: liquid of the eutectic composition transforms simultaneously into two distinct solid phases at ONE fixed (invariant) temperature -- unlike an isomorphous system, there is no freezing RANGE at exactly the eutectic composition. Option (a) describes an isomorphous system's single-phase solidification, not a eutectic. Option (d) describes gradual solidification over a temperature range, which is exactly what does NOT happen at the eutectic composition (it does happen at OFF-eutectic compositions, which pass through a two-phase L+alpha or L+beta region before reaching the eutectic temperature)."
+      "correct_index": 0,
+      "explanation": "The eutectic reaction is L -> alpha + beta: liquid of the eutectic composition transforms simultaneously into two distinct solid phases at ONE fixed (invariant) temperature -- unlike an isomorphous system, there is no freezing RANGE at exactly the eutectic composition. Option (d) describes an isomorphous system's single-phase solidification, not a eutectic. Option (c) describes gradual solidification over a temperature range, which is exactly what does NOT happen at the eutectic composition (it does happen at OFF-eutectic compositions, which pass through a two-phase L+alpha or L+beta region before reaching the eutectic temperature)."
     },
     {
       "kc": "phase-diagram-reading",
@@ -655,7 +655,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "In the Fe-Fe3C system, the eutectoid reaction occurs at 727 degC and 0.76 wt% C: gamma (austenite) -> alpha (ferrite) + Fe3C (cementite). For a steel of exactly 0.76 wt% C cooled slowly through 727 degC, describe what happens, and contrast it with a steel of 0.40 wt% C (hypoeutectoid) cooled through the same temperature region.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §9.19 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a79.19 style",
       "solution": "At exactly the eutectoid composition (0.76 wt% C), the austenite transforms entirely and simultaneously into a fine lamellar mixture of ferrite and cementite (pearlite) at the single eutectoid temperature (727 degC) -- this is directly analogous to a eutectic reaction, but between two SOLID phases (austenite decomposing into two other solids) rather than liquid decomposing into two solids. A hypoeutectoid steel (0.40 wt% C, LESS carbon than eutectoid) instead first passes through a two-phase (austenite + proeutectoid ferrite) region ABOVE 727 degC, precipitating some primary ferrite before the remaining, now-eutectoid-composition austenite transforms to pearlite exactly at 727 degC -- the final microstructure is a mixture of primary (proeutectoid) ferrite grains plus pearlite, not pure pearlite."
     },
     {
@@ -664,7 +664,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "In the Cu-Ni isomorphous system at an overall composition of 50 wt% Ni, the liquidus is at approximately 1313 degC and the solidus is at approximately 1249 degC. Identify the phase(s) present at 1350 degC, 1280 degC, and 1200 degC, and justify each from the phase diagram's structure (not just by pattern-matching the temperature ranges).",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §9.8 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a79.8 style",
       "solution": "At 1350 degC: above the liquidus (1313 degC), so the alloy is fully liquid (L) -- there is no boundary above the liquidus other than 'fully liquid.' At 1280 degC: between the solidus (1249) and liquidus (1313), so this is the two-phase (L + alpha) region, where liquid and solid solution coexist along a tie line at this temperature, with relative amounts set by the lever rule. At 1200 degC: below the solidus (1249 degC), so the alloy is fully solid -- a single homogeneous alpha solid-solution phase, since Cu and Ni are completely miscible in the solid state (isomorphous system, no eutectic or other invariant reaction)."
     },
     {
@@ -673,14 +673,14 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "In the lever rule WL = (Calpha - C0)/(Calpha - CL), what does the NUMERATOR (Calpha - C0) represent geometrically on the tie line?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §9.9 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a79.9 style",
       "options": [
-        "The segment of the tie line adjacent to (closest to) the liquid composition",
         "The segment of the tie line on the OPPOSITE side from the liquid phase, i.e. adjacent to the solid composition -- the 'far arm' relative to liquid",
+        "The composition of the liquid phase itself",
         "The full length of the tie line",
-        "The composition of the liquid phase itself"
+        "The segment of the tie line adjacent to (closest to) the liquid composition"
       ],
-      "correct_index": 1,
+      "correct_index": 0,
       "explanation": "The lever rule's numerator for a given phase's fraction is the tie-line segment measured from the OVERALL composition to the OTHER phase's composition -- for WL (fraction liquid), the relevant segment runs from C0 to Calpha (the solid composition), i.e. the 'far arm' on the solid side, not near the liquid composition. This inverse relationship (using the FAR segment, not the near one) is exactly why it's called a 'lever' -- like a mechanical lever, the phase closer to C0 gets the LARGER fraction, computed from the FARTHER arm's length. Option (c) mistakes the numerator for the full tie-line length (that's the denominator)."
     },
     {
@@ -689,14 +689,14 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "In a two-phase region with mass fractions WL (liquid) and Walpha (solid), what must WL + Walpha equal, and why?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §9.9 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a79.9 style",
       "options": [
-        "0, since they represent opposing phases",
         "1, since together they must account for the ENTIRE mass of the alloy",
         "2, since there are two phases",
+        "0, since they represent opposing phases",
         "It depends on the specific tie line"
       ],
-      "correct_index": 1,
+      "correct_index": 0,
       "explanation": "Mass fractions of all phases present must sum to exactly 1 (100%) because together they account for the alloy's entire mass -- there is no third phase or unaccounted mass in a two-phase region. This is a basic conservation check that should be applied after every lever-rule calculation. Option (d) is wrong: this sum-to-1 property holds for EVERY tie line in a two-phase region, not just special cases."
     },
     {
@@ -705,7 +705,7 @@
       "kind": "numeric",
       "difficulty": 1,
       "prompt": "A Cu-Ni alloy of overall composition C0 = 45 wt% Ni sits at a temperature where the tie line gives Calpha = 55 wt% Ni and CL = 35 wt% Ni. Compute the mass fraction of liquid, WL.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §9.9 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a79.9 style",
       "answer": {
         "value": 0.5,
         "unit": null,
@@ -719,7 +719,7 @@
       "kind": "worked",
       "difficulty": 3,
       "prompt": "A Pb-Sn alloy of overall composition C0 = 60 wt% Sn sits just below the eutectic temperature, in the alpha+beta two-phase region, where Calpha = 19 wt% Sn and Cbeta = 97.5 wt% Sn. Compute the mass fractions of alpha and beta, setting up the lever rule yourself.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §9.9 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a79.9 style",
       "solution": "Wbeta = (C0 - Calpha)/(Cbeta - Calpha) = (60 - 19)/(97.5 - 19) = 41/78.5 approx 0.522 (52.2%). Walpha = 1 - Wbeta = 0.478 (47.8%). Check independently: Walpha = (Cbeta - C0)/(Cbeta - Calpha) = (97.5 - 60)/78.5 = 37.5/78.5 approx 0.478, confirming the two calculation routes agree."
     },
     {
@@ -728,7 +728,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "A Cu-Ni alloy at C0 = 40 wt% Ni has a tie line with Calpha = 45 wt% Ni and CL = 30 wt% Ni. Compute WL, and separately state the ACTUAL composition (in wt% Ni) of the liquid phase present, making clear these are two different numbers answering two different questions.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §9.9 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a79.9 style",
       "solution": "Mass fraction liquid: WL = (Calpha - C0)/(Calpha - CL) = (45-40)/(45-30) = 5/15 = 0.333 (33.3%). This is the AMOUNT of liquid present, as a fraction of the alloy's total mass. Separately, and independently of this calculation, the COMPOSITION of that liquid phase is read directly from where the tie line meets the liquidus curve -- given as CL = 30 wt% Ni -- meaning the liquid itself is 30 wt% nickel, regardless of how much or little of it is present. These are not the same 33.3% and 30 wt% answer the same overall problem in two genuinely different senses."
     },
     {
@@ -737,14 +737,14 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "The radius ratio used to predict ceramic coordination number is defined as:",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §12.2 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a712.2 style",
       "options": [
+        "(rC + rA)/2",
         "rA/rC (anion over cation)",
-        "rC/rA (cation over anion)",
         "Whichever radius is larger, divided by the smaller",
-        "(rC + rA)/2"
+        "rC/rA (cation over anion)"
       ],
-      "correct_index": 1,
+      "correct_index": 3,
       "explanation": "The ratio is specifically cation radius over anion radius (rC/rA), representing how many anions of a given size can geometrically pack around one central cation. It coincidentally matches 'smaller/larger' in most common ceramics (since cations are usually smaller), but the rule is defined as cation-over-anion specifically, not by comparing which happens to be bigger -- option (c) is the misconception this KC's documented misconception directly targets."
     },
     {
@@ -753,15 +753,15 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "A radius ratio of 0.68 falls into which coordination-number band, and what structure type would an AX ceramic with this ratio adopt?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §12.2 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a712.2 style",
       "options": [
+        "CN=3 (triangular), a rare planar-coordinated structure",
         "CN=4 (tetrahedral), zinc blende structure",
         "CN=6 (octahedral), rock salt structure",
-        "CN=8 (cubic), cesium chloride structure",
-        "CN=3 (triangular), a rare planar-coordinated structure"
+        "CN=8 (cubic), cesium chloride structure"
       ],
-      "correct_index": 1,
-      "explanation": "0.68 falls within the 0.414-0.732 band, corresponding to CN=6 (octahedral coordination) -- for an AX (1:1) ceramic, this is the rock salt structure. Option (a)'s CN=4 band is 0.225-0.414, well below 0.68. Option (c)'s CN=8 band is 0.732-1.0, just above 0.68. Option (d)'s CN=3 band (0.155-0.225) is far below 0.68."
+      "correct_index": 2,
+      "explanation": "0.68 falls within the 0.414-0.732 band, corresponding to CN=6 (octahedral coordination) -- for an AX (1:1) ceramic, this is the rock salt structure. Option (b)'s CN=4 band is 0.225-0.414, well below 0.68. Option (d)'s CN=8 band is 0.732-1.0, just above 0.68. Option (a)'s CN=3 band (0.155-0.225) is far below 0.68."
     },
     {
       "kc": "ceramic-crystal-structures-and-radius-ratios",
@@ -769,7 +769,7 @@
       "kind": "numeric",
       "difficulty": 2,
       "prompt": "Ca2+ has rC = 0.100 nm, O2- has rA = 0.140 nm. Compute the radius ratio rC/rA.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §12.2 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a712.2 style",
       "answer": {
         "value": 0.714,
         "unit": null,
@@ -783,7 +783,7 @@
       "kind": "worked",
       "difficulty": 3,
       "prompt": "Zn2+ has rC = 0.074 nm, S2- has rA = 0.184 nm. Compute the radius ratio, identify the coordination number band, and name the resulting structure. Then explain briefly why this ratio -- and hence this structure -- is notably different from the rock-salt-forming oxides (MgO, CaO) despite ZnS also being a simple AX ceramic.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §12.2 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a712.2 style",
       "solution": "rC/rA = 0.074/0.184 = 0.402, which falls just below the 0.414 threshold, placing it at the boundary of the 0.225-0.414 band -> CN=4 (tetrahedral coordination), giving the zinc blende (sphalerite) structure rather than rock salt. The key difference from MgO/CaO is that Zn2+ is considerably smaller relative to its anion than Mg2+ or Ca2+ are relative to O2- -- a smaller cation can only be surrounded by fewer, more tightly packed anions before those anions would start touching each other, forcing a lower coordination number (4 instead of 6) and therefore a different crystal structure entirely."
     },
     {
@@ -792,7 +792,7 @@
       "kind": "worked",
       "difficulty": 1,
       "prompt": "Mg2+ has rC = 0.072 nm, O2- has rA = 0.140 nm. Predict MgO's coordination number and structure from the radius ratio, then state whether this matches MgO's known real-world structure.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §12.2 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a712.2 style",
       "solution": "rC/rA = 0.072/0.140 = 0.514, within the 0.414-0.732 band -> CN=6 (octahedral) -> rock salt structure for this AX compound. This matches MgO's actual, experimentally determined structure (rock salt, isostructural with NaCl), confirming the radius-ratio rule's predictive validity for this compound."
     },
     {
@@ -801,15 +801,15 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "A student computes engineering stress using the ORIGINAL cross-sectional area A0 throughout a tensile test, including well past necking, and calls the result 'true stress.' What is wrong with this?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §6.4-6.7 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a76.4-6.7 style",
       "options": [
         "Nothing -- engineering stress and true stress are the same quantity by definition",
         "True stress uses the INSTANTANEOUS (current, reduced) cross-sectional area, not A0, so using A0 throughout systematically UNDERSTATES stress in the necking region",
-        "True stress uses A0, and it's engineering stress that uses the instantaneous area",
-        "The distinction only matters for brittle materials, not ductile ones"
+        "The distinction only matters for brittle materials, not ductile ones",
+        "True stress uses A0, and it's engineering stress that uses the instantaneous area"
       ],
       "correct_index": 1,
-      "explanation": "Engineering stress = F/A0 (fixed original area) by definition, while true stress = F/Ai (instantaneous, actual current area). Once necking begins, the instantaneous area shrinks substantially below A0, so true stress (using the smaller, shrinking Ai) is actually HIGHER than engineering stress in the necking region, even as engineering stress apparently drops after the UTS. Option (c) reverses the two definitions. Option (d) is wrong; the distinction is a general one for any material undergoing significant deformation, most pronounced in ductile metals precisely because they neck visibly."
+      "explanation": "Engineering stress = F/A0 (fixed original area) by definition, while true stress = F/Ai (instantaneous, actual current area). Once necking begins, the instantaneous area shrinks substantially below A0, so true stress (using the smaller, shrinking Ai) is actually HIGHER than engineering stress in the necking region, even as engineering stress apparently drops after the UTS. Option (d) reverses the two definitions. Option (c) is wrong; the distinction is a general one for any material undergoing significant deformation, most pronounced in ductile metals precisely because they neck visibly."
     },
     {
       "kc": "stress-strain-curve-quantities",
@@ -817,15 +817,15 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "Why is the 0.2% offset method used to determine yield strength, rather than simply reading off the point where the stress-strain curve visibly stops being a straight line?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §6.6 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a76.6 style",
       "options": [
-        "Because most metals show a very sharp, easily identified break at yield, so the offset method is purely a convention with no practical purpose",
-        "Because many metals (especially aluminum alloys) transition from elastic to plastic behavior gradually, with no sharp visible 'kink,' so a standardized offset gives a reproducible, comparable yield value",
+        "Because 0.2% strain is the strain at which fracture always occurs",
         "Because the offset method measures ultimate tensile strength, not yield strength",
-        "Because 0.2% strain is the strain at which fracture always occurs"
+        "Because most metals show a very sharp, easily identified break at yield, so the offset method is purely a convention with no practical purpose",
+        "Because many metals (especially aluminum alloys) transition from elastic to plastic behavior gradually, with no sharp visible 'kink,' so a standardized offset gives a reproducible, comparable yield value"
       ],
-      "correct_index": 1,
-      "explanation": "Many metals, particularly aluminum and other non-ferrous alloys, curve smoothly from elastic into plastic behavior with no sharp, visually obvious transition point -- attempting to eyeball 'where it stops being straight' gives inconsistent, subjective results between different observers. The 0.2% offset convention standardizes the definition (draw a line parallel to the elastic modulus starting at 0.2% strain; where it intersects the curve IS the defined yield strength), making yield strength values reproducible and comparable across labs and materials. Option (c) confuses yield strength with an entirely different quantity (UTS). Option (d) is simply false; 0.2% strain is far below the strain at fracture for any ductile metal."
+      "correct_index": 3,
+      "explanation": "Many metals, particularly aluminum and other non-ferrous alloys, curve smoothly from elastic into plastic behavior with no sharp, visually obvious transition point -- attempting to eyeball 'where it stops being straight' gives inconsistent, subjective results between different observers. The 0.2% offset convention standardizes the definition (draw a line parallel to the elastic modulus starting at 0.2% strain; where it intersects the curve IS the defined yield strength), making yield strength values reproducible and comparable across labs and materials. Option (b) confuses yield strength with an entirely different quantity (UTS). Option (a) is simply false; 0.2% strain is far below the strain at fracture for any ductile metal."
     },
     {
       "kc": "stress-strain-curve-quantities",
@@ -833,7 +833,7 @@
       "kind": "numeric",
       "difficulty": 1,
       "prompt": "A brass tensile specimen has original diameter d0 = 12.5 mm (A0 = 122.72 mm^2), gauge length l0 = 50 mm. In the elastic region, at F = 15,000 N the elongation is 0.0611 mm. Compute the elastic modulus E in GPa.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §6.3 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a76.3 style",
       "answer": {
         "value": 100,
         "unit": "GPa",
@@ -847,7 +847,7 @@
       "kind": "worked",
       "difficulty": 3,
       "prompt": "A Ti-6Al-4V rod has d0 = 9 mm (A0 = pi*(4.5)^2 = 63.62 mm^2) and l0 = 80 mm. At F = 7,240 N, the elongation is 0.081 mm. Compute stress, strain, and elastic modulus, and compare to the known value for Ti-6Al-4V (approx 114 GPa).",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §6.3 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a76.3 style",
       "solution": "Stress = F/A0 = 7,240/63.62 = 113.8 MPa. Strain = 0.081/80 = 0.0010125. E = 113.8/0.0010125 = 112,395 MPa approx 112.4 GPa -- close to the known Ti-6Al-4V value of approx 114 GPa (within about 1.5%, consistent with rounding in the given test data)."
     },
     {
@@ -856,7 +856,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "A steel specimen has an elastic modulus of E = 205 GPa. Its stress-strain curve, drawn out, shows the 0.2%-offset line (parallel to the elastic slope, starting at strain = 0.002) intersecting the actual curve at a stress of 415 MPa. State the yield strength and explain, in one sentence, what physical event this intersection point represents.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §6.6 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a76.6 style",
       "solution": "The yield strength is 415 MPa. This intersection point represents the stress at which the material has accumulated exactly 0.2% PERMANENT (plastic) strain -- i.e., if the specimen were unloaded at this point, it would retain a 0.2% residual strain rather than fully springing back to zero strain, marking the conventionally defined onset of significant plastic deformation."
     },
     {
@@ -865,15 +865,15 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "Toughness, as used to compare materials for impact resistance, is best defined as:",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §8.6 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a78.6 style",
       "options": [
-        "The maximum stress a material can withstand before permanent deformation begins",
         "The resistance of a material's surface to localized indentation",
+        "The maximum stress a material can withstand before permanent deformation begins",
         "The total energy a material can absorb before fracturing, including plastic deformation",
         "The material's elastic modulus"
       ],
       "correct_index": 2,
-      "explanation": "Toughness specifically measures total ENERGY ABSORBED up to fracture (roughly, the area under the full stress-strain curve, or fracture energy in an impact test) -- a material can be tough via a combination of moderate strength and large plastic strain capacity, or via other combinations. Option (a) describes yield strength, a different property entirely. Option (b) describes hardness. Option (d) describes stiffness (elastic modulus), unrelated to energy absorption or fracture."
+      "explanation": "Toughness specifically measures total ENERGY ABSORBED up to fracture (roughly, the area under the full stress-strain curve, or fracture energy in an impact test) -- a material can be tough via a combination of moderate strength and large plastic strain capacity, or via other combinations. Option (b) describes yield strength, a different property entirely. Option (a) describes hardness. Option (d) describes stiffness (elastic modulus), unrelated to energy absorption or fracture."
     },
     {
       "kc": "hardness-toughness-strength-distinction",
@@ -881,15 +881,15 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "Two steels have identical yield strength (500 MPa) but very different hardness values (one HRC 25, the other HRC 45) due to different heat treatments. What does this demonstrate?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §6.10 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a76.10 style",
       "options": [
-        "This is impossible; hardness and strength always track exactly together",
-        "Hardness and strength, while often correlated in a given alloy family via empirical relations, are measuring genuinely different responses (localized indentation resistance vs. bulk yield onset), and can diverge depending on microstructure",
         "One of the two hardness measurements must be measurement error",
-        "Yield strength cannot be measured in a hardness-tested sample"
+        "This is impossible; hardness and strength always track exactly together",
+        "Yield strength cannot be measured in a hardness-tested sample",
+        "Hardness and strength, while often correlated in a given alloy family via empirical relations, are measuring genuinely different responses (localized indentation resistance vs. bulk yield onset), and can diverge depending on microstructure"
       ],
-      "correct_index": 1,
-      "explanation": "While hardness and yield strength are often EMPIRICALLY correlated within a single alloy family (rougher rule-of-thumb conversions exist for steels), they measure fundamentally different physical responses -- hardness measures resistance to LOCALIZED plastic deformation under an indenter, while yield strength measures the onset of BULK plastic flow under uniform tensile stress. Different microstructures (e.g. differing amounts of retained austenite, surface work-hardening, or case hardening) can decouple the two even at matched bulk yield strength. Option (a) overstates the correlation as an absolute law rather than an empirical trend."
+      "correct_index": 3,
+      "explanation": "While hardness and yield strength are often EMPIRICALLY correlated within a single alloy family (rougher rule-of-thumb conversions exist for steels), they measure fundamentally different physical responses -- hardness measures resistance to LOCALIZED plastic deformation under an indenter, while yield strength measures the onset of BULK plastic flow under uniform tensile stress. Different microstructures (e.g. differing amounts of retained austenite, surface work-hardening, or case hardening) can decouple the two even at matched bulk yield strength. Option (b) overstates the correlation as an absolute law rather than an empirical trend."
     },
     {
       "kc": "hardness-toughness-strength-distinction",
@@ -897,7 +897,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "For each material, state hardness, strength, and toughness qualitatively, and justify: (1) Fully hardened (untempered) martensite in steel. (2) Annealed (soft) low-carbon steel. (3) Quenched-and-tempered medium-carbon steel.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §11.7 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a711.7 style",
       "solution": "(1) Fully hardened untempered martensite: very high hardness and strength (extremely fine, highly strained microstructure resists both indentation and yielding), but very LOW toughness (brittle, prone to cracking, since there's essentially no ductility to absorb energy before fracture). (2) Annealed low-carbon steel: low-to-moderate hardness and strength (coarse ferrite/pearlite, minimal strengthening mechanisms active), but HIGH toughness (large ductility allows substantial plastic energy absorption before fracture). (3) Quenched-and-tempered medium-carbon steel: the tempering step deliberately sacrifices SOME of the as-quenched hardness/strength in exchange for a large toughness recovery, landing at a well-balanced intermediate point -- this is exactly why tempering is used in practice rather than leaving parts in the untempered, maximum-hardness state."
     },
     {
@@ -906,7 +906,7 @@
       "kind": "worked",
       "difficulty": 3,
       "prompt": "Explain why hardness testing is far more common as a quality-control (QC) tool on a factory floor than full tensile testing, even though hardness alone does not directly reveal strength or toughness.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §6.10 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a76.10 style",
       "solution": "Hardness testing is fast, essentially nondestructive (leaves only a small indentation), requires minimal sample preparation, and can be performed directly on a finished part without needing a dedicated tensile specimen -- this makes it practical to test many or even every part in a production run. Because hardness correlates EMPIRICALLY with strength for a GIVEN alloy and processing route (though not universally or exactly, as the earlier exercise on martensite vs. annealed steel shows), a quick hardness check can serve as an efficient screening tool to catch gross deviations from the intended heat treatment or composition, flagging parts for further (slower, destructive) tensile or impact testing only when something looks off -- rather than substituting for a genuine strength or toughness measurement when precise values are actually required."
     },
     {
@@ -915,15 +915,15 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "In Griffith's energy balance for crack growth, which two energy terms are being compared?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §8.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a78.5 style",
       "options": [
         "Kinetic energy of the crack tip vs. thermal energy of the material",
-        "Elastic strain energy released by crack growth vs. surface energy consumed by creating new crack faces",
+        "Hardness vs. toughness",
         "Yield strength vs. ultimate tensile strength",
-        "Hardness vs. toughness"
+        "Elastic strain energy released by crack growth vs. surface energy consumed by creating new crack faces"
       ],
-      "correct_index": 1,
-      "explanation": "Griffith's criterion balances the elastic strain energy RELEASED as the material relaxes near a growing crack (a volume effect, favoring growth) against the surface energy REQUIRED to create the two new crack faces (a surface-area effect, opposing growth) -- the crack grows spontaneously once the released strain energy per unit extension exceeds the surface energy cost per unit extension. Options (c) and (d) name unrelated mechanical-property pairs, not the actual energy terms in Griffith's derivation."
+      "correct_index": 3,
+      "explanation": "Griffith's criterion balances the elastic strain energy RELEASED as the material relaxes near a growing crack (a volume effect, favoring growth) against the surface energy REQUIRED to create the two new crack faces (a surface-area effect, opposing growth) -- the crack grows spontaneously once the released strain energy per unit extension exceeds the surface energy cost per unit extension. Options (c) and (b) name unrelated mechanical-property pairs, not the actual energy terms in Griffith's derivation."
     },
     {
       "kc": "griffith-fracture-principle",
@@ -931,14 +931,14 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "According to sigma_f = sqrt(2*E*gamma_s / (pi*c)), if the flaw size c is increased by a factor of 4 (all else equal), what happens to the failure stress?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §8.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a78.5 style",
       "options": [
-        "It decreases by a factor of 4",
         "It decreases by a factor of 2 (since failure stress scales as 1/sqrt(c))",
-        "It increases by a factor of 2",
-        "It is unaffected by flaw size"
+        "It decreases by a factor of 4",
+        "It is unaffected by flaw size",
+        "It increases by a factor of 2"
       ],
-      "correct_index": 1,
+      "correct_index": 0,
       "explanation": "Since sigma_f is proportional to 1/sqrt(c), increasing c by a factor of 4 decreases sigma_f by a factor of sqrt(4) = 2, not by a factor of 4 itself. This square-root (not linear or inverse-linear) dependence is exactly why doubling a flaw does not halve the failure stress, and is central to why brittle fracture strength is treated statistically -- flaw-size distributions matter more subtly than a naive linear picture would suggest."
     },
     {
@@ -947,7 +947,7 @@
       "kind": "numeric",
       "difficulty": 2,
       "prompt": "Soda-lime glass has E = 69 GPa and surface energy gamma_s = 0.30 J/m^2. Using Griffith's criterion sigma_f = sqrt(2*E*gamma_s/(pi*c)), compute the failure stress (in MPa) for a surface flaw of size c = 2.0e-5 m (20 microns).",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §8.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a78.5 style",
       "answer": {
         "value": 25.7,
         "unit": "MPa",
@@ -961,7 +961,7 @@
       "kind": "worked",
       "difficulty": 3,
       "prompt": "The same soda-lime glass (E = 69 GPa, gamma_s = 0.30 J/m^2) instead has a much smaller flaw, c = 5.0e-6 m (5 microns). Compute the failure stress, and explain -- referencing the square-root dependence -- why this failure stress is roughly double the 20-micron-flaw case (25.7 MPa) rather than four times higher.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §8.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a78.5 style",
       "solution": "sigma_f = sqrt(2 x 69e9 x 0.30/(pi x 5.0e-6)) = sqrt(4.14e10/1.571e-5) = sqrt(2.636e15) = 5.134e7 Pa approx 51.3 MPa. The flaw size decreased by a factor of 4 (from 20 microns to 5 microns), and since sigma_f is proportional to 1/sqrt(c), a 4x DECREASE in c produces only a sqrt(4) = 2x INCREASE in failure stress (51.3/25.7 approx 2.0), not a 4x increase -- exactly the square-root relationship, applied in the opposite (flaw-shrinking) direction from the earlier factor-of-4-increase exercise."
     },
     {
@@ -970,7 +970,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "Explain, using Griffith's criterion, why brittle ceramic components are tested and rated using statistical strength distributions (like Weibull statistics) rather than a single fixed 'strength' value the way ductile metals often are.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §8.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a78.5 style",
       "solution": "Because failure stress depends on the size of the LARGEST flaw present in the stressed volume (sigma_f proportional to 1/sqrt(c)), and real ceramic components inevitably contain a random population of flaws of different, largely undetectable sizes distributed through their volume or surface, the failure stress of any individual specimen is essentially a random variable governed by whatever its worst flaw happens to be -- not a fixed material constant the way, say, elastic modulus is. Larger volumes of material have a statistically higher chance of containing a larger critical flaw somewhere within them, so failure probability depends on both applied stress AND specimen size/volume -- this size-dependence and inherent randomness is exactly what a single deterministic strength value cannot capture, motivating the use of statistical (Weibull) strength distributions for brittle materials."
     },
     {
@@ -979,15 +979,15 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "A component fails after a large number of load cycles, at a peak stress well BELOW the material's static yield strength. What failure mechanism is this?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §8.11 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a78.11 style",
       "options": [
-        "Creep",
-        "Fatigue",
         "Ductile overload fracture",
-        "Brittle fracture from a single application of load"
+        "Brittle fracture from a single application of load",
+        "Creep",
+        "Fatigue"
       ],
-      "correct_index": 1,
-      "explanation": "Failing after many cycles at a stress below the static yield strength is the defining signature of fatigue -- cumulative, cycle-count-driven damage (microcrack initiation and growth) that eventually causes failure well below the stress a single static load test would predict as safe. Creep (a) requires SUSTAINED (not cyclic) load, typically at elevated temperature. Options (c) and (d) both describe single-application overload failures, not cumulative, sub-yield, cyclic damage."
+      "correct_index": 3,
+      "explanation": "Failing after many cycles at a stress below the static yield strength is the defining signature of fatigue -- cumulative, cycle-count-driven damage (microcrack initiation and growth) that eventually causes failure well below the stress a single static load test would predict as safe. Creep (a) requires SUSTAINED (not cyclic) load, typically at elevated temperature. Options (a) and (b) both describe single-application overload failures, not cumulative, sub-yield, cyclic damage."
     },
     {
       "kc": "fatigue-and-creep-classification",
@@ -995,14 +995,14 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "Why is creep primarily a concern at temperatures above roughly 0.4 x Tm (homologous temperature), rather than at any temperature?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §9.2 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a79.2 style",
       "options": [
-        "Because at lower temperatures, diffusion-controlled deformation mechanisms (grain boundary sliding, dislocation climb) are too slow to produce significant time-dependent strain over practical timescales",
         "Because materials are always elastic below 0.4*Tm",
+        "Because at lower temperatures, diffusion-controlled deformation mechanisms (grain boundary sliding, dislocation climb) are too slow to produce significant time-dependent strain over practical timescales",
         "Because 0.4*Tm is an arbitrary regulatory cutoff with no physical basis",
         "Because fatigue and creep are the same mechanism above this temperature"
       ],
-      "correct_index": 0,
+      "correct_index": 1,
       "explanation": "Creep strain accumulates through thermally-activated, diffusion-controlled mechanisms (grain-boundary sliding, dislocation climb, vacancy diffusion) whose rates depend exponentially on temperature (Arrhenius-type behavior). Below about 0.4 times the absolute melting temperature, these mechanisms are too sluggish to produce meaningful time-dependent deformation over any practical service life, so creep is not a practical design concern there -- above that threshold, the same mechanisms become fast enough to matter. Option (c) mischaracterizes this physically-grounded threshold as arbitrary; option (d) incorrectly conflates two genuinely distinct failure mechanisms."
     },
     {
@@ -1011,7 +1011,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "Classify the dominant mechanism: (1) A jet engine turbine blade held at 850 degC under constant centrifugal load slowly elongates over its service life. (2) An aircraft wing spar experiences millions of small stress cycles from turbulence over decades and eventually cracks at a stress far below its design yield strength. (3) A bridge cable snaps instantly during an unprecedented flood-driven overload event.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §8.11, §9.2 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a78.11, \u00a79.2 style",
       "solution": "(1) Creep -- sustained (non-cyclic) load at a temperature well above 0.4*Tm for a nickel superalloy, producing slow, time-dependent plastic strain. (2) Fatigue -- cyclic loading at ambient temperature, cumulative cycle-count-driven damage, failure below static yield strength. (3) Neither -- a single-event monotonic overload fracture, unrelated to sustained high temperature (creep) or repeated sub-yield cycling (fatigue)."
     },
     {
@@ -1020,7 +1020,7 @@
       "kind": "worked",
       "difficulty": 3,
       "prompt": "Explain why fatigue failure is often described as 'deceptive' or surprising to engineers who only check static (yield/ultimate) strength calculations.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §8.11 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a78.11 style",
       "solution": "A static strength check confirms the part won't fail under a SINGLE application of the maximum expected load, comparing peak stress to yield or ultimate strength. Fatigue failure, however, can occur at stresses far below yield strength -- sometimes below half the yield strength -- given enough load cycles, because microscopic cracks initiate (often at surface defects, stress concentrations, or inclusions) and slowly propagate with each cycle until the remaining cross-section can no longer support the load, at which point sudden fracture occurs. A part that appears to have a comfortable static safety margin can therefore still fail catastrophically after months or years of cyclic service, precisely because static strength calculations don't account for the cumulative, cycle-count-dependent damage mechanism fatigue represents -- this is exactly why fatigue-specific design tools (S-N curves, endurance limits, fatigue safety factors) exist as a SEPARATE design check from static strength."
     },
     {
@@ -1029,14 +1029,14 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "A material has: very low density, low elastic modulus, poor performance above roughly 150-200 degC, and is an electrical insulator. What class is it?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §1.4 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a71.4 style",
       "options": [
-        "Metal",
         "Ceramic",
-        "Polymer",
-        "Composite"
+        "Composite",
+        "Metal",
+        "Polymer"
       ],
-      "correct_index": 2,
+      "correct_index": 3,
       "explanation": "Low density, low modulus, poor high-temperature performance (softening/degradation), and electrical insulation together are the classic polymer property profile. Metals (a) have much higher modulus and are conductive. Ceramics (b) have excellent high-temperature performance and much higher modulus (though also insulating). Composites (d) are defined by combining two distinct constituent materials, not implied by this single profile alone."
     },
     {
@@ -1045,14 +1045,14 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "A material has: high specific strength (strength-to-weight), highly anisotropic mechanical properties depending on loading direction, and its overall properties are engineered by combining two chemically distinct constituents rather than being an inherent property of one homogeneous substance. What class is it?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §1.4 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a71.4 style",
       "options": [
         "Metal",
         "Ceramic",
-        "Polymer",
-        "Composite"
+        "Composite",
+        "Polymer"
       ],
-      "correct_index": 3,
+      "correct_index": 2,
       "explanation": "Anisotropy driven by the arrangement of two distinct constituents (e.g. fiber + matrix) and properties that are DESIGNED via that combination, rather than being an intrinsic property of one material, is the defining signature of a composite. The other three classes (metal, ceramic, polymer) are each treated as a single, more-or-less homogeneous material class with intrinsic (though composition/processing-dependent) properties."
     },
     {
@@ -1061,7 +1061,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "Given the material class 'ceramic,' predict the expected property profile (modulus, ductility, high-temperature performance, electrical behavior) WITHOUT reference to a specific ceramic compound.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §1.4 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a71.4 style",
       "solution": "Ceramics generally show: very high elastic modulus and hardness (strong, largely ionic/covalent bonding resists both elastic and plastic deformation), very low ductility/toughness (the same bonding that gives high strength also restricts dislocation motion, making brittle fracture the dominant failure mode), excellent high-temperature performance (high melting points, good creep resistance relative to metals and especially polymers), and typically electrically insulating behavior (few free charge carriers, given the ionic/covalent bonding, though notable exceptions exist among certain oxide and carbide ceramics engineered for conductivity)."
     },
     {
@@ -1070,7 +1070,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "A material has: high modulus and good ductility, moderate-to-high density, and excellent electrical and thermal conductivity that persists even at room temperature in solid form. Identify the class and justify from each clue independently.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §1.4 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a71.4 style",
       "solution": "Metal. High modulus with good DUCTILITY together (rather than high modulus with brittleness, which would suggest ceramic) points to metallic bonding, whose non-directional electron-sea attraction permits ion cores to slide past each other under load without brittle fracture. Moderate-to-high density is also typical of metals relative to polymers (though this alone is not fully diagnostic). Excellent conductivity persisting in the solid state, without any special engineering or doping, is the strongest single indicator here -- it points directly to a delocalized 'electron sea,' the defining feature of metallic bonding, ruling out polymer (insulating) and ceramic (typically insulating) alternatives."
     },
     {
@@ -1079,12 +1079,12 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "A student computing the TRANSVERSE modulus of a fiber composite uses Ec = Vf*Ef + Vm*Em (the simple weighted average) instead of the inverse rule of mixtures. What is the direct consequence?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §16.10 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a716.10 style",
       "options": [
-        "No consequence; both formulas give identical results for the transverse direction",
-        "The computed transverse modulus will be too HIGH, since the simple weighted average is only valid for the LONGITUDINAL (iso-strain) case, not the transverse (iso-stress) case",
         "The computed transverse modulus will be too LOW",
-        "The error only matters if Vf > 0.5"
+        "The computed transverse modulus will be too HIGH, since the simple weighted average is only valid for the LONGITUDINAL (iso-strain) case, not the transverse (iso-stress) case",
+        "The error only matters if Vf > 0.5",
+        "No consequence; both formulas give identical results for the transverse direction"
       ],
       "correct_index": 1,
       "explanation": "The simple weighted (arithmetic) average Ec = Vf*Ef + Vm*Em applies specifically to the LONGITUDINAL direction (iso-strain assumption, fibers and matrix strain equally under axial load). The TRANSVERSE direction requires the inverse (harmonic) rule of mixtures, 1/Ec = Vf/Ef + Vm/Em (iso-stress assumption). Since the harmonic mean is always less than or equal to the arithmetic mean of the same two numbers, using the arithmetic-average formula for the transverse case always OVERSTATES the true transverse modulus -- exactly the error this KC's practice notes flag as the most common mistake."
@@ -1095,12 +1095,12 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "In a continuous-fiber composite, why is the longitudinal modulus typically much higher than the transverse modulus?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §16.10 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a716.10 style",
       "options": [
         "Because the fibers carry a much larger share of the load when aligned with the loading direction (iso-strain, load-sharing proportional to stiffness), whereas transverse loading puts fiber and matrix in series (iso-stress), so the compliant matrix dominates",
         "Because the fiber material itself changes properties depending on loading direction",
-        "There is no real difference; this is a common misconception with no physical basis",
-        "Because transverse loading always causes immediate fracture"
+        "Because transverse loading always causes immediate fracture",
+        "There is no real difference; this is a common misconception with no physical basis"
       ],
       "correct_index": 0,
       "explanation": "Longitudinal (aligned) loading puts fiber and matrix in an iso-STRAIN configuration (parallel, like springs side by side) where the much stiffer fiber carries a disproportionate share of the load, pulling the effective composite modulus up close to the fiber's own high modulus. Transverse loading puts them in an iso-STRESS configuration (in series, like springs end to end) where the much more compliant matrix dominates the overall deformation, pulling the effective modulus down close to the matrix's much lower modulus -- hence the dramatic anisotropy. Option (b) incorrectly implies the fiber's intrinsic properties change; they don't -- only how the two phases share load changes with direction."
@@ -1111,7 +1111,7 @@
       "kind": "numeric",
       "difficulty": 2,
       "prompt": "A boron fiber-aluminum matrix composite has Vf = 0.35, Ef = 400 GPa (boron), Em = 70 GPa (aluminum). Compute the longitudinal modulus Ec,L in GPa.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §16.10 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a716.10 style",
       "answer": {
         "value": 185.5,
         "unit": "GPa",
@@ -1125,7 +1125,7 @@
       "kind": "worked",
       "difficulty": 3,
       "prompt": "For the same boron fiber-aluminum matrix composite (Vf = 0.35, Ef = 400 GPa, Em = 70 GPa), compute the transverse modulus Ec,T using the inverse rule of mixtures, and state the ratio Ec,L/Ec,T (using Ec,L = 185.5 GPa from the previous problem) to quantify the composite's anisotropy.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §16.10 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a716.10 style",
       "solution": "1/Ec,T = Vf/Ef + (1-Vf)/Em = 0.35/400 + 0.65/70 = 0.000875 + 0.009286 = 0.010161 (1/GPa). Ec,T = 1/0.010161 approx 98.4 GPa. Anisotropy ratio: Ec,L/Ec,T = 185.5/98.4 approx 1.89 -- nearly a 2x difference between longitudinal and transverse stiffness for this fiber volume fraction, notably less extreme than a very high-Vf, high-fiber-modulus system (like the glass-epoxy example with a nearly 6x ratio) because boron's fiber modulus is 'only' about 5.7x the aluminum matrix modulus, compared to glass fiber's roughly 21x ratio over an epoxy matrix."
     },
     {
@@ -1134,7 +1134,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "A Kevlar 49 fiber-epoxy composite has Vf = 0.45, Ef = 124 GPa, Em = 3.2 GPa. Compute both the longitudinal and transverse elastic modulus, setting up each formula yourself.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §16.10 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a716.10 style",
       "solution": "Longitudinal: Ec,L = Vf*Ef + (1-Vf)*Em = 0.45(124) + 0.55(3.2) = 55.8 + 1.76 = 57.56 GPa. Transverse: 1/Ec,T = Vf/Ef + (1-Vf)/Em = 0.45/124 + 0.55/3.2 = 0.003629 + 0.171875 = 0.175504, so Ec,T = 1/0.175504 approx 5.70 GPa. The longitudinal-to-transverse ratio here is roughly 57.56/5.70 approx 10.1, a much larger anisotropy than the boron-aluminum case, driven by Kevlar's fiber modulus being nearly 39x the epoxy matrix's modulus (versus boron's roughly 5.7x over aluminum)."
     },
     {
@@ -1143,15 +1143,15 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "For a weight-critical, stiffness-limited design (e.g. an aircraft panel), why should a designer compare candidate materials using the INDEX E/rho (specific stiffness) rather than the absolute modulus E alone?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §20.3 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a720.3 style",
       "options": [
         "Because E/rho and E always rank materials identically, so it doesn't actually matter which is used",
+        "Because density is always more important than stiffness in any design",
         "Because the design constraint is stiffness PER UNIT WEIGHT, and a material with lower absolute E but even lower density can achieve the same stiffness at less mass -- the raw E value alone ignores the weight side of the tradeoff entirely",
-        "Because absolute E values are impossible to measure accurately",
-        "Because density is always more important than stiffness in any design"
+        "Because absolute E values are impossible to measure accurately"
       ],
-      "correct_index": 1,
-      "explanation": "When the actual constraint is 'achieve a given stiffness while minimizing weight' (or equivalently, 'maximize stiffness for a given weight'), the relevant merit index is specific stiffness E/rho, not E alone -- a material can have lower absolute modulus but be the better choice if its density is proportionally even lower, since less material mass is needed to achieve equivalent stiffness. Option (a) is false precisely in the classic aluminum-vs-steel comparison (aluminum has much lower E but comparable E/rho to steel). Options (c) and (d) are unrelated, unsupported claims."
+      "correct_index": 2,
+      "explanation": "When the actual constraint is 'achieve a given stiffness while minimizing weight' (or equivalently, 'maximize stiffness for a given weight'), the relevant merit index is specific stiffness E/rho, not E alone -- a material can have lower absolute modulus but be the better choice if its density is proportionally even lower, since less material mass is needed to achieve equivalent stiffness. Option (a) is false precisely in the classic aluminum-vs-steel comparison (aluminum has much lower E but comparable E/rho to steel). Options (d) and (b) are unrelated, unsupported claims."
     },
     {
       "kc": "materials-selection-principle",
@@ -1159,15 +1159,15 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "On an Ashby materials-selection chart plotting two competing properties (e.g. strength vs. density), what does the absence of a single 'best' material at one point on the chart reflect?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §20.3 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a720.3 style",
       "options": [
-        "A flaw in how the chart was constructed",
-        "That real material selection is a multi-criteria tradeoff -- different materials occupy different points on the efficient tradeoff frontier, and which one is 'best' depends on how the specific design weighs the competing criteria",
         "That materials selection is essentially random and cannot be systematized",
-        "That only the material with the highest value of the y-axis property should ever be chosen"
+        "That real material selection is a multi-criteria tradeoff -- different materials occupy different points on the efficient tradeoff frontier, and which one is 'best' depends on how the specific design weighs the competing criteria",
+        "That only the material with the highest value of the y-axis property should ever be chosen",
+        "A flaw in how the chart was constructed"
       ],
       "correct_index": 1,
-      "explanation": "Ashby charts deliberately plot two (or more) competing properties precisely because real selection problems trade them off against each other -- the materials lying on the outer 'frontier' of the chart each represent a different, valid balance point between the two criteria, and which one is actually 'best' depends entirely on how a SPECIFIC application weighs those criteria (e.g. is weight or cost more critical here?). Options (c) and (d) both misread the tool: it doesn't imply randomness, and picking purely by one axis (d) throws away the entire point of plotting two properties at once."
+      "explanation": "Ashby charts deliberately plot two (or more) competing properties precisely because real selection problems trade them off against each other -- the materials lying on the outer 'frontier' of the chart each represent a different, valid balance point between the two criteria, and which one is actually 'best' depends entirely on how a SPECIFIC application weighs those criteria (e.g. is weight or cost more critical here?). Options (a) and (c) both misread the tool: it doesn't imply randomness, and picking purely by one axis (d) throws away the entire point of plotting two properties at once."
     },
     {
       "kc": "materials-selection-principle",
@@ -1175,7 +1175,7 @@
       "kind": "numeric",
       "difficulty": 2,
       "prompt": "Compare the specific stiffness (E/rho) of magnesium alloy (E = 45 GPa, rho = 1800 kg/m^3) against steel (E = 200 GPa, rho = 7850 kg/m^3). Compute magnesium's E/rho, in units of MN-m/kg (i.e., GPa/(kg/m^3) x 1000).",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §20.3 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a720.3 style",
       "answer": {
         "value": 25,
         "unit": "MJ/kg",
@@ -1189,7 +1189,7 @@
       "kind": "worked",
       "difficulty": 3,
       "prompt": "Compare the specific strength (yield strength / density) of a titanium alloy (Sy = 880 MPa, rho = 4500 kg/m^3) against a carbon steel (Sy = 350 MPa, rho = 7850 kg/m^3). Compute both specific strengths and state which material would be favored for a weight-critical, strength-limited design (e.g. an aerospace strut), independent of cost considerations.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §20.3 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a720.3 style",
       "solution": "Ti alloy: Sy/rho = 880e6/4500 = 1.956e5 J/kg (195.6 kJ/kg). Steel: Sy/rho = 350e6/7850 = 4.459e4 J/kg (44.6 kJ/kg). Titanium's specific strength is roughly 4.4x higher than the steel's -- for a purely weight-critical, strength-limited design (ignoring cost, which titanium alloys make far more expensive per unit mass), titanium would be strongly favored, needing far less mass to carry the same load. This is exactly why titanium alloys are used extensively in aerospace structures despite their high cost, while ordinary carbon steel remains preferred for cost-critical, less weight-sensitive applications."
     },
     {
@@ -1198,15 +1198,15 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "In the thermal-shock-resistance parameter TSR = sigma_f*k/(E*alpha), which combination of property CHANGES would INCREASE a material's thermal shock resistance?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §19.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a719.5 style",
       "options": [
-        "Higher fracture strength and higher thermal conductivity, with lower modulus and lower expansion coefficient",
-        "Higher modulus and higher expansion coefficient, with lower strength and lower conductivity",
         "Any increase in modulus alone, regardless of the other three properties",
-        "TSR does not depend on thermal conductivity at all"
+        "TSR does not depend on thermal conductivity at all",
+        "Higher modulus and higher expansion coefficient, with lower strength and lower conductivity",
+        "Higher fracture strength and higher thermal conductivity, with lower modulus and lower expansion coefficient"
       ],
-      "correct_index": 0,
-      "explanation": "TSR rewards properties in the numerator (strength sigma_f, conductivity k) and PENALIZES properties in the denominator (modulus E, expansion coefficient alpha) -- so higher strength and conductivity together with LOWER modulus and expansion coefficient all increase TSR. Option (b) has every term backwards. Option (c) ignores that E is in the denominator, so increasing it alone would actually DECREASE TSR, not increase it."
+      "correct_index": 3,
+      "explanation": "TSR rewards properties in the numerator (strength sigma_f, conductivity k) and PENALIZES properties in the denominator (modulus E, expansion coefficient alpha) -- so higher strength and conductivity together with LOWER modulus and expansion coefficient all increase TSR. Option (c) has every term backwards. Option (a) ignores that E is in the denominator, so increasing it alone would actually DECREASE TSR, not increase it."
     },
     {
       "kc": "thermal-properties-and-thermal-shock",
@@ -1214,15 +1214,15 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "A ceramic coating with alpha_coating = 4e-6 /degC is applied to a metal substrate with alpha_metal = 12e-6 /degC. After a large temperature change, what is the most likely consequence at the coating-substrate interface?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §19.3 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a719.3 style",
       "options": [
         "No consequence, since coatings never experience internal stress from temperature changes",
-        "Significant internal (thermal) stress develops at the interface because the two materials want to expand or contract by different amounts, which can crack or delaminate the coating",
         "The coating will always expand more than the substrate, regardless of the alpha values given",
+        "Significant internal (thermal) stress develops at the interface because the two materials want to expand or contract by different amounts, which can crack or delaminate the coating",
         "Thermal expansion mismatch only matters for polymers, not ceramic-metal systems"
       ],
-      "correct_index": 1,
-      "explanation": "When two bonded materials with different expansion coefficients experience the same temperature change, they 'want' to change dimension by different amounts, but being bonded together forces them to deform together -- this generates internal stress at the interface (compressive or tensile depending on the sign of the temperature change and which material has the larger alpha), which is a common cause of coating cracking, spallation, or delamination in thermal-cycling service. Option (c) incorrectly asserts a fixed relationship regardless of the actual alpha values (here, the metal has the LARGER alpha, so it would expand MORE on heating, not the coating)."
+      "correct_index": 2,
+      "explanation": "When two bonded materials with different expansion coefficients experience the same temperature change, they 'want' to change dimension by different amounts, but being bonded together forces them to deform together -- this generates internal stress at the interface (compressive or tensile depending on the sign of the temperature change and which material has the larger alpha), which is a common cause of coating cracking, spallation, or delamination in thermal-cycling service. Option (b) incorrectly asserts a fixed relationship regardless of the actual alpha values (here, the metal has the LARGER alpha, so it would expand MORE on heating, not the coating)."
     },
     {
       "kc": "thermal-properties-and-thermal-shock",
@@ -1230,7 +1230,7 @@
       "kind": "numeric",
       "difficulty": 1,
       "prompt": "An aluminum panel is 3.0 m long at 20 degC. Aluminum's linear expansion coefficient is alpha = 23e-6 /degC. Find the change in length (in mm) when the panel reaches 60 degC.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §19.3 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a719.3 style",
       "answer": {
         "value": 2.76,
         "unit": "mm",
@@ -1244,7 +1244,7 @@
       "kind": "worked",
       "difficulty": 3,
       "prompt": "Compute the thermal-shock-resistance parameter TSR = sigma_f*k/(E*alpha) for silicon nitride (sigma_f = 700 MPa, k = 25 W/m-K, E = 310 GPa, alpha = 3.2e-6 /degC) and for a typical firebrick refractory (sigma_f = 10 MPa, k = 1.0 W/m-K, E = 15 GPa, alpha = 5.5e-6 /degC). Which material better resists thermal shock, and by roughly what factor?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §19.5 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a719.5 style",
       "solution": "Silicon nitride: TSR = (700e6 x 25)/(310e9 x 3.2e-6) = 1.75e10/9.92e5 approx 1.764e4 W/m. Firebrick: TSR = (10e6 x 1.0)/(15e9 x 5.5e-6) = 1.0e7/8.25e4 approx 121.2 W/m. Silicon nitride's TSR is roughly 1.764e4/121.2 approx 146x higher than firebrick's -- silicon nitride is dramatically better at resisting thermal shock, driven by its combination of much higher strength AND much higher thermal conductivity, despite also having a higher modulus (which alone would work against it). This is exactly why silicon nitride is used in applications with severe thermal cycling (e.g. turbocharger rotors, cutting tools) where firebrick-type refractories would crack."
     },
     {
@@ -1253,7 +1253,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "A precision instrument requires a support structure that changes length by less than 0.01 mm over a 50 degC temperature swing, for a component length of 0.5 m. Compare ordinary steel (alpha = 12e-6 /degC) against Invar (a Fe-Ni alloy specifically engineered with alpha = 1.2e-6 /degC) for this application.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §19.3 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a719.3 style",
       "solution": "Steel: delta_L = 12e-6 x 0.5 x 50 = 12e-6 x 25 = 3.0e-4 m = 0.30 mm -- far exceeds the 0.01 mm limit, making ordinary steel unsuitable. Invar: delta_L = 1.2e-6 x 0.5 x 50 = 1.2e-6 x 25 = 3.0e-5 m = 0.030 mm -- still exceeds 0.01 mm, though by a much smaller margin (10x better than steel). This illustrates why Invar (whose very low expansion coefficient comes from a specific magnetic/electronic compensation effect in its Fe-Ni composition) is specifically engineered and selected for precision instruments, clocks, and other applications where dimensional stability across temperature swings is critical, even though achieving the stated 0.01 mm tolerance here would still require either a shorter length, a smaller temperature swing, or an even lower-expansion material or active compensation."
     },
     {
@@ -1262,15 +1262,15 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "In a galvanic couple between zinc and copper immersed in seawater, which metal corrodes, and why?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §17.4 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a717.4 style",
       "options": [
-        "Copper, because it is more chemically reactive",
-        "Zinc, because it is more anodic (higher on the active end of the galvanic series) than copper, so it preferentially gives up electrons",
         "Neither corrodes when in contact; galvanic coupling always halts corrosion",
-        "Both corrode at exactly the same rate"
+        "Copper, because it is more chemically reactive",
+        "Both corrode at exactly the same rate",
+        "Zinc, because it is more anodic (higher on the active end of the galvanic series) than copper, so it preferentially gives up electrons"
       ],
-      "correct_index": 1,
-      "explanation": "Zinc sits well above (more anodic/active than) copper on the galvanic series, meaning it more readily gives up electrons (oxidizes). When electrically coupled, the more anodic metal (zinc) becomes the sacrificial anode and corrodes preferentially, while the more noble/cathodic metal (copper) is protected -- this is the entire principle behind galvanizing steel and sacrificial anode protection systems. Option (c) is factually wrong; galvanic coupling typically ACCELERATES corrosion of the more anodic member, not halts it."
+      "correct_index": 3,
+      "explanation": "Zinc sits well above (more anodic/active than) copper on the galvanic series, meaning it more readily gives up electrons (oxidizes). When electrically coupled, the more anodic metal (zinc) becomes the sacrificial anode and corrodes preferentially, while the more noble/cathodic metal (copper) is protected -- this is the entire principle behind galvanizing steel and sacrificial anode protection systems. Option (a) is factually wrong; galvanic coupling typically ACCELERATES corrosion of the more anodic member, not halts it."
     },
     {
       "kc": "corrosion-and-oxidation-basics",
@@ -1278,15 +1278,15 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "A metal's oxide has a Pilling-Bedworth ratio of 0.55. What does this predict about its oxide scale?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §17.9 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a717.9 style",
       "options": [
-        "A well-protective, adherent scale, similar to aluminum's",
-        "A scale under such high compressive stress that it will definitely spall off in large flakes",
         "A porous, non-protective scale, since the oxide volume is substantially smaller than the metal volume it replaced, leaving gaps",
-        "PBR values below 1 are physically impossible"
+        "A scale under such high compressive stress that it will definitely spall off in large flakes",
+        "PBR values below 1 are physically impossible",
+        "A well-protective, adherent scale, similar to aluminum's"
       ],
-      "correct_index": 2,
-      "explanation": "A PBR well below 1 (like 0.55) means the oxide occupies LESS volume than the metal consumed to form it -- the oxide layer physically cannot fully cover the metal surface without gaps or porosity, so it provides little to no barrier against continued oxidation. Option (b) describes the opposite extreme (PBR >> 2, high compressive stress from oxide volume EXCEEDING metal volume). Option (d) is false; PBR < 1 is a real, well-documented case (e.g. alkali and alkaline-earth metals like sodium and magnesium)."
+      "correct_index": 0,
+      "explanation": "A PBR well below 1 (like 0.55) means the oxide occupies LESS volume than the metal consumed to form it -- the oxide layer physically cannot fully cover the metal surface without gaps or porosity, so it provides little to no barrier against continued oxidation. Option (b) describes the opposite extreme (PBR >> 2, high compressive stress from oxide volume EXCEEDING metal volume). Option (c) is false; PBR < 1 is a real, well-documented case (e.g. alkali and alkaline-earth metals like sodium and magnesium)."
     },
     {
       "kc": "corrosion-and-oxidation-basics",
@@ -1294,7 +1294,7 @@
       "kind": "numeric",
       "difficulty": 3,
       "prompt": "Sodium oxidizes to Na2O. Molar mass of Na2O = 61.98 g/mol, density of Na2O = 2.27 g/cm^3. Molar mass of Na = 22.99 g/mol, density of Na = 0.97 g/cm^3. Each Na2O formula unit contains 2 Na atoms (n=2). Compute the Pilling-Bedworth ratio.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §17.9 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a717.9 style",
       "answer": {
         "value": 0.576,
         "unit": null,
@@ -1308,7 +1308,7 @@
       "kind": "worked",
       "difficulty": 3,
       "prompt": "Iron oxidizes to Fe2O3. Molar mass of Fe2O3 = 159.69 g/mol, density = 5.24 g/cm^3. Molar mass of Fe = 55.85 g/mol, density = 7.87 g/cm^3, n = 2 Fe atoms per Fe2O3 formula unit. Compute the PBR, classify the resulting scale, and explain why this matches iron's well-known tendency to rust progressively rather than passivate.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §17.9 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a717.9 style",
       "solution": "PBR = (159.69 x 7.87)/(2 x 55.85 x 5.24) = 1,256.8/585.3 approx 2.147. Since PBR is well above 2, the growing oxide occupies substantially more volume than the metal consumed, putting the scale under high internal compressive stress -- this causes the scale to crack, buckle, and flake off (spall) rather than remaining as a continuous, adherent, protective layer. This is exactly why iron's rust does not passivate the surface the way aluminum's tightly-adherent Al2O3 (PBR approx 1.29) does: freshly exposed metal is continually revealed as the oxide spalls, allowing corrosion to proceed essentially unimpeded over time."
     },
     {
@@ -1317,7 +1317,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "Explain, using the anode/cathode framework, why corrosion is fundamentally described as an ELECTROCHEMICAL process rather than a simple direct chemical reaction between a metal and its environment.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §17.2-17.3 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a717.2-17.3 style",
       "solution": "Corrosion involves two spatially and functionally distinct half-reactions occurring simultaneously: an ANODIC reaction where the metal is oxidized (M -> M^n+ + n*e-, releasing electrons and metal ions into solution) and a CATHODIC reaction, typically elsewhere on the same surface or on a different metal in a galvanic couple, where those released electrons are consumed by a reduction reaction (commonly O2 + 2H2O + 4e- -> 4OH-, or 2H+ + 2e- -> H2 in acidic conditions). Because electrons must flow from the anodic site to the cathodic site (through the metal, acting as an electron conductor) and ions must flow through the electrolyte to complete the circuit, corrosion behaves like a tiny electrochemical cell (battery) rather than a simple one-step chemical reaction -- this framework is exactly what explains why galvanic coupling between dissimilar metals, or even localized composition/aeration differences on a single metal's surface, can dramatically accelerate or redirect corrosion."
     },
     {
@@ -1326,14 +1326,14 @@
       "kind": "mcq",
       "difficulty": 1,
       "prompt": "Which characterization technique is used primarily to identify crystal structure and phase identity via characteristic diffraction peak positions?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.16 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.16 style",
       "options": [
-        "Optical microscopy",
         "X-ray diffraction (XRD)",
+        "Tensile testing",
         "Vickers hardness testing",
-        "Tensile testing"
+        "Optical microscopy"
       ],
-      "correct_index": 1,
+      "correct_index": 0,
       "explanation": "XRD reveals crystal structure and phase identity by measuring the characteristic angles (and hence interplanar spacings, via Bragg's law) at which a crystalline sample diffracts X-rays -- each phase and crystal structure produces a distinctive diffraction pattern. Optical microscopy (a) reveals grain size/microstructure at low-to-moderate magnification, not crystal structure. Hardness testing (c) and tensile testing (d) are mechanical property measurements, unrelated to crystal structure identification."
     },
     {
@@ -1342,14 +1342,14 @@
       "kind": "mcq",
       "difficulty": 2,
       "prompt": "A researcher needs both high-resolution fracture-surface morphology AND the elemental composition of a small inclusion found on that fracture surface. Which single technique provides both in one measurement?",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.16 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.16 style",
       "options": [
-        "Optical microscopy alone",
         "Scanning electron microscopy (SEM) with EDS (energy-dispersive X-ray spectroscopy)",
+        "X-ray diffraction alone",
         "Tensile testing",
-        "X-ray diffraction alone"
+        "Optical microscopy alone"
       ],
-      "correct_index": 1,
+      "correct_index": 0,
       "explanation": "SEM provides high-resolution imaging of surface morphology (far exceeding optical microscopy's resolution and depth of field, especially for rough fracture surfaces), and when paired with EDS, can also measure the elemental composition at a specific point or region the electron beam is focused on -- giving both morphology AND local composition in a single instrument session. Optical microscopy (a) lacks the resolution for fine fracture features and provides no elemental information. Tensile testing (c) and XRD alone (d) provide neither the morphology nor the localized elemental composition being asked for here."
     },
     {
@@ -1358,7 +1358,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "A failure analysis team needs to determine: (1) the average grain size of a failed component, (2) whether a suspected phase transformation actually occurred (change in crystal structure), (3) the hardness profile across a case-hardened surface layer. Match each question to the appropriate technique.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.16, §11.8 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.16, \u00a711.8 style",
       "solution": "(1) Optical microscopy (on a polished and etched cross-section) -- grain boundaries become visible under etching, and grain size can be measured directly or via a standard grain-size number method at low-to-moderate magnification. (2) X-ray diffraction (XRD) -- comparing diffraction patterns before and after suspected transformation directly reveals whether the crystal structure/phase has changed, since each phase has a distinct diffraction signature. (3) Vickers (or microhardness) testing at a series of points moving inward from the case-hardened surface -- a hardness PROFILE (not a single hardness number) requires multiple point measurements at increasing depth, which microhardness testing is specifically suited to provide."
     },
     {
@@ -1367,7 +1367,7 @@
       "kind": "worked",
       "difficulty": 2,
       "prompt": "Explain why a materials failure investigation typically uses MULTIPLE characterization techniques together rather than relying on just one, using a hypothetical brittle fracture investigation as the example.",
-      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §3.16 style",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, \u00a73.16 style",
       "solution": "Each technique reveals a fundamentally different aspect of the material, and a single failure mechanism typically leaves evidence across several of them simultaneously: SEM fractography would reveal the fracture SURFACE morphology (e.g. distinguishing a brittle cleavage fracture from a ductile dimpled fracture, or identifying a fatigue striation pattern), XRD could confirm whether an unexpected phase (e.g. untempered martensite) is present that would explain embrittlement, optical microscopy on a polished cross-section could reveal grain size or a heat-affected zone's microstructure, and hardness testing could map out whether the failure region shows anomalously high (brittle) or low (soft, overtempered) hardness relative to the surrounding material. Relying on only one of these would give an incomplete picture -- for instance, SEM alone might show a brittle fracture surface but couldn't confirm WHY the material was brittle (composition? phase? grain size? residual stress?), which is exactly the kind of question the other techniques are suited to answer."
     }
   ]
