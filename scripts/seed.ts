@@ -461,6 +461,30 @@ async function main() {
     }
   }
 
+  // Rituals (v1.9) — two example rituals for the seeded demo user,
+  // deterministic ids + idempotent (ON CONFLICT DO UPDATE) like the
+  // capabilities pass above. group_id stays NULL (see data-model.md's
+  // userId+group_id-null read rule — groups aren't built yet).
+  const sundayReviewId = deterministicId('ritual', `${userId}:sunday-weekly-review`);
+  statements.push(
+    `INSERT INTO rituals (id, user_id, name, description, kind, cadence, by_weekday, course_id, steps, group_id, active, created_at)
+     VALUES (${sqlStr(sundayReviewId)}, ${sqlStr(userId)}, ${sqlStr('Sunday weekly review')}, ${sqlStr('Look back at the week across every course and flag what to revisit before it goes stale.')}, ${sqlStr('recurring')}, ${sqlStr('weekly')}, ${sqlStr(JSON.stringify([7]))}, NULL, NULL, NULL, 1, ${now})
+     ON CONFLICT(id) DO UPDATE SET name=excluded.name, description=excluded.description, kind=excluded.kind, cadence=excluded.cadence, by_weekday=excluded.by_weekday;`,
+  );
+
+  const deepWorkSteps = [
+    { kind: 'warmup', label: 'Warm up', minutes: 5 },
+    { kind: 'retrieval', label: 'Retrieval practice', minutes: 10 },
+    { kind: 'new_material', label: 'New material', minutes: 30 },
+    { kind: 'reflect', label: 'Reflect', minutes: 5 },
+  ];
+  const deepWorkId = deterministicId('ritual', `${userId}:deep-work-sitting`);
+  statements.push(
+    `INSERT INTO rituals (id, user_id, name, description, kind, cadence, by_weekday, course_id, steps, group_id, active, created_at)
+     VALUES (${sqlStr(deepWorkId)}, ${sqlStr(userId)}, ${sqlStr('Deep work sitting')}, ${sqlStr('A focused study block with a shape: warm up, test yourself, learn something new, then reflect.')}, ${sqlStr('session_shape')}, NULL, NULL, NULL, ${sqlStr(JSON.stringify(deepWorkSteps))}, NULL, 1, ${now})
+     ON CONFLICT(id) DO UPDATE SET name=excluded.name, description=excluded.description, kind=excluded.kind, steps=excluded.steps;`,
+  );
+
   // ---------------------------------------------------------------------
   // Demo data (v1.2): assessments/tasks/events/study sessions for the
   // current-term courses only, so the planner/dashboard have something

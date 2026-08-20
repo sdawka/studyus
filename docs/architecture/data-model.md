@@ -1,6 +1,8 @@
 # studyus Data Model
 
-**Re-derived 2026-08-15 from `src/db/schema.ts` and `migrations/0000_chemical_ink.sql`** (the sole migration file — see ADR-003's "Schema Management" section for why this is a single regenerated baseline, not an incremental history; this filename is the v1.6 regen, superseding the v1.5-era `0000_yielding_nocturne.sql`). Column names below are the actual snake_case DB names; `src/db/schema.ts` uses camelCase Drizzle field names that map onto them (e.g. `userId` → `user_id`). Every table's primary key is `id` (text, UUID from `crypto.randomUUID()`) unless noted otherwise; every table has `created_at` (integer epoch ms) unless noted.
+**Re-derived 2026-08-15, updated 2026-08-19 for v1.9, from `src/db/schema.ts` and `migrations/0000_dashing_cammi.sql`** (the sole migration file — see ADR-003's "Schema Management" section for why this is a single regenerated baseline, not an incremental history; this filename is the v1.9 regen — capabilities/capability_kcs/rituals + tasks.ritual_id/study_sessions.ritual_id — superseding the v1.6-era `0000_chemical_ink.sql`, which itself superseded the v1.5-era `0000_yielding_nocturne.sql`).
+
+**Glossary note**: "capability" means two different things in this codebase, deliberately not unified. The `capabilities` table (below) is a **domain noun** — a competency a learner is building. Elsewhere (`docs/architecture/overview.md`, `agentic-channels.md`), "capability" was used loosely to mean *a pure service function* — those two docs were reworded to say "service function" instead once the domain table landed, to kill the collision at the source rather than footnote around it. Column names below are the actual snake_case DB names; `src/db/schema.ts` uses camelCase Drizzle field names that map onto them (e.g. `userId` → `user_id`). Every table's primary key is `id` (text, UUID from `crypto.randomUUID()`) unless noted otherwise; every table has `created_at` (integer epoch ms) unless noted.
 
 Timestamps are epoch-ms integers in the DB; the API boundary (`src/lib/serialize.ts::toApi`) converts every `_at`/`_date` field (plus `ts` and `date`) to an ISO 8601 string — see `docs/api.md`.
 
@@ -86,6 +88,32 @@ Prerequisite edges between KCs: `(kc_id)` depends on `(prereq_kc_id)`.
 - `created_at`
 
 **No `user_id` column** (ownership flows `kc_id` → `kcs.course_id` → `courses.user_id`, same as `assessment_kcs`). May cross courses (a cross-course prereq ref in `content.json`), so there's no single `course_id` column either. Indexes: `kc_edges_kc_prereq_unique` (unique) on (`kc_id`, `prereq_kc_id`); `kc_edges_prereq_kc_id_idx` on (`prereq_kc_id`).
+
+### capabilities (v1.9 — competencies)
+
+Higher-order aggregates of KCs, deliberately allowed to cross course boundaries — see `events-and-mastery.md`'s Capabilities section for the derived-mastery fold (`src/lib/capabilityMastery.ts`) and `courses/content-schema.md` for the seed file format.
+
+- `id` (text, pk)
+- `user_id` → `users.id`, **ON DELETE CASCADE** — user-scoped, not course-scoped (a competency is cross-course by design, so there's no single `course_id` to hang it off)
+- `slug` (text) — unique per user
+- `name` (text)
+- `description` (text, nullable)
+- `source` (text enum: `seed | user`, default `'seed'`) — `'user'` is schema-ready; there's no authoring UI for it yet, only `courses/capabilities.json`
+- `created_at`
+
+Index: `capabilities_user_slug_unique` (unique) on (`user_id`, `slug`).
+
+### capability_kcs (v1.9)
+
+The membership join: which KCs roll up into a competency, and how heavily.
+
+- `id` (text, pk)
+- `capability_id` → `capabilities.id`, **ON DELETE CASCADE**
+- `kc_id` → `kcs.id`, **ON DELETE CASCADE**
+- `weight` (integer, default `1`) — relative weight in the weighted-mean mastery fold; a plain unweighted mean when every member's weight is `1` (the common case)
+- `created_at`
+
+Indexes: `capability_kcs_capability_kc_unique` (unique) on (`capability_id`, `kc_id`); `capability_kcs_kc_id_idx` on (`kc_id`).
 
 ### misconceptions (v1.7)
 
@@ -227,7 +255,8 @@ Upload size is capped at `MAX_ATTACHMENT_BYTES` = 10 MB (`src/lib/schemas/attach
 - `class_session_id` → `class_sessions.id`, nullable, **ON DELETE CASCADE**
 - `assessment_id` → `assessments.id`, nullable, **ON DELETE CASCADE**
 - `kc_id` → `kcs.id`, nullable, **ON DELETE CASCADE** — these four are the origin FKs for sweep-generated tasks; all `null` for a user-minted todo
-- `dedupe_key` (text, nullable, **unique-indexed**) — sweep idempotency key (e.g. `attend_class:<class_session_id>`); `NULL` is unconstrained under SQLite's multi-NULL unique semantics, so every user todo's `NULL` coexists fine; **never serialized**
+- `ritual_id` → `rituals.id`, nullable, **ON DELETE CASCADE** — **v1.9**: set on a sweep-minted `ritual` task (the fifth origin FK, alongside the four above); `type` gains a `'ritual'` value in `TASK_TYPES` (`src/lib/schemas/tasks.ts`) for these rows
+- `dedupe_key` (text, nullable, **unique-indexed**) — sweep idempotency key (e.g. `attend_class:<class_session_id>`, or `ritual:<ritual_id>:<yyyymmdd>` for a ritual occurrence); `NULL` is unconstrained under SQLite's multi-NULL unique semantics, so every user todo's `NULL` coexists fine; **never serialized**
 - `source` (text enum: `user | system`, default `'user'`)
 - `created_at`
 
@@ -265,6 +294,7 @@ Index: `task_courses_task_course_unique` (unique, on `task_id` + `course_id`) �
 - `ended_at` (integer, nullable)
 - `scheduled_at` (integer, nullable) — planner-created sessions; added post-M1 (see `docs/api.md`'s v1.2 Additions)
 - `reflection` (text, nullable) — also reused as a JSON blob for quick-quiz storage (see `docs/api.md`'s Agentic Flows section)
+- `ritual_id` → `rituals.id`, nullable, **ON DELETE SET NULL** — **v1.9**: which session-shape ritual (if any) this session was started with; the session-shape adherence signal (`services/rituals.ts::listRitualsWithAdherence` counts these rows over a trailing window) — **set null**, not cascade, since deleting a ritual shouldn't delete session history
 - `created_at`
 
 Indexes: `study_sessions_user_scheduled_idx` on (`user_id`, `scheduled_at`), `study_sessions_user_started_idx` on (`user_id`, `started_at`) — `calendar.ts` needs both because it filters on `COALESCE(scheduled_at, started_at)`, which SQLite can't index directly; either single-column index lets the planner query hit one side of the coalesce.
@@ -325,7 +355,26 @@ Attendance is modeled as **pre-existing scheduled rows whose status gets updated
 
 Index: `class_sessions_course_date_unique` (unique, on `course_id` + `date`).
 
-## Index Inventory (full, from `migrations/0000_chemical_ink.sql`)
+### rituals (v1.9)
+
+A learner-authored study structure — recurring practice, in-session shape, or both. See `events-and-mastery.md`'s Rituals section for the deliberate-practice/self-regulation framing and the anti-gamification adherence rules.
+
+- `id` (text, pk)
+- `user_id` → `users.id`, **ON DELETE CASCADE**
+- `name` (text)
+- `description` (text, nullable)
+- `kind` (text enum: `recurring | session_shape | both`)
+- `cadence` (text enum: `daily | weekly | after_class | before_class`, nullable) — nullable because a pure `session_shape` ritual doesn't schedule anything
+- `by_weekday` (text, nullable) — same JSON-array-string convention as `courses.meeting_days` (e.g. `"[1,3,5]"`, ISO weekday numbers Mon=1..Sun=7), parsed with `parseMeetingDays` (`src/lib/services/classSessions.ts`); only meaningful when `cadence = 'weekly'`
+- `course_id` → `courses.id`, nullable, **ON DELETE CASCADE** — set only for an `after_class`/`before_class` cadence, which keys off that course's `class_sessions`
+- `steps` (text, JSON mode, nullable) — array of `{kind: 'game'|'warmup'|'retrieval'|'new_material'|'reflect'|'break', label?, minutes?}`; a guidance step rail for `session_shape`/`both` rituals (`StudyFlow.svelte` renders it, not enforced — see the events-and-mastery.md section), `null` for a plain `recurring` ritual with no in-session structure
+- `group_id` (text, nullable) — **reserved for a future group scope; always `null` in v1, no FK (groups don't exist yet).** The read rule every service query applies is **`user_id = ? AND group_id IS NULL`** (see `requireOwnedRitual`/`listRitualsWithAdherence` in `services/rituals.ts`) — a group-scoped ritual, if this scope is ever built, would need its own read path rather than silently falling into a user's personal list.
+- `active` (integer/boolean, default `true`) — per-ritual on/off; the sweep's `ritual` master toggle (`settings.task_generators.ritual`) gates the whole collector, this flag gates one ritual within it. A dismissed sweep-minted task can't resurrect even if reactivated (existing dedupe-key semantics).
+- `created_at`
+
+**No adherence table** (ADR-004, computed on read) — recurring adherence folds sweep-minted `ritual` tasks (`tasks.ritual_id`, dedupe key `ritual:<ritual_id>:<yyyymmdd>`) over a trailing window; session-shape adherence folds `study_sessions.ritual_id` usage over the same window. Index: `rituals_user_id_idx` on (`user_id`).
+
+## Index Inventory (full, from `migrations/0000_dashing_cammi.sql`)
 
 Every non-PK index currently in the schema:
 
@@ -340,6 +389,10 @@ Every non-PK index currently in the schema:
 | `kcs_course_slug_unique` | kcs | course_id, slug | ✓ |
 | `kc_edges_kc_prereq_unique` | kc_edges | kc_id, prereq_kc_id | ✓ |
 | `kc_edges_prereq_kc_id_idx` | kc_edges | prereq_kc_id | |
+| `capabilities_user_slug_unique` | capabilities | user_id, slug | ✓ |
+| `capability_kcs_capability_kc_unique` | capability_kcs | capability_id, kc_id | ✓ |
+| `capability_kcs_kc_id_idx` | capability_kcs | kc_id | |
+| `rituals_user_id_idx` | rituals | user_id | |
 | `misconceptions_kc_slug_unique` | misconceptions | kc_id, slug | ✓ |
 | `scaffolds_kc_id_idx` | scaffolds | kc_id | |
 | `user_corrections_user_status_idx` | user_corrections | user_id, status | |
@@ -357,7 +410,7 @@ Every table's `id` primary key is implicitly indexed by SQLite on top of the abo
 
 ## Foreign Keys & ON DELETE Behavior (full inventory)
 
-All FKs below are real SQL `FOREIGN KEY ... ON DELETE ...` constraints emitted into `migrations/0000_chemical_ink.sql` from each column's `.references()` call in `schema.ts` — **D1 does enforce these**, contrary to a stale claim in ADR-003 (see that ADR's erratum).
+All FKs below are real SQL `FOREIGN KEY ... ON DELETE ...` constraints emitted into `migrations/0000_dashing_cammi.sql` from each column's `.references()` call in `schema.ts` — **D1 does enforce these**, contrary to a stale claim in ADR-003 (see that ADR's erratum).
 
 | Column | References | ON DELETE |
 |---|---|---|
@@ -368,6 +421,13 @@ All FKs below are real SQL `FOREIGN KEY ... ON DELETE ...` constraints emitted i
 | kcs.course_id | courses.id | cascade |
 | kc_edges.kc_id | kcs.id | cascade |
 | kc_edges.prereq_kc_id | kcs.id | cascade |
+| capabilities.user_id | users.id | cascade |
+| capability_kcs.capability_id | capabilities.id | cascade |
+| capability_kcs.kc_id | kcs.id | cascade |
+| rituals.user_id | users.id | cascade |
+| rituals.course_id | courses.id | cascade |
+| tasks.ritual_id | rituals.id | cascade |
+| study_sessions.ritual_id | rituals.id | set null |
 | misconceptions.kc_id | kcs.id | cascade |
 | scaffolds.kc_id | kcs.id | cascade |
 | user_corrections.user_id | users.id | cascade |
@@ -427,13 +487,13 @@ All FKs below are real SQL `FOREIGN KEY ... ON DELETE ...` constraints emitted i
 }
 ```
 
-There is **no branch-level mastery rollup** — `by_course` is the only breakdown, computed by averaging each course's KCs' `mastery` cache (courses with no KCs get `0`). `overall_mastery` averages only the courses with a non-zero mastery. `current_streak`/`longest_streak` are consecutive-UTC-calendar-day counts with ≥1 event; `current_streak` is `0` unless the most recent event day is today or yesterday. `knowledge_map` is an explicit `null` stub — no implementation exists.
+There is **no branch-level mastery rollup** — `by_course` is the only breakdown, computed by averaging each course's KCs' `mastery` cache (courses with no KCs get `0`). `overall_mastery` averages only the courses with a non-zero mastery. `current_streak`/`longest_streak` are consecutive-UTC-calendar-day counts with ≥1 event; `current_streak` is `0` unless the most recent event day is today or yesterday. **`knowledge_map` (v1.9)**: no longer an explicit `null` stub — it's `getGlobalFrontier`'s `counts` object (`{frontier, blocked, mastered, total}`, `src/lib/zpd.ts`/`src/lib/services/zpd.ts`), reusing that same single pass over `kcs`/`kc_edges` rather than a second bespoke query. The `/profile` page itself calls `getGlobalFrontier` a second time, directly, to get the full `by_course` breakdown the `FrontierPanel` needs (this response object only carries the summary counts) — a known duplicate-call candidate for a future dedupe, see `docs/todo.md`.
 
 This is NOT stored — it's computed server-side on every request from `courses`, `kcs` (mastery column), and `events`.
 
 ## TODO
 
-- ~~Knowledge map table design (concept graph, prerequisite edges, transitive mastery closure).~~ **Done, v1.7**: `kc_edges` models prerequisite edges; `GET /api/v1/kcs/:id/graph` (`docs/api.md`'s v1.7 section) computes the transitive-closure traversal + readiness at request time — there is still no persisted mastery-closure cache, just the edge table and a pure traversal.
+- ~~Knowledge map table design (concept graph, prerequisite edges, transitive mastery closure).~~ **Done, v1.7**: `kc_edges` models prerequisite edges; `GET /api/v1/kcs/:id/graph` (`docs/api.md`'s v1.7 section) computes the transitive-closure traversal + readiness at request time — there is still no persisted mastery-closure cache, just the edge table and a pure traversal. **v1.9 addendum**: `GET /api/v1/profile/frontier` (`src/lib/services/zpd.ts`) is the same idea from the other direction — instead of one KC's own prereq graph, it computes every *ready-to-learn* KC across all courses (the "coming later" `LearnerProfile.knowledge_map` this section used to flag is what shipped it) — still a pure per-request traversal over `kcs`/`kc_edges`, no new persisted structure.
 - Versioning strategy for qmatrix and KC taxonomy (how to migrate existing mappings).
 - Archival & data retention policy (how long do we keep old events?).
 - `attachments.note_id` is schema-ready (nullable FK, `ON DELETE SET NULL`) but has no writer yet — either wire a note-scoped upload route or drop the column if it stays unused.

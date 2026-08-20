@@ -96,6 +96,8 @@ flowchart TD
 
 The step-back view: what's due, what's scheduled, and where to slot study time this week. `/planner`'s unified calendar (week grid by default, toggleable to month/agenda) is the hub; the dashboard's `WeekView` widget mirrors it in miniature. `PlannerRail` surfaces unscheduled due-soon items but — per `docs/todo.md`'s deferral list — clicking one only jumps the grid to that week, it doesn't auto-schedule; scheduling itself now happens by dragging directly on the grid to create a typed item (class / study session / other).
 
+A recurring **ritual** (v1.9 — e.g. a weekly "Sunday review") is one of the things that can land on this week's plate: the sweep mints one `ritual` task per occurrence, so it shows up in `TodayTasks`/`/tasks` alongside everything else rather than in a separate rituals-only surface. Starting a study session that has a **session-shape** ritual attached (`StudyFlow`'s ritual picker) layers a guidance step rail — warm-up, retrieval, new material, reflect — onto that one sitting; this is orthogonal to the weekly planning loop itself, since it's decided at session-start, not at planning time. Both flavors of adherence — recurring done/skipped/upcoming, session-shape usage count — surface on `/profile`'s Rituals panel, not here; the planner's job is just "does this occurrence exist on the calendar," not tracking the habit.
+
 ```mermaid
 flowchart TD
     A["Student opens Planner<br/>(week grid default)"] --> B["Unified calendar: assessment due-dates,<br/>task due-dates, sessions, logged events"]
@@ -163,6 +165,8 @@ flowchart TD
     H --> J["Student practices<br/>(Practice / Play / tutor)"]
     J --> A
 ```
+
+Sitting alongside this loop rather than inside it (v1.9): the **ZPD learning frontier** re-derives, on every read, which unmastered KCs are actually worth reaching for right now — every prerequisite already `ready` per the same threshold this loop's status bands use. It never changes what the fold computes; it's a *view* over the same `kcs`/`kc_edges` data, surfaced on `/profile`'s Frontier panel and folded into `understandNext`'s course-level picks ("unlocks after ⟨prereq⟩" instead of a bare gray-out). A KC's frontier membership can flip between reads as the underlying mastery numbers move, same as everything else in this loop — there's no separate frontier state to keep in sync.
 
 ## 9. Absorbing a New KC (Guided Understanding)
 

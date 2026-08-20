@@ -50,20 +50,34 @@ const rituals: RitualResponse[] = toApi(await listRitualsWithAdherence(db, userI
 <AppShell title="Profile">
   <h1>Profile</h1>
 
-  <StandingCard overallMastery={profile.overall_mastery} currentStreak={profile.current_streak} longestStreak={profile.longest_streak} />
-
-  <CapabilitiesPanel client:visible capabilities={capabilities} metaSkills={metaSkills} />
-
-  <FrontierPanel client:visible frontier={frontier} />
-
-  <RitualsPanel client:visible rituals={rituals} />
-
-  <div class="cols">
-    <MasteryByCourse byCourse={profile.by_course} slugByCourse={slugByCourse} />
-    <ConceptsByStatus statusCounts={statusCounts} totalKcs={totalKcs} />
+  <div class="slot-standing">
+    <StandingCard overallMastery={profile.overall_mastery} currentStreak={profile.current_streak} longestStreak={profile.longest_streak} />
   </div>
 
-  <RecentActivitySection />
+  <div class="slot-capabilities">
+    <CapabilitiesPanel client:visible capabilities={capabilities} metaSkills={metaSkills} />
+  </div>
+
+  <div class="slot-frontier">
+    <FrontierPanel client:visible frontier={frontier} />
+  </div>
+
+  <div class="slot-rituals">
+    <RitualsPanel client:visible rituals={rituals} />
+  </div>
+
+  <div class="cols">
+    <div class="slot-mastery-by-course">
+      <MasteryByCourse byCourse={profile.by_course} slugByCourse={slugByCourse} />
+    </div>
+    <div class="slot-concepts-by-status">
+      <ConceptsByStatus statusCounts={statusCounts} totalKcs={totalKcs} />
+    </div>
+  </div>
+
+  <div class="slot-activity">
+    <RecentActivitySection />
+  </div>
 </AppShell>
 
 <style>

@@ -576,6 +576,100 @@ const plannerComponents: Annotation[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// /profile — the learner identity page (v1.9)
+// ---------------------------------------------------------------------------
+
+const profileComponents: Annotation[] = [
+  {
+    name: 'StandingCard',
+    selector: '.slot-standing',
+    purpose: 'A quick top-line readout — overall mastery and streaks — before anything else on the identity page.',
+    affordances: ['Read overall mastery %, current streak, and longest streak.'],
+    actions: ['No writes — pure props from getProfile (src/lib/services/profile.ts), server-computed on every page load.'],
+    feedback: ['A muted footnote clarifies what counts toward a streak (any logged event — attendance, grades, study, tutor sessions).'],
+    docs: [SCREENS, 'src/components/profile/StandingCard.astro'],
+  },
+  {
+    name: 'CapabilitiesPanel',
+    selector: '.slot-capabilities',
+    purpose: "Two layers beyond a single concept's mastery: competencies that aggregate KCs across courses, and a frequency/trend readout of the metacognitive skills behind how the student studies.",
+    affordances: [
+      'Scan each competency\'s name, status chip, mastery bar/percent, and a "N of M concepts started" coverage line.',
+      'Scan the three meta-skills (retrieval practice, self-explanation, error analysis) as a count-in-28-days + trend arrow + last-seen row.',
+    ],
+    actions: ['No writes — pure props (CapabilityResponse[], MetaSkill[]) from listCapabilities/getMetaSkills (src/lib/services/capabilities.ts), server-seeded, no client fetch.'],
+    feedback: [
+      '"No competencies yet." once real data loads with zero rows (distinct from the null-props "Coming in this wave." placeholder, which profile.astro no longer sends now that the service is wired).',
+      'A competency only reads "Mastered" once every one of its member KCs has been started, not just once the weighted mastery number clears the threshold — see events-and-mastery.md\'s Capabilities section.',
+    ],
+    docs: [SCREENS, 'docs/architecture/events-and-mastery.md', 'src/components/profile/CapabilitiesPanel.svelte'],
+  },
+  {
+    name: 'FrontierPanel',
+    selector: '.slot-frontier',
+    purpose: 'The learning frontier — unmastered concepts whose every prerequisite is already in reach — replacing the old "Global knowledge map — coming later" stub with a real, always-current view.',
+    affordances: [
+      'Read a one-line summary: how many concepts are ready, how many are still waiting on a prerequisite, how many of the total are mastered.',
+      'Scan frontier concepts grouped by course (via FrontierGraph), each linking straight into /learn/[kcId].',
+    ],
+    actions: ['No writes — pure props (FrontierResponse) from getGlobalFrontier (src/lib/services/zpd.ts), computed fresh on every page load from kcs + kc_edges, nothing persisted.'],
+    feedback: [
+      '"Add a course to see your learning frontier here." when the student has zero KCs at all.',
+      '"Nothing\'s fully ready yet…" when every unmastered concept still has an unready prerequisite (frontier is empty but blocked concepts exist).',
+      'Blocked and mastered concepts are informational counts only, never their own per-KC list here — that list-level detail lives in the blocked KC\'s own understandNext "unlocks after" pointer instead.',
+    ],
+    docs: [SCREENS, 'docs/architecture/events-and-mastery.md', 'src/components/profile/FrontierPanel.svelte', 'src/components/profile/FrontierGraph.svelte'],
+  },
+  {
+    name: 'RitualsPanel',
+    selector: '.slot-rituals',
+    purpose: 'Set up and track recurring study practices and in-session structure, without ever framing it as a streak to protect.',
+    affordances: [
+      'Add a ritual: name, kind (recurring / session-shape / both), a daily or weekly cadence with weekday picker, and/or a step rail (warm-up/retrieval/new-material/reflect/game/break, each with an optional label + minutes).',
+      'Scan each ritual\'s cadence summary, a 28-day done/skipped/upcoming dot row (recurring), or a "used to start N sessions" count (session-shape).',
+      'Toggle a ritual active/paused, or delete it (two-step inline confirm).',
+    ],
+    actions: [
+      'GET/POST /api/v1/rituals, PATCH/DELETE /api/v1/rituals/:id.',
+      'Self-loads via GET /api/v1/rituals if profile.astro ever passes null props again — the panel works standalone either way.',
+    ],
+    feedback: [
+      '"No rituals yet…" empty state; a paused ritual dims to 70% opacity with a "Paused" tag.',
+      'Adherence vocabulary is deliberately flat — "skipped," never "missed," no streak/badge/broken-chain language (docs/product/vision.md\'s anti-gamification stance).',
+      'The create form only offers daily/weekly cadences (no after_class/before_class) since it isn\'t given a course list — see docs/todo.md.',
+    ],
+    docs: [SCREENS, 'docs/architecture/events-and-mastery.md', 'docs/product/vision.md', 'src/components/profile/RitualsPanel.svelte'],
+  },
+  {
+    name: 'MasteryByCourse',
+    selector: '.slot-mastery-by-course',
+    purpose: 'The pre-existing per-course mastery breakdown, kept below the new capability/frontier/ritual panels as reference detail.',
+    affordances: ['Scan each course\'s mastery bar + percent; click through to the course.'],
+    actions: ['No writes — pure props from getProfile\'s by_course breakdown.'],
+    feedback: ['"No courses yet." empty state.'],
+    docs: [SCREENS, 'src/components/profile/MasteryByCourse.astro'],
+  },
+  {
+    name: 'ConceptsByStatus',
+    selector: '.slot-concepts-by-status',
+    purpose: 'A KC-status distribution across every course — how many concepts are not-started/learning/review/mastered, at a glance.',
+    affordances: ['Scan a labeled bar + count per status, and the total KC count in the section head.'],
+    actions: ['No writes — pure props, a status tally computed in profile.astro\'s frontmatter from a single scoped kcs query.'],
+    feedback: ['"No concepts imported yet." empty state.'],
+    docs: [SCREENS, 'src/components/profile/ConceptsByStatus.astro'],
+  },
+  {
+    name: 'RecentActivitySection',
+    selector: '.slot-activity',
+    purpose: 'The raw event log, for a student who wants to see (and correct) the paper trail behind every mastery number on this page.',
+    affordances: ['Scroll the last 20 logged events; re-type or delete a manually-logged one (same affordances as the course-level RecentActivityCard).'],
+    actions: ['Wraps EventTimeline.svelte (client:visible) — PATCH/DELETE /api/v1/events/:id underneath.'],
+    feedback: ['"No events logged yet." empty state (see EventTimeline\'s own behavior).'],
+    docs: [SCREENS, 'src/components/profile/RecentActivitySection.astro', 'src/components/events/EventTimeline.svelte'],
+  },
+];
+
+// ---------------------------------------------------------------------------
 // /settings
 // ---------------------------------------------------------------------------
 
@@ -763,6 +857,25 @@ export const ROUTE_ANNOTATIONS: RouteAnnotation[] = [
     ],
     docs: [PLANNER_UX, MOBILE_SHELL, JOURNEYS, LIFECYCLE],
     components: plannerComponents,
+  },
+  {
+    route: '/profile',
+    title: 'Profile',
+    purpose: '"Who am I as a learner, beyond one course\'s grade?" — the identity page: standing, competencies, what\'s next in reach, and the study habits behind it all.',
+    jobs: [
+      'See overall standing (mastery, streaks) at a glance.',
+      'Check higher-order competencies that cross course boundaries, and how consistently you use deliberate study strategies.',
+      'See exactly which unmastered concepts are ready to tackle next, across every course, without hunting course-by-course.',
+      'Set up and track recurring study habits or in-session structure.',
+      'Fall back to the classic per-course mastery / concept-status / event-log breakdowns when that\'s the actual question.',
+    ],
+    flows: [
+      'Frontier membership (FrontierPanel) is computed the same way understandNext\'s "unlocks after" pointer is on the course Overview — one readiness definition (src/lib/services/knowledgeMap.ts::isReady), reused everywhere.',
+      'A recurring ritual\'s adherence dots come from sweep-minted tasks (services/taskSweep.ts::collectRituals) — the same task rows that surface on /tasks and the dashboard, not a separate tracking mechanism.',
+      'Starting a StudyFlow session with a session-shape ritual attached stamps study_sessions.ritual_id, which is what RitualsPanel\'s "used to start N sessions" count reads back.',
+    ],
+    docs: [SCREENS, 'docs/architecture/events-and-mastery.md', 'docs/architecture/data-model.md', 'docs/product/vision.md'],
+    components: profileComponents,
   },
   {
     route: '/settings',

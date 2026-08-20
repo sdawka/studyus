@@ -97,6 +97,15 @@ Flagged during the T6 `apiFetch` consolidation's verification pass, not fixed th
 - **Unhandled-rejection risk at two un-migrated fetch call sites**: `src/components/study/StudyFlow.svelte`'s `discardSession` and `submitCompletion`, and `src/components/events/EventTimeline.svelte`'s `saveEdit` and `remove`, each wrap their `fetch` call in `try { ... } finally { ... }` with no `catch` clause — a network-level throw (offline, backend redeploying) is an unhandled promise rejection with zero user-visible feedback, unlike every other call site (now on `apiFetch`, which catches and surfaces `NETWORK_ERROR_MESSAGE`). Left alone because migrating them to `apiFetch` would newly surface errors that previously failed silently — desired, but a deliberate future change, not this pass's scope.
 - **`GradeTable`'s private `formatDue` vs. `plannerDates.formatDueDate`**: `src/components/admin/GradeTable.svelte`'s `formatDue(ms: number | null)` renders the same string (`toLocaleDateString` with `{month:'short',day:'numeric',year:'numeric'}`, "No due date" fallback) as `formatDueDate(iso: string | null)` in `src/lib/plannerDates.ts`, but the two take different input shapes — `GradeTable`'s `Assessment.dueDate` is an epoch-ms number, while `formatDueDate`'s only caller (`AssessmentsCard`) passes an ISO string — and their null-checks diverge (`ms === null` vs. `!iso`, which would treat an epoch-0 timestamp differently). Not a byte-identical swap without either widening the shared helper's signature (which changes its falsy-check semantics) or converting at the call site, so it's booked here rather than merged speculatively.
 
+### Verification-Pass Deferrals (2026-08-19, v1.9 wave)
+
+Flagged during the ZPD/capabilities/rituals verify pass, not fixed there because each is a scope addition or a behavior change, not a like-for-like fix:
+
+- **FrontierGraph edge rendering**: `FrontierGraph.svelte` (`/profile`'s Frontier panel) renders frontier KCs as a flat chip list sharing `PrereqGraph.svelte`'s node styling, but draws no prerequisite edges between them — every node shown is, by definition, already `ready`, so there's nothing currently blocked to draw an edge *to*. Drawing the edges themselves (e.g. dimmed lines into the blocked KCs just past the frontier) would need `FrontierByCourse` to also carry the blocked set per course, not just frontier counts.
+- **Per-course blocked counts**: `GET /api/v1/profile/frontier`'s `FrontierResponse` only reports a single global `blocked` count (`counts.blocked`), not a per-course breakdown — `frontierByCourseSchema` (`src/lib/schemas/zpd.ts`) would need an additive `blocked_count` (or a full blocked-KC list, see the FrontierGraph item above) field per course to show "3 waiting on a prerequisite" scoped to one course rather than only the whole-profile summary.
+- **RitualsPanel create form has no after_class/before_class cadence**: `RitualsPanel.svelte`'s create form only offers `daily`/`weekly` cadences (`CADENCE_OPTIONS`) because it isn't given a `courses` prop, and `after_class`/`before_class` rituals require a `course_id`. A course-scoped ritual can still be created directly via `POST /api/v1/rituals`, just not from this form. Needs `profile.astro` to pass the user's course list down and the form to grow a course picker for those two cadences.
+- **`profile.astro` calls `getGlobalFrontier` twice**: once directly (for the `FrontierPanel`'s full `by_course` breakdown) and once inside `getProfile` (`services/profile.ts`, for `knowledge_map`'s summary counts) — two full passes over the user's `kcs`/`kc_edges` per profile page load. A dedupe candidate: either have `getProfile` accept a precomputed frontier result, or have the page call `getGlobalFrontier` once and derive both the summary counts and the by-course breakdown from that one call.
+
 ### Core Features
 
 ### Multi-User Signup & Email Verification
@@ -165,15 +174,9 @@ Flagged during the T6 `apiFetch` consolidation's verification pass, not fixed th
 
 ### Global Knowledge Map
 
-**Current**: Stubbed in `LearnerProfile.knowledgeMap = null`.
+**Resolved, v1.9**: `LearnerProfile.knowledge_map` is no longer `null` — `GET /api/v1/profile/frontier` (`src/lib/zpd.ts`/`src/lib/services/zpd.ts`) computes the ZPD learning frontier (unmastered KCs whose every prerequisite is `ready`) across all non-archived courses, grouped by course, on `/profile`'s Frontier panel. This is the "nodes: KCs across all courses, edges: prerequisite" half of what was scoped below — still a pure per-request traversal, no persisted closure table.
 
-**Post-v1**: Build a concept prerequisite graph:
-- Nodes: KCs across all courses.
-- Edges: "X is a prerequisite for Y" (directed, weighted).
-- Transitive closure: compute derived mastery for unmastered prerequisites.
-- Recommendation: "To master Navier-Stokes, strengthen Conservation of Momentum first."
-
-**Scope**: Knowledge engineering (map each course's KC dependencies), query optimization, adaptive sequencing.
+**Still open** (not built by v1.9): a genuine transitive-closure / derived-mastery adjustment (e.g. "To master Navier-Stokes, strengthen Conservation of Momentum first" as a *mastery* recommendation, not just a readiness gate) and adaptive sequencing beyond "here's what's unlocked." See `docs/architecture/events-and-mastery.md`'s "Prerequisite modeling" TODO for the mastery-adjustment half specifically.
 
 ## Platforms & Channels
 

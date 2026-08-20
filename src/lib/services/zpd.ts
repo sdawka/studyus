@@ -9,12 +9,28 @@ import type { FrontierByCourse, FrontierResponse } from '../schemas/zpd';
 import { computeReadiness, selectFrontier, type ZpdKc } from '../zpd';
 import { requireOwnedCourse } from './util';
 
+// D1's bound-parameter cap is 100 per query — a whole-profile scope (all of
+// a user's non-archived courses' KCs, e.g. 147 across the 9 seeded courses)
+// blows past that in one `inArray` call, so this chunks scopeIds into
+// batches and unions the results. Every other `inArray` caller in this file
+// stays on a single course's KCs (well under the cap), so only this one
+// needed it.
+const D1_MAX_BOUND_PARAMS = 100;
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
 /** kcId -> its prereqKcId list, restricted to `kcId in scopeIds`. */
 async function loadPrereqsOf(db: Db, scopeIds: string[]): Promise<Map<string, string[]>> {
   const prereqsOf = new Map<string, string[]>();
   if (scopeIds.length === 0) return prereqsOf;
-  const rows = await db.select().from(kcEdges).where(inArray(kcEdges.kcId, scopeIds));
-  for (const row of rows) {
+  const batches = await Promise.all(
+    chunk(scopeIds, D1_MAX_BOUND_PARAMS).map((batch) => db.select().from(kcEdges).where(inArray(kcEdges.kcId, batch))),
+  );
+  for (const row of batches.flat()) {
     const list = prereqsOf.get(row.kcId) ?? [];
     list.push(row.prereqKcId);
     prereqsOf.set(row.kcId, list);
