@@ -127,6 +127,23 @@ CREATE TABLE `events` (
 --> statement-breakpoint
 CREATE INDEX `events_kc_id_idx` ON `events` (`kc_id`);--> statement-breakpoint
 CREATE INDEX `events_user_ts_idx` ON `events` (`user_id`,`ts`);--> statement-breakpoint
+CREATE TABLE `exercises` (
+	`id` text PRIMARY KEY NOT NULL,
+	`kc_id` text NOT NULL,
+	`slug` text NOT NULL,
+	`kind` text NOT NULL,
+	`difficulty` integer DEFAULT 2 NOT NULL,
+	`prompt` text NOT NULL,
+	`details` text DEFAULT '{}' NOT NULL,
+	`source` text NOT NULL,
+	`origin` text DEFAULT 'seed' NOT NULL,
+	`sort_order` integer DEFAULT 0 NOT NULL,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`kc_id`) REFERENCES `kcs`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `exercises_kc_slug_unique` ON `exercises` (`kc_id`,`slug`);--> statement-breakpoint
+CREATE INDEX `exercises_kc_id_idx` ON `exercises` (`kc_id`);--> statement-breakpoint
 CREATE TABLE `kc_edges` (
 	`id` text PRIMARY KEY NOT NULL,
 	`kc_id` text NOT NULL,

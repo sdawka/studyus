@@ -241,6 +241,45 @@ export const scaffolds = sqliteTable(
   (table) => [index('scaffolds_kc_id_idx').on(table.kcId)],
 );
 
+// Auto-gradeable / self-checkable exercise bank for a KC (v2.0 —
+// courses/<slug>/exercises.json, sibling file to content.json — see
+// courses/exercise-schema.md for the frozen authoring contract). Complements
+// scaffolds (which teach, no answers) with assess-and-check items: `mcq`
+// (seeded QuickQuiz bank items), `numeric` (tolerance-checked practice), and
+// `worked` (study material with a full solution). `details` is the
+// kind-specific payload (mcq: {options, correct_index, explanation}; numeric:
+// {answer: {value, unit, tolerance_pct}, solution}; worked: {solution}) —
+// opaque JSON here, shaped by the Zod mirror in src/lib/content/exercises.ts.
+// Column named `origin` (not `source`) because `source` already holds the
+// authoring citation (textbook/chapter, per exercise-schema.md).
+export const exercises = sqliteTable(
+  'exercises',
+  {
+    id: id(),
+    kcId: text('kc_id')
+      .notNull()
+      .references(() => kcs.id, { onDelete: 'cascade' }),
+    slug: text('slug').notNull(),
+    kind: text('kind', { enum: ['mcq', 'numeric', 'worked'] }).notNull(),
+    // Mirrors scaffold fading: 1 = supported/recall, 2 = standard, 3 = independent/transfer.
+    difficulty: integer('difficulty').notNull().default(2),
+    prompt: text('prompt').notNull(),
+    details: text('details', { mode: 'json' })
+      .notNull()
+      .default(sql`'{}'`),
+    source: text('source').notNull(),
+    origin: text('origin', { enum: ['seed', 'user'] }).notNull().default('seed'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    // Slug-keyed like misconceptions (not index-keyed like scaffolds), so
+    // reordering the authoring file is safe and removals purge cleanly.
+    uniqueIndex('exercises_kc_slug_unique').on(table.kcId, table.slug),
+    index('exercises_kc_id_idx').on(table.kcId),
+  ],
+);
+
 // ---------------------------------------------------------------------------
 // Events — the source of truth for mastery
 // ---------------------------------------------------------------------------

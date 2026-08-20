@@ -821,3 +821,21 @@ New resource (`src/lib/schemas/rituals.ts`, `src/lib/services/rituals.ts`). A ri
 ### Settings — `task_generators.ritual`
 
 `task_generators` gains a seventh key, `ritual` (default `true`, matching five of the existing six generators — only `prep_before_class`/`stale_kc` ship opt-in). This is the master toggle for the ritual sweep collector; per-ritual on/off is the separate `rituals.active` flag, and a deactivated ritual (or master toggle off) stops generating new tasks without resurrecting dismissed ones (existing dedupe semantics).
+
+---
+
+## v2.0 Additions — Exercise bank
+
+**Status**: FOUNDATION LANDED (schema, Zod mirror, service, this route), additive. Auto-gradeable / self-checkable exercises attached to KCs — the complement to scaffolds (which teach, no answers). Schema: new `exercises` table (`src/db/schema.ts`), populated from `courses/<slug>/exercises.json` (sibling file to `content.json`, frozen contract `courses/exercise-schema.md`) by `scripts/seed.ts`, validated by the Zod mirror in `src/lib/content/exercises.ts`. QuickQuiz server-side grading integration (`src/lib/services/exercises.ts::listCourseMcqBank`) lands with a later track.
+
+### GET /kcs/:id/exercises
+
+**Query**: `kind=mcq|numeric|worked?` (omit for all kinds).
+
+**Response** (200): `{ "data": [Exercise, ...] }`, ordered `sort_order` ascending. `Exercise` shape: `{ "id", "kc_id", "slug", "kind", "difficulty", "prompt", "details", "source", "origin", "sort_order", "created_at" }` — `details` is answer-stripped per `kind`:
+
+- `mcq`: `details = { "options": ["string", ...] }` — no `correct_index`/`explanation`.
+- `numeric`: `details = { "unit": "string|null" }` — no `value`/`tolerance_pct`/`solution`.
+- `worked`: `details = { "solution": "string" }` — the solution *is* the content, so it's never stripped.
+
+Ownership: `:id` must belong to the caller (`requireOwnedKc`). The full (answer-included) `details` payload — `listKcExercises(db, userId, kcId, { withAnswers: true })` — and the course-wide mcq bank (`listCourseMcqBank(db, userId, courseId)`, full details, used for server-side grading) are service-layer only; no route currently returns either directly to a client.

@@ -15,6 +15,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { EVENT_ROLE_FLAGS } from '../src/lib/schemas/events';
 import { type CourseContent, courseContentSchema, resolveContentGraph } from '../src/lib/content/courseContent';
+import { type ExerciseFile, exerciseFileSchema } from '../src/lib/content/exercises';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -401,6 +402,92 @@ async function main() {
        ON CONFLICT(id) DO NOTHING;`,
     );
   }
+
+  // ---------------------------------------------------------------------
+  // exercises.json pipeline (v2.0) — courses/<slug>/exercises.json, sibling
+  // file to content.json (frozen contract: courses/exercise-schema.md). Same
+  // optional/abort-on-invalid convention as content.json: a missing file
+  // means zero exercises for that course (no legacy fallback — exercises are
+  // new in v2.0), a present-but-invalid file aborts the whole seed with the
+  // file path + issues. `kc` refs resolve against contentKcIdByKey (built
+  // above from every loaded content.json), so this pass must run after that
+  // map is populated; unresolvable refs warn + skip rather than abort,
+  // matching content.json's cross-course-ref handling.
+  // ---------------------------------------------------------------------
+  const exercisesBySlug = new Map<string, ExerciseFile>();
+  for (const course of coursesData) {
+    const exercisesPath = join(process.cwd(), 'courses', course.slug, 'exercises.json');
+    if (!existsSync(exercisesPath)) continue;
+    let raw: unknown;
+    try {
+      raw = JSON.parse(readFileSync(exercisesPath, 'utf-8'));
+    } catch (err) {
+      throw new Error(`Failed to read/parse ${exercisesPath}: ${(err as Error).message}`);
+    }
+    const result = exerciseFileSchema.safeParse(raw);
+    if (!result.success) {
+      const issues = result.error.issues.map((i) => `  ${i.path.join('.') || '(root)'}: ${i.message}`).join('\n');
+      throw new Error(`Exercise validation failed for ${exercisesPath}:\n${issues}`);
+    }
+    exercisesBySlug.set(course.slug, result.data);
+  }
+
+  // courseSlug -> { count, unresolved }, printed in the summary at the end.
+  const exerciseStatsBySlug = new Map<string, { count: number; unresolved: number }>();
+  // Every id this run actually produced (across all courses) — the purge
+  // below deletes any origin='seed' exercises row NOT in this set, so
+  // removing an exercise (or an entire course's exercises.json) from the
+  // authoring files cleanly deletes the corresponding row(s) on reseed,
+  // rather than leaving orphans (the documented scaffold-purge gap this
+  // table was explicitly designed to avoid — see courses/exercise-schema.md).
+  const seededExerciseIds: string[] = [];
+
+  for (const [courseSlug, file] of exercisesBySlug) {
+    const stats = { count: 0, unresolved: 0 };
+    exerciseStatsBySlug.set(courseSlug, stats);
+
+    for (const exercise of file.exercises) {
+      const kcKey = `${courseSlug}#${exercise.kc}`;
+      const kcId = contentKcIdByKey.get(kcKey);
+      if (!kcId) {
+        stats.unresolved += 1;
+        console.warn(
+          `  exercises.json: unresolvable kc "${exercise.kc}" for exercise "${exercise.slug}" (course "${courseSlug}") — skipped.`,
+        );
+        continue;
+      }
+      stats.count += 1;
+      const exerciseId = deterministicId('exercise', `${courseSlug}#${exercise.kc}:${exercise.slug}`);
+      seededExerciseIds.push(exerciseId);
+
+      const details =
+        exercise.kind === 'mcq'
+          ? { options: exercise.options, correct_index: exercise.correct_index, explanation: exercise.explanation }
+          : exercise.kind === 'numeric'
+            ? { answer: exercise.answer, solution: exercise.solution }
+            : { solution: exercise.solution };
+
+      statements.push(
+        `INSERT INTO exercises (id, kc_id, slug, kind, difficulty, prompt, details, source, origin, sort_order, created_at)
+         VALUES (${sqlStr(exerciseId)}, ${sqlStr(kcId)}, ${sqlStr(exercise.slug)}, ${sqlStr(exercise.kind)}, ${exercise.difficulty}, ${sqlStr(exercise.prompt)}, ${sqlStr(JSON.stringify(details))}, ${sqlStr(exercise.source)}, 'seed', 0, ${now})
+         ON CONFLICT(id) DO UPDATE SET
+           kind=excluded.kind, difficulty=excluded.difficulty, prompt=excluded.prompt,
+           details=excluded.details, source=excluded.source;`,
+      );
+    }
+  }
+
+  // Global purge (never touches origin='user' rows): a course whose
+  // exercises.json was deleted entirely, or an exercise removed from one,
+  // disappears from seededExerciseIds and gets purged here — same idea as
+  // the capabilities purge below, just scoped to seed-origin rows directly
+  // rather than per-parent, since exercises has no natural single parent id
+  // to delete-and-reinsert-under.
+  statements.push(
+    seededExerciseIds.length
+      ? `DELETE FROM exercises WHERE origin='seed' AND id NOT IN (${seededExerciseIds.map((id) => sqlStr(id)).join(', ')});`
+      : `DELETE FROM exercises WHERE origin='seed';`,
+  );
 
   // Capabilities (v1.9) — second pass, same idea as the kc_edges pass above:
   // courses/capabilities.json's members reference "<course-slug>/<kc-slug>"
@@ -863,6 +950,17 @@ async function main() {
     contentGraph.warnings.forEach((w) => console.log(`  - ${w}`));
   } else if (contentFiles.length) {
     console.log('\nNo content graph warnings.');
+  }
+
+  console.log('\n--- Exercises pipeline summary ---');
+  for (const course of coursesData) {
+    const stats = exerciseStatsBySlug.get(course.slug);
+    if (!stats) {
+      console.log(`  ${course.slug}: no exercises.json`);
+      continue;
+    }
+    const unresolvedSuffix = stats.unresolved ? ` (${stats.unresolved} unresolved kc ref(s) skipped)` : '';
+    console.log(`  ${course.slug}: exercises ${stats.count}${unresolvedSuffix}`);
   }
 }
 
