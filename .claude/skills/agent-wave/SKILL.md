@@ -68,5 +68,12 @@ How this repo runs multi-agent implementation waves (used for v1 M0–M5 and v1.
 - **Sweep-generated tasks carry UI semantics**: anything minted for a *past* moment inherits the tasks list's red "overdue" framing. For informational/no-guilt features (rituals), mint backfill pre-dismissed and auto-expire stale occurrences in the sweep — state design, not CSS, is what enforces anti-gamification.
 - **Wire-shape seam at .astro page boundaries**: services return camelCase rows, Svelte panels are typed against snake_case Zod wire shapes — bridge with `toApi()` in the page frontmatter (see profile.astro), don't hand-map.
 
+## Lessons from the v2.0 wave (2026-08-20, exercise banks / content research)
+
+- **Teammate agents' own subagent results route to the ORCHESTRATOR's session, not the teammate** — a researcher that fans out never hears back from its children. Protocol that works: subagents WRITE output to a unique scratchpad file and return only the path + counts; the researcher polls for files. When a payload does land on the orchestrator, extract it from the child's transcript JSONL (parse lines, walk string values for the payload) into a relay file — don't paste 25k-token payloads through SendMessage.
+- **LLM-authored MCQs put the correct answer first** — 323/392 across 7 of 9 authoring agents (the two that shuffled did so on their own). Post-hoc fix needs option shuffling PLUS letter-reference remapping in explanations ("Option B"), plus an audit that scenario-internal letters (Gas A, ln(A), Material B) aren't touched. Cheaper: bake "vary correct_index; reference options by content not letter" into the authoring contract up front (now in courses/exercise-schema.md).
+- **Content validation is a different gate than structural validation** — Zod caught slugs/shapes; only the Haiku recompute-the-answers pass caught the answer-position bias, and only a human-eye spot-check of a live page caught mid-walk event residue. Sample-validate content with agents that actually recompute, and screenshot with your own eyes after any live walk.
+- **Seed-time Zod as the merge gate works**: strict schema + validate-or-abort seed caught tolerance_pct edge cases and non-kebab slugs across 9 independently-authored files with zero silent corruption.
+
 ## TODO
 - Consider worktree isolation per agent if track ownership ever must overlap.
