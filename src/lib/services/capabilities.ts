@@ -3,7 +3,7 @@
 // Both are computed on read (ADR-004): nothing here is stored beyond the
 // capabilities/capability_kcs rows themselves (source: seed via
 // courses/capabilities.json, or source: 'user' — schema-ready, no UI yet).
-import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
+import { and, asc, eq, inArray, or } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { capabilities, capabilityKcs, events, kcs, tutorConversations, userCorrections } from '../../db/schema';
 import { foldCapabilityMastery } from '../capabilityMastery';
@@ -130,11 +130,36 @@ function assessmentOutcome(payload: unknown): 'pass' | 'fail' | null {
 export async function getMetaSkills(db: Db, userId: string, now: number = Date.now()): Promise<MetaSkill[]> {
   const signals: MetaSkillSignal[] = [];
 
-  const retrievalEvents = await db
-    .select({ ts: events.ts })
+  // Single scan over events covering all three event-sourced signals below
+  // (retrieval_practice types, taught_someone, and assessment outcomes for
+  // the error_analysis fail->pass walk) instead of three separate table
+  // scans — a row can match more than one branch (e.g. a quiz_taken event
+  // is both a retrieval-practice type and an assessment outcome).
+  const relevantEvents = await db
+    .select({ type: events.type, ts: events.ts, kcId: events.kcId, payload: events.payload, isAssessment: events.isAssessment })
     .from(events)
-    .where(and(eq(events.userId, userId), inArray(events.type, [...RETRIEVAL_EVENT_TYPES])));
-  for (const e of retrievalEvents) signals.push({ key: 'retrieval_practice', ts: e.ts });
+    .where(
+      and(
+        eq(events.userId, userId),
+        or(inArray(events.type, [...RETRIEVAL_EVENT_TYPES, 'taught_someone']), eq(events.isAssessment, true)),
+      ),
+    )
+    .orderBy(asc(events.ts));
+
+  const byKc = new Map<string, { ts: number; payload: unknown }[]>();
+  for (const e of relevantEvents) {
+    if ((RETRIEVAL_EVENT_TYPES as readonly string[]).includes(e.type)) {
+      signals.push({ key: 'retrieval_practice', ts: e.ts });
+    }
+    if (e.type === 'taught_someone') {
+      signals.push({ key: 'self_explanation', ts: e.ts });
+    }
+    if (e.isAssessment && e.kcId) {
+      const list = byKc.get(e.kcId) ?? [];
+      list.push({ ts: e.ts, payload: e.payload });
+      byKc.set(e.kcId, list);
+    }
+  }
 
   const selfExplainConversations = await db
     .select({ ts: tutorConversations.createdAt })
@@ -142,31 +167,12 @@ export async function getMetaSkills(db: Db, userId: string, now: number = Date.n
     .where(and(eq(tutorConversations.userId, userId), eq(tutorConversations.mode, 'self_explain')));
   for (const c of selfExplainConversations) signals.push({ key: 'self_explanation', ts: c.ts });
 
-  const taughtSomeoneEvents = await db
-    .select({ ts: events.ts })
-    .from(events)
-    .where(and(eq(events.userId, userId), eq(events.type, 'taught_someone')));
-  for (const e of taughtSomeoneEvents) signals.push({ key: 'self_explanation', ts: e.ts });
-
   const corrections = await db
     .select({ ts: userCorrections.acceptedAt })
     .from(userCorrections)
     .where(eq(userCorrections.userId, userId));
   for (const c of corrections) signals.push({ key: 'error_analysis', ts: c.ts });
 
-  const assessmentEvents = await db
-    .select({ kcId: events.kcId, ts: events.ts, payload: events.payload })
-    .from(events)
-    .where(and(eq(events.userId, userId), eq(events.isAssessment, true), isNotNull(events.kcId)))
-    .orderBy(asc(events.ts));
-
-  const byKc = new Map<string, { ts: number; payload: unknown }[]>();
-  for (const e of assessmentEvents) {
-    if (!e.kcId) continue;
-    const list = byKc.get(e.kcId) ?? [];
-    list.push({ ts: e.ts, payload: e.payload });
-    byKc.set(e.kcId, list);
-  }
   for (const kcEvents of byKc.values()) {
     let sawFailure = false;
     for (const e of kcEvents) {

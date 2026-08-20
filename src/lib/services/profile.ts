@@ -46,7 +46,11 @@ function computeStreaks(eventDaysDesc: string[]): { current: number; longest: nu
   return { current, longest };
 }
 
-export async function getProfile(db: Db, userId: string) {
+export async function getProfile(
+  db: Db,
+  userId: string,
+  precomputed?: { frontierCounts: Awaited<ReturnType<typeof getGlobalFrontier>>['counts'] },
+) {
   const userRows = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!userRows[0]) throw new NotFoundError('User');
 
@@ -84,7 +88,10 @@ export async function getProfile(db: Db, userId: string) {
   // Reuses getGlobalFrontier's single pass over kcs/kc_edges rather than a
   // second bespoke count query — its `counts` are exactly the summary this
   // page needs (src/lib/zpd.ts's frontier/blocked/mastered/total shape).
-  const { counts: knowledgeMap } = await getGlobalFrontier(db, userId);
+  // Callers that already computed the frontier (e.g. profile.astro, which
+  // needs the full by_course breakdown too) can pass its counts in to avoid
+  // running the same query twice.
+  const knowledgeMap = precomputed ? precomputed.frontierCounts : (await getGlobalFrontier(db, userId)).counts;
 
   return {
     user_id: userId,

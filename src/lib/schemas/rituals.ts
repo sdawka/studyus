@@ -90,17 +90,19 @@ export type RitualAdherence = z.infer<typeof ritualAdherenceSchema>;
 
 // Full GET /rituals row shape (all `rituals` table columns in snake_case,
 // per docs/api.md convention, plus the adherence block above).
-export const ritualResponseSchema = z.object({
-  id: idSchema,
-  name: z.string(),
-  description: z.string().nullable(),
-  kind: z.enum(RITUAL_KINDS),
-  cadence: z.enum(RITUAL_CADENCES).nullable(),
-  by_weekday: z.string().nullable(),
-  course_id: idSchema.nullable(),
-  steps: z.array(ritualStepSchema).nullable(),
-  active: z.boolean(),
-  created_at: z.string(),
-  adherence: ritualAdherenceSchema,
-});
-export type RitualResponse = z.infer<typeof ritualResponseSchema>;
+// Response shape only (never parsed) — plain TS type, not Zod (house rule:
+// Zod validates requests; responses are plain TS types, see
+// src/lib/types/calendar.ts).
+export type RitualResponse = {
+  id: string;
+  name: string;
+  description: string | null;
+  kind: RitualKind;
+  cadence: RitualCadence | null;
+  by_weekday: string | null;
+  course_id: string | null;
+  steps: RitualStep[] | null;
+  active: boolean;
+  created_at: string;
+  adherence: RitualAdherence;
+};

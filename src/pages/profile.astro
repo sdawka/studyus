@@ -23,7 +23,10 @@ import type { RitualResponse } from '../lib/schemas/rituals';
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
 
-const profile = await getProfile(db, userId);
+const frontier: FrontierResponse = await getGlobalFrontier(db, userId);
+// Passes the frontier counts just computed above in so getProfile doesn't
+// run getGlobalFrontier a second time for its knowledge_map summary.
+const profile = await getProfile(db, userId, { frontierCounts: frontier.counts });
 
 const userCourses = await db.select({ id: courses.id, slug: courses.slug }).from(courses).where(eq(courses.userId, userId));
 const courseIds = userCourses.map((c) => c.id);
@@ -42,7 +45,6 @@ const totalKcs = Object.values(statusCounts).reduce((a, b) => a + b, 0);
 // CapabilityResponse props are typed against (kc_id/course_id members).
 const capabilities: CapabilityResponse[] = toApi(await listCapabilities(db, userId)) as unknown as CapabilityResponse[];
 const metaSkills: MetaSkill[] = await getMetaSkills(db, userId);
-const frontier: FrontierResponse = await getGlobalFrontier(db, userId);
 // Same toApi bridge as capabilities: service rows are camelCase, the panel's
 // RitualResponse props are the snake_case wire shape.
 const rituals: RitualResponse[] = toApi(await listRitualsWithAdherence(db, userId)) as unknown as RitualResponse[];
@@ -54,16 +56,16 @@ const rituals: RitualResponse[] = toApi(await listRitualsWithAdherence(db, userI
     <StandingCard overallMastery={profile.overall_mastery} currentStreak={profile.current_streak} longestStreak={profile.longest_streak} />
   </div>
 
-  <div class="slot-capabilities">
-    <CapabilitiesPanel client:visible capabilities={capabilities} metaSkills={metaSkills} />
+  <div class="slot-frontier">
+    <FrontierPanel client:idle frontier={frontier} />
   </div>
 
-  <div class="slot-frontier">
-    <FrontierPanel client:visible frontier={frontier} />
+  <div class="slot-capabilities">
+    <CapabilitiesPanel client:idle capabilities={capabilities} metaSkills={metaSkills} />
   </div>
 
   <div class="slot-rituals">
-    <RitualsPanel client:visible rituals={rituals} />
+    <RitualsPanel client:idle rituals={rituals} />
   </div>
 
   <div class="cols">
