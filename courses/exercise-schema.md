@@ -29,7 +29,7 @@ study material with a full solution.
 | `options` | string[] (3–5) | **mcq only, required.** Distractors must be plausible — derive them from documented misconceptions or classic sign/unit errors where possible. |
 | `correct_index` | int | **mcq only, required.** 0-based, < options.length. |
 | `explanation` | string | **mcq only, required.** Why the right answer is right AND what error each distractor represents. |
-| `answer` | `{ "value": number, "unit": string \| null, "tolerance_pct": number }` | **numeric only, required.** tolerance_pct default 2; unit null for dimensionless. Value must be VERIFIED by actually working the problem. |
+| `answer` | `{ "value": number, "unit": string \| null, "tolerance_pct": number }` | **numeric only, required.** tolerance_pct default 2, 0 allowed (exact match for integer/count answers); unit null for dimensionless. Value must be VERIFIED by actually working the problem. |
 | `solution` | string | **numeric + worked, required.** Full worked solution, markdown. For `worked`, `prompt` poses the problem and `solution` is the complete walkthrough. |
 
 ## Authoring rules

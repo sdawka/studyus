@@ -348,6 +348,55 @@
             }
           ],
           "misconceptions": []
+        },
+        {
+          "slug": "fed-batch-fermentation-strategies",
+          "name": "Fed-batch fermentation strategies",
+          "kc_type": "rule",
+          "description": "Explain why fed-batch operation (starting a batch culture, then feeding concentrated substrate gradually rather than adding it all at once or running continuous flow) is used to avoid substrate inhibition, overflow metabolism, and catabolite repression while still reaching high final cell/product densities, and compute a simple exponential feed-rate profile that holds specific growth rate at a target value below μ_max.",
+          "practice_notes": "Contrast all three modes side by side for the same organism (batch: all substrate up front, growth and dilution rate uncoupled; continuous/chemostat: constant volume, steady state, μ locked to D; fed-batch: volume grows over time, no outflow, feed rate is the control handle) so the choice of mode maps to the actual industrial motivation (e.g. avoiding acetate overflow in E. coli fed too much glucose at once) rather than being memorized as an isolated definition.",
+          "sort_order": 5,
+          "prereqs": [
+            "#monod-growth-kinetics",
+            "#bioreactor-mass-balances-and-dilution-rate"
+          ],
+          "resources": [
+            {
+              "label": "NPTEL — Bioreactor Design and Analysis",
+              "url": "https://nptel.ac.in/courses/102106086",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "contrast_examples",
+              "level": 1,
+              "title": "Batch vs. continuous vs. fed-batch, side by side",
+              "body": "**Batch**: all substrate charged at t=0; culture passes through lag, exponential, stationary, death phases as substrate depletes and product/waste accumulates; simple but growth rate isn't controlled and high initial substrate can itself be inhibitory or trigger wasteful overflow metabolism.\n\n**Continuous (chemostat)**: constant feed in, constant outflow out, constant volume; at steady state μ=D exactly, giving precise, sustained control of growth rate -- but industrially harder to maintain sterile and genetically stable over long runs.\n\n**Fed-batch**: starts like a batch, but instead of charging all substrate up front, concentrated feed is added gradually with no outflow (volume increases over the run); this lets the operator keep the *instantaneous* substrate concentration low (avoiding inhibition/overflow metabolism) while still delivering a large *total* amount of substrate over the run, reaching a much higher final biomass or product titer than a batch limited by how much substrate the vessel could hold at t=0 without being toxic."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Exponential feed rate to hold mu below mu_max",
+              "body": "A fed-batch culture has current biomass X=2.0 g/L in a working volume V=10 L (total biomass = 20 g), biomass yield Y_X/S = 0.50 g cells/g substrate, and the operator wants to hold the specific growth rate at a fixed target mu_set = 0.20 /h (safely below mu_max, to avoid overflow metabolism) using a feed of concentrated substrate at S_feed = 500 g/L.\nStep 1: at any instant, feeding substrate exactly fast enough to sustain mu_set on the CURRENT total biomass requires F*S_feed = mu_set*X*V/Y_X/S (substrate consumption rate needed = growth rate needed / yield).\nStep 2: F = mu_set*(X*V)/(Y_X/S*S_feed) = 0.20*20/(0.50*500) = 4.0/250 = 0.016 L/h.\nStep 3: as biomass X*V grows over time (because mu_set*X*V is being sustained), F must be increased proportionally to keep mu at mu_set -- this is why the classic fed-batch feed profile is F(t) = F0*exp(mu_set*t), an exponentially ramping feed, not a constant one."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Why exponential, not constant, feed?",
+              "body": "In a fed-batch run targeting a constant specific growth rate mu_set below mu_max, why must the feed rate F(t) increase exponentially over time rather than stay constant?"
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "fed-batch-is-just-a-batch-with-extra-steps",
+              "name": "Fed-batch is functionally the same as adding more substrate to a batch culture",
+              "description": "Learner treats fed-batch as merely 'topping up' a batch culture whenever it runs low, missing that the point is deliberately keeping instantaneous substrate concentration LOW throughout the run (to avoid inhibition/overflow metabolism) while accumulating a large total substrate dose and biomass over time -- not simply extending a batch's substrate supply.",
+              "root_cause": "Surface-level similarity (substrate keeps getting added, no outflow, batch-like single harvest at the end) obscures that fed-batch's defining purpose is control of the *instantaneous* substrate concentration via a calculated feed-rate profile, not just avoiding running out.",
+              "diagnostic_probe": "A student proposes simply dumping all the substrate a fed-batch run would eventually use into the vessel at t=0 instead, arguing 'it's the same total substrate either way.' What key difference in outcome are they missing?",
+              "correction": "Fed-batch deliberately limits the instantaneous substrate concentration by metering in feed over time (often on an exponential ramp) specifically to avoid substrate-level effects -- inhibition, overflow metabolism, catabolite repression -- that would occur if the same total substrate were present all at once; dumping it all up front at t=0 defeats the entire purpose even though the total substrate delivered is identical."
+            }
+          ]
         }
       ]
     },
@@ -478,6 +527,48 @@
               "correction": "Reversibility and inhibition mechanism (competitive vs. noncompetitive vs. uncompetitive) are independent properties of an inhibitor. The mechanism is determined by which kinetic parameters shift on a Lineweaver-Burk plot — competitive inhibition specifically means adding excess substrate can fully overcome the inhibition (V_max unchanged), which is a stronger and more specific claim than mere reversibility."
             }
           ]
+        },
+        {
+          "slug": "immobilized-enzymes-and-biocatalyst-reuse",
+          "name": "Immobilized enzymes and biocatalyst reuse",
+          "kc_type": "concept",
+          "description": "Classify an enzyme immobilization method — physical adsorption onto a solid support, covalent binding to a support, entrapment in a gel/polymer matrix, or encapsulation behind a semipermeable membrane — and evaluate its trade-offs for industrial biocatalysis: reusability and easy product separation versus activity loss and diffusional (mass-transfer) limitations that can lower the apparent K_m/V_max compared to the free enzyme.",
+          "practice_notes": "For each immobilization method, practice naming both a benefit (reuse, easier downstream separation, sometimes improved stability) and a specific cost (loss of activity from conformational strain or restricted substrate access, added diffusional resistance) rather than treating immobilization as a strictly one-sided improvement over free enzyme.",
+          "sort_order": 4,
+          "prereqs": [
+            "#michaelis-menten-kinetics"
+          ],
+          "resources": [
+            {
+              "label": "OpenStax Biology 2e — 6.5 Enzymes",
+              "url": "https://openstax.org/books/biology-2e/pages/6-5-enzymes",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Four immobilization methods, classify the trade-off",
+              "body": "For each described setup, name the immobilization method and one likely drawback:\n\n1. Enzyme molecules are trapped inside the pores of a calcium-alginate gel bead, free to diffuse within the bead but too large to escape.\n2. Enzyme is chemically cross-linked via covalent bonds to functional groups on a silica particle surface.\n3. Enzyme is simply mixed with activated carbon and allowed to bind via van der Waals/ionic forces onto the particle surface.\n4. Enzyme solution is enclosed inside a semipermeable hollow-fiber membrane that lets small substrate/product molecules pass but retains the enzyme.\n\n**Key**: (1) entrapment — substrate must diffuse into the gel and product must diffuse out, adding a mass-transfer resistance that can make the apparent kinetics look slower than the enzyme's intrinsic rate. (2) covalent binding — strong, low leaching, but the covalent attachment can distort the enzyme's active-site conformation and reduce intrinsic activity. (3) physical adsorption — simple and gentle (least likely to disturb activity), but weakly bound enzyme can desorb/leach off the support over repeated use. (4) encapsulation — protects the enzyme and allows reuse/continuous operation, but adds a membrane diffusional barrier and risks membrane fouling over time."
+            },
+            {
+              "kind": "self_explanation_prompt",
+              "level": 3,
+              "title": "Why would apparent K_m rise after immobilization?",
+              "body": "An enzyme's measured apparent K_m increases substantially after it is entrapped in a gel bead, even though the enzyme's intrinsic active-site chemistry is unchanged. In your own words, explain how a purely physical diffusional limitation (substrate must diffuse through the gel to reach the enzyme) can make the apparent K_m look larger than the enzyme's true, intrinsic K_m."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "immobilization-only-improves-enzyme-performance",
+              "name": "Immobilizing an enzyme can only make its industrial performance better",
+              "description": "Learner assumes immobilization is a strictly positive intervention (more stability, easier reuse) with no downside, overlooking that immobilization commonly introduces diffusional mass-transfer limitations and can reduce intrinsic catalytic activity through conformational strain or restricted active-site access.",
+              "root_cause": "Textbook treatments emphasize the industrial motivation (reuse, continuous processing, easier separation from product) prominently, while the kinetic cost (apparent K_m shift, activity loss) is a secondary point that's easy to file away as a minor caveat rather than a real trade-off to weigh.",
+              "diagnostic_probe": "A company immobilizes an enzyme expecting identical per-mass activity to the free enzyme, but observes a lower reaction rate at the same substrate concentration after immobilization. Is this necessarily evidence the immobilization procedure went wrong?",
+              "correction": "Immobilization inherently trades some catalytic performance (via diffusional resistance and/or conformational effects on the active site) for reusability, easier separation, and often improved operational stability; a lower apparent rate at a given bulk substrate concentration after immobilization is an expected trade-off in many cases, not necessarily a sign of a failed procedure."
+            }
+          ]
         }
       ]
     },
@@ -547,12 +638,61 @@
           "misconceptions": []
         },
         {
+          "slug": "lac-operon-and-inducible-gene-expression",
+          "name": "Lac operon and inducible gene expression",
+          "kc_type": "concept",
+          "description": "Explain operon-based gene regulation using the E. coli lac operon (promoter, operator, repressor protein, and the inducer that inactivates the repressor) as the model system, and connect this mechanism to how biotechnologists exploit inducible promoters (e.g. the lac/tac promoter induced by IPTG) to control WHEN a cloned recombinant gene is expressed in a bacterial production host, decoupling cell growth from product expression.",
+          "practice_notes": "Trace the lac operon's two states explicitly — repressor bound to operator, RNA polymerase blocked, no transcription (uninduced) vs. inducer binds repressor, repressor releases the operator, transcription proceeds (induced) — then map that same two-state logic onto an industrial IPTG-induction protocol: grow the culture uninduced to high density first, then add inducer to switch on expression of the recombinant protein.",
+          "sort_order": 3,
+          "prereqs": [
+            "#central-dogma-of-molecular-biology",
+            "#recombinant-dna-workflow"
+          ],
+          "resources": [
+            {
+              "label": "Khan Academy — the lac operon",
+              "url": "https://www.khanacademy.org/science/ap-biology/gene-expression-and-regulation/regulation-of-gene-expression-and-cell-specialization/a/the-lac-operon",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "contrast_examples",
+              "level": 1,
+              "title": "Repressed vs. induced lac operon",
+              "body": "**Uninduced (no lactose/IPTG present)**: the lac repressor protein is bound tightly to the operator sequence, physically blocking RNA polymerase from transcribing the downstream structural genes (lacZ, lacY, lacA) — little to no mRNA, no proteins made.\n\n**Induced (lactose, or the non-hydrolyzable analog IPTG, present)**: the inducer binds the repressor, changing its shape so it can no longer bind the operator; the repressor releases, RNA polymerase is free to transcribe the operon, and the structural genes are expressed.\n\nIn a biotech expression system, the gene of interest is cloned downstream of a lac-derived (or lac-like, e.g. tac) promoter/operator instead of the natural lacZYA genes; the exact same repressor/inducer logic then lets an operator flip protein expression on with a simple IPTG addition, on demand."
+            },
+            {
+              "kind": "self_explanation_prompt",
+              "level": 2,
+              "title": "Why induce late, not from the start?",
+              "body": "In a typical recombinant-protein production run, the host culture is grown WITHOUT inducer until it reaches a high cell density, and only then is IPTG added to switch on expression of the cloned gene. In your own words, explain why decoupling growth (uninduced phase) from product expression (induced phase) this way is usually more productive than inducing expression from the very start of the culture."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Repressor and inducer roles, cold",
+              "body": "In the lac operon system, what does the repressor protein bind to when uninduced, and what does the inducer do to release that block?"
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "inducer-directly-activates-transcription",
+              "name": "The inducer directly turns on transcription",
+              "description": "Learner believes the inducer (lactose or IPTG) acts as a direct positive signal that activates RNA polymerase or the promoter itself, rather than understanding that the inducer's actual mechanism is purely negative — it inactivates a repressor that was blocking transcription, so transcription proceeds by default once the block is removed.",
+              "root_cause": "The everyday word 'inducer' sounds like it should positively cause or trigger transcription, which obscures that the lac system's real logic is double-negative (repressor blocks; inducer blocks the repressor) rather than a direct on-switch.",
+              "diagnostic_probe": "A student is asked what would happen to lacZYA transcription in a mutant E. coli strain that cannot produce any lac repressor protein at all, even with no lactose or IPTG present. They predict no transcription, reasoning 'there's no inducer to turn it on.' What is wrong with this reasoning?",
+              "correction": "The lac repressor is what blocks transcription by default; the inducer's role is only to inactivate that repressor, not to positively activate transcription itself. A repressor-null mutant would show constitutive (always-on) transcription regardless of inducer, because the negative regulator that normally blocks the promoter/operator is simply absent — transcription is the operon's unblocked default state, not something the inducer must actively switch on."
+            }
+          ]
+        },
+        {
           "slug": "crispr-gene-editing-mechanism",
           "name": "CRISPR-Cas9 gene editing mechanism",
           "kc_type": "principle",
           "description": "Explain the mechanism by which CRISPR-Cas9 achieves sequence-specific gene editing — a guide RNA's sequence complementarity directs Cas9 to a matching genomic site next to a PAM sequence, Cas9 cuts both DNA strands there, and the cell's own repair machinery (error-prone NHEJ for disruption, or template-directed HDR for a precise edit) completes the change — and why this gives far greater targeting precision than earlier gene-editing methods.",
           "practice_notes": "Self-explain each step in sequence (guide RNA design → target recognition → PAM check → double-strand cut → cellular repair choice) and connect each step to why it contributes to precision, rather than treating 'CRISPR edits genes' as a black box.",
-          "sort_order": 3,
+          "sort_order": 4,
           "prereqs": [
             "#recombinant-dna-workflow"
           ],
@@ -657,6 +797,54 @@
             }
           ],
           "misconceptions": []
+        },
+        {
+          "slug": "downstream-processing-and-product-recovery",
+          "name": "Downstream processing and product recovery",
+          "kc_type": "concept",
+          "description": "Select the appropriate downstream processing unit operation — cell disruption, centrifugation, filtration, precipitation, or chromatography — for a given bioprocess scenario, based on whether the product is intracellular or extracellular, its scale, and the required purity, and explain why downstream processing commonly dominates the total cost of producing a high-value biological product.",
+          "practice_notes": "For each scenario, first decide the single most consequential fork in the road — is the product intracellular (cells must be disrupted/lysed before anything else can happen) or extracellular (cells can simply be removed by centrifugation/filtration, leaving product in the supernatant)? — before reasoning about which purification steps come next.",
+          "sort_order": 3,
+          "prereqs": [
+            "#bioreactor-mass-balances-and-dilution-rate"
+          ],
+          "resources": [
+            {
+              "label": "NPTEL — Bioreactor Design and Analysis",
+              "url": "https://nptel.ac.in/courses/102106086",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "procedure_outline",
+              "level": 1,
+              "title": "The downstream processing decision tree",
+              "body": "1. **Locate the product**: intracellular (inside the cell, e.g. many recombinant proteins expressed in E. coli without a secretion signal) or extracellular (secreted into the broth, e.g. many industrial enzymes, ethanol)?\n2. **If intracellular**: first separate cells from broth (centrifugation or filtration), then disrupt the cells (mechanical: bead milling, high-pressure homogenization; or chemical/enzymatic lysis) to release the product into a crude lysate, generating cell debris that must then be removed.\n3. **If extracellular**: separate cells from broth (centrifugation or filtration) and keep the clarified supernatant directly — no disruption step needed, which is a major cost and simplicity advantage of engineering a secreted-product strain when possible.\n4. **Purify** the clarified product stream: precipitation (e.g. ammonium sulfate, isoelectric precipitation) for a cheap, coarse initial concentration/purification step, then chromatography (ion-exchange, affinity, size-exclusion) for progressively higher resolution and purity, at increasing cost per step -- purity requirements for an injectable pharmaceutical protein justify far more chromatography steps than a bulk industrial enzyme."
+            },
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Pick the first downstream step",
+              "body": "For each scenario, state whether cell disruption is required and name the first downstream unit operation after fermentation:\n\n1. A recombinant therapeutic protein accumulates as inclusion bodies inside E. coli cytoplasm.\n2. An industrial detergent enzyme is secreted by Bacillus subtilis directly into the fermentation broth.\n3. Ethanol is produced by yeast fermentation and remains dissolved in the broth.\n\n**Key**: (1) intracellular — requires cell disruption after harvesting cells (centrifugation) to release the protein. (2) extracellular — no disruption needed; centrifuge or filter to remove cells, keep the clarified supernatant. (3) extracellular (dissolved product, not even associated with cells) — cells are removed by centrifugation/filtration and ethanol is typically recovered from the clarified broth by distillation, not a disruption step."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Why is downstream often the expensive half?",
+              "body": "Name two reasons downstream processing (recovery and purification) can account for 50-80% of total production cost for a high-purity biological product, even though the fermentation step is what most people picture as 'making' the product."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "fermentation-is-the-hard-and-expensive-part",
+              "name": "Fermentation is the dominant cost and difficulty in bioprocessing",
+              "description": "Learner assumes that growing the organism (fermentation) is the main technical and cost challenge of a bioprocess, underestimating that downstream separation and purification steps -- especially for high-purity pharmaceutical products -- frequently dominate both total cost and process complexity.",
+              "root_cause": "Introductory courses spend the most time teaching fermentation kinetics (Monod, chemostats) because it is mathematically rich, which can leave the impression that fermentation is also the dominant real-world cost driver, when for many products it is not.",
+              "diagnostic_probe": "A student assumes that once a strain reaches a high titer in the bioreactor, the product is 'basically already made' and the remaining steps are minor cleanup. Why is this an unreliable assumption for a high-purity injectable protein product?",
+              "correction": "For many high-value, high-purity products (especially injectable therapeutics), downstream recovery and purification -- cell disruption, clarification, multiple chromatography steps to reach required purity -- commonly account for the majority of total process cost and engineering effort, not the fermentation step that produced the crude titer."
+            }
+          ]
         }
       ]
     }
@@ -706,7 +894,8 @@
       "kc_slugs": [
         "#cell-metabolism-and-energy-pathways",
         "#bacterial-growth-curve-phases",
-        "#monod-growth-kinetics"
+        "#monod-growth-kinetics",
+        "#fed-batch-fermentation-strategies"
       ]
     },
     {
@@ -730,7 +919,8 @@
       "kc_slugs": [
         "#aseptic-technique-and-experimental-design",
         "#bacterial-growth-curve-phases",
-        "#bioreactor-mass-balances-and-dilution-rate"
+        "#bioreactor-mass-balances-and-dilution-rate",
+        "#downstream-processing-and-product-recovery"
       ]
     },
     {
@@ -757,13 +947,17 @@
       "kc_slugs": [
         "#monod-growth-kinetics",
         "#bioreactor-mass-balances-and-dilution-rate",
+        "#fed-batch-fermentation-strategies",
         "#michaelis-menten-kinetics",
         "#enzyme-kinetics-data-linearization",
         "#enzyme-inhibition-types",
+        "#immobilized-enzymes-and-biocatalyst-reuse",
         "#genetic-engineering-tools-and-vectors",
         "#recombinant-dna-workflow",
+        "#lac-operon-and-inducible-gene-expression",
         "#crispr-gene-editing-mechanism",
-        "#bioprocessing-scale-up-considerations"
+        "#bioprocessing-scale-up-considerations",
+        "#downstream-processing-and-product-recovery"
       ]
     },
     {

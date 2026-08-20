@@ -85,12 +85,53 @@
           "misconceptions": []
         },
         {
+          "slug": "reaction-order-determination-from-data",
+          "name": "Determining reaction order from experimental data",
+          "kc_type": "rule",
+          "description": "Determine the order of a reaction in each species from experimental concentration-vs-time or initial-rate data, using the method of initial rates (varying one concentration at a time), the integral/graphical method (testing which integrated form linearizes the data), or the half-life method (checking whether successive half-lives are constant, double, or vary inversely with concentration).",
+          "practice_notes": "Practice cross-checking two independent methods on the same data set (e.g. graphical linearity test AND the half-life trend) before committing to an order -- real experimental noise makes any single method occasionally ambiguous, and disagreement between methods is a signal to look more carefully rather than a signal one method is 'wrong'.",
+          "sort_order": 3,
+          "prereqs": [
+            "#rate-laws-and-reaction-order",
+            "#integrated-rate-laws"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE — Kinetics & Reactor Design resources",
+              "url": "https://learncheme.com/course-overview/kinetics-resources/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "procedure_outline",
+              "level": 1,
+              "title": "Three routes to reaction order",
+              "body": "**Method of initial rates**: run several experiments, changing one reactant's initial concentration while holding others fixed; take the ratio of initial rates and initial concentrations between two runs -- rate2/rate1 = ([A]2/[A]1)^n solves directly for the order n in that species.\nStep 1: pick two runs that differ in only one concentration.\nStep 2: form the ratio of rates and the ratio of that concentration.\nStep 3: take log of both sides: n = ln(rate2/rate1) / ln([A]2/[A]1).\n\n**Integral (graphical) method**: plot the concentration-time data three ways -- [A] vs t (zeroth order gives a line), ln[A] vs t (first order gives a line), 1/[A] vs t (second order gives a line) -- whichever plot is straight reveals the order.\n\n**Half-life method**: measure successive half-lives from the same run. Zeroth order: half-life decreases with each successive half-life (proportional to the concentration at the start of that interval). First order: half-life is constant, independent of concentration. Second order: half-life doubles each time the concentration halves (inversely proportional to starting concentration)."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Method of initial rates, two experiments",
+              "body": "Two experiments measure the initial rate of A + B -> products: Run 1: [A]0=0.10 M, [B]0=0.20 M, rate0=4.0e-3 M/s. Run 2: [A]0=0.20 M, [B]0=0.20 M (only [A] changed), rate0=1.6e-2 M/s. Find the order in A.\nStep 1: since [B] is held constant between the two runs, rate2/rate1 = ([A]2/[A]1)^n.\nStep 2: rate2/rate1 = 1.6e-2/4.0e-3 = 4.0. [A]2/[A]1 = 0.20/0.10 = 2.0.\nStep 3: 4.0 = 2.0^n, so n = ln(4.0)/ln(2.0) = 2.0 -- second order in A.\nStep 4: sanity check -- doubling [A] quadrupled the rate, which is exactly the signature of second order (2^2 = 4), consistent with n=2."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Half-life signature, cold",
+              "body": "Without looking it up: for a reaction where each successive half-life you measure is exactly double the one before it, what is the reaction order, and which integrated-rate-law linearization would confirm it?"
+            }
+          ],
+          "misconceptions": []
+        },
+        {
           "slug": "arrhenius-equation-and-temperature-dependence",
           "name": "Arrhenius equation and temperature dependence",
           "kc_type": "fact",
           "description": "State the Arrhenius equation k = A*exp(-Ea/(R*T)) and recall the physical meaning of each term: the pre-exponential (frequency) factor A, the activation energy Ea, the gas constant R, and absolute temperature T.",
           "practice_notes": "Drill the equation and its linearized log form (ln k = ln A - Ea/(R*T)) until both are automatic recall, since almost every kinetics-temperature problem in this course starts from one of these two forms.",
-          "sort_order": 3,
+          "sort_order": 4,
           "prereqs": [],
           "resources": [
             {
@@ -127,7 +168,7 @@
           "kc_type": "rule",
           "description": "Determine the activation energy Ea and pre-exponential factor A of a reaction from rate constants measured at two or more temperatures, using the linearized Arrhenius relationship.",
           "practice_notes": "Practice with both the two-point formula (ln(k2/k1) = -Ea/R*(1/T2 - 1/T1)) and the full linear-regression picture (plotting ln k vs 1/T across several points) so you're not locked into only the two-temperature shortcut.",
-          "sort_order": 4,
+          "sort_order": 5,
           "prereqs": [
             "#arrhenius-equation-and-temperature-dependence",
             "#integrated-rate-laws"
@@ -215,7 +256,7 @@
           "kc_type": "rule",
           "description": "Given a proposed multi-step reaction mechanism, identify the rate-determining (slowest) elementary step and derive the overall rate law consistent with that mechanism.",
           "practice_notes": "Practice distinguishing the overall (observed, often non-integer or complex-looking) rate law from the rate law of a single elementary step; work through the steady-state or rate-determining-step approximation explicitly rather than pattern-matching mechanism 'shapes.'",
-          "sort_order": 5,
+          "sort_order": 6,
           "prereqs": [
             "#rate-laws-and-reaction-order"
           ],
@@ -243,7 +284,7 @@
           "kc_type": "principle",
           "description": "Explain, using the activation-energy concept, why a catalyst increases reaction rate without changing the reaction's thermodynamics (equilibrium constant, \u0394G_rxn), by providing an alternative reaction pathway with lower activation energy.",
           "practice_notes": "Practice articulating the distinction between kinetics (rate, Ea, catalysts) and thermodynamics (\u0394G\u00b0, K_eq) out loud or in writing -- this is one of the most examined conceptual distinctions in physical chemistry for engineers.",
-          "sort_order": 6,
+          "sort_order": 7,
           "prereqs": [
             "#activation-energy-determination",
             "#reaction-mechanisms-and-rate-determining-step"
@@ -359,12 +400,54 @@
           ]
         },
         {
+          "slug": "bet-isotherm-and-multilayer-adsorption",
+          "name": "BET isotherm and multilayer adsorption",
+          "kc_type": "rule",
+          "description": "Apply the BET (Brunauer-Emmett-Teller) isotherm to adsorption data showing multilayer condensation, and use the linearized BET equation to determine the monolayer capacity V_m and, from it, a solid's specific surface area -- recognizing BET as the generalization of Langmuir that drops the single-layer assumption.",
+          "practice_notes": "Practice the linearized BET plot (P/(V*(P0-P)) vs. P/P0) mechanically first -- slope and intercept give (C-1)/(Vm*C) and 1/(Vm*C) respectively -- then connect V_m to specific surface area via the adsorbate's molecular cross-sectional area and Avogadro's number; this is the standard industrial method (BET surface area) for characterizing catalyst supports and porous materials.",
+          "sort_order": 3,
+          "prereqs": [
+            "#langmuir-adsorption-isotherm"
+          ],
+          "resources": [
+            {
+              "label": "Chemistry LibreTexts (Nix) — The BET Isotherm",
+              "url": "https://chem.libretexts.org/Bookshelves/Physical_and_Theoretical_Chemistry_Textbook_Maps/Surface_Science_(Nix)/04:_Adsorption_Isotherms/4.03:_The_BET_Isotherm",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "contrast_examples",
+              "level": 1,
+              "title": "Why Langmuir isn't enough here",
+              "body": "Langmuir assumes adsorption stops at one monolayer (theta saturates at 1). Real gas adsorption on a porous catalyst at low temperature often keeps rising well past a monolayer's worth of gas as pressure approaches the saturation vapor pressure P0, because a second, third, ... layer can condense on top of the first. BET keeps the Langmuir picture for the first layer but allows an infinite stack of additional layers with liquid-like condensation energy, introducing a second parameter C (related to the difference between the heat of adsorption of the first layer and the heat of liquefaction of subsequent layers) alongside the monolayer capacity V_m."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Monolayer capacity and surface area from a BET plot",
+              "body": "Nitrogen adsorption data on a catalyst sample, linearized as P/(V*(P0-P)) vs. P/P0, gives slope = 9.6 g/cm^3(STP) and intercept = 0.20 g/cm^3(STP) (V in cm^3 of N2 at STP per gram of sample).\nStep 1: slope = (C-1)/(Vm*C), intercept = 1/(Vm*C). Adding them: slope + intercept = 1/Vm, so Vm = 1/(9.6+0.20) = 1/9.8 = 0.102 cm^3(STP)/g.\nStep 2: each N2 molecule occupies a cross-sectional area of 0.162 nm^2; at STP, 22,414 cm^3 of N2 = 1 mol = 6.022e23 molecules.\nStep 3: moles of N2 in the monolayer per gram = 0.102/22414 = 4.55e-6 mol/g; molecules = 4.55e-6*6.022e23 = 2.74e18 molecules/g.\nStep 4: with 1 nm^2 = 1e-18 m^2, surface area per gram = 2.74e18 molecules/g * 0.162e-18 m^2/molecule = 0.444 m^2/g, i.e. specific surface area S ~= 0.44 m^2/g -- this looks low for a catalyst; a real high-area catalyst support would show a much larger V_m (smaller slope+intercept sum). The procedure (add slope+intercept, invert for Vm, convert to molecules then area) is the transferable skill regardless of the specific numbers."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "bet-and-langmuir-are-the-same-model",
+              "name": "BET is just another name for the Langmuir isotherm",
+              "description": "Learner treats the BET equation as interchangeable with the Langmuir equation, or assumes fitting BET parameters to data with a straight monolayer limit is meaningless extra complexity rather than a different physical model.",
+              "root_cause": "Both isotherms saturate visually on a theta-vs-P plot and share a similar low-pressure linear regime, so the learner pattern-matches the shape rather than checking whether the data keeps rising past a monolayer's worth of gas at high P.",
+              "diagnostic_probe": "A student fits Langmuir to nitrogen adsorption data that keeps increasing steeply even after the calculated monolayer amount has been exceeded, and reports a good fit. What model-selection mistake did they make?",
+              "correction": "BET generalizes Langmuir by permitting multiple adsorbed layers with liquid-like condensation on top of the first monolayer; it should be used whenever adsorption data continues rising well past the monolayer capacity as P approaches the saturation pressure P0 -- the two models make different physical assumptions and are not interchangeable."
+            }
+          ]
+        },
+        {
           "slug": "surface-tension-and-capillarity",
           "name": "Surface tension and capillarity",
           "kc_type": "rule",
           "description": "Apply the capillary-rise relation (h = 2*gamma*cos(theta_c)/(rho*g*r)) to compute the rise or depression of a liquid in a narrow tube, given surface tension, contact angle, liquid density, and tube radius.",
           "practice_notes": "Practice identifying which direction (rise vs. depression) a given contact angle implies before computing a number: contact angle less than 90 degrees (wetting) gives capillary rise, greater than 90 degrees (non-wetting) gives capillary depression.",
-          "sort_order": 3,
+          "sort_order": 4,
           "prereqs": [],
           "resources": [
             {
@@ -389,7 +472,7 @@
           "kc_type": "concept",
           "description": "Classify the wetting behavior of a liquid on a solid surface (wetting/spreading vs. non-wetting/beading) from the measured contact angle, and predict qualitatively how surface chemistry changes (e.g., a hydrophobic coating) shift that angle.",
           "practice_notes": "Practice connecting contact-angle ranges to everyday and industrial pictures: near 0 degrees is complete wetting/spreading, less than 90 degrees is generally wetting, greater than 90 degrees is non-wetting, near 180 degrees is complete beading (superhydrophobic).",
-          "sort_order": 4,
+          "sort_order": 5,
           "prereqs": [
             "#surface-tension-and-capillarity"
           ],
@@ -409,6 +492,55 @@
             }
           ],
           "misconceptions": []
+        },
+        {
+          "slug": "gibbs-adsorption-isotherm",
+          "name": "Gibbs adsorption isotherm",
+          "kc_type": "principle",
+          "description": "Apply the Gibbs adsorption isotherm (Gamma = -(1/RT)*(d(gamma)/d(ln C))) to relate the surface excess concentration of a solute at an interface to the slope of a surface-tension-vs-concentration curve, explaining why surfactants that lower surface tension as concentration rises must accumulate at the interface.",
+          "practice_notes": "Practice reading the sign and magnitude of d(gamma)/d(ln C) off a sketched or tabulated gamma-vs-ln(C) curve before touching the formula -- a surfactant's curve slopes downward (negative d(gamma)/d(ln C)), which the isotherm predicts must correspond to positive surface excess (accumulation at the interface), tying the qualitative 'surfactants concentrate at surfaces' picture to the quantitative relation.",
+          "sort_order": 6,
+          "prereqs": [
+            "#surface-tension-and-capillarity",
+            "#adsorption-fundamentals-physisorption-vs-chemisorption"
+          ],
+          "resources": [
+            {
+              "label": "Chemistry LibreTexts (Nix) — The Gibbs Adsorption Isotherm",
+              "url": "https://chem.libretexts.org/Bookshelves/Physical_and_Theoretical_Chemistry_Textbook_Maps/Surface_Science_(Nix)/02:_Adsorption_at_Surfaces/2.02:_The_Gibbs_Adsorption_Isotherm",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "derivation_walkthrough",
+              "level": 2,
+              "title": "From surface excess to a measurable slope",
+              "body": "Define the surface excess concentration Gamma (mol/m^2) as the extra amount of solute per unit interfacial area compared to what a bulk-uniform solution would contain right up to the interface -- Gamma > 0 means the solute is enriched at the surface relative to the bulk, Gamma < 0 means it is depleted there. Gibbs showed, from a thermodynamic surface-excess free-energy balance at constant T, that d(gamma) = -Gamma*R*T*d(ln C) for a dilute solute, which rearranges to Gamma = -(1/(RT))*(d(gamma)/d(ln C)). Because R, T, and C are always positive, the sign of Gamma is exactly the sign of -(d(gamma)/d(ln C)): whenever adding solute LOWERS surface tension (d(gamma)/d(ln C) < 0, the ordinary surfactant case), Gamma is positive -- the solute is thermodynamically driven to accumulate at the interface, which is precisely why it lowers gamma there."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Surface excess from a tangent slope",
+              "body": "At 25 degC (T=298 K), a surfactant solution's surface tension gamma decreases linearly with ln(C) over a concentration range, with measured slope d(gamma)/d(ln C) = -3.0e-3 N/m (i.e. -3.0 mN/m per unit of ln C). Find the surface excess concentration Gamma.\nStep 1: Gamma = -(1/(RT))*(d(gamma)/d(ln C)), with R = 8.314 J/(mol*K).\nStep 2: RT = 8.314*298 = 2477.6 J/mol.\nStep 3: Gamma = -(1/2477.6)*(-3.0e-3) = 3.0e-3/2477.6 = 1.211e-6 mol/m^2.\nStep 4: sanity check the sign -- the slope was negative (surface tension falls as concentration rises), so Gamma came out positive, correctly indicating the surfactant accumulates at the interface, consistent with it being surface-active."
+            },
+            {
+              "kind": "self_explanation_prompt",
+              "level": 3,
+              "title": "Why must a surface-tension-lowering solute accumulate at the interface?",
+              "body": "In your own words, explain -- from a free-energy argument, not just the formula -- why a solute that lowers a solution's surface tension as its bulk concentration increases MUST have a positive surface excess (be enriched at the interface relative to the bulk)."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "surface-excess-means-total-amount-adsorbed",
+              "name": "Surface excess Gamma is the total amount of solute at the interface",
+              "description": "Learner interprets the surface excess concentration Gamma as the absolute quantity of solute molecules sitting at the interface, rather than the EXCESS relative to what the bulk concentration would already contribute to that same volume if the interface were not there.",
+              "root_cause": "The word 'concentration' suggests an absolute quantity, and the subtraction against a hypothetical bulk-only reference (the Gibbs dividing surface construction) is an unusual, easy-to-skip thermodynamic bookkeeping step.",
+              "diagnostic_probe": "A solute with a small negative Gamma is measured at an interface. A student says this is impossible because 'you can't have negative molecules at a surface.' What is the student misunderstanding about what Gamma represents?",
+              "correction": "Gamma is a surface EXCESS relative to a reference system where the bulk concentration extends unchanged right up to the dividing surface; a negative Gamma means the solute is depleted near the interface relative to that bulk reference (common for simple electrolytes, which raise surface tension), not that a negative number of molecules exists there."
+            }
+          ]
         }
       ]
     },
@@ -623,7 +755,8 @@
       "weight_pct": 7,
       "kc_slugs": [
         "#rate-laws-and-reaction-order",
-        "#integrated-rate-laws"
+        "#integrated-rate-laws",
+        "#reaction-order-determination-from-data"
       ]
     },
     {
@@ -646,8 +779,10 @@
       "kc_slugs": [
         "#adsorption-fundamentals-physisorption-vs-chemisorption",
         "#langmuir-adsorption-isotherm",
+        "#bet-isotherm-and-multilayer-adsorption",
         "#surface-tension-and-capillarity",
-        "#wetting-and-contact-angle"
+        "#wetting-and-contact-angle",
+        "#gibbs-adsorption-isotherm"
       ]
     },
     {
@@ -670,6 +805,7 @@
       "kc_slugs": [
         "#rate-laws-and-reaction-order",
         "#integrated-rate-laws",
+        "#reaction-order-determination-from-data",
         "#arrhenius-equation-and-temperature-dependence",
         "#activation-energy-determination",
         "#reaction-mechanisms-and-rate-determining-step",
@@ -684,8 +820,10 @@
       "kc_slugs": [
         "#adsorption-fundamentals-physisorption-vs-chemisorption",
         "#langmuir-adsorption-isotherm",
+        "#bet-isotherm-and-multilayer-adsorption",
         "#surface-tension-and-capillarity",
         "#wetting-and-contact-angle",
+        "#gibbs-adsorption-isotherm",
         "#electrochemical-cell-fundamentals",
         "#standard-electrode-potentials",
         "#nernst-equation",

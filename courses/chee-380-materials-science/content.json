@@ -128,6 +128,46 @@
               "correction": "Amorphous solids lack long-range, periodic order — there's no repeating unit cell extending indefinitely through the material — but most amorphous materials, including silica glass and many amorphous polymers, retain well-defined short-range order: consistent local bonding distances, angles, and coordination numbers around each atom or repeat unit. The crystalline/amorphous distinction is about how far that local order extends, not whether structural order exists at all."
             }
           ]
+        },
+        {
+          "slug": "polymer-molecular-weight-and-degree-of-polymerization",
+          "name": "Polymer molecular weight and degree of polymerization",
+          "kc_type": "rule",
+          "description": "Compute the number-average (Mn) and weight-average (Mw) molecular weight of a polymer from a molecular-weight distribution table, derive the polydispersity index (PDI = Mw/Mn), and convert Mn to the number-average degree of polymerization using the repeat unit's formula mass.",
+          "practice_notes": "Watch which fraction type a distribution table gives you: the mole/number fraction xi feeds Mn = sum(xi·Mi) directly, but Mw needs the WEIGHT fraction wi = xi·Mi/Mn, not xi itself — recomputing wi from xi before summing for Mw is the step everyone skips. Always finish with DP = Mn/m0, where m0 is the repeat unit's formula mass, not the monomer's (they can differ, e.g. condensation polymers losing a small molecule per link).",
+          "sort_order": 6,
+          "prereqs": ["#polymer-chain-structure"],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Polyethylene Mn, Mw, PDI, and DP — fully worked",
+              "body": "A polyethylene sample has the following molecular-weight distribution (mole fraction xi in each range, midpoint Mi):\n\n| Range (g/mol) | Mi (g/mol) | xi |\n|---|---|---|\n| 8,000-16,000 | 12,000 | 0.05 |\n| 16,000-24,000 | 20,000 | 0.16 |\n| 24,000-32,000 | 28,000 | 0.24 |\n| 32,000-40,000 | 36,000 | 0.28 |\n| 40,000-48,000 | 44,000 | 0.20 |\n| 48,000-56,000 | 52,000 | 0.07 |\n\n(check: xi sums to 1.00)\n\n**Step 1 — Mn = sum(xi·Mi):** 0.05(12,000) + 0.16(20,000) + 0.24(28,000) + 0.28(36,000) + 0.20(44,000) + 0.07(52,000) = 600 + 3,200 + 6,720 + 10,080 + 8,800 + 3,640 = **Mn = 33,040 g/mol**.\n\n**Step 2 — convert each xi to a weight fraction wi = xi·Mi/Mn** (since Mn = sum(xi·Mi) is exactly the normalizing denominator): e.g. w1 = 600/33,040 = 0.01816, and so on for each range.\n\n**Step 3 — Mw = sum(wi·Mi):** carrying this through for all six ranges gives **Mw ≈ 36,281 g/mol**.\n\n**Step 4 — PDI = Mw/Mn = 36,281/33,040 ≈ 1.098** — close to 1 means a fairly narrow (uniform) distribution.\n\n**Step 5 — degree of polymerization:** polyethylene's repeat unit is -CH2-CH2- (C2H4), formula mass m0 = 28.05 g/mol. DP = Mn/m0 = 33,040/28.05 ≈ **1,178 repeat units per average chain**."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "A second polyethylene batch — you finish Mw, PDI, and DP",
+              "body": "A different polyethylene sample has this distribution:\n\n| Range (g/mol) | Mi (g/mol) | xi |\n|---|---|---|\n| 5,000-15,000 | 10,000 | 0.10 |\n| 15,000-25,000 | 20,000 | 0.30 |\n| 25,000-35,000 | 30,000 | 0.35 |\n| 35,000-45,000 | 40,000 | 0.25 |\n\nGiven: Mn = sum(xi·Mi) = 0.10(10,000) + 0.30(20,000) + 0.35(30,000) + 0.25(40,000) = 1,000 + 6,000 + 10,500 + 10,000 = **27,500 g/mol**.\n\nYour turn: (1) convert each xi to wi = xi·Mi/Mn, (2) compute Mw = sum(wi·Mi), (3) compute PDI = Mw/Mn, (4) compute DP using m0 = 28.05 g/mol for polyethylene.\n\n(Check: w-values ≈ 0.0364, 0.2182, 0.3818, 0.3636; Mw ≈ 30,727 g/mol; PDI ≈ 1.117; DP ≈ 980.)"
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Polystyrene distribution — solve independently",
+              "body": "A polystyrene sample has this molecular-weight distribution:\n\n| Range (g/mol) | Mi (g/mol) | xi |\n|---|---|---|\n| 10,000-20,000 | 15,000 | 0.10 |\n| 20,000-30,000 | 25,000 | 0.30 |\n| 30,000-40,000 | 35,000 | 0.35 |\n| 40,000-50,000 | 45,000 | 0.25 |\n\nCompute Mn, Mw, PDI, and the degree of polymerization DP. Polystyrene's repeat unit (-CH2-CHC6H5-) has formula mass m0 = 104.15 g/mol. Set up every step yourself, including the xi-to-wi conversion."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "mole-fraction-and-weight-fraction-interchangeable",
+              "name": "Mole fraction and weight fraction can be used interchangeably in Mn and Mw",
+              "description": "The learner plugs the same tabulated fraction (usually the mole/number fraction xi) directly into both the Mn and Mw formulas, not realizing Mw specifically requires the weight fraction wi, which must be derived from xi (wi = xi·Mi/Mn) before it can be summed.",
+              "root_cause": "Both formulas have the identical algebraic shape (sum of a fraction times Mi), so learners pattern-match on the formula's structure rather than checking which fraction TYPE each definition actually calls for — the distinction between 'fraction of molecules in this size range' (mole fraction, for Mn) and 'fraction of total mass in this size range' (weight fraction, for Mw) gets lost.",
+              "diagnostic_probe": "A student computes Mn = sum(xi·Mi) = 33,040 g/mol correctly, then computes 'Mw' as sum(xi·Mi) again using the same xi values, getting the same number for both and concluding PDI = 1 exactly. What did they skip, and why is PDI = 1 exactly almost never correct for a real polymer sample?",
+              "correction": "Mn = sum(xi·Mi) uses the mole (number) fraction xi directly. Mw = sum(wi·Mi) requires the weight fraction wi = xi·Mi/Mn — larger molecules contribute more to the total mass than to the total molecule count, so wi is not equal to xi except in the unrealistic case of a perfectly monodisperse sample. Skipping the xi-to-wi conversion collapses Mw onto Mn and always gives PDI = 1, which is essentially never true for a real, industrially produced polymer."
+            }
+          ]
         }
       ]
     },
@@ -416,6 +456,52 @@
               "correction": "The compositions of the two phases (Cα = 42.5 wt% Ni, CL = 31.5 wt% Ni) are read directly from where the tie-line ends touch the phase-boundary curves — they don't depend on the overall alloy composition. The lever rule instead uses those same tie-line segments to compute the mass fraction of each phase present: WL = (Cα−C0)/(Cα−CL) = 68%, meaning 68% of the alloy's mass is liquid of composition 31.5 wt% Ni — not that the liquid itself is 68% Ni."
             }
           ]
+        },
+        {
+          "slug": "ceramic-crystal-structures-and-radius-ratios",
+          "name": "Ceramic crystal structures and radius ratios",
+          "kc_type": "rule",
+          "description": "Apply the cation-to-anion radius ratio (rC/rA) to predict the coordination number and resulting crystal structure (rock salt, cesium chloride, zinc blende, fluorite) of an ionic ceramic, and check the prediction against the real structure.",
+          "practice_notes": "Always compute rC/rA (cation over anion, a ratio less than 1 for the typical case of a smaller cation) and compare it to the coordination-number bands before naming a structure — guessing the structure from the compound's formula alone (AX vs. AX2) skips the geometric reasoning this KC is actually testing.",
+          "sort_order": 8,
+          "prereqs": ["#bond-type-classification", "#crystal-systems-and-bravais-lattices"],
+          "resources": [
+            {
+              "label": "DoITPoMS — Simple Crystal Structures in Ceramics (TLP)",
+              "url": "https://www.doitpoms.ac.uk/tlplib/crystallography3/index.php",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "NaCl radius ratio and structure — fully worked",
+              "body": "Na+ has rC = 0.102 nm, Cl- has rA = 0.181 nm.\n\nStep 1 — radius ratio: rC/rA = 0.102/0.181 = 0.564.\nStep 2 — compare to coordination bands: 0.414-0.732 → coordination number 6 (octahedral).\nStep 3 — a 6-coordinated AX ionic compound with equal numbers of cations and anions is the **rock salt (NaCl) structure**: each Na+ is surrounded by 6 Cl- (and vice versa) in an FCC-based arrangement.\n\nThis matches NaCl's actual measured structure exactly — the radius-ratio rule is a genuine predictive tool, not just a bookkeeping label applied after the fact."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "CsCl radius ratio — you finish the classification",
+              "body": "Cs+ has rC = 0.170 nm, Cl- has rA = 0.181 nm.\n\nGiven: rC/rA = 0.170/0.181 = 0.939.\n\nYour turn: which coordination-number band does 0.939 fall into (recall: 0.732-1.0 → CN 8), and what structure does an AX compound with 8-fold coordination form?\n\n(Check: CN = 8, cubic coordination — this is the **cesium chloride structure**, with each Cs+ at the center of a cube of 8 Cl- ions, distinct from rock salt's octahedral 6-coordination.)"
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "ZnS radius ratio — solve independently",
+              "body": "Zn2+ has rC = 0.074 nm, S2- has rA = 0.184 nm. Compute the radius ratio, identify the coordination number band it falls into, and name the resulting ceramic crystal structure (this is the structure ZnS is actually known by). Show the full radius-ratio-to-coordination-number reasoning; do not just state the answer from memory."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "radius-ratio-uses-larger-over-smaller-ion",
+              "name": "Radius ratio is always (larger ion radius)/(smaller ion radius)",
+              "description": "The learner computes the radius ratio as whichever ion is physically larger divided by whichever is smaller, rather than specifically cation radius over anion radius — which usually happens to match the 'larger/smaller' framing (since anions are usually larger) but silently breaks it for compounds where that isn't true, and obscures WHY the ratio predicts coordination (it's about how many anions can pack around one central cation).",
+              "root_cause": "In the most commonly taught examples (NaCl, MgO), the anion is indeed the larger ion, so 'radius ratio = bigger/smaller' happens to give the same number as 'rC/rA' and the shortcut goes unchallenged until it's applied to a less typical case or misremembered under exam pressure.",
+              "diagnostic_probe": "A student is asked for the radius ratio of a compound and, without checking which ion is the cation, divides the larger tabulated radius by the smaller one. Why does this shortcut usually work for common oxides and halides, and what is the ratio actually meant to represent geometrically?",
+              "correction": "The radius ratio for coordination-number prediction is specifically rC/rA — the CATION radius divided by the ANION radius — because it represents how many anions of a given size can geometrically pack around one central cation without the anions touching each other. It usually coincides with 'smaller/larger' because cations are usually the smaller ion, but the rule should always be applied as cation-over-anion, not by comparing which radius happens to be bigger."
+            }
+          ]
         }
       ]
     },
@@ -660,9 +746,114 @@
       ]
     },
     {
+      "slug": "physicochemical-properties",
+      "name": "Physico-chemical Properties",
+      "sort_order": 5,
+      "kcs": [
+        {
+          "slug": "thermal-properties-and-thermal-shock",
+          "name": "Thermal expansion, conductivity, and thermal shock resistance",
+          "kc_type": "rule",
+          "description": "Apply the linear thermal expansion equation to compute dimensional change with temperature, and combine fracture strength, thermal conductivity, elastic modulus, and expansion coefficient into a thermal-shock-resistance comparison between materials.",
+          "practice_notes": "For expansion problems, isolate ΔL = α·L0·ΔT and keep units consistent (α in /°C, ΔT in °C, L0 and ΔL in the same length unit). For thermal-shock comparisons, remember the resistance parameter rewards HIGH strength and conductivity but PENALIZES high modulus and high expansion coefficient — a material can be strong and still shock-prone if its expansion coefficient is large.",
+          "sort_order": 1,
+          "prereqs": ["#griffith-fracture-principle", "#unit-cell-calculations"],
+          "resources": [
+            {
+              "label": "DoITPoMS — Thermal Expansion and the Bi-Material Strip (TLP)",
+              "url": "https://www.doitpoms.ac.uk/tlplib/thermal_expansion/index.php",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Steel rail thermal expansion — fully worked",
+              "body": "A steel rail is 20 m long at 15°C. Steel's linear thermal expansion coefficient is α = 12×10⁻⁶ /°C. On a hot day the rail reaches 45°C. Find the change in length.\n\nΔT = 45 − 15 = 30°C.\nΔL = α·L0·ΔT = (12×10⁻⁶)(20)(30) = 12×10⁻⁶ × 600 = 0.0072 m = **7.2 mm**.\n\nThis is exactly why continuous-welded rail track needs expansion joints or pre-stressing during installation: a 20 m section growing by 7 mm is enough to buckle a rigidly end-constrained rail on a hot day."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Bridge girder thermal expansion — you finish the calculation",
+              "body": "A steel girder is 15 m long at its installation temperature. Over a year, it experiences a temperature swing of ΔT = 40°C. Using α = 11.7×10⁻⁶ /°C for structural steel:\n\nGiven: the formula is ΔL = α·L0·ΔT.\n\nYour turn: substitute the numbers and compute ΔL in mm.\n\n(Check: ΔL = 11.7×10⁻⁶ × 15 × 40 = 0.00702 m = 7.02 mm.)"
+            },
+            {
+              "kind": "self_explanation_prompt",
+              "level": 3,
+              "title": "Comparing thermal shock resistance: alumina vs. soda-lime glass",
+              "body": "The thermal-shock-resistance parameter is TSR = σf·k/(E·α), where σf is fracture strength, k is thermal conductivity, E is elastic modulus, and α is the linear expansion coefficient — a HIGHER TSR means the material better resists cracking from a sudden temperature change.\n\nAlumina: σf = 140 MPa, k = 30 W/m·K, E = 380 GPa, α = 8.0×10⁻⁶ /°C.\nSoda-lime glass: σf = 69 MPa, k = 1.7 W/m·K, E = 69 GPa, α = 9.0×10⁻⁶ /°C.\n\nCompute TSR for both materials (TSR = σf·k/(E·α), keeping units consistent in Pa, W/m·K, and /°C) and explain, in terms of the four properties in the formula, why one of these two materials is far more prone to cracking when suddenly quenched or heated — despite alumina being the much harder, seemingly 'tougher-seeming' ceramic.\n\n(Compute: TSR_alumina = (140×10⁶ × 30)/(380×10⁹ × 8.0×10⁻⁶) ≈ 1,382 W/m; TSR_glass = (69×10⁶ × 1.7)/(69×10⁹ × 9.0×10⁻⁶) ≈ 189 W/m — alumina's TSR is over 7× higher, driven mainly by its much higher thermal conductivity letting heat equalize faster and reducing the internal temperature gradient that generates thermal stress.)"
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "high-strength-implies-good-thermal-shock-resistance",
+              "name": "A stronger material automatically resists thermal shock better",
+              "description": "The learner assumes thermal shock resistance tracks fracture strength alone, ignoring that thermal conductivity, elastic modulus, and the expansion coefficient all enter the comparison and can dominate the result even for a strong material.",
+              "root_cause": "'Resistance to cracking' sounds like a strength property, and thermal shock failure IS a fracture event, so learners map it onto the single most familiar strength number rather than recognizing that thermal shock is fundamentally about how much internal stress a temperature gradient generates (set by k and α) relative to how much stress the material can survive (set by σf and E).",
+              "diagnostic_probe": "A ceramic engineer chooses a lower-strength, lower-modulus glass-ceramic over a higher-strength alumina for a part that will be repeatedly and rapidly heated and cooled. A student assumes this must be a mistake since alumina is 'stronger.' What property besides strength is the engineer weighing, and why might it matter more here?",
+              "correction": "Thermal shock resistance depends on the combination TSR ∝ σf·k/(E·α), not on fracture strength alone. A material with lower strength but much higher thermal conductivity and/or lower expansion coefficient can develop smaller internal temperature gradients and correspondingly lower thermal stresses, making it more resistant to cracking under rapid temperature change even though it is 'weaker' by a simple tensile-strength comparison."
+            }
+          ]
+        },
+        {
+          "slug": "corrosion-and-oxidation-basics",
+          "name": "Electrochemical corrosion and oxidation basics",
+          "kc_type": "concept",
+          "description": "Explain metallic corrosion as an electrochemical process (anodic oxidation coupled to cathodic reduction), use the galvanic series to predict which of two dissimilar metals in contact will corrode preferentially, and use the Pilling-Bedworth ratio to judge whether a metal's oxide scale will be protective.",
+          "practice_notes": "For galvanic-pair questions, the metal higher (more active/anodic) on the galvanic series corrodes; the more noble (cathodic) metal is protected. For oxide-scale questions, compute the Pilling-Bedworth ratio (PBR) — a PBR well below 1 means a porous, non-protective scale (metal continues oxidizing), a PBR between roughly 1 and 2 means a protective, adherent scale, and a PBR well above 2 means a scale so compressively stressed it spalls off.",
+          "sort_order": 2,
+          "prereqs": ["#bond-type-classification"],
+          "resources": [
+            {
+              "label": "NPTEL — Corrosion Science and Engineering",
+              "url": "https://onlinecourses.nptel.ac.in/noc23_ch67/preview",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Pilling-Bedworth ratio for magnesium oxidation — fully worked",
+              "body": "Magnesium oxidizes to MgO. Molar mass of MgO = 40.30 g/mol, density of MgO = 3.58 g/cm³. Molar mass of Mg = 24.31 g/mol, density of Mg = 1.74 g/cm³. One Mg atom appears per MgO formula unit (n = 1).\n\nPBR = (M_oxide × ρ_metal) / (n × M_metal × ρ_oxide) = (40.30 × 1.74) / (1 × 24.31 × 3.58) = 70.12 / 87.03 ≈ **0.806**.\n\nSince PBR < 1, the oxide volume is actually SMALLER than the metal volume it replaced — the resulting MgO scale is porous and full of gaps (it physically can't fully cover the metal surface), so it provides little protection and magnesium continues to oxidize steadily rather than passivating."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Pilling-Bedworth ratio for aluminum oxidation — you finish the calculation",
+              "body": "Aluminum oxidizes to Al2O3. Molar mass of Al2O3 = 101.96 g/mol, density of Al2O3 = 3.95 g/cm³. Molar mass of Al = 26.98 g/mol, density of Al = 2.70 g/cm³. Note: each Al2O3 formula unit contains 2 Al atoms, so n = 2.\n\nGiven: PBR = (M_oxide × ρ_metal)/(n × M_metal × ρ_oxide).\n\nYour turn: substitute the values (remembering n = 2 in the denominator) and compute PBR. Then classify the resulting scale as non-protective (PBR ≪ 1), protective (PBR ≈ 1-2), or spalling/compressive (PBR ≫ 2).\n\n(Check: PBR = (101.96 × 2.70)/(2 × 26.98 × 3.95) = 275.3/213.1 ≈ 1.29 — in the protective range, which matches aluminum's well-known behavior of forming a thin, adherent, self-limiting oxide layer that passivates the surface.)"
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Pilling-Bedworth ratio for iron oxidation — solve independently",
+              "body": "Iron oxidizes to Fe2O3. Molar mass of Fe2O3 = 159.69 g/mol, density of Fe2O3 = 5.24 g/cm³. Molar mass of Fe = 55.85 g/mol, density of Fe = 7.87 g/cm³. Each Fe2O3 formula unit contains 2 Fe atoms (n = 2).\n\nCompute the PBR for iron, classify the resulting scale, and explain — in terms of the PBR value you get — why iron oxide (rust) is well known for flaking off and exposing fresh metal to continued corrosion, unlike aluminum's self-limiting oxide."
+            },
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Galvanic pairs: which metal corrodes?",
+              "body": "Using the standard galvanic series (more active/anodic → more noble/cathodic: magnesium, zinc, aluminum, steel, lead, copper, stainless steel, titanium, gold), classify which member of each pair corrodes preferentially when the two are placed in electrical contact in an electrolyte:\n\n1. Zinc bolted to steel.\n2. Copper pipe joined to steel pipe.\n3. Aluminum rivets in a stainless steel panel.\n\nAnswers: (1) Zinc corrodes (more anodic than steel) — this is exactly why zinc coatings (galvanizing) are used to sacrificially protect steel. (2) Steel corrodes (more anodic than copper) — a classic plumbing failure mode where the steel pipe near the copper joint corrodes rapidly. (3) Aluminum corrodes (more anodic than stainless steel) — galvanic corrosion of aluminum fasteners/panels next to stainless steel is a well-documented aerospace and marine hardware failure mode, which is why insulating gaskets or compatible fastener materials are specified in such assemblies."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "any-oxide-layer-is-protective",
+              "name": "Forming an oxide layer always protects a metal from further corrosion",
+              "description": "The learner assumes that once a metal reacts with oxygen to form an oxide scale, that scale necessarily shields the underlying metal from further attack, without checking whether the oxide's volume actually matches the metal it replaced (the Pilling-Bedworth ratio).",
+              "root_cause": "The passivating behavior of a few very commonly cited metals (aluminum, chromium, stainless steel) is often presented as the general rule for 'metal + oxygen = protective oxide,' without contrasting it against metals like magnesium and iron whose oxide scales are porous or spalling and therefore non-protective — so learners generalize from the passivating examples alone.",
+              "diagnostic_probe": "A student assumes that because iron reacts readily with oxygen to form a visible oxide (rust), the resulting Fe2O3 layer should protect the steel underneath from further corrosion, the way aluminum's oxide does. Given that Fe2O3's Pilling-Bedworth ratio is about 2.1 (compressive, spalling range) versus aluminum's ~1.3 (protective range), what actually happens to iron's oxide scale, and why doesn't it stop corrosion the way aluminum's does?",
+              "correction": "Whether an oxide scale protects the underlying metal depends on how well the oxide's volume matches the volume of metal consumed to form it, quantified by the Pilling-Bedworth ratio (PBR = oxide volume / metal volume). A PBR in roughly the 1-2 range (like aluminum's ≈1.3) tends to form a thin, adherent, protective scale. A PBR well above 2 (like iron's ≈2.1) puts the growing scale under high compressive stress, causing it to crack and flake off (spall), continually exposing fresh metal — which is exactly why iron rusts progressively instead of passivating the way aluminum does."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "slug": "materials-laboratory",
       "name": "Materials Laboratory",
-      "sort_order": 5,
+      "sort_order": 6,
       "kcs": [
         {
           "slug": "materials-characterization-techniques",

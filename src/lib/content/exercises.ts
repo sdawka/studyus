@@ -25,7 +25,9 @@ const exerciseBaseShape = {
 export const exerciseAnswerSchema = z.strictObject({
   value: z.number(),
   unit: z.string().nullable(),
-  tolerance_pct: z.number().positive().optional().default(2),
+  // 0 is legitimate: exact-count answers (e.g. base pairs, integer orders)
+  // grade as exact matches rather than within a percentage band.
+  tolerance_pct: z.number().nonnegative().optional().default(2),
 });
 export type ExerciseAnswer = z.infer<typeof exerciseAnswerSchema>;
 

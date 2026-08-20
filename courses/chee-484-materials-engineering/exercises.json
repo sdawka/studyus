@@ -1,0 +1,876 @@
+{
+  "schema_version": 1,
+  "exercises": [
+    {
+      "kc": "amorphous-vs-semicrystalline-structure",
+      "slug": "quench-rate-vs-final-structure",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A polymer melt is cooled at two different rates through the same temperature range spanning Tm down to Tg: rate A is very fast (quench), rate B is slow. Which statement correctly predicts the resulting structures?",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "options": [
+        "Both cooling rates always produce the same structure, since the polymer composition is identical",
+        "Fast cooling (A) tends to produce a more amorphous structure (chains have less time to organize into lamellae); slow cooling (B) tends to produce a more semicrystalline structure",
+        "Fast cooling always produces MORE crystallinity than slow cooling",
+        "Cooling rate has no effect on crystallinity, only final temperature matters"
+      ],
+      "correct_index": 1,
+      "explanation": "Crystallization requires TIME for chains to diffuse and fold into ordered lamellae -- a fast quench through the crystallization-favorable temperature range denies chains that time, freezing in a more disordered (amorphous) arrangement once Tg is reached. Slow cooling gives chains a long dwell time in the favorable range, allowing more extensive lamellar/spherulitic crystallization. Option (c) directly reverses this relationship; option (d) ignores that TIME spent in the crystallization-favorable range (not just the endpoint temperature) is what controls the outcome."
+    },
+    {
+      "kc": "amorphous-vs-semicrystalline-structure",
+      "slug": "metallic-glass-formation-condition",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Under what condition can even a normally fast-crystallizing pure metal be forced into an amorphous (metallic glass) structure?",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §12.10 style",
+      "options": [
+        "Only by alloying with a ceramic",
+        "By cooling so rapidly (often >10^6 K/s) that there is essentially no time for nucleation and growth of a crystalline phase before atomic mobility is frozen out",
+        "By heating the metal above its melting point for an extended period",
+        "Metallic glasses are physically impossible; all metals must crystallize"
+      ],
+      "correct_index": 1,
+      "explanation": "Even metals, which normally crystallize almost instantly on cooling, can be forced into an amorphous atomic arrangement given an extreme enough cooling rate (commonly needing >10^6 K/s for pure elemental metals, though certain multi-component alloy compositions can form bulk metallic glasses at far more modest rates) -- the key requirement is denying the system enough TIME for nucleation and growth to occur before mobility is frozen out, exactly analogous to the polymer case but requiring far more extreme rates given how fast metallic crystallization normally proceeds. Option (d) is factually false; metallic glasses are a well-established, commercially produced class of materials."
+    },
+    {
+      "kc": "amorphous-vs-semicrystalline-structure",
+      "slug": "predict-clarity-from-processing",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "A manufacturer needs a transparent plastic packaging film from a semicrystalline-capable polymer (like PET). Using what you know about the relationship between crystallinity and optical clarity, describe the processing approach (in terms of cooling rate) needed to achieve transparency, and explain the underlying physical reason.",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "solution": "To achieve transparency, the polymer must be processed with a RAPID quench through its crystallization-favorable temperature range, minimizing the time available for spherulite/lamellar crystallization and instead freezing the material into a largely amorphous state. The physical reason: semicrystalline regions (spherulites) have a different refractive index than the surrounding amorphous matrix, and this refractive-index mismatch scatters visible light at each crystallite boundary, producing the hazy/opaque appearance typical of semicrystalline polymers. An amorphous (rapidly quenched) PET film has no such crystallite boundaries to scatter light, so it remains transparent -- this is exactly why PET beverage bottles (rapidly quenched/blow-molded) are transparent while slower-cooled, thicker PET parts can appear hazier."
+    },
+    {
+      "kc": "amorphous-vs-semicrystalline-structure",
+      "slug": "compare-three-cooling-histories",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Three identical samples of the same semicrystalline-capable polymer are processed with different cooling histories: (1) extremely fast quench well below Tg, (2) moderate cooling with some dwell time between Tm and Tg, (3) very slow cooling with long dwell time in that range. Rank their expected crystallinity and predict how stiffness would compare across the three.",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "solution": "Crystallinity ranking (lowest to highest): (1) fast quench < (2) moderate cooling < (3) slow cooling -- more time spent in the crystallization-favorable temperature range directly produces more crystallinity, following the same time-dependent nucleation-and-growth logic as the quench-rate exercise above. Stiffness follows the same ranking: (1) lowest stiffness (least crystalline, most compliant amorphous character dominates) through (3) highest stiffness (most crystalline, with the ordered lamellar regions acting as stiff, load-bearing domains within the softer amorphous matrix) -- this is a direct, testable consequence of the structure-property link this KC establishes."
+    },
+    {
+      "kc": "textured-and-oriented-microstructure",
+      "slug": "rolling-texture-anisotropy-direction",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A cold-rolled steel sheet shows higher yield strength when tested along the rolling direction than when tested transverse (90 degrees) to it. What causes this anisotropy?",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "options": [
+        "Random measurement error; rolled sheet should be perfectly isotropic",
+        "Grains become elongated and crystallographically aligned along the rolling direction during deformation, creating a preferred orientation (texture) that makes mechanical response direction-dependent",
+        "The chemical composition changes across the sheet during rolling",
+        "Rolling always produces LOWER strength along the rolling direction, never higher"
+      ],
+      "correct_index": 1,
+      "explanation": "Cold rolling elongates grains and rotates them toward preferred crystallographic orientations relative to the rolling direction (crystallographic texture), and since a single crystal's own strength/stiffness is itself direction-dependent (anisotropic), a textured polycrystal inherits a net directional bias in its bulk mechanical properties. Option (c) incorrectly attributes the effect to a composition change, when in fact composition is unchanged -- only microstructure (grain shape and crystallographic orientation) has changed. Option (d) wrongly asserts a fixed direction for the effect; the specific anisotropy direction depends on the material's crystal structure and rolling texture type."
+    },
+    {
+      "kc": "textured-and-oriented-microstructure",
+      "slug": "drawn-fiber-property-consequence",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A polymer fiber is drawn (stretched) to several times its original length below its melting point. What happens to its axial tensile strength and its transverse strength, respectively?",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "options": [
+        "Both increase equally",
+        "Axial strength increases substantially (chain backbones align along the draw axis, load-bearing covalent bonds now run mostly in the load direction); transverse strength stays low or decreases (fewer load-bearing chains span the transverse direction)",
+        "Axial strength decreases; transverse strength increases",
+        "Drawing has no effect on either property"
+      ],
+      "correct_index": 1,
+      "explanation": "Drawing aligns polymer chain backbones along the draw (axial) direction, meaning the strong covalent backbone bonds now run predominantly along the loading direction for axial tension -- dramatically increasing axial strength/stiffness (often several-fold). Because fewer chains now span the transverse direction (most have rotated toward the axial direction), transverse strength -- which relies more on the weaker interchain secondary bonding -- stays low or can even decrease slightly. This is exactly the mechanism behind high-performance drawn fibers (e.g. drawn nylon, PET, or ultra-high-molecular-weight polyethylene fibers)."
+    },
+    {
+      "kc": "textured-and-oriented-microstructure",
+      "slug": "skin-core-morphology-consequence",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "An injection-molded polymer part shows a highly oriented, more crystalline 'skin' near the mold wall and a more randomly oriented, less crystalline 'core.' Explain why this morphology forms, and predict a design consequence for a part whose wall thickness is deliberately made very thin versus very thick.",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "solution": "The skin forms because polymer melt in direct contact with the (much cooler) mold wall experiences intense shear during mold filling and rapid quenching, aligning and partially crystallizing chains near the surface before they can relax back to a random orientation. The core, further from the wall, cools more slowly and experiences less shear, allowing chains to remain closer to their equilibrium (more random, less oriented) configuration. Design consequence: a very THIN-walled part is dominated by the oriented, stiffer/stronger skin layer (since the skin represents a larger fraction of the total thickness), giving the part more skin-like anisotropic mechanical behavior; a very THICK-walled part is dominated by the more isotropic core, behaving more like an unoriented bulk polymer -- wall thickness is therefore a real design lever affecting not just weight and cooling time, but also the part's effective mechanical anisotropy."
+    },
+    {
+      "kc": "textured-and-oriented-microstructure",
+      "slug": "identify-orientation-mechanism-independent",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "For each scenario, identify the orientation/texture mechanism and predict the resulting anisotropy direction: (1) An aluminum can body is deep-drawn from a rolled sheet blank, showing 'earing' (uneven rim height) after drawing. (2) A carbon-fiber composite panel is laid up with all fibers running in one direction.",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "solution": "(1) Rolling texture (planar anisotropy) inherited from the sheet-rolling process -- because the rolled sheet's grains are crystallographically aligned relative to the original rolling direction, the sheet's flow (formability) behavior during deep drawing varies with in-plane direction, causing the rim to draw up unevenly ('ears') at specific angular positions relative to the original rolling direction rather than forming a perfectly even cylindrical rim. (2) Deliberate fiber alignment (not a byproduct of a forming process, but an engineered choice) -- with all reinforcing fibers running in one direction, the panel will be extremely stiff and strong along that fiber direction (load-bearing fibers directly resist axial load) but comparatively weak and compliant transverse to it (matrix-dominated behavior, as covered by the rule-of-mixtures anisotropy in chee-380's composite modulus KC)."
+    },
+    {
+      "kc": "blending-and-composite-processing",
+      "slug": "co-continuous-vs-dispersed-morphology",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Two immiscible polymers are melt-blended at a composition ratio of 95/5 (95% polymer A, 5% polymer B). What morphology is most likely, compared to a 50/50 blend?",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "options": [
+        "Co-continuous, same as the 50/50 case",
+        "Polymer B forms small, dispersed droplets within a continuous polymer A matrix, rather than a co-continuous network",
+        "Polymer A forms small droplets within polymer B",
+        "The two polymers always fully mix at any ratio"
+      ],
+      "correct_index": 1,
+      "explanation": "Far from a 50/50 ratio, the minor-fraction component (here, polymer B at only 5%) is much more likely to form small, dispersed droplets within a continuous matrix of the majority component (polymer A), rather than the interpenetrating co-continuous network that can occur nearer a 50/50 composition. Option (c) reverses which component is the matrix versus the dispersed phase. Option (d) is wrong; the entire premise here is that the polymers are IMMISCIBLE, so they do not fully mix at the molecular level regardless of blend ratio."
+    },
+    {
+      "kc": "blending-and-composite-processing",
+      "slug": "in-situ-polymerization-dispersion-advantage",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Why does dispersing nanoparticles into a MONOMER before polymerization typically give finer, more uniform dispersion than mixing the same nanoparticles into an already-polymerized, high-viscosity polymer melt?",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "options": [
+        "Because monomers chemically bond to nanoparticles, which never happens with pre-formed polymer",
+        "Because the low-viscosity monomer allows particles to disperse much more easily before the high-viscosity polymer network forms around them, whereas mixing into an already-viscous melt fights against that high viscosity the whole time",
+        "Because nanoparticles are always insoluble in monomers",
+        "There is no real difference between the two approaches"
+      ],
+      "correct_index": 1,
+      "explanation": "Monomers are typically much lower viscosity than the polymer they will become, so nanoparticles can be dispersed uniformly through the low-viscosity monomer relatively easily; polymerization then locks in that already-achieved fine dispersion as the network forms around the particles. Mixing particles into an ALREADY polymerized, high-viscosity melt requires overcoming that high viscosity throughout the entire mixing process, making it far harder to achieve the same fine, uniform dispersion, and more prone to particle agglomeration. Option (a) overstates a chemical-bonding mechanism that isn't generally required for this dispersion advantage."
+    },
+    {
+      "kc": "blending-and-composite-processing",
+      "slug": "classify-and-predict-morphology-independent",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Classify the processing route and predict the resulting morphology: (1) A thermoplastic matrix is reinforced with short, randomly-oriented chopped glass fibers via extrusion compounding. (2) A continuous carbon-fiber prepreg (pre-impregnated fiber sheet) is laid up in a specific stacking sequence and cured in an autoclave.",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "solution": "(1) Extrusion compounding with short, randomly-oriented fibers produces a morphology with fibers dispersed roughly isotropically in the plane perpendicular to the extrusion flow direction (though some flow-induced alignment along the extrusion direction is common), giving properties intermediate between an unreinforced polymer and a fully aligned continuous-fiber composite -- reinforcement is present but the rule-of-mixtures anisotropy is much less pronounced than for continuous, aligned fibers. (2) Autoclave curing of a stacked prepreg produces a highly engineered, LAYERED (laminate) morphology where each ply's fiber direction is deliberately controlled -- properties in any given direction depend on the specific stacking sequence chosen, giving the designer explicit control over the composite's overall anisotropy, in contrast to the more 'as-processed, less controlled' morphology from route (1)."
+    },
+    {
+      "kc": "blending-and-composite-processing",
+      "slug": "predict-property-consequence-of-morphology",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "A 50/50 melt blend of two immiscible polymers forms a co-continuous morphology. Predict, qualitatively, how this blend's overall mechanical response would compare to (a) a blend where the same composition instead formed a dispersed-droplet morphology (polymer B as small droplets in a polymer A matrix), and explain the underlying reasoning.",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "solution": "A co-continuous morphology means BOTH polymers form continuous, load-bearing networks that each span the material -- the blend's overall properties can genuinely reflect a combination/average of both polymers' intrinsic behavior (e.g. if polymer A is stiff and polymer B is tough, the blend might show a useful stiffness-toughness balance from both networks contributing). A dispersed-droplet morphology, by contrast, is dominated by the CONTINUOUS matrix phase (polymer A) -- the dispersed polymer B droplets act more like discrete inclusions (similar in spirit to particulate composite reinforcement or toughening) rather than a full continuous network, so the blend's bulk behavior is much closer to polymer A's properties alone, only modestly modified by the presence of the dispersed B droplets. Morphology, not just composition, is therefore a first-order factor in blend performance."
+    },
+    {
+      "kc": "powder-processing-and-sintering",
+      "slug": "sintering-driving-force",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "What is the fundamental thermodynamic driving force for densification during sintering?",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "options": [
+        "Reduction of total surface energy as curved particle surfaces are replaced by flatter interparticle neck/grain-boundary area",
+        "The powder particles chemically react with each other to form a new compound",
+        "Gravity alone compacts the powder as it is heated",
+        "Melting and resolidification of the particle surfaces"
+      ],
+      "correct_index": 0,
+      "explanation": "Sintering is driven by the reduction in total surface (interfacial) energy that occurs as atoms diffuse toward interparticle contact points, replacing high-curvature (high-energy) free particle surfaces with lower-energy neck and grain-boundary area -- the same thermodynamic principle behind grain growth and Ostwald ripening. Option (b) describes a possible but non-general side reaction, not the general sintering mechanism. Option (d) describes the misconception this KC explicitly targets: sintering proceeds via solid-state diffusion, not melting."
+    },
+    {
+      "kc": "powder-processing-and-sintering",
+      "slug": "shrinkage-vs-density-distinct-quantities",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A green compact shrinks by 12% (linear) during sintering. A student assumes this means the part is now 12% denser than before. What is wrong with this reasoning?",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "options": [
+        "Nothing; linear shrinkage and density increase are the same number by definition",
+        "Linear shrinkage is a LENGTH ratio, while density increase is a MASS/VOLUME ratio -- since volume scales as the CUBE of a linear dimension, a 12% linear shrinkage corresponds to a substantially larger fractional volume (and hence density) increase, not the same 12%",
+        "Shrinkage and density are completely unrelated quantities with no connection at all",
+        "Density always decreases during sintering, never increases"
+      ],
+      "correct_index": 1,
+      "explanation": "Linear shrinkage describes a ONE-DIMENSIONAL length change, but density depends on volume, which scales as the CUBE of a linear dimension (assuming roughly isotropic shrinkage) -- so a 12% linear shrinkage corresponds to a volume reduction of roughly 1 - (1-0.12)^3 approx 32%, which (at constant mass) means a substantially larger fractional density increase than the 12% figure alone would suggest. Option (c) overcorrects by claiming no relationship at all, when in fact there IS a real, calculable (just non-identical) relationship. Option (d) is simply false; density increases during sintering as porosity is eliminated."
+    },
+    {
+      "kc": "powder-processing-and-sintering",
+      "slug": "sintering-shrinkage-calc-fresh",
+      "kind": "numeric",
+      "difficulty": 1,
+      "prompt": "A powder compact is pressed to a green length of 45.0 mm and sinters to a final length of 39.0 mm. Compute the linear shrinkage as a percentage.",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "answer": {
+        "value": 13.3,
+        "unit": "%",
+        "tolerance_pct": 3
+      },
+      "solution": "Linear shrinkage = (Lgreen - Lsintered)/Lgreen x 100 = (45.0 - 39.0)/45.0 x 100 = 6.0/45.0 x 100 approx 13.3%."
+    },
+    {
+      "kc": "powder-processing-and-sintering",
+      "slug": "green-and-sintered-density-independent",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "A metal powder compact has a theoretical (fully dense) density of 6.1 g/cm^3. Its green density is 4.0 g/cm^3 and its sintered density is 5.7 g/cm^3. Compute the green density and sintered density as percentages of theoretical, and state the percentage of residual porosity remaining after sintering.",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "solution": "Green density as % theoretical = 4.0/6.1 x 100 approx 65.6%. Sintered density as % theoretical = 5.7/6.1 x 100 approx 93.4%. Residual porosity after sintering = 100% - 93.4% = 6.6% -- meaning roughly 6.6% of the sintered part's volume is still unfilled pore space, a typical result for conventional pressureless sintering (versus hot isostatic pressing or other pressure-assisted routes, which can push residual porosity down much further)."
+    },
+    {
+      "kc": "powder-processing-and-sintering",
+      "slug": "why-fine-powder-sinters-faster",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Explain why a powder compact made from FINER (smaller particle size) powder generally sinters to a given density faster, or at a lower temperature, than the same material made from COARSER powder, using the surface-energy driving-force argument.",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "solution": "Finer powder has a much higher surface-area-to-volume ratio than coarser powder of the same total mass, meaning the total surface (interfacial) energy available to drive densification is larger for the fine powder. Additionally, the diffusion distances atoms must travel to reach interparticle neck regions are much SHORTER for smaller particles, so a given amount of diffusion (at a given temperature and time) produces a proportionally larger fraction of the total densification needed. Both effects -- a larger driving force AND shorter diffusion distances -- combine to let finer powders sinter to a target density faster or at a lower temperature than coarser powders of the same composition, which is exactly why nanoscale and ultrafine powders are often used when low-temperature or rapid sintering is required."
+    },
+    {
+      "kc": "nucleation-thermodynamics",
+      "slug": "surface-vs-volume-term-scaling",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "In the nucleation free-energy expression, the volume (driving-force) term scales as r^3 and the surface (energy-cost) term scales as r^2. Why does this GUARANTEE that a critical radius r* exists at which the total free energy change is at a maximum?",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §10.3 style",
+      "options": [
+        "It doesn't guarantee this; r* is found purely empirically with no theoretical basis",
+        "For small r, the r^2 surface term dominates (making growth energetically unfavorable), but for large r, the r^3 volume term eventually dominates (making growth favorable) -- since one term dominates at small r and the other at large r, the total free energy must have an interior maximum where growth transitions from unfavorable to favorable",
+        "Because r^3 is always larger than r^2 for all r, so there is no actual competition",
+        "The critical radius is simply defined as r=0, requiring no energy balance at all"
+      ],
+      "correct_index": 1,
+      "explanation": "At small r, the surface area term (proportional to r^2, but with a positive coefficient gamma) dominates over the still-small volume term (proportional to r^3, with a negative coefficient), making the total free energy change positive and increasing with r -- an energy cost that opposes small nucleus formation. As r grows large enough, the r^3 volume term (with its larger power) eventually overtakes the r^2 term regardless of the specific coefficients, driving the total free energy down and making growth favorable. This transition from 'increasing' to 'decreasing' behavior in a smooth function requires an interior maximum, which is exactly the critical radius r* where d(delta-G)/dr = 0."
+    },
+    {
+      "kc": "nucleation-thermodynamics",
+      "slug": "undercooling-effect-on-barrier",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "As undercooling delta-T increases (a melt is cooled further below its equilibrium melting point), what happens to the critical nucleus radius r* and the nucleation energy barrier delta-G*?",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §10.3 style",
+      "options": [
+        "Both increase, making nucleation harder at larger undercooling",
+        "Both decrease, making nucleation easier and more likely at larger undercooling",
+        "r* increases while delta-G* decreases",
+        "Neither depends on undercooling at all"
+      ],
+      "correct_index": 1,
+      "explanation": "Both r* = 2*gamma*Tm/(L*delta-T) and delta-G* = 16*pi*gamma^3*Tm^2/(3*L^2*delta-T^2) have delta-T in the DENOMINATOR (delta-T and delta-T^2 respectively), so increasing undercooling directly decreases both quantities -- a smaller critical radius means fewer atoms need to spontaneously cluster together to exceed the barrier, and a smaller energy barrier means that clustering is thermodynamically easier to achieve via random fluctuations. This is exactly why rapid, deeply undercooling quenches produce many small nuclei (fine grains) while slow cooling near the melting point produces few, large grains."
+    },
+    {
+      "kc": "nucleation-thermodynamics",
+      "slug": "critical-radius-iron-calc",
+      "kind": "numeric",
+      "difficulty": 3,
+      "prompt": "Pure iron has L = 2.098e9 J/m^3, gamma = 0.204 J/m^2, Tm = 1809 K, and a typical experimentally observed undercooling of delta-T = 295 K. Using r* = 2*gamma*Tm/(L*delta-T), compute the critical nucleus radius in nm.",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §10.3 style",
+      "answer": {
+        "value": 1.19,
+        "unit": "nm",
+        "tolerance_pct": 5
+      },
+      "solution": "r* = 2(0.204)(1809)/(2.098e9 x 295) = 738.1/6.189e11 = 1.1927e-9 m = 1.19 nm -- similar in order of magnitude to the nickel example worked through in the KC's own scaffold, both landing in the few-atomic-diameters range typical of homogeneous nucleation critical radii."
+    },
+    {
+      "kc": "nucleation-thermodynamics",
+      "slug": "energy-barrier-scaling-independent",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "Using L = 2.098e9 J/m^3, gamma = 0.204 J/m^2, Tm = 1809 K for iron, compute the nucleation energy barrier delta-G* at delta-T = 295 K, using delta-G* = 16*pi*gamma^3*Tm^2/(3*L^2*delta-T^2). Then, without recomputing from scratch, estimate delta-G* at delta-T = 590 K (double the undercooling) using the r*^-2 (i.e., delta-T^-2) scaling relationship alone.",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §10.3 style",
+      "solution": "At delta-T=295K: delta-G* = 16*pi*(0.204)^3*(1809)^2 / (3*(2.098e9)^2*(295)^2) = 16*pi*0.008489*3,272,481 / (3*4.402e18*87,025) = 1.4014e6/1.1494e24... (carrying through the full computation) approx 1.215e-18 J. At delta-T=590K (2x): since delta-G* is proportional to 1/delta-T^2, doubling delta-T reduces delta-G* by a factor of 2^2=4, giving delta-G*(590K) approx 1.215e-18/4 approx 3.04e-19 J -- illustrating quantitatively just how much easier nucleation becomes with even a modest further increase in undercooling, consistent with the qualitative trend from the multiple-choice question above."
+    },
+    {
+      "kc": "nucleation-classification",
+      "slug": "heterogeneous-nucleation-practical-default",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "In real industrial casting processes, which type of nucleation is the practical default, and why?",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §10.4 style",
+      "options": [
+        "Homogeneous, because industrial melts are always perfectly pure and container-free",
+        "Heterogeneous, because mold walls, inoculant particles, and impurities almost always provide preferential nucleation sites, lowering the effective energy barrier compared to the idealized homogeneous case",
+        "Neither type occurs in industrial casting; solidification happens without nucleation",
+        "Homogeneous and heterogeneous nucleation are indistinguishable in practice"
+      ],
+      "correct_index": 1,
+      "explanation": "Real industrial melts are cast into mold walls (a surface) and often deliberately or incidentally contain inoculant particles or impurities, all of which provide pre-existing surfaces that lower the effective nucleation energy barrier -- making heterogeneous nucleation the practical, near-universal default, while homogeneous nucleation (requiring large undercooling with NO preferential site) is closer to an idealized laboratory limiting case. Option (a) inverts which scenario is realistic."
+    },
+    {
+      "kc": "nucleation-classification",
+      "slug": "inoculation-purpose",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Why do foundries deliberately add fine inoculant particles to a melt before casting, rather than simply casting the pure alloy?",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §10.4 style",
+      "options": [
+        "To slow down solidification and produce larger, easier-to-inspect grains",
+        "To provide many additional heterogeneous nucleation sites, producing many small grains at low undercooling rather than a few large grains -- typically improving strength via the Hall-Petch relationship",
+        "Inoculants are added purely for color/appearance, with no mechanical effect",
+        "Inoculants prevent nucleation entirely, producing a single large crystal"
+      ],
+      "correct_index": 1,
+      "explanation": "Inoculant particles act as heterogeneous nucleation sites, dramatically increasing the number of nucleation events that occur at a given (typically much smaller) undercooling compared to relying on homogeneous nucleation or a smaller number of adventitious heterogeneous sites -- this produces a fine, many-grained microstructure rather than a coarse, few-grained one, and fine grain size is directly linked to higher strength (and often better toughness) via the Hall-Petch relationship. Option (a) describes exactly the opposite intended effect."
+    },
+    {
+      "kc": "nucleation-classification",
+      "slug": "classify-and-predict-grain-size",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Classify the nucleation mechanism and predict the resulting grain size: (1) A small, perfectly clean droplet of pure metal is electromagnetically levitated (no container walls) and cooled, requiring a very large undercooling before any solid appears. (2) The same metal is instead poured into a sand mold with no inoculants, but the mold walls themselves act as nucleation sites at modest undercooling.",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §10.4 style",
+      "solution": "(1) Homogeneous nucleation -- with no container wall or particulate surface available, the levitated droplet must nucleate entirely on its own, requiring a large undercooling to overcome the full energy barrier; because a large undercooling favors a high nucleation rate once it IS reached, this can actually still produce fine grains if nucleation, once triggered, occurs rapidly throughout the volume -- though the practical requirement of achieving that large undercooling in the first place is itself unusual outside controlled laboratory conditions. (2) Heterogeneous nucleation at the mold wall -- nucleation begins at the wall surface at a comparatively modest undercooling; without additional inoculant particles distributed through the bulk melt, however, nucleation sites are effectively limited to the mold surface, which can produce a coarser grain structure than would result from a well-inoculated melt with many nucleation sites distributed throughout the volume."
+    },
+    {
+      "kc": "nucleation-classification",
+      "slug": "slow-cooling-misconception-application",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "A student proposes cooling a casting as slowly as possible 'to be safe' and get the best-quality part. Using what you know about nucleation rate versus undercooling, evaluate this proposal for a structural part where strength is the primary requirement.",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §10.4 style",
+      "solution": "Slow cooling generally reaches only a small undercooling before whatever nucleation sites ARE present (heterogeneous, in a typical mold) become active, and because relatively few nucleation events occur before growth dominates, the resulting grains grow large before impinging on each other -- large-grained microstructures typically have LOWER strength via the Hall-Petch relationship (strength scales inversely with the square root of grain size). For a structural part where strength is the primary requirement, this proposal is likely counterproductive: a controlled, moderately rapid cooling rate (often combined with deliberate inoculation) that promotes a higher nucleation rate relative to growth rate would generally produce the finer-grained, higher-strength microstructure the application actually needs. 'Slow and careful' is not a universal proxy for 'higher quality' in solidification processing -- the right cooling rate is the one that produces the target microstructure for the specific property requirement."
+    },
+    {
+      "kc": "growth-kinetics-avrami",
+      "slug": "avrami-exponent-physical-meaning",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "What does the Avrami exponent n primarily reflect about a phase transformation?",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §10.5 style",
+      "options": [
+        "The absolute transformation rate (how fast, in seconds, the transformation completes)",
+        "The nucleation mechanism and growth geometry (e.g. constant vs. decreasing nucleation rate, and 1-D, 2-D, or 3-D growth), which sets the SHAPE of the X(t) curve, not its absolute speed",
+        "The final equilibrium fraction transformed, which is always 1.0 regardless of n",
+        "The activation energy of the transformation"
+      ],
+      "correct_index": 1,
+      "explanation": "The exponent n in X(t) = 1 - exp(-kt^n) reflects the geometric/mechanistic character of the transformation -- how nucleation rate behaves over time and whether growth is effectively 1-, 2-, or 3-dimensional -- which shapes the CURVE of X versus t (how sigmoidal, how steep) rather than setting its absolute timescale (that role belongs to k, and indirectly to temperature via k's own temperature dependence). Option (a) confuses exponent with rate constant. Option (d) is a separate quantity entirely (from the Arrhenius temperature dependence of the underlying diffusion/growth process, not the Avrami equation itself)."
+    },
+    {
+      "kc": "growth-kinetics-avrami",
+      "slug": "linearization-method-purpose",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Why do materials engineers take ln(-ln(1-X)) versus ln(t) to determine n and k from experimental transformation data, rather than fitting the raw X(t) data directly?",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §10.5 style",
+      "options": [
+        "Because this transformation converts the nonlinear Avrami equation into a straight line (slope=n, intercept related to k), making n and k easy to extract via simple linear regression",
+        "Because taking a double logarithm makes the data less accurate",
+        "This transformation is purely cosmetic and provides no analytical benefit",
+        "It only works for n=1"
+      ],
+      "correct_index": 0,
+      "explanation": "Starting from X = 1-exp(-kt^n), rearranging gives -ln(1-X) = kt^n, and taking ln of both sides gives ln(-ln(1-X)) = ln(k) + n*ln(t) -- a linear equation in ln(t), with slope n and intercept ln(k). This linearization lets engineers extract both Avrami parameters from a straight-line fit to transformed experimental data, rather than needing a nonlinear curve fit to the original sigmoidal X(t) curve. Option (d) is factually wrong: it works for any n, since the linearization is a general algebraic identity, not restricted to a special case."
+    },
+    {
+      "kc": "growth-kinetics-avrami",
+      "slug": "avrami-fraction-transformed-calc",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "An isothermal transformation follows the Avrami equation with n = 1.8, and 50% transformation occurs at t = 80 s. Find the fraction transformed at t = 120 s.",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §10.5 style",
+      "answer": {
+        "value": 0.762,
+        "unit": null,
+        "tolerance_pct": 5
+      },
+      "solution": "Step 1: find k from the 50% point: 0.5 = 1-exp(-k*80^1.8), so k*80^1.8 = -ln(0.5) = 0.6931. 80^1.8 = exp(1.8*ln80) = exp(1.8*4.382) = exp(7.888) approx 2664.5. k = 0.6931/2664.5 approx 2.602e-4. Step 2: at t=120: 120^1.8 = exp(1.8*ln120) = exp(1.8*4.787) = exp(8.617) approx 5518.6. Exponent: k*t^n = 2.602e-4*5518.6 approx 1.436. X(120) = 1-exp(-1.436) = 1-0.2379 = 0.7621 approx 0.76 (76%)."
+    },
+    {
+      "kc": "growth-kinetics-avrami",
+      "slug": "avrami-determine-n-and-k-independent",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "An alloy shows 20% transformation at t = 40 s and 80% transformation at t = 160 s, isothermally. Determine the Avrami exponent n and rate constant k, using the linearized form ln(-ln(1-X)) = ln(k) + n*ln(t).",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §10.5 style",
+      "solution": "At t=40, X=0.20: -ln(1-0.20) = -ln(0.80) = 0.2231, so ln(-ln(1-X)) = ln(0.2231) = -1.500. At t=160, X=0.80: -ln(1-0.80) = -ln(0.20) = 1.6094, so ln(-ln(1-X)) = ln(1.6094) = 0.4759. The line runs from (ln40, -1.500) = (3.689, -1.500) to (ln160, 0.4759) = (5.075, 0.4759). Slope n = (0.4759-(-1.500))/(5.075-3.689) = 1.9759/1.386 approx 1.426. Intercept: -1.500 = ln(k) + 1.426(3.689), so ln(k) = -1.500 - 5.260 = -6.760, k = exp(-6.760) approx 1.16e-3."
+    },
+    {
+      "kc": "growth-kinetics-avrami",
+      "slug": "avrami-solve-for-time-independent",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Using n=1.8 and k=2.602e-4 (from the fraction-transformed exercise above), find the time needed to reach 95% transformation.",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §10.5 style",
+      "solution": "0.95 = 1-exp(-k*t^1.8), so exp(-k*t^1.8) = 0.05, k*t^1.8 = -ln(0.05) = 2.996. t^1.8 = 2.996/2.602e-4 approx 11,514. t = 11,514^(1/1.8) = exp(ln(11514)/1.8) = exp(9.351/1.8) = exp(5.195) approx 180.5 s."
+    },
+    {
+      "kc": "ttt-cct-diagram-reading",
+      "slug": "wrong-diagram-type-error",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "A part is continuously cooled from the austenitizing temperature to room temperature (not held isothermally at any point). Which diagram should be used to predict its resulting microstructure?",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §10.6-10.7 style",
+      "options": [
+        "TTT diagram, since it's more commonly available",
+        "CCT diagram, since it is specifically constructed for continuous cooling paths",
+        "Either diagram gives identical predictions",
+        "Neither diagram applies to continuous cooling"
+      ],
+      "correct_index": 1,
+      "explanation": "A CCT (continuous cooling transformation) diagram is specifically constructed to predict transformation behavior for a sample that is continuously cooling through a range of temperatures, unlike a TTT (time-temperature-transformation) diagram, which describes behavior only for a sample held at a single, constant temperature. Reading a continuous cooling path against TTT curves (as if interchangeable) predicts transformation starting earlier than it actually does and can give the wrong final microstructure -- exactly the misconception this KC's documented misconception addresses."
+    },
+    {
+      "kc": "ttt-cct-diagram-reading",
+      "slug": "cct-curve-shift-direction",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Relative to a TTT diagram for the same steel, where are a CCT diagram's transformation start/finish curves typically shifted?",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §10.7 style",
+      "options": [
+        "To shorter times and higher temperatures",
+        "To longer times (and somewhat lower temperatures at the nose), because continuous cooling gives less total time at any single temperature for nucleation to occur than an isothermal hold would",
+        "CCT curves are always identical in position to TTT curves for the same alloy",
+        "CCT diagrams have no time axis at all"
+      ],
+      "correct_index": 1,
+      "explanation": "Because a continuously cooling sample only spends a brief, ever-decreasing amount of time at each temperature (versus an isothermal hold, which provides unlimited time at that ONE temperature), transformation is somewhat suppressed -- CCT curves shift to LONGER times, and the characteristic 'nose' of the curve also shifts to somewhat lower temperatures, relative to the TTT diagram for the same alloy. Option (a) states the exact opposite shift direction."
+    },
+    {
+      "kc": "ttt-cct-diagram-reading",
+      "slug": "isothermal-hold-partial-transformation",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "A eutectoid steel is quenched to 550 degC and held isothermally for 5 s. At 550 degC, the TTT diagram shows pearlite transformation starting at about 1.5 s and finishing at about 12 s. Determine the resulting microstructure after the 5 s hold followed by a rapid final quench to room temperature.",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §10.6 style",
+      "solution": "Since the 5 s hold falls between the start (1.5 s) and finish (12 s) times, the transformation is only PARTIALLY complete at 550 degC -- some austenite has transformed to (relatively fine, given the moderate temperature) pearlite, while the remaining untransformed austenite is still present when the rapid final quench to room temperature begins. That remaining austenite transforms to martensite on the fast final quench. Final microstructure: a mixture of fine pearlite and martensite, with the RELATIVE amounts depending on how far through the transformation (between the 1.5 s start and 12 s finish) the 5 s hold time actually falls."
+    },
+    {
+      "kc": "ttt-cct-diagram-reading",
+      "slug": "approximate-fraction-from-ttt-position",
+      "kind": "numeric",
+      "difficulty": 3,
+      "prompt": "A eutectoid steel is held isothermally at a temperature where its TTT diagram shows transformation starting at t_start = 5 s and finishing at t_finish = 50 s. Using an approximate LOG-TIME linear interpolation between the start and finish curves (a standard first-order estimate when the full Avrami parameters for this specific temperature aren't available), estimate the percent transformed after a 15 s hold.",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §10.6 style",
+      "answer": {
+        "value": 47.7,
+        "unit": "%",
+        "tolerance_pct": 5
+      },
+      "solution": "Approximate fraction transformed = [log10(t_hold) - log10(t_start)] / [log10(t_finish) - log10(t_start)] x 100 = [log10(15) - log10(5)] / [log10(50) - log10(5)] x 100 = [1.176 - 0.699]/[1.699 - 0.699] x 100 = 0.477/1.000 x 100 approx 47.7%. Note this is only an APPROXIMATION (a linear interpolation on the log-time axis) used when full Avrami kinetics for this exact temperature are not given -- the actual TTT curve's start/finish times already implicitly encode Avrami-type (sigmoidal) kinetics, so this method is a reasonable estimate, not an exact substitute for the growth-kinetics-avrami KC's rigorous calculation when k and n ARE known."
+    },
+    {
+      "kc": "processing-variable-property-principle",
+      "slug": "same-composition-different-properties",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "Two steel parts of identical eutectoid composition are austenitized identically, but one is furnace-cooled (slow) and the other water-quenched (fast). They end up with very different hardness values. What does this demonstrate?",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "options": [
+        "Composition is the only thing that determines mechanical properties",
+        "Processing (specifically, cooling rate) controls the resulting microstructure, and microstructure -- not composition alone -- determines the finished properties",
+        "One of the two samples must have a measurement error",
+        "Cooling rate only affects the surface, never the bulk properties"
+      ],
+      "correct_index": 1,
+      "explanation": "Identical composition but wildly different properties (soft coarse pearlite vs. hard martensite) is only explainable by the different MICROSTRUCTURES produced by the two different cooling rates -- this is the core principle of this KC: processing variables (here, cooling rate) control finished properties by controlling microstructure, not by changing composition (which is identical in both cases). Option (a) is directly contradicted by the scenario itself."
+    },
+    {
+      "kc": "processing-variable-property-principle",
+      "slug": "processing-variable-comparison-question",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "When comparing two parts made from the SAME alloy that show different properties, what question does this KC's practice framework suggest asking FIRST?",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "options": [
+        "What is different about their chemical composition?",
+        "What processing difference (cooling rate, deformation history, temperature history) could explain the property difference, given that composition is the same?",
+        "Which part was made more recently?",
+        "Properties can never differ for the same alloy; one measurement must be wrong"
+      ],
+      "correct_index": 1,
+      "explanation": "Since composition is stated to be the SAME, a compositional explanation is ruled out from the start -- the productive question is what PROCESSING difference (cooling rate, degree of deformation, thermal history) could explain the observed property difference through its effect on microstructure. This reflects the KC's core practice habit: default to a processing-based explanation before reaching for a compositional one when composition is known to be identical."
+    },
+    {
+      "kc": "processing-variable-property-principle",
+      "slug": "explain-hardness-difference-mechanism",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Explain, using nucleation/growth kinetics and TTT/CCT diagram concepts, exactly WHY furnace cooling and water quenching of the same eutectoid steel produce such different hardness (soft pearlite vs. hard martensite).",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "solution": "Furnace cooling is extremely slow, giving the austenite ample time at intermediate temperatures where the TTT/CCT diagram shows pearlite forming -- the slow cooling path crosses the pearlite transformation region well above the diagram's 'nose,' allowing complete, coarse pearlite formation via diffusion-controlled nucleation and growth, which is relatively soft. Water quenching is so fast that the cooling path on a CCT diagram misses the pearlite (and bainite) noses entirely, dropping the temperature below the martensite start temperature before any diffusion-controlled transformation can occur -- the remaining austenite instead transforms via the diffusionless (shear-based) martensitic mechanism, which traps carbon in a highly strained, hard, brittle crystal structure. The SAME composition therefore produces dramatically different hardness purely because the cooling rate determined which transformation PATHWAY (diffusion-controlled pearlite vs. diffusionless martensite) actually occurred."
+    },
+    {
+      "kc": "processing-variable-property-principle",
+      "slug": "ice-cream-analogy-transfer",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Using the 'freezing rate controls crystal size' analogy (fast freezing of ice cream gives small ice crystals and smooth texture; slow freezing gives large crystals and grainy texture), explain how the SAME logic applies to controlling grain size in a cast metal component, and identify the processing variable an engineer would adjust.",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "solution": "In both cases, the outcome (crystal/grain size) is controlled by the competition between nucleation rate and growth rate, which is itself controlled by how much TIME is available at favorable transformation conditions -- fast freezing (or fast cooling of a metal) favors many small nucleation events with limited time for growth, producing fine crystals/grains; slow freezing (or slow cooling) favors fewer nucleation events with much more time for each one to grow large before impinging on its neighbors, producing coarse crystals/grains. For a cast metal component, the engineer's primary lever is COOLING RATE (achieved via mold material choice, mold preheat temperature, part/mold geometry, or the use of inoculants), directly analogous to how fast or slow the ice cream mixture is frozen."
+    },
+    {
+      "kc": "alloying-and-solid-solution-strengthening",
+      "slug": "strengthening-mechanism-source",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "What is the physical mechanism by which a substitutional solute atom (similar size to the host, occupying regular lattice sites) increases a metal's yield strength?",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §7.9 style",
+      "options": [
+        "The solute atom chemically reacts with the host metal to form a new, harder compound",
+        "The solute atom's size and modulus mismatch with the host lattice creates local lattice strain, which impedes dislocation motion, requiring higher applied stress to move dislocations through the lattice",
+        "Solute atoms increase the metal's density, which directly increases strength",
+        "Solid-solution strengthening only works for interstitial solutes, never substitutional ones"
+      ],
+      "correct_index": 1,
+      "explanation": "A substitutional solute atom that differs even modestly in size or elastic modulus from the host lattice atoms creates a local strain field around itself; a moving dislocation must do additional work to pass through (or around) this distorted region, raising the stress required for continued plastic flow -- this is the fundamental mechanism of solid-solution strengthening. Option (a) describes a different mechanism (compound formation, more relevant to intermetallic/precipitation strengthening at high solute content). Option (d) is false; solid-solution strengthening operates for BOTH substitutional and interstitial solutes (interstitial solutes, being a size mismatch by nature, often strengthen even more strongly per atom)."
+    },
+    {
+      "kc": "alloying-and-solid-solution-strengthening",
+      "slug": "solubility-limit-boundary-effect",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A Cu-Be alloy's strength rises steadily as beryllium content increases toward its ~2 wt% solubility limit. What happens to the strengthening trend once beryllium content is pushed WELL BEYOND that solubility limit?",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §7.9, §11.9 style",
+      "options": [
+        "Strength keeps rising indefinitely and proportionally, with no change in behavior",
+        "The strengthening trend changes: excess beryllium forms coarse second-phase/intermetallic particles rather than continuing to strengthen the matrix the same way, and toughness/ductility typically decline",
+        "The alloy becomes a pure ceramic once the solubility limit is exceeded",
+        "Strength always DECREASES the instant the solubility limit is passed, dropping below the pure-copper baseline"
+      ],
+      "correct_index": 1,
+      "explanation": "Below the solubility limit, additional beryllium dissolves into the copper matrix and continues to strengthen it via solid-solution/precipitation mechanisms. Once the solubility limit is exceeded, additional beryllium can no longer dissolve into the matrix and instead forms coarse second-phase or brittle intermetallic particles, which do not strengthen the matrix through the same fine-scale mechanism and typically reduce ductility/toughness -- this is exactly the bounded, non-monotonic behavior the KC's documented misconception (assuming unbounded strengthening) gets wrong. Option (d) overstates the effect in the opposite direction; strength does not necessarily drop below the pure-metal baseline, it simply stops improving via the same mechanism and can develop new liabilities (brittleness)."
+    },
+    {
+      "kc": "alloying-and-solid-solution-strengthening",
+      "slug": "solid-solution-strengthening-pct-increase",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "Pure nickel has a yield strength of approximately 59 MPa. A Ni-30wt%Cu solid-solution alloy (Monel-type, single-phase across this composition range) has a yield strength of approximately 180 MPa. Compute the percent increase in yield strength due to the copper solid-solution addition.",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §7.9 style",
+      "answer": {
+        "value": 205,
+        "unit": "%",
+        "tolerance_pct": 5
+      },
+      "solution": "Percent increase = (180 - 59)/59 x 100 = 121/59 x 100 approx 205.1%, meaning the yield strength has more than tripled (an increase equal to roughly 2.05 times the pure-nickel baseline) due to the copper solid-solution strengthening effect alone."
+    },
+    {
+      "kc": "alloying-and-solid-solution-strengthening",
+      "slug": "cu-zn-strengthening-independent",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Pure copper has yield strength approximately 70 MPa. Cartridge brass (Cu-30wt%Zn, single-phase alpha solid solution) has yield strength approximately 130 MPa. Compute the strengthening increment and the percent increase, and explain why this increment exists even though zinc, like nickel in the earlier example, is simply substituting onto copper lattice sites.",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §7.9 style",
+      "solution": "Strengthening increment = 130 - 70 = 60 MPa. Percent increase = 60/70 x 100 approx 85.7%. Even though zinc is substituting onto regular copper lattice sites (not forming a separate phase, since the composition remains within the single-phase alpha region for this system), zinc atoms differ from copper atoms in size and elastic modulus, creating local lattice strain fields around each zinc atom. Dislocations moving through the lattice must do extra work to traverse these distorted regions, raising the stress needed for continued plastic flow -- the same fundamental mechanism as the Cu-Ni case, just with a different solute element and a correspondingly different (here, somewhat smaller) strengthening increment per atomic percent added."
+    },
+    {
+      "kc": "alloying-and-solid-solution-strengthening",
+      "slug": "over-alloying-consequence-independent",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "A Cu-Be alloy at 2 wt% Be (near its solubility limit, properly aged) achieves >1000 MPa strength with useful ductility. A second Cu-Be alloy at 4 wt% Be (well beyond the solubility limit) is examined. Predict, and explain the mechanism for, both its strength and toughness relative to the 2 wt% alloy.",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §11.9 style",
+      "solution": "The 4 wt% Be alloy, well beyond the ~2 wt% solubility limit, cannot dissolve all its beryllium into the copper matrix -- the excess forms coarse, often brittle intermetallic particles rather than the fine, coherent precipitates responsible for the 2 wt% alloy's excellent strength-toughness balance. Strength may show a further LOCAL increase in hardness near these coarse particles (or may not improve meaningfully overall, depending on particle size and distribution), but toughness and ductility typically decline sharply, since coarse, poorly-bonded intermetallic particles act as stress concentrators and crack initiation sites rather than contributing to a uniform, fine-scale strengthening mechanism. The practical consequence is that 4 wt% Be is very unlikely to be a superior engineering alloy compared to the properly-aged 2 wt% version, despite containing 'more' of the nominally strengthening element -- illustrating why alloy compositions are chosen relative to solubility limits, not simply maximized."
+    },
+    {
+      "kc": "cold-work-and-recrystallization",
+      "slug": "cold-work-area-not-diameter",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A rod's diameter is reduced from 10.0 mm to 8.0 mm during cold drawing. What is the correct way to compute the percent cold work?",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §7.10 style",
+      "options": [
+        "%CW = (10.0-8.0)/10.0 x 100 = 20%, using the diameter change directly",
+        "%CW must be computed from the CROSS-SECTIONAL AREA change: %CW = (A0-Ad)/A0 x 100, using A0=pi(5.0)^2=78.54 mm^2 and Ad=pi(4.0)^2=50.27 mm^2, giving approximately 36%, nearly double the naive diameter-based estimate",
+        "Both methods give the same answer since area is proportional to diameter",
+        "Percent cold work cannot be computed from dimensional changes at all"
+      ],
+      "correct_index": 1,
+      "explanation": "Percent cold work is strictly defined on cross-sectional AREA, not diameter or length directly: %CW = (A0-Ad)/A0 x 100 = (78.54-50.27)/78.54 x 100 approx 36%. Because area scales as the SQUARE of diameter, even a modest 20% diameter reduction corresponds to a much larger area (and hence cold-work) reduction -- computing directly from the diameter change, as in option (a), substantially understates the true %CW."
+    },
+    {
+      "kc": "cold-work-and-recrystallization",
+      "slug": "recrystallization-restores-ductility",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "A heavily cold-worked metal strip is brittle and hard to form further. What heat treatment restores its ductility, and by what mechanism?",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §7.12 style",
+      "options": [
+        "Quenching in cold water, which further hardens the strip",
+        "A recrystallization anneal, which nucleates new, strain-free grains that replace the heavily dislocation-tangled cold-worked grain structure, restoring ductility (at the cost of some strength)",
+        "No heat treatment can restore ductility once a metal is cold-worked; the effect is permanent",
+        "Cold working itself is reversed simply by waiting at room temperature, with no heat treatment needed"
+      ],
+      "correct_index": 1,
+      "explanation": "A recrystallization anneal (heating above the material's recrystallization temperature, typically 0.3-0.5 of the absolute melting temperature) provides enough thermal energy for entirely new, strain-free grains to nucleate and grow, consuming the heavily dislocation-tangled cold-worked microstructure -- this restores much of the ductility lost during cold work, though generally at the cost of giving back some of the strain-hardening-derived strength. Option (c) is factually wrong; recrystallization annealing is a standard, widely used industrial process specifically for this purpose."
+    },
+    {
+      "kc": "cold-work-and-recrystallization",
+      "slug": "cold-work-pct-calc-fresh",
+      "kind": "numeric",
+      "difficulty": 1,
+      "prompt": "A rod is cold-drawn from d0 = 20.0 mm to d1 = 16.5 mm. Compute the percent cold work.",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §7.10 style",
+      "answer": {
+        "value": 31.9,
+        "unit": "%",
+        "tolerance_pct": 3
+      },
+      "solution": "A0 = pi(10.0)^2 = 314.16 mm^2. A1 = pi(8.25)^2 = 213.82 mm^2. %CW = (314.16-213.82)/314.16 x 100 = 100.34/314.16 x 100 approx 31.9%."
+    },
+    {
+      "kc": "cold-work-and-recrystallization",
+      "slug": "final-diameter-from-target-cw-independent",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "A rod with initial diameter d0 = 14.0 mm is to be cold-drawn to exactly 40% cold work. Determine the final diameter, setting up the algebra yourself (do not just quote a ratio shortcut).",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §7.10 style",
+      "solution": "A0 = pi(7.0)^2 = 153.94 mm^2. %CW = (A0-Ad)/A0 x 100 = 40 means Ad = A0(1-0.40) = 153.94 x 0.60 = 92.36 mm^2. Solving Ad = pi(dd/2)^2 for dd: dd = 2*sqrt(Ad/pi) = 2*sqrt(92.36/3.1416) = 2*sqrt(29.40) = 2(5.422) approx 10.84 mm."
+    },
+    {
+      "kc": "cold-work-and-recrystallization",
+      "slug": "why-cold-work-then-anneal-strategically",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Explain why a manufacturer might deliberately cold-work a part and then apply a PARTIAL (not full) recrystallization anneal, rather than either leaving it fully cold-worked or fully annealing it back to the soft, unworked state.",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §7.12 style",
+      "solution": "Fully cold-worked material is strong and hard but brittle (low ductility), which can make it difficult to form further or prone to cracking in service under impact or fatigue loading. Fully annealed (unworked) material is ductile but comparatively weak/soft. A PARTIAL recrystallization anneal (heating to a temperature and/or time that allows recrystallization to begin, forming SOME new strain-free grains, without allowing complete grain growth or fully erasing all the strengthening effect) can achieve an intermediate balance -- recovering meaningful ductility while retaining more strength than a fully annealed part would have. This strategic partial processing is a common way manufacturers tune the final strength-ductility balance of a cold-worked-and-annealed part to match a specific application's requirements, rather than being limited to the two extremes of 'fully hard' or 'fully soft.'"
+    },
+    {
+      "kc": "shaping-operations-classification",
+      "slug": "extrusion-identifying-feature",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "A continuous window-frame profile with a constant, complex cross-section is produced by forcing heated aluminum through a shaped die opening. What process is this?",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "options": [
+        "Injection molding",
+        "Extrusion",
+        "Forging",
+        "Casting"
+      ],
+      "correct_index": 1,
+      "explanation": "Extrusion is specifically defined by forcing material (metal or polymer) through a shaped die to produce a constant cross-section profile of arbitrary length. Injection molding (a) instead fills a closed, fully 3-D mold cavity rather than continuously extruding a fixed profile. Forging (c) uses compressive deformation between shaped dies to produce a near-net 3-D shape, not a constant-cross-section continuous profile. Casting (d) involves pouring molten material into a mold, not pushing solid/near-solid material through a die."
+    },
+    {
+      "kc": "shaping-operations-classification",
+      "slug": "forging-vs-casting-property-reason",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A high-strength crankshaft is produced by forging rather than casting, even though casting would be cheaper and allow a more complex near-net shape in one step. Why is forging preferred here?",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "options": [
+        "Forging is always cheaper than casting",
+        "Forging's plastic deformation refines and aligns the grain structure (and closes internal porosity), giving superior mechanical properties (fatigue resistance, toughness) compared to a cast part's as-solidified, potentially porous grain structure",
+        "Casting cannot produce crankshaft-shaped parts at all",
+        "There is no real mechanical property difference between forged and cast parts of the same alloy"
+      ],
+      "correct_index": 1,
+      "explanation": "Forging deforms the metal plastically while solid, refining and elongating the grain structure along the load-bearing directions of the part and closing up any internal porosity or shrinkage defects that might be present in an as-cast structure -- this typically gives forged parts superior fatigue resistance and toughness compared to a cast part of the same alloy, which is exactly why highly stressed, fatigue-critical components like crankshafts are commonly forged rather than cast, despite forging's higher cost and more limited shape complexity per step."
+    },
+    {
+      "kc": "shaping-operations-classification",
+      "slug": "classify-four-processes-independent",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Classify the shaping process for each: (1) A complex, thin-walled plastic bottle is produced by inflating a heated polymer tube (parison) inside a closed mold using air pressure. (2) A metal sheet is progressively thinned and elongated by passing between rotating rolls. (3) A turbine disk is produced from metal powder compacted and then heated below its melting point until the particles bond and densify.",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "solution": "(1) Blow molding -- exploits a heated, still-formable polymer tube's ability to be inflated against a mold cavity wall, ideal for hollow, thin-walled parts like bottles (a variant of the general injection-molding-adjacent category of polymer-melt shaping processes covered in this KC). (2) Rolling -- plastic deformation of solid metal between rotating rolls, the standard route for sheet/plate production, progressively reducing thickness while elongating the material. (3) Powder metallurgy / sintering -- consistent with the diffusion-driven densification mechanism covered in the powder-processing-and-sintering KC, this route is chosen when it's difficult or uneconomical to achieve the needed near-net shape and material properties (e.g. controlled porosity, or difficult-to-machine alloys) via melting/casting or bulk deformation routes."
+    },
+    {
+      "kc": "shaping-operations-classification",
+      "slug": "two-questions-framework-application",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Using the two-question framework (is the material melted/flowed or plastically deformed while solid? is the cross-section constant along a length, or a full 3-D near-net shape?), classify a process that: melts a thermoplastic and forces it into a closed, complex 3-D mold cavity.",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "solution": "Question 1: the material IS melted/flowed (molten thermoplastic). Question 2: the result is a full, complex 3-D near-net shape (not a constant cross-section extending along a length). Answering both questions -- melted, and 3-D near-net-shape -- identifies this as injection molding, distinguishing it from extrusion (melted/flowed, but constant cross-section) and from forging (3-D near-net shape, but plastically deformed SOLID, not melted)."
+    },
+    {
+      "kc": "joining-operations-classification",
+      "slug": "brazing-vs-fusion-welding-distinction",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "Two copper pipes are joined using a lower-melting-point filler alloy drawn into the gap by capillary action, without melting the copper itself. What joining process is this?",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "options": [
+        "Fusion (arc) welding",
+        "Brazing",
+        "Solid-state diffusion bonding",
+        "Adhesive bonding"
+      ],
+      "correct_index": 1,
+      "explanation": "Brazing is defined by melting ONLY the filler material (at a temperature below the base metals' melting points) and relying on capillary action to draw it into the joint gap, without melting the base metal itself. Fusion welding (a) would melt the copper pipe edges themselves. Diffusion bonding (c) involves no melting at all, not even of a filler. Adhesive bonding (d) uses a chemical adhesive rather than a metallic filler alloy."
+    },
+    {
+      "kc": "joining-operations-classification",
+      "slug": "diffusion-bonding-use-case",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Diffusion (solid-state) bonding is often chosen specifically for joining DISSIMILAR metals, over fusion welding. Why?",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "options": [
+        "Diffusion bonding is always cheaper and faster than fusion welding",
+        "Fusion welding of dissimilar metals often forms brittle intermetallic compounds in the melted/resolidified zone; diffusion bonding avoids melting entirely, reducing the risk of forming those brittle phases",
+        "Diffusion bonding can only join identical metals, never dissimilar ones",
+        "Fusion welding is impossible between any two different metals"
+      ],
+      "correct_index": 1,
+      "explanation": "When dissimilar metals are melted together and resolidify (as in fusion welding), they can form brittle intermetallic compounds in the fusion zone, which act as crack initiation sites and compromise the joint's mechanical integrity. Diffusion bonding avoids this entirely by never melting either metal -- atoms diffuse across the solid-solid interface at an elevated (but sub-melting) temperature under applied pressure, which can produce a sound bond between dissimilar metals without the intermetallic-formation risk. Option (c) is factually backwards; diffusion bonding is specifically valued for dissimilar-metal joints."
+    },
+    {
+      "kc": "joining-operations-classification",
+      "slug": "classify-four-joints-independent",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Classify the joining method: (1) Two aluminum sheets are joined by a rotating, non-consumable tool that plastically stirs the material together at the joint line without melting either sheet (friction stir welding). (2) A structural adhesive bonds a composite panel to an aluminum frame with no heat applied. (3) A steel pipe joint is made by melting the pipe edges together with a consumable filler wire in an electric arc.",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "solution": "(1) Friction stir welding is a SOLID-STATE joining process (like diffusion bonding, no melting occurs) -- the rotating tool generates frictional heat and severe plastic deformation that mechanically stirs and metallurgically bonds the material across the joint line, without melting either sheet, making it well-suited to alloys prone to solidification defects or intermetallic formation if fusion-welded. (2) Adhesive bonding -- no melting, no diffusion, purely a chemical/mechanical bond via the adhesive to both surfaces, and notably the only one of these three that requires no heat input at all. (3) Fusion (arc) welding -- both the pipe edges and the filler wire melt and resolidify together as one continuous weld pool."
+    },
+    {
+      "kc": "joining-operations-classification",
+      "slug": "select-joining-method-for-scenario",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "A manufacturer needs to join two dissimilar metals (titanium and stainless steel) for an aerospace application where any brittle intermetallic phase at the joint would be unacceptable, and where the assembly's overall shape allows the parts to be pressed together under heat and pressure. Recommend a joining method and justify your choice against the alternatives.",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "solution": "Diffusion (solid-state) bonding is the strongest recommendation here: because titanium and stainless steel readily form brittle intermetallic compounds when melted together (a well-documented issue in Ti-steel fusion welding), any fusion-based method (arc welding, or even brazing if the filler reacts unfavorably with both base metals) risks introducing exactly the unacceptable brittle phase the application must avoid. Diffusion bonding avoids melting either base metal entirely, relying instead on solid-state atomic diffusion across the pressed interface at elevated temperature -- given that the geometry allows the parts to be pressed together under heat and pressure (a prerequisite for diffusion bonding, which typically requires close-fitting, pressable interfaces rather than complex 3-D joint geometries), this makes it a strong fit both metallurgically and geometrically for this specific application."
+    },
+    {
+      "kc": "residual-stress-and-heat-affected-zone",
+      "slug": "haz-definition",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "What defines the heat-affected zone (HAZ) in a weld?",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, §11.13-style application",
+      "options": [
+        "The region that was fully melted and resolidified",
+        "Base metal adjacent to the fusion zone that was heated above its transformation temperature (and, near the fusion line, nearly to melting) but never actually melted, yet still underwent real microstructural change",
+        "The filler metal added during welding",
+        "Any part of the weldment more than 10 cm from the joint"
+      ],
+      "correct_index": 1,
+      "explanation": "The HAZ is specifically base metal that never melted but was heated high enough (above the transformation temperature, in a hardenable steel) to undergo real microstructural change -- grain growth near the fusion line, and potentially hard, brittle untempered martensite formation on rapid self-quenching after welding. Option (a) describes the fusion zone, a different region entirely. Option (d) is an arbitrary and incorrect fixed distance; the HAZ's extent depends on the specific thermal cycle and material, not a fixed distance."
+    },
+    {
+      "kc": "residual-stress-and-heat-affected-zone",
+      "slug": "coarse-grain-haz-cracking-risk",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Why is the coarse-grain region of the HAZ (closest to the fusion line, reaching the highest peak temperatures) typically the most crack-prone zone in a welded hardenable steel?",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, style, based on standard welding metallurgy references",
+      "options": [
+        "It combines significant grain growth (which itself reduces toughness) with the possibility of untempered, hard, brittle martensite forming on rapid self-quenching",
+        "It never actually changes temperature during welding",
+        "It is always weaker than the weld metal itself, regardless of composition or cooling rate",
+        "Grain growth always increases toughness, so this explanation is backwards"
+      ],
+      "correct_index": 0,
+      "explanation": "The coarse-grain HAZ reaches peak temperatures high enough to fully austenitize and produce significant grain growth (larger grains generally reduce toughness on their own), AND, because the surrounding cold base metal acts as an efficient heat sink, this region can self-quench fast enough to form hard, brittle, UNTEMPERED martensite -- combining two separate embrittling effects in the same region. Option (d) inverts a well-established relationship (larger grain size generally REDUCES toughness, via the Hall-Petch-adjacent grain-boundary strengthening/toughening logic)."
+    },
+    {
+      "kc": "residual-stress-and-heat-affected-zone",
+      "slug": "explain-off-weld-failure",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "A welded steel joint fails in service several millimeters away from the weld bead, in metal visibly never melted. Explain the mechanism, referencing the specific HAZ sub-zone most likely responsible.",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, style, based on standard welding metallurgy references",
+      "solution": "The failure region is almost certainly the coarse-grain HAZ -- base metal heated during welding to a peak temperature high enough (roughly 1100-1500 degC) to fully austenitize and undergo substantial grain growth, but never reaching the melting point (so it 'was clearly never welded' from a casual visual inspection). If the base steel is hardenable and the weld thermal cycle provides rapid self-quenching (common, since the surrounding cold base metal acts as an efficient heat sink), this coarse-grained austenite can transform to hard, brittle, UNTEMPERED martensite -- a combination of grain coarsening and untempered martensite formation that makes this specific sub-zone more brittle than either the fusion zone (whose composition and cooling can be controlled via filler selection and welding parameters) or the far-field unaffected base metal (whose peak temperature never exceeded the transformation temperature at all)."
+    },
+    {
+      "kc": "residual-stress-and-heat-affected-zone",
+      "slug": "preheat-and-pwht-purpose",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Explain why welding procedures for hardenable steels often specify a PREHEAT temperature and/or a POST-WELD HEAT TREATMENT (PWHT), connecting each to the HAZ mechanism.",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, style, based on standard welding metallurgy references",
+      "solution": "Preheating the base metal before welding slows the subsequent cooling rate through the transformation range once welding is complete (since the surrounding metal starts hotter, the effective quench is less severe), reducing the likelihood of forming untempered martensite in the coarse-grain HAZ and also reducing hydrogen-cracking risk associated with rapid cooling. Post-weld heat treatment (typically a stress-relief or tempering treatment applied after welding) allows any martensite that DID form in the HAZ to temper (partially relieving its brittleness) and reduces the residual stresses locked in from the highly non-uniform heating and cooling cycle of welding -- both preheat and PWHT are therefore direct, deliberate countermeasures against the specific HAZ embrittlement and residual-stress mechanisms this KC describes, not generic 'extra safety margin' steps."
+    },
+    {
+      "kc": "pressure-vessel-design-basics",
+      "slug": "hoop-vs-longitudinal-governing-stress",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "For a thin-wall cylindrical pressure vessel, why is wall thickness always sized against the HOOP stress rather than the longitudinal stress?",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, style, following standard pressure vessel design practice",
+      "options": [
+        "Because hoop stress (sigma_h = Pr/t) is always exactly twice the longitudinal stress (sigma_l = Pr/2t), so designing for hoop stress automatically satisfies the (less demanding) longitudinal stress requirement",
+        "Because longitudinal stress is always larger and more dangerous",
+        "Because hoop stress and longitudinal stress are unrelated and both must be checked independently with no fixed relationship",
+        "Because longitudinal stress does not depend on pressure at all"
+      ],
+      "correct_index": 0,
+      "explanation": "For a thin-wall cylinder, hoop stress sigma_h = Pr/t is exactly twice the longitudinal stress sigma_l = Pr/2t (same P, r, and t appear in both, with only a factor-of-2 difference from the geometry of how each stress arises) -- since hoop stress is always the larger of the two for the same vessel, designing wall thickness to satisfy the allowable stress against hoop stress automatically ensures the longitudinal stress (being half as large) is comfortably satisfied as well."
+    },
+    {
+      "kc": "pressure-vessel-design-basics",
+      "slug": "allowable-stress-safety-factor",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Why is the allowable design stress computed as Sy/SF (yield strength divided by a safety factor greater than 1), rather than using Sy directly as the design stress?",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, style, following standard pressure vessel design practice",
+      "options": [
+        "To provide a margin against uncertainties (material variability, load estimation error, corrosion, fabrication defects) so the vessel operates safely below the stress that would cause yielding",
+        "SF is purely a bureaucratic requirement with no engineering justification",
+        "Using Sy directly would make the vessel too thick and expensive",
+        "SF only matters for vessels operating above room temperature"
+      ],
+      "correct_index": 0,
+      "explanation": "The safety factor accounts for real-world uncertainties not captured in the idealized design equations -- variability in actual material properties from the nominal Sy value, uncertainty in the actual operating pressure and any transient pressure spikes, potential material loss from corrosion over the vessel's service life, and possible fabrication imperfections (e.g. weld defects) -- by keeping the ALLOWABLE stress safely below the yield strength rather than designing right up to the point of yielding. Option (c) is backwards: a SMALLER allowable stress (larger SF) requires a THICKER wall, not thinner, to keep actual stress below that lower allowable value."
+    },
+    {
+      "kc": "pressure-vessel-design-basics",
+      "slug": "pressure-vessel-thickness-fresh",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "A cylindrical vessel must hold P = 1.8 MPa at inner radius r = 0.35 m. The material has Sy = 280 MPa and the applicable code requires SF = 2.2. Determine the minimum required wall thickness (before any corrosion allowance) in mm, using the governing hoop stress equation.",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, style, following standard pressure vessel design practice",
+      "answer": {
+        "value": 4.95,
+        "unit": "mm",
+        "tolerance_pct": 3
+      },
+      "solution": "sigma_allow = Sy/SF = 280/2.2 = 127.27 MPa. t = Pr/sigma_allow = (1.8e6 x 0.35)/(127.27e6) = 6.3e5/1.2727e8 = 0.00495 m = 4.95 mm."
+    },
+    {
+      "kc": "pressure-vessel-design-basics",
+      "slug": "pressure-vessel-with-corrosion-allowance-independent",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "A vessel must hold P = 2.2 MPa at r = 0.5 m. The material has Sy = 320 MPa, the code requires SF = 2.5, and a 2.5 mm corrosion allowance is specified for the service environment. Determine the total minimum design wall thickness, showing your choice of allowable stress and the governing (hoop) stress equation.",
+      "source": "Callister & Rethwisch, Materials Science and Engineering: An Introduction 10e, style, following standard pressure vessel design practice",
+      "solution": "sigma_allow = Sy/SF = 320/2.5 = 128 MPa. Structural thickness from hoop stress: t = Pr/sigma_allow = (2.2e6 x 0.5)/(128e6) = 1.1e6/1.28e8 = 0.008594 m = 8.594 mm. Adding the 2.5 mm corrosion allowance: total design thickness = 8.594 + 2.5 = 11.09 mm, which would typically be rounded UP to the next available standard plate gauge (e.g. 12 mm) in practice, since rounding down would leave the vessel under-designed against either the structural requirement or the corrosion allowance."
+    },
+    {
+      "kc": "materials-selection-for-processing",
+      "slug": "process-structure-property-driven-decision",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Two candidate materials both satisfy a vessel's required wall-thickness calculation for a given pressure and safety factor. What typically determines the FINAL selection between them in practice?",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "options": [
+        "Nothing further needs to be considered once the stress calculation is satisfied",
+        "Secondary process-structure-property factors: weldability, fabrication cost, joining method compatibility, and long-term corrosion/maintenance risk, since the governing stress calculation alone doesn't distinguish materials that both satisfy it",
+        "The material that was used in the most recent project, regardless of fit",
+        "Whichever material has the lower elastic modulus"
+      ],
+      "correct_index": 1,
+      "explanation": "When multiple materials satisfy the SAME governing design equation (as is common -- many real design problems are under-determined by a single equation), the actual selection decision shifts to secondary factors that the stress calculation itself doesn't capture: how easily and reliably the material can be welded/joined, what it costs to fabricate into the needed shape, and how it will perform over the vessel's service life (corrosion resistance, maintenance requirements). This reflects the broader principle that process-structure-property linkages -- not the design spec in isolation -- drive real material selection."
+    },
+    {
+      "kc": "materials-selection-for-processing",
+      "slug": "single-winning-material-misconception",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "A student assumes that materials selection always has one single objectively 'best' material once all relevant properties are known. What does the phone-case analogy in this KC's scaffolds suggest is wrong with this assumption?",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "options": [
+        "Nothing is wrong; there is always exactly one best material",
+        "Just as a phone case's 'best' choice depends on which secondary factors (weight, cost, heat dissipation) matter most for a given use case, a material's 'best' choice for a design depends on how that SPECIFIC application weighs multiple competing criteria -- there is rarely one universal winner across all applications",
+        "The analogy implies materials selection is entirely a matter of personal preference with no engineering basis",
+        "Phone cases and pressure vessels have nothing meaningfully in common, so the analogy fails entirely"
+      ],
+      "correct_index": 1,
+      "explanation": "The analogy's point is that a design spec can be satisfied multiple ways (rubber bumper vs. metal case; carbon steel with liner vs. solid stainless steel), and which option is genuinely 'best' depends on which SECONDARY criteria (weight, cost, heat dissipation for phone cases; weldability, fabrication cost, corrosion/maintenance risk for vessels) matter most for that specific application -- not that selection is arbitrary or preference-based (option c overstates the analogy), but that it is a genuine multi-criteria engineering tradeoff without one context-independent universal answer."
+    },
+    {
+      "kc": "materials-selection-for-processing",
+      "slug": "two-vessel-materials-tradeoff-independent",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "A vessel must hold a corrosive process fluid at 2.5 MPa and 120 degC. Two options both satisfy the thin-wall thickness requirement: (a) carbon steel with a corrosion-resistant polymer liner, or (b) solid Hastelloy (a high-nickel corrosion-resistant alloy). Identify at least three process-structure-property factors (beyond the stress calculation) that would actually decide between them.",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "solution": "(1) Fabrication/weldability: carbon steel is far easier and cheaper to weld and fabricate into complex vessel geometries than Hastelloy, which requires specialized welding procedures and consumables due to its high alloy content. (2) Cost: Hastelloy is dramatically more expensive per unit mass than carbon steel, and while option (a) requires an additional lining step/material, the base structural material remains cheap -- the total installed cost comparison depends heavily on vessel size and liner application cost. (3) Long-term maintenance/reliability risk: a polymer liner (option a) can degrade, crack, or delaminate over time, especially if the process fluid's corrosivity or temperature varies, creating a risk of undetected localized corrosion of the underlying carbon steel once the liner fails -- solid Hastelloy (option b) has no liner-failure mode to worry about, offering more predictable long-term corrosion performance at a much higher upfront cost. A full decision would weigh these against the vessel's expected service life, inspection/access difficulty, and consequence of failure, not the stress calculation alone."
+    },
+    {
+      "kc": "materials-selection-for-processing",
+      "slug": "specific-stiffness-selection-crossover",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Explain why a design engineer, comparing two materials that both technically satisfy a design equation, might still choose the more expensive option if the application has an unusually high consequence of failure (e.g. a pressure vessel in a populated area) versus a low-consequence application (e.g. a non-critical storage tank in a remote location).",
+      "source": "MIT OCW 3.044 Materials Processing (style, following the course's lecture sequence) style",
+      "solution": "Materials selection weighs criteria PROPORIONALLY to how much they matter for the specific application -- for a high-consequence-of-failure application, the 'cost' of an unexpected corrosion-related failure (safety risk, environmental damage, liability, reputational harm) can vastly exceed the extra upfront material cost of the more robust, more expensive option, shifting the effective tradeoff calculation strongly toward reliability even at a large cost premium. For a low-consequence, remote, easily-inspected application, that same reliability premium may not be justified, and the cheaper option (even if it requires more frequent inspection or eventual replacement) can be the economically and practically sound choice. This is exactly the kind of context-dependent weighting the materials-selection-principle KC (from chee-380) and this KC's own framework both emphasize: there is no universally 'correct' material choice independent of the specific application's full set of requirements and risk tolerance."
+    }
+  ]
+}

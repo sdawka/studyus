@@ -80,6 +80,52 @@
             }
           ],
           "misconceptions": []
+        },
+        {
+          "slug": "powder-processing-and-sintering",
+          "name": "Powder processing and sintering",
+          "kc_type": "concept",
+          "description": "Explain sintering as a diffusion-driven densification process that reduces total surface energy by eliminating porosity and forming interparticle necks, and compute the linear shrinkage and percent-of-theoretical density that result from a compaction-and-sintering route.",
+          "practice_notes": "Tie the mechanism back to Fick's laws: atoms diffuse from particle surfaces and grain boundaries toward the interparticle neck region because that's where reducing curved surface area lowers the system's total surface energy — sintering is diffusion doing thermodynamic work, not just 'heating powder until it sticks.' For the numbers, always compute shrinkage as a LENGTH ratio and density as a MASS/VOLUME ratio against theoretical (fully dense) density — don't confuse the two.",
+          "sort_order": 4,
+          "prereqs": ["chee-380-materials-science#diffusion-ficks-laws"],
+          "resources": [
+            {
+              "label": "NPTEL — Powder Metallurgy",
+              "url": "https://onlinecourses.nptel.ac.in/noc24_mm104/preview",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Sintering shrinkage and density — fully worked",
+              "body": "A powder compact ('green' part) is pressed to a length of 50.0 mm, then sintered, coming out at a final length of 42.5 mm. The theoretical (fully dense, pore-free) density of the material is 8.9 g/cm3. The green compact has a measured density of 6.2 g/cm3, and the sintered part has a measured density of 8.4 g/cm3.\n\nLinear shrinkage: (Lgreen - Lsintered)/Lgreen x 100 = (50.0 - 42.5)/50.0 x 100 = 7.5/50.0 x 100 = **15.0%**.\n\nGreen density as % of theoretical: 6.2/8.9 x 100 ~= **69.7%** -- meaning roughly 30% of the green compact's volume is still pore space before sintering.\n\nSintered density as % of theoretical: 8.4/8.9 x 100 ~= **94.4%** -- sintering has eliminated most, but not all, of the porosity; the remaining ~5.6% residual porosity is typical for a conventional (non-hot-pressed) sintering route and is exactly the kind of gap that limits sintered parts' fatigue performance relative to fully wrought material."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "A second sintering run -- you finish the density calculation",
+              "body": "A green compact of length 60.0 mm sinters down to 52.0 mm. Theoretical density of the material is 7.6 g/cm3, and the sintered part's measured density is 7.15 g/cm3.\n\nGiven: linear shrinkage = (60.0 - 52.0)/60.0 x 100 = 8.0/60.0 x 100 = 13.3%.\n\nYour turn: compute the sintered part's density as a percentage of theoretical density, and state whether this part has more or less residual porosity than the worked example above (94.4% of theoretical).\n\n(Check: 7.15/7.6 x 100 ~= 94.1% -- very close to, but slightly lower than, the worked example's 94.4%, meaning this part retains marginally more residual porosity.)"
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Green density and sintering target -- solve independently",
+              "body": "A ceramic powder compact is pressed to a green length of 80.0 mm and a green density of 3.1 g/cm3. The fully dense (theoretical) value for this ceramic is 5.6 g/cm3, and a sintering schedule is expected to produce a final part with 96% of theoretical density and 12.5% linear shrinkage. Compute: (a) the green density as a percentage of theoretical, (b) the expected sintered density in g/cm3, (c) the expected final sintered length."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "sintering-is-melting",
+              "name": "Sintering works by partially melting the powder particles together",
+              "description": "The learner believes sintering densifies a powder compact primarily through localized melting at particle contact points, rather than through solid-state atomic diffusion driven by the reduction of total surface energy -- sintering is typically carried out well below the material's melting point.",
+              "root_cause": "The visible outcome (loose powder becoming a solid, bonded part) looks similar to melting-and-resolidifying processes the learner has already studied (casting, welding), and 'heating something until it fuses' is the most available mental model for how separate particles become one solid piece.",
+              "diagnostic_probe": "A ceramic powder is sintered at a temperature well below its melting point and still densifies significantly, forming strong necks between particles and shrinking measurably. If no melting occurred, what mechanism actually moved material from the particle interiors and surfaces into the neck regions?",
+              "correction": "Sintering densifies a powder compact through solid-state atomic diffusion (surface diffusion, grain-boundary diffusion, and volume diffusion), not melting. Atoms migrate toward the neck regions between touching particles because doing so reduces the total curved surface area and therefore the total surface energy of the system -- the same thermodynamic driving force that governs grain growth and Ostwald ripening. This is why sintering temperatures are typically 60-80% of the material's absolute melting temperature, well below the point where any liquid phase would appear."
+            }
+          ]
         }
       ]
     },
@@ -333,6 +379,52 @@
               "root_cause": "Early, simplified teaching examples of solid-solution strengthening show a clean, monotonic strength-vs-composition trend over a modest concentration range within the solubility limit, and learners extrapolate that trend indefinitely without being shown what happens once the solubility limit is exceeded or a second brittle phase begins to dominate the microstructure.",
               "diagnostic_probe": "A Cu-Be alloy's strength increases dramatically as beryllium content rises toward its ~2 wt% solubility limit (with proper aging heat treatment). A student assumes doubling the beryllium content again would double the strength again. What actually happens once beryllium content exceeds the solubility limit, and why might a higher-Be alloy actually perform worse in service?",
               "correction": "Solid-solution and precipitation strengthening are bounded by the solute's solubility limit in the base metal; below that limit, more solute generally does increase strength. Beyond the solubility limit, excess solute forms coarse second-phase particles or brittle intermetallic compounds that do not strengthen the matrix the same way, and typically reduce ductility and toughness — so 'more alloying element' does not translate into indefinitely 'more strength,' and can make the material perform worse overall once the useful compositional range is exceeded."
+            }
+          ]
+        },
+        {
+          "slug": "cold-work-and-recrystallization",
+          "name": "Cold work, strain hardening, and recrystallization",
+          "kc_type": "rule",
+          "description": "Compute the percent cold work from a before/after cross-sectional area change, relate it to the resulting strength/ductility tradeoff, and explain how a recrystallization anneal restores ductility by nucleating new, strain-free grains.",
+          "practice_notes": "Percent cold work is always defined on CROSS-SECTIONAL AREA, not diameter or length directly: %CW = (A0 - Ad)/A0 x 100. When going the other direction (given %CW, find the final dimension), solve for Ad first, then back out the diameter — don't try to shortcut through a diameter ratio, since area scales as the square of diameter.",
+          "sort_order": 3,
+          "prereqs": ["chee-380-materials-science#stress-strain-curve-quantities", "chee-380-materials-science#crystal-defect-classification"],
+          "resources": [
+            {
+              "label": "DoITPoMS — Recrystallization (TLP)",
+              "url": "https://www.doitpoms.ac.uk/tlplib/recrystallization/index.php",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Percent cold work from wire drawing — fully worked",
+              "body": "A copper rod is cold-drawn from an initial diameter d0 = 15.2 mm to a final diameter dd = 12.2 mm. Find the percent cold work.\n\nStep 1 — cross-sectional areas: A0 = pi(d0/2)^2 = pi(7.6)^2 = 181.46 mm^2. Ad = pi(dd/2)^2 = pi(6.1)^2 = 116.90 mm^2.\n\nStep 2 — percent cold work: %CW = (A0 - Ad)/A0 x 100 = (181.46 - 116.90)/181.46 x 100 = 64.56/181.46 x 100 ≈ **35.6%**.\n\nAt this level of cold work, copper's yield and tensile strength both rise substantially (typically 2-3x the annealed value) while its ductility (%elongation) drops sharply — the dislocation density has increased enormously, and dislocations tangling with each other is exactly what raises the stress needed for further plastic flow (strain hardening)."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Final diameter from a target percent cold work — you finish the algebra",
+              "body": "A rod with initial diameter d0 = 10.0 mm is to be cold-drawn to 30% cold work. Find the final diameter.\n\nGiven: A0 = pi(5.0)^2 = 78.54 mm^2, and %CW = (A0 - Ad)/A0 x 100 = 30 means Ad = A0(1 - 0.30) = 78.54 x 0.70 = 54.98 mm^2.\n\nYour turn: solve Ad = pi(dd/2)^2 for dd.\n\n(Check: dd = 2*sqrt(Ad/pi) = 2*sqrt(54.98/3.1416) = 2*sqrt(17.50) = 2(4.18) ≈ 8.37 mm.)"
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Cold work then recrystallization anneal — solve independently",
+              "body": "A brass strip is cold-rolled from 8.0 mm to 5.5 mm thickness (width and length essentially unchanged, so the area ratio equals the thickness ratio). Compute the percent cold work. Then explain, without doing further calculation, what happens to the strip's grain structure, strength, and ductility if it is subsequently given a recrystallization anneal above its recrystallization temperature — and why a manufacturer might deliberately cold-work and then anneal a part instead of just leaving it in the annealed (uncold-worked) state to begin with."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "cold-work-percentage-uses-diameter-directly",
+              "name": "Percent cold work can be computed directly from the diameter (or length) ratio",
+              "description": "The learner computes %CW using the change in diameter or linear dimension directly (e.g., (d0-dd)/d0 x 100) instead of the change in cross-sectional AREA, understating the true amount of deformation because area scales as the square of a linear dimension.",
+              "root_cause": "Diameter is the dimension most directly measured and reported for a rod or wire, so it's the natural quantity to plug into a percent-change formula, and the definition's insistence on area (rather than the more intuitively available diameter) is easy to skip past without a worked contrast showing how different the two answers are.",
+              "diagnostic_probe": "A rod's diameter is reduced by 20% during drawing (from 10.0 mm to 8.0 mm). A student computes %CW as 20% directly from the diameter change. Using A0 = pi(5.0)^2 = 78.54 mm^2 and Ad = pi(4.0)^2 = 50.27 mm^2, what is the actual percent cold work, and why is it so much larger than the diameter-based estimate?",
+              "correction": "Percent cold work is defined strictly on cross-sectional area: %CW = (A0 - Ad)/A0 x 100, not on diameter or length directly. For a 20% diameter reduction (10.0 mm to 8.0 mm), the actual %CW = (78.54 - 50.27)/78.54 x 100 ≈ 36%, nearly double the naive diameter-based estimate — because area depends on the square of the diameter, even a modest linear dimension change corresponds to a much larger area (and therefore deformation) change."
             }
           ]
         }
