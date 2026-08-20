@@ -882,7 +882,13 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
       expect(body.data.longest_streak).toBeDefined();
       expect(Array.isArray(body.data.recent_events)).toBe(true);
       expect(Array.isArray(body.data.by_course)).toBe(true);
-      expect(body.data.knowledge_map).toBeNull();
+      // Frontier summary counts (src/lib/zpd.ts) replaced the old null stub.
+      expect(body.data.knowledge_map).toEqual({
+        frontier: expect.any(Number),
+        blocked: expect.any(Number),
+        mastered: expect.any(Number),
+        total: expect.any(Number),
+      });
     });
   });
 

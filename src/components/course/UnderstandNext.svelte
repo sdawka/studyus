@@ -41,6 +41,11 @@
               <span class="pill pill-warn">idle {pick.idleDays}d</span>
             {/if}
           </div>
+          {#if pick.blockedBy.length > 0}
+            <!-- Informational, not a gate — the pick is still shown and
+                 still links to /learn (anti-gamification: no locked-out UI). -->
+            <p class="unlocks-line">unlocks after {pick.blockedBy[0]}</p>
+          {/if}
         </li>
       {/each}
     </ul>
@@ -122,4 +127,11 @@
     min-width: 2.4rem;
   }
   .pick-meta .pill { flex-shrink: 0; }
+
+  .unlocks-line {
+    margin: 0;
+    font-size: 12px;
+    font-style: italic;
+    color: var(--muted);
+  }
 </style>

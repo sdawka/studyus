@@ -11,6 +11,7 @@ import { getDb } from '../../../db/client';
 import { getCourseBySlug } from '../../../lib/services/courses';
 import { listTasks } from '../../../lib/services/tasks';
 import { sweepTasks } from '../../../lib/services/taskSweep';
+import { getCourseReadiness } from '../../../lib/services/zpd';
 import { toApi } from '../../../lib/serialize';
 import { hueFor } from '../../../lib/courseHue';
 import { NotFoundError, notFound } from '../../../lib/handleNotFound';
@@ -31,6 +32,11 @@ try {
 await sweepTasks(db, userId);
 const allTasks = await listTasks(db, userId, { sweep: false });
 
+// ZPD readiness (src/lib/zpd.ts, one hop out for cross-course prereqs) —
+// merged into each KC below so UnderstandNext.svelte stays fetch-free.
+const readiness = await getCourseReadiness(db, userId, course.id);
+const unreadyPrereqNamesByKc = new Map(readiness.map((r) => [r.id, r.unreadyPrereqNames]));
+
 // Slim island props: exactly what UnderstandNext/MasteryCard render, not
 // the full DB rows.
 const branches = course.branches.map((b) => ({
@@ -42,6 +48,7 @@ const branches = course.branches.map((b) => ({
     mastery: kc.mastery ?? 0,
     status: kc.status ?? null,
     lastEventAt: kc.lastEventAt ?? null,
+    unreadyPrereqNames: unreadyPrereqNamesByKc.get(kc.id),
   })),
 }));
 ---

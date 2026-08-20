@@ -2,10 +2,12 @@
 // the handful of KCs most worth a deep-work absorb session (/learn/[kcId])
 // right now. Two pools, both excluding mastered KCs:
 //  - weak: started (mastery > 0) — lowest mastery first, staleness (oldest
-//    lastEventAt) breaking ties;
+//    lastEventAt) breaking ties, then a stable partition sinking ZPD-blocked
+//    KCs below unblocked ones (never hard-excluded — see `unreadyPrereqNames`);
 //  - new: untouched (mastery 0) in the caller's order (branch/KC sortOrder,
-//    i.e. curriculum order) — guaranteed one slot whenever any exists, so a
-//    course you're behind on still points forward, not only backward.
+//    i.e. curriculum order), same unblocked-first stable partition — guaranteed
+//    one slot whenever any exists, so a course you're behind on still points
+//    forward, not only backward.
 // The "idle Nd" annotation mirrors taskSweep's stale_kc 7-day threshold but
 // is display-only — no tasks are minted here (the sweep already does that).
 export interface UnderstandNextKc {
@@ -14,6 +16,11 @@ export interface UnderstandNextKc {
   mastery: number;
   status: string | null;
   lastEventAt: number | null;
+  // ZPD readiness (src/lib/zpd.ts): names of this KC's not-yet-ready
+  // prerequisites, merged in by the course page from getCourseReadiness.
+  // Absent (undefined) is treated as unblocked — every existing caller that
+  // predates ZPD keeps its exact prior behavior.
+  unreadyPrereqNames?: string[];
 }
 
 export interface UnderstandNextPick {
@@ -22,6 +29,26 @@ export interface UnderstandNextPick {
   // Days since the KC's last event, populated only at/past the stale
   // threshold (a KC touched yesterday isn't worth an "idle" nag).
   idleDays: number | null;
+  // Names of not-yet-ready prerequisites blocking this pick; empty when
+  // unblocked (or when readiness wasn't supplied at all).
+  blockedBy: string[];
+}
+
+function blockedByOf(kc: UnderstandNextKc): string[] {
+  return kc.unreadyPrereqNames ?? [];
+}
+
+function isBlocked(kc: UnderstandNextKc): boolean {
+  return blockedByOf(kc).length > 0;
+}
+
+// Stable partition: unblocked KCs first, blocked ones sunk to the end,
+// preserving each group's relative order — Array#sort is spec-guaranteed
+// stable, so sorting solely on the blocked flag never reshuffles within a
+// group already ordered by the caller (mastery/staleness, or curriculum
+// order).
+function sinkBlocked<T extends UnderstandNextKc>(kcs: T[]): T[] {
+  return [...kcs].sort((a, b) => Number(isBlocked(a)) - Number(isBlocked(b)));
 }
 
 export const UNDERSTAND_NEXT_LIMIT = 4;
@@ -42,17 +69,22 @@ export function selectUnderstandNext(
 ): UnderstandNextPick[] {
   const notMastered = kcs.filter((k) => k.status !== 'mastered');
 
-  const weak = notMastered
-    .filter((k) => k.mastery > 0)
-    .sort((a, b) => a.mastery - b.mastery || (a.lastEventAt ?? 0) - (b.lastEventAt ?? 0));
-  const fresh = notMastered.filter((k) => k.mastery === 0);
+  const weak = sinkBlocked(
+    notMastered
+      .filter((k) => k.mastery > 0)
+      .sort((a, b) => a.mastery - b.mastery || (a.lastEventAt ?? 0) - (b.lastEventAt ?? 0)),
+  );
+  // "new" pool stays in curriculum order but sinks blocked KCs the same
+  // way — the reserved slot picks the first *unblocked* untouched KC,
+  // falling back to a blocked one only when every fresh KC is blocked.
+  const fresh = sinkBlocked(notMastered.filter((k) => k.mastery === 0));
 
   const reservedForNew = fresh.length > 0 ? 1 : 0;
   const weakPicks = weak.slice(0, Math.max(0, limit - reservedForNew));
   const freshPicks = fresh.slice(0, limit - weakPicks.length);
 
   return [
-    ...weakPicks.map((kc) => ({ kc, reason: 'weak' as const, idleDays: idleDaysOf(kc, now) })),
-    ...freshPicks.map((kc) => ({ kc, reason: 'new' as const, idleDays: null })),
+    ...weakPicks.map((kc) => ({ kc, reason: 'weak' as const, idleDays: idleDaysOf(kc, now), blockedBy: blockedByOf(kc) })),
+    ...freshPicks.map((kc) => ({ kc, reason: 'new' as const, idleDays: null, blockedBy: blockedByOf(kc) })),
   ];
 }

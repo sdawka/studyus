@@ -79,4 +79,49 @@ describe('selectUnderstandNext', () => {
     expect(picks.find((p) => p.kc.id === 'stale')?.idleDays).toBe(12);
     expect(picks.find((p) => p.kc.id === 'recent')?.idleDays).toBeNull();
   });
+
+  it('leaves behavior unchanged when unreadyPrereqNames is absent (pre-ZPD callers)', () => {
+    // Same fixture as the "reserves one slot" test, but with no readiness
+    // field on any KC at all — must select identically.
+    const weak = [1, 2, 3, 4, 5].map((n) =>
+      kc({ id: `w${n}`, mastery: n * 10, status: 'learning', lastEventAt: NOW - DAY_MS }),
+    );
+    const picks = selectUnderstandNext([...weak, kc({ id: 'new-1' }), kc({ id: 'new-2' })], NOW);
+    expect(picks.map((p) => p.kc.id)).toEqual(['w1', 'w2', 'w3', 'new-1']);
+    expect(picks.every((p) => p.blockedBy.length === 0)).toBe(true);
+  });
+
+  it('weak pool: sinks blocked KCs below unblocked ones without dropping them, preserving order within each group', () => {
+    const picks = selectUnderstandNext(
+      [
+        kc({ id: 'blocked-strongest', mastery: 90, status: 'review', lastEventAt: NOW - DAY_MS, unreadyPrereqNames: ['Limits'] }),
+        kc({ id: 'unblocked-weak', mastery: 10, status: 'learning', lastEventAt: NOW - DAY_MS }),
+        kc({ id: 'unblocked-mid', mastery: 30, status: 'learning', lastEventAt: NOW - DAY_MS }),
+        kc({ id: 'blocked-weakest', mastery: 5, status: 'learning', lastEventAt: NOW - DAY_MS, unreadyPrereqNames: ['Derivatives'] }),
+      ],
+      NOW,
+      2, // limit
+    );
+    // Both unblocked picks come out ahead of either blocked KC, even though
+    // 'blocked-weakest' has lower mastery than both unblocked ones.
+    expect(picks.map((p) => p.kc.id)).toEqual(['unblocked-weak', 'unblocked-mid']);
+    expect(picks.every((p) => p.blockedBy.length === 0)).toBe(true);
+  });
+
+  it('"new" slot picks the first unblocked untouched KC, falling back to blocked only when all fresh KCs are blocked', () => {
+    const unblockedFallthrough = selectUnderstandNext(
+      [
+        kc({ id: 'fresh-blocked', unreadyPrereqNames: ['Vectors'] }),
+        kc({ id: 'fresh-unblocked' }),
+      ],
+      NOW,
+      1, // limit — isolates the single reserved "new" slot
+    );
+    expect(unblockedFallthrough.map((p) => p.kc.id)).toEqual(['fresh-unblocked']);
+    expect(unblockedFallthrough[0].blockedBy).toEqual([]);
+
+    const allBlocked = selectUnderstandNext([kc({ id: 'fresh-blocked', unreadyPrereqNames: ['Vectors'] })], NOW, 1);
+    expect(allBlocked.map((p) => p.kc.id)).toEqual(['fresh-blocked']);
+    expect(allBlocked[0].blockedBy).toEqual(['Vectors']);
+  });
 });

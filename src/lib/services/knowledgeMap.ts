@@ -25,7 +25,9 @@ type ScaffoldKind = ScaffoldRow['kind'];
 type ScaffoldRow = typeof scaffolds.$inferSelect;
 export type MisconceptionRow = typeof misconceptions.$inferSelect;
 
-function isReady(status: string, mastery: number): boolean {
+// Single readiness definition, shared with src/lib/zpd.ts's frontier
+// selector (imported there rather than redefined) — see docs/api.md.
+export function isReady(status: string, mastery: number): boolean {
   return status !== 'not-started' && mastery >= MASTERY_CONSTANTS.REVIEW_THRESHOLD;
 }
 

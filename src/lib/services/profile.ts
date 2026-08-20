@@ -1,9 +1,10 @@
 // Learner profile aggregation. Not a table — computed on read from courses,
-// kcs, and events. knowledgeMap is an explicit TODO stub per the plan.
+// kcs, and events.
 import { desc, eq } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { courses, events, kcs, users } from '../../db/schema';
 import { NotFoundError } from './util';
+import { getGlobalFrontier } from './zpd';
 
 function dayKey(ms: number): string {
   return new Date(ms).toISOString().slice(0, 10);
@@ -80,6 +81,11 @@ export async function getProfile(db: Db, userId: string) {
   const allUserEvents = await db.select({ ts: events.ts }).from(events).where(eq(events.userId, userId));
   const { current, longest } = computeStreaks(allUserEvents.map((e) => dayKey(e.ts)));
 
+  // Reuses getGlobalFrontier's single pass over kcs/kc_edges rather than a
+  // second bespoke count query — its `counts` are exactly the summary this
+  // page needs (src/lib/zpd.ts's frontier/blocked/mastered/total shape).
+  const { counts: knowledgeMap } = await getGlobalFrontier(db, userId);
+
   return {
     user_id: userId,
     overall_mastery: overallMastery,
@@ -87,6 +93,6 @@ export async function getProfile(db: Db, userId: string) {
     longest_streak: longest,
     current_streak: current,
     recent_events: recentEvents,
-    knowledge_map: null, // TODO
+    knowledge_map: knowledgeMap,
   };
 }

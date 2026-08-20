@@ -5,6 +5,7 @@ import { getDb } from '../db/client';
 import { eq, inArray } from 'drizzle-orm';
 import { courses, kcs } from '../db/schema';
 import { getProfile } from '../lib/services/profile';
+import { getGlobalFrontier } from '../lib/services/zpd';
 import StandingCard from '../components/profile/StandingCard.astro';
 import MasteryByCourse from '../components/profile/MasteryByCourse.astro';
 import ConceptsByStatus from '../components/profile/ConceptsByStatus.astro';
@@ -37,10 +38,7 @@ const totalKcs = Object.values(statusCounts).reduce((a, b) => a + b, 0);
 // TODO(track-b): wire listCapabilities/getMetaSkills (src/lib/services/capabilities.ts).
 const capabilities: CapabilityResponse[] | null = null;
 const metaSkills: MetaSkill[] | null = null;
-// TODO(track-a): wire getGlobalFrontier (src/lib/services/zpd.ts); also replace
-// getProfile's knowledge_map: null TODO (src/lib/services/profile.ts) with real
-// frontier summary counts.
-const frontier: FrontierResponse | null = null;
+const frontier: FrontierResponse = await getGlobalFrontier(db, userId);
 // TODO(track-c): wire listRitualsWithAdherence (src/lib/services/rituals.ts).
 const rituals: RitualResponse[] | null = null;
 ---
