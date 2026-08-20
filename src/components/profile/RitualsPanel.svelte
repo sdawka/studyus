@@ -86,6 +86,30 @@
     return new Date(`${date}T12:00:00.000Z`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
+  const DAY_MS = 86_400_000;
+
+  type AdherenceSlot = { date: string; state: 'done' | 'skipped' | 'upcoming'; real: boolean };
+
+  // The API only sends real occurrence dots (however many actually exist
+  // in the 28-day window — a brand-new weekly ritual may have just one),
+  // so a sparse array on its own renders as a lone floating dot with no
+  // sense of scale. Fill in the rest of the 28-day window with unfilled
+  // placeholder ticks (styled the same as a real 'upcoming' dot) so the
+  // row always reads as a fixed 4-week axis, real occurrences positioned
+  // among them by date.
+  function buildAdherenceAxis(occurrences: { date: string; state: 'done' | 'skipped' | 'upcoming' }[]): AdherenceSlot[] {
+    const byDate = new Map(occurrences.map((o) => [o.date, o]));
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const base = new Date(`${todayStr}T00:00:00.000Z`).getTime();
+    const slots: AdherenceSlot[] = [];
+    for (let i = 27; i >= 0; i--) {
+      const date = new Date(base - i * DAY_MS).toISOString().slice(0, 10);
+      const occ = byDate.get(date);
+      slots.push({ date, state: occ?.state ?? 'upcoming', real: !!occ });
+    }
+    return slots;
+  }
+
   // ---------------------------------------------------------------------
   // Create form
   // ---------------------------------------------------------------------
@@ -264,11 +288,11 @@
             <p class="cadence">{cadenceSummary(r)}</p>
             {#if r.adherence.occurrences.length > 0}
               <div class="dot-row" role="list" aria-label="Last 4 weeks">
-                {#each r.adherence.occurrences as o (o.date)}
+                {#each buildAdherenceAxis(r.adherence.occurrences) as slot (slot.date)}
                   <span
-                    class="dot dot-{o.state}"
+                    class="dot dot-{slot.state}"
                     role="listitem"
-                    title={`${formatDotDate(o.date)} — ${o.state}`}
+                    title={slot.real ? `${formatDotDate(slot.date)} — ${slot.state}` : formatDotDate(slot.date)}
                   ></span>
                 {/each}
               </div>

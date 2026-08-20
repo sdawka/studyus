@@ -3,7 +3,7 @@
 // right now. Two pools, both excluding mastered KCs:
 //  - weak: started (mastery > 0) — lowest mastery first, staleness (oldest
 //    lastEventAt) breaking ties, then a stable partition sinking ZPD-blocked
-//    KCs below unblocked ones (never hard-excluded — see `unreadyPrereqNames`);
+//    KCs below unblocked ones (never hard-excluded — see `unreadyPrereqs`);
 //  - new: untouched (mastery 0) in the caller's order (branch/KC sortOrder,
 //    i.e. curriculum order), same unblocked-first stable partition — guaranteed
 //    one slot whenever any exists, so a course you're behind on still points
@@ -16,11 +16,11 @@ export interface UnderstandNextKc {
   mastery: number;
   status: string | null;
   lastEventAt: number | null;
-  // ZPD readiness (src/lib/zpd.ts): names of this KC's not-yet-ready
-  // prerequisites, merged in by the course page from getCourseReadiness.
-  // Absent (undefined) is treated as unblocked — every existing caller that
-  // predates ZPD keeps its exact prior behavior.
-  unreadyPrereqNames?: string[];
+  // ZPD readiness (src/lib/zpd.ts): this KC's not-yet-ready prerequisites
+  // (id + name, so the UI can link to them), merged in by the course page
+  // from getCourseReadiness. Absent (undefined) is treated as unblocked —
+  // every existing caller that predates ZPD keeps its exact prior behavior.
+  unreadyPrereqs?: { id: string; name: string }[];
 }
 
 export interface UnderstandNextPick {
@@ -29,13 +29,13 @@ export interface UnderstandNextPick {
   // Days since the KC's last event, populated only at/past the stale
   // threshold (a KC touched yesterday isn't worth an "idle" nag).
   idleDays: number | null;
-  // Names of not-yet-ready prerequisites blocking this pick; empty when
-  // unblocked (or when readiness wasn't supplied at all).
-  blockedBy: string[];
+  // Not-yet-ready prerequisites blocking this pick; empty when unblocked
+  // (or when readiness wasn't supplied at all).
+  blockedBy: { id: string; name: string }[];
 }
 
-function blockedByOf(kc: UnderstandNextKc): string[] {
-  return kc.unreadyPrereqNames ?? [];
+function blockedByOf(kc: UnderstandNextKc): { id: string; name: string }[] {
+  return kc.unreadyPrereqs ?? [];
 }
 
 function isBlocked(kc: UnderstandNextKc): boolean {

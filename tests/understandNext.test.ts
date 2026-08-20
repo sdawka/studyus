@@ -80,7 +80,7 @@ describe('selectUnderstandNext', () => {
     expect(picks.find((p) => p.kc.id === 'recent')?.idleDays).toBeNull();
   });
 
-  it('leaves behavior unchanged when unreadyPrereqNames is absent (pre-ZPD callers)', () => {
+  it('leaves behavior unchanged when unreadyPrereqs is absent (pre-ZPD callers)', () => {
     // Same fixture as the "reserves one slot" test, but with no readiness
     // field on any KC at all — must select identically.
     const weak = [1, 2, 3, 4, 5].map((n) =>
@@ -94,10 +94,10 @@ describe('selectUnderstandNext', () => {
   it('weak pool: sinks blocked KCs below unblocked ones without dropping them, preserving order within each group', () => {
     const picks = selectUnderstandNext(
       [
-        kc({ id: 'blocked-strongest', mastery: 90, status: 'review', lastEventAt: NOW - DAY_MS, unreadyPrereqNames: ['Limits'] }),
+        kc({ id: 'blocked-strongest', mastery: 90, status: 'review', lastEventAt: NOW - DAY_MS, unreadyPrereqs: [{ id: 'limits', name: 'Limits' }] }),
         kc({ id: 'unblocked-weak', mastery: 10, status: 'learning', lastEventAt: NOW - DAY_MS }),
         kc({ id: 'unblocked-mid', mastery: 30, status: 'learning', lastEventAt: NOW - DAY_MS }),
-        kc({ id: 'blocked-weakest', mastery: 5, status: 'learning', lastEventAt: NOW - DAY_MS, unreadyPrereqNames: ['Derivatives'] }),
+        kc({ id: 'blocked-weakest', mastery: 5, status: 'learning', lastEventAt: NOW - DAY_MS, unreadyPrereqs: [{ id: 'derivatives', name: 'Derivatives' }] }),
       ],
       NOW,
       2, // limit
@@ -111,7 +111,7 @@ describe('selectUnderstandNext', () => {
   it('"new" slot picks the first unblocked untouched KC, falling back to blocked only when all fresh KCs are blocked', () => {
     const unblockedFallthrough = selectUnderstandNext(
       [
-        kc({ id: 'fresh-blocked', unreadyPrereqNames: ['Vectors'] }),
+        kc({ id: 'fresh-blocked', unreadyPrereqs: [{ id: 'vectors', name: 'Vectors' }] }),
         kc({ id: 'fresh-unblocked' }),
       ],
       NOW,
@@ -120,8 +120,8 @@ describe('selectUnderstandNext', () => {
     expect(unblockedFallthrough.map((p) => p.kc.id)).toEqual(['fresh-unblocked']);
     expect(unblockedFallthrough[0].blockedBy).toEqual([]);
 
-    const allBlocked = selectUnderstandNext([kc({ id: 'fresh-blocked', unreadyPrereqNames: ['Vectors'] })], NOW, 1);
+    const allBlocked = selectUnderstandNext([kc({ id: 'fresh-blocked', unreadyPrereqs: [{ id: 'vectors', name: 'Vectors' }] })], NOW, 1);
     expect(allBlocked.map((p) => p.kc.id)).toEqual(['fresh-blocked']);
-    expect(allBlocked[0].blockedBy).toEqual(['Vectors']);
+    expect(allBlocked[0].blockedBy).toEqual([{ id: 'vectors', name: 'Vectors' }]);
   });
 });

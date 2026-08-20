@@ -302,6 +302,22 @@
     }
   }
 
+  // The retrieval step's rail link points at the practice page's Quick
+  // Quiz section (id="quick-quiz" in PracticePanel.svelte). When the
+  // session is already running from that page, a normal href there is a
+  // dead reload — scroll to the section instead. Anywhere else (e.g. the
+  // general /study door), keep the full URL so the link still goes
+  // somewhere.
+  function onPracticePageFor(slug: string): boolean {
+    return typeof window !== 'undefined' && window.location.pathname === `/courses/${slug}/practice`;
+  }
+
+  function goToQuickQuiz(e: MouseEvent, slug: string) {
+    if (!onPracticePageFor(slug)) return;
+    e.preventDefault();
+    document.getElementById('quick-quiz')?.scrollIntoView({ behavior: 'smooth' });
+  }
+
   function startOver() {
     sessionId = null;
     selectedCourse = preselected;
@@ -412,7 +428,11 @@
                 {#if s.label}<span class="rail-detail">{s.label}</span>{/if}
                 {#if s.minutes}<span class="rail-minutes">{s.minutes}m</span>{/if}
                 {#if s.kind === 'retrieval' && selectedCourse}
-                  <a class="rail-link" href={`/courses/${selectedCourse.slug}/practice`}>Quick quiz →</a>
+                  <a
+                    class="rail-link"
+                    href={onPracticePageFor(selectedCourse.slug) ? '#quick-quiz' : `/courses/${selectedCourse.slug}/practice`}
+                    onclick={(e) => goToQuickQuiz(e, selectedCourse!.slug)}
+                  >Quick quiz →</a>
                 {:else if s.kind === 'new_material' && selectedCourse}
                   <a class="rail-link" href={`/courses/${selectedCourse.slug}`}>Course home →</a>
                 {:else if s.kind === 'game' && selectedCourse}

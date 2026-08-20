@@ -35,7 +35,7 @@ const allTasks = await listTasks(db, userId, { sweep: false });
 // ZPD readiness (src/lib/zpd.ts, one hop out for cross-course prereqs) —
 // merged into each KC below so UnderstandNext.svelte stays fetch-free.
 const readiness = await getCourseReadiness(db, userId, course.id);
-const unreadyPrereqNamesByKc = new Map(readiness.map((r) => [r.id, r.unreadyPrereqNames]));
+const unreadyPrereqsByKc = new Map(readiness.map((r) => [r.id, r.unreadyPrereqs]));
 
 // Slim island props: exactly what UnderstandNext/MasteryCard render, not
 // the full DB rows.
@@ -48,7 +48,7 @@ const branches = course.branches.map((b) => ({
     mastery: kc.mastery ?? 0,
     status: kc.status ?? null,
     lastEventAt: kc.lastEventAt ?? null,
-    unreadyPrereqNames: unreadyPrereqNamesByKc.get(kc.id),
+    unreadyPrereqs: unreadyPrereqsByKc.get(kc.id),
   })),
 }));
 ---

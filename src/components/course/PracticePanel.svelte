@@ -32,7 +32,7 @@
     <StudyFlow courses={[course]} openSession={openSession} preselectedCourseId={course.id} rituals={rituals} />
   </section>
 
-  <section class="section">
+  <section class="section" id="quick-quiz">
     <h2>Quick quiz</h2>
     <QuickQuiz courses={[{ id: course.id, title: course.title }]} preselectedCourse={course.id} />
   </section>

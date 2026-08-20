@@ -106,9 +106,9 @@ export async function getGlobalFrontier(db: Db, userId: string): Promise<Frontie
 
 export type KcReadiness = {
   id: string;
-  // Names of not-yet-ready prerequisites, empty when fully ready. Merges
-  // directly into UnderstandNextKc.unreadyPrereqNames.
-  unreadyPrereqNames: string[];
+  // Not-yet-ready prerequisites (id + name, so the UI can link to them),
+  // empty when fully ready. Merges directly into UnderstandNextKc.unreadyPrereqs.
+  unreadyPrereqs: { id: string; name: string }[];
 };
 
 /**
@@ -149,9 +149,9 @@ export async function getCourseReadiness(db: Db, userId: string, courseId: strin
 
   return courseKcs.map((k) => {
     const prereqIds = prereqsOf.get(k.id) ?? [];
-    const unreadyPrereqNames = prereqIds
+    const unreadyPrereqs = prereqIds
       .filter((id) => !(readiness.get(id) ?? false))
-      .map((id) => nameById.get(id) ?? id);
-    return { id: k.id, unreadyPrereqNames };
+      .map((id) => ({ id, name: nameById.get(id) ?? id }));
+    return { id: k.id, unreadyPrereqs };
   });
 }

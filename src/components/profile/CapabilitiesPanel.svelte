@@ -45,6 +45,14 @@
     const started = Math.round(cap.coverage * cap.members.length);
     return `${started} of ${cap.members.length} concept${cap.members.length === 1 ? '' : 's'} started`;
   }
+
+  // Reframe, not coerce (anti-gamification): when every row reads "not
+  // started", a bare list of zeroes looks like a scoreboard of failure.
+  // One quiet line points up at the learning frontier instead of adding
+  // badges/urgency to the rows themselves.
+  const allNotStarted = $derived(
+    capabilities !== null && capabilities.length > 0 && capabilities.every((c) => c.status === 'not-started'),
+  );
 </script>
 
 <section class="card">
@@ -53,6 +61,10 @@
     Competencies that aggregate concepts across courses, and the metacognitive skills behind how you
     study — retrieval practice, self-explanation, error analysis.
   </p>
+
+  {#if allNotStarted}
+    <p class="reframe-line">Nothing logged against these yet — the learning frontier above shows where to start.</p>
+  {/if}
 
   {#if capabilities === null}
     <p class="placeholder">Coming in this wave.</p>
@@ -104,6 +116,7 @@
   .card h2 { font-size: 1.05rem; margin: 0 0 1rem; }
   .stepdesc { color: var(--muted); font-size: 0.88rem; max-width: 620px; margin: 0 0 1rem; }
   .placeholder { color: var(--muted); font-size: 0.88rem; margin: 0; }
+  .reframe-line { color: var(--muted); font-size: 0.86rem; font-style: italic; margin: -0.4rem 0 1rem; }
 
   .competency-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.9rem; }
   .competency-row { min-width: 0; }

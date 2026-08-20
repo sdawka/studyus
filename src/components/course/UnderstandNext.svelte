@@ -43,8 +43,11 @@
           </div>
           {#if pick.blockedBy.length > 0}
             <!-- Informational, not a gate — the pick is still shown and
-                 still links to /learn (anti-gamification: no locked-out UI). -->
-            <p class="unlocks-line">unlocks after {pick.blockedBy[0]}</p>
+                 still links to /learn (anti-gamification: no locked-out UI).
+                 The blocker name is itself a door to /learn/<id>, quietly
+                 styled (muted, not accent-blue) so it reads as part of the
+                 sentence, not a competing call-to-action. -->
+            <p class="unlocks-line">unlocks after <a class="unlocks-link" href={`/learn/${pick.blockedBy[0].id}`}>{pick.blockedBy[0].name}</a></p>
           {/if}
         </li>
       {/each}
@@ -133,5 +136,15 @@
     font-size: 12px;
     font-style: italic;
     color: var(--muted);
+  }
+  .unlocks-link {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--hairline);
+    text-underline-offset: 2px;
+  }
+  .unlocks-link:hover {
+    color: var(--text);
+    text-decoration-color: currentColor;
   }
 </style>
