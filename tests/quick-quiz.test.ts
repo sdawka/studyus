@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../src/db/client';
-import { branches, courses, events, kcs, users } from '../src/db/schema';
+import { branches, courses, events, exercises, kcs, users } from '../src/db/schema';
 import { generateQuickQuiz, QuizNotGradableError, submitQuickQuizAnswers } from '../src/lib/flows/quick_quiz';
 
 const db = getDb(env.DB);
@@ -175,6 +175,94 @@ describe('generateQuickQuiz — kc_ids explicit targeting (v1.7)', () => {
     });
     const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' });
     expect(new Set(quiz.questions.map((q) => q.kc_id))).toEqual(new Set(kcIds));
+  });
+});
+
+async function seedMcq(kcId: string, overrides: Partial<typeof exercises.$inferInsert> = {}) {
+  await db.insert(exercises).values({
+    id: crypto.randomUUID(),
+    kcId,
+    slug: overrides.slug ?? `seeded-${crypto.randomUUID()}`,
+    kind: 'mcq',
+    prompt: overrides.prompt ?? 'Seeded question?',
+    source: 'source',
+    details: overrides.details ?? { options: ['S1', 'S2', 'S3', 'S4'], correct_index: 2, explanation: 'Seeded explanation' },
+  });
+}
+
+describe('generateQuickQuiz — v2.0 seeded exercise bank', () => {
+  it('prefers a seeded mcq item over AI generation for a KC that has one', async () => {
+    await seedMcq(kcIds[0]);
+    // If the AI path were hit for kcIds[0] it would return this instead —
+    // asserting the seeded question/options prove the AI path was skipped.
+    mockJsonFetch({
+      items: [kcIds[1], kcIds[2]].map((kc_id, i) => ({
+        kc_id,
+        question: `AI question ${i}?`,
+        options: ['A', 'B', 'C', 'D'],
+        correct_index: 0,
+        explanation: `AI explanation ${i}`,
+      })),
+    });
+
+    const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' });
+
+    const seededQuestion = quiz.questions.find((q) => q.kc_id === kcIds[0]);
+    expect(seededQuestion?.question).toBe('Seeded question?');
+    expect(seededQuestion?.options).toEqual(['S1', 'S2', 'S3', 'S4']);
+    expect(seededQuestion).not.toHaveProperty('correct_index');
+    expect(seededQuestion).not.toHaveProperty('explanation');
+  });
+
+  it('mixes seeded and AI-generated items, falling through to AI only for KCs with no seeded mcq', async () => {
+    await seedMcq(kcIds[0], { prompt: 'Seeded only for kc0' });
+    mockJsonFetch({
+      items: [kcIds[1], kcIds[2]].map((kc_id, i) => ({
+        kc_id,
+        question: `AI question ${i}?`,
+        options: ['A', 'B', 'C', 'D'],
+        correct_index: 0,
+        explanation: `AI explanation ${i}`,
+      })),
+    });
+
+    const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' });
+
+    expect(quiz.questions).toHaveLength(3);
+    expect(quiz.questions.find((q) => q.kc_id === kcIds[0])?.question).toBe('Seeded only for kc0');
+    expect(quiz.questions.find((q) => q.kc_id === kcIds[1])?.question).toBe('AI question 0?');
+    expect(quiz.questions.find((q) => q.kc_id === kcIds[2])?.question).toBe('AI question 1?');
+  });
+
+  it('skips the OpenRouter call entirely (works with no OPENROUTER_API_KEY) when every picked KC has a seeded item', async () => {
+    for (const kcId of kcIds) await seedMcq(kcId);
+    // Deliberately no mockJsonFetch stub — if the AI path were reached, the
+    // unstubbed global fetch would throw/fail, failing this test.
+
+    const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, { OPENROUTER_API_KEY: '', OPENROUTER_MODEL: '' });
+
+    expect(quiz.questions).toHaveLength(3);
+    for (const q of quiz.questions) {
+      expect(q.question).toBe('Seeded question?');
+    }
+  });
+
+  it('grading a fully-seeded quiz still appends retrieval_practice events with the standard payload/channel', async () => {
+    for (const kcId of kcIds) await seedMcq(kcId, { details: { options: ['S1', 'S2', 'S3', 'S4'], correct_index: 2, explanation: 'E' } });
+    const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, { OPENROUTER_API_KEY: '', OPENROUTER_MODEL: '' });
+
+    const result = await submitQuickQuizAnswers(db, userId, quiz.id, {
+      answers: quiz.questions.map((q) => ({ question_index: q.index, selected_index: 2 })),
+    });
+    expect(result.score).toBe(100);
+
+    for (const kcId of kcIds) {
+      const kcEvents = await db.select().from(events).where(eq(events.kcId, kcId));
+      const graded = kcEvents.find((e) => e.type === 'retrieval_practice');
+      expect(graded).toBeDefined();
+      expect(graded?.source).toBe('tutor');
+      expect(graded?.payload).toMatchObject({ channel: 'quick_quiz' });
+    }
   });
 });
 

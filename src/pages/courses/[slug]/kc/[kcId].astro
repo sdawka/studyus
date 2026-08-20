@@ -11,6 +11,7 @@ import MasteryBar from '../../../../components/course/MasteryBar.astro';
 import StatusChip from '../../../../components/course/StatusChip.astro';
 import KcTypeBadge from '../../../../components/course/KcTypeBadge.astro';
 import EventTimeline from '../../../../components/events/EventTimeline.svelte';
+import ExercisesSection from '../../../../components/kc/ExercisesSection.svelte';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
@@ -94,6 +95,11 @@ const historyEvents = [...recentEvents].reverse();
   <section class="section">
     <h2>Event timeline</h2>
     <EventTimeline client:visible kcId={kc.id} />
+  </section>
+
+  <section class="section">
+    <h2>Exercises</h2>
+    <ExercisesSection client:visible kcId={kc.id} />
   </section>
 
   <section class="section two-col">

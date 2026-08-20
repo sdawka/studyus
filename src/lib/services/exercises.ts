@@ -4,9 +4,9 @@
 // docs/api.md's v2.0 section for the API shapes this backs).
 import { and, asc, eq } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { exercises, kcs } from '../../db/schema';
+import { courses, exercises, kcs } from '../../db/schema';
 import type { ExerciseKind } from '../content/exercises';
-import { requireOwnedCourse, requireOwnedKc } from './util';
+import { NotFoundError, requireOwnedCourse, requireOwnedKc } from './util';
 
 export type ExerciseRow = typeof exercises.$inferSelect;
 
@@ -79,4 +79,23 @@ export async function listCourseMcqBank(db: Db, userId: string, courseId: string
     .where(and(eq(kcs.courseId, courseId), eq(exercises.kind, 'mcq')))
     .orderBy(asc(exercises.sortOrder))
     .then((rows) => rows.map((r) => r.exercise));
+}
+
+/**
+ * Loads a single exercise WITH full details (mcq: correct_index/explanation;
+ * numeric: answer/solution), ownership-checked via its KC's course — the
+ * reading surface the numeric/mcq attempt-grading flow needs. Never route
+ * this straight to a client response.
+ */
+export async function getExerciseWithAnswers(db: Db, userId: string, exerciseId: string): Promise<ExerciseRow> {
+  const rows = await db
+    .select({ exercise: exercises, courseUserId: courses.userId })
+    .from(exercises)
+    .innerJoin(kcs, eq(exercises.kcId, kcs.id))
+    .innerJoin(courses, eq(kcs.courseId, courses.id))
+    .where(eq(exercises.id, exerciseId))
+    .limit(1);
+  const row = rows[0];
+  if (!row || row.courseUserId !== userId) throw new NotFoundError('Exercise');
+  return row.exercise;
 }

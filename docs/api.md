@@ -826,7 +826,9 @@ New resource (`src/lib/schemas/rituals.ts`, `src/lib/services/rituals.ts`). A ri
 
 ## v2.0 Additions — Exercise bank
 
-**Status**: FOUNDATION LANDED (schema, Zod mirror, service, this route), additive. Auto-gradeable / self-checkable exercises attached to KCs — the complement to scaffolds (which teach, no answers). Schema: new `exercises` table (`src/db/schema.ts`), populated from `courses/<slug>/exercises.json` (sibling file to `content.json`, frozen contract `courses/exercise-schema.md`) by `scripts/seed.ts`, validated by the Zod mirror in `src/lib/content/exercises.ts`. QuickQuiz server-side grading integration (`src/lib/services/exercises.ts::listCourseMcqBank`) lands with a later track.
+**Status**: LANDED (schema, Zod mirror, service, routes, QuickQuiz integration, KC-detail UI), additive. Auto-gradeable / self-checkable exercises attached to KCs — the complement to scaffolds (which teach, no answers). Schema: new `exercises` table (`src/db/schema.ts`), populated from `courses/<slug>/exercises.json` (sibling file to `content.json`, frozen contract `courses/exercise-schema.md`) by `scripts/seed.ts`, validated by the Zod mirror in `src/lib/content/exercises.ts`.
+
+`POST /flows/quick_quiz` (see above) now prefers this seeded bank: for each picked KC with at least one seeded `mcq` exercise, the quiz uses one of those (server-side grading, no AI call for that KC) instead of generating a question via OpenRouter; only KCs with no seeded `mcq` items fall through to the existing AI path. If every picked KC has a seeded item, the OpenRouter call is skipped entirely — quick_quiz works with no `OPENROUTER_API_KEY` set. `submitQuickQuizAnswers` is unchanged (item-shape-agnostic); event payload/channel (`retrieval_practice`, `payload.channel: "quick_quiz"`, `source: "tutor"`) is identical regardless of whether an item came from the seeded bank or AI generation. Implementation: `src/lib/flows/quick_quiz.ts::loadSeededMcqByKc`.
 
 ### GET /kcs/:id/exercises
 
@@ -838,4 +840,23 @@ New resource (`src/lib/schemas/rituals.ts`, `src/lib/services/rituals.ts`). A ri
 - `numeric`: `details = { "unit": "string|null" }` — no `value`/`tolerance_pct`/`solution`.
 - `worked`: `details = { "solution": "string" }` — the solution *is* the content, so it's never stripped.
 
-Ownership: `:id` must belong to the caller (`requireOwnedKc`). The full (answer-included) `details` payload — `listKcExercises(db, userId, kcId, { withAnswers: true })` — and the course-wide mcq bank (`listCourseMcqBank(db, userId, courseId)`, full details, used for server-side grading) are service-layer only; no route currently returns either directly to a client.
+Ownership: `:id` must belong to the caller (`requireOwnedKc`). The full (answer-included) `details` payload — `listKcExercises(db, userId, kcId, { withAnswers: true })` — and the course-wide mcq bank (`listCourseMcqBank(db, userId, courseId)`, full details, used by QuickQuiz's server-side grading) are service-layer only; no route returns either directly to a client.
+
+Rendered on the KC detail page (`/courses/:slug/kc/:kcId`) by `src/components/kc/ExercisesSection.svelte`, grouped by kind: mcq items are a selectable option list graded via the attempt endpoint below; numeric items are a value input + unit label; worked items show a "Show solution" disclosure (no attempt call — the solution is already in the answer-stripped response).
+
+### POST /exercises/:id/attempt
+
+Grades a submitted attempt against exercise `:id` and appends one `retrieval_practice` event on its KC — the assess-and-check counterpart to `POST /flows/quick_quiz/:id/answers`. Ownership: `:id`'s KC must belong to the caller (`getExerciseWithAnswers`, 404 otherwise).
+
+**Body**: exactly one of:
+- `{ "value": number }` — numeric attempt.
+- `{ "selected_index": number }` — mcq attempt (accepted now for the KC-detail UI; also usable by a future QuickQuiz-from-bank review flow).
+
+A body shape that doesn't match the exercise's actual `kind` (including `worked`, which has no gradeable attempt) returns `400 invalid_input`.
+
+**Response** (200): `{ "data": { ...graded, "mastery_deltas": [...] } }` where `graded` is kind-specific:
+
+- numeric: `{ "correct": boolean, "answer": { "value": number, "unit": "string|null" }, "solution": "string" }` — correct iff `|submitted - answer.value| <= tolerance_pct% of |answer.value|` (from the seeded `answer.tolerance_pct`).
+- mcq: `{ "correct": boolean, "correct_index": number, "explanation": "string" }`.
+
+Event: `type: "retrieval_practice"`, `kc_id` = the exercise's KC, `payload: { correct, exercise_id, channel: "exercise" }`, `source: "tutor"` — same non-manual "flow-computed correctness check" idiom as quick_quiz's grading events (not the `POST /events` default of `"manual"`). Implementation: `src/lib/flows/exercise_attempt.ts::gradeExerciseAttempt`.

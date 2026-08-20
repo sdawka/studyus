@@ -19,6 +19,7 @@ import type { Db } from '../../db/client';
 import { courses, kcs, sessionKcs, studySessions } from '../../db/schema';
 import type { CreateQuickQuizInput, SubmitQuickQuizAnswersInput } from '../schemas/quickQuiz';
 import { createEvent } from '../services/events';
+import { listCourseMcqBank, listKcExercises, type ExerciseRow } from '../services/exercises';
 import { NotFoundError, requireOwnedCourse, requireOwnedKc } from '../services/util';
 import { chatCompletionJSON, type ChatMessage } from '../services/tutor/openrouter';
 
@@ -39,6 +40,56 @@ type QuizBlob = {
 };
 
 type TutorEnv = { OPENROUTER_API_KEY: string; OPENROUTER_MODEL: string };
+
+type McqDetails = { options: string[]; correct_index: number; explanation: string };
+
+// v2.0: QuickQuiz prefers the seeded exercise bank (courses/<slug>/
+// exercises.json, see courses/exercise-schema.md) over AI generation — only
+// KCs with no seeded `mcq` items fall through to the OpenRouter path below.
+// Course-scoped requests (input.course_id set) pull the whole course's mcq
+// bank in one query (listCourseMcqBank); otherwise (explicit kc_id/kc_ids,
+// or the mastery heuristic with no course_id, which can span courses) we
+// fetch per-KC since the target set is small (<=10) — the fewer-queries path
+// per KC beats grouping by an unknown course.
+async function loadSeededMcqByKc(
+  db: Db,
+  userId: string,
+  input: CreateQuickQuizInput,
+  targetKcs: Array<{ id: string }>,
+): Promise<Map<string, ExerciseRow[]>> {
+  const byKc = new Map<string, ExerciseRow[]>();
+
+  if (input.course_id) {
+    const bank = await listCourseMcqBank(db, userId, input.course_id);
+    for (const row of bank) {
+      const list = byKc.get(row.kcId) ?? [];
+      list.push(row);
+      byKc.set(row.kcId, list);
+    }
+    return byKc;
+  }
+
+  for (const kc of targetKcs) {
+    const rows = await listKcExercises(db, userId, kc.id, { kind: 'mcq', withAnswers: true });
+    if (rows.length > 0) byKc.set(kc.id, rows as unknown as ExerciseRow[]);
+  }
+  return byKc;
+}
+
+// Random-among-them is intentionally simple (Date.now-based randomness is
+// fine here — this is runtime app code serving quiz variety, not a
+// determinism-sensitive workflow script).
+function pickSeededItem(pool: ExerciseRow[], kcId: string): QuizItem {
+  const chosen = pool[Math.floor(Math.random() * pool.length)];
+  const details = chosen.details as McqDetails;
+  return {
+    kc_id: kcId,
+    question: chosen.prompt,
+    options: details.options,
+    correct_index: details.correct_index,
+    explanation: details.explanation,
+  };
+}
 
 async function pickDueKcs(db: Db, userId: string, input: CreateQuickQuizInput, count: number) {
   // v1.7: explicit KC targeting overrides the mastery heuristic entirely
@@ -150,12 +201,33 @@ export async function generateQuickQuiz(db: Db, userId: string, input: CreateQui
   const count = input.count ?? DEFAULT_COUNT;
   const targetKcs = await pickDueKcs(db, userId, input, count);
 
-  const raw = await chatCompletionJSON({
-    apiKey: env.OPENROUTER_API_KEY,
-    model: env.OPENROUTER_MODEL,
-    messages: buildQuizPrompt(targetKcs),
-  });
-  const items = parseQuizItems(raw, targetKcs);
+  const seededByKc = await loadSeededMcqByKc(db, userId, input, targetKcs);
+  const seededItemByKc = new Map<string, QuizItem>();
+  const aiTargetKcs = [];
+  for (const kc of targetKcs) {
+    const pool = seededByKc.get(kc.id);
+    if (pool && pool.length > 0) {
+      seededItemByKc.set(kc.id, pickSeededItem(pool, kc.id));
+    } else {
+      aiTargetKcs.push(kc);
+    }
+  }
+
+  // Only call out to AI generation for KCs the seeded bank didn't cover —
+  // if every picked KC has seeded items, this quiz works with no
+  // OPENROUTER_API_KEY set at all.
+  let aiItems: QuizItem[] = [];
+  if (aiTargetKcs.length > 0) {
+    const raw = await chatCompletionJSON({
+      apiKey: env.OPENROUTER_API_KEY,
+      model: env.OPENROUTER_MODEL,
+      messages: buildQuizPrompt(aiTargetKcs),
+    });
+    aiItems = parseQuizItems(raw, aiTargetKcs);
+  }
+
+  const aiItemByKc = new Map(aiItems.map((item) => [item.kc_id, item]));
+  const items = targetKcs.map((kc) => seededItemByKc.get(kc.id) ?? aiItemByKc.get(kc.id)!);
 
   const sessionId = crypto.randomUUID();
   const blob: QuizBlob = { items };
