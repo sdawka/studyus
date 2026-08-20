@@ -55,7 +55,7 @@ This document describes how studyus will integrate **Flue** (`@flue/server`, `@f
 - Astro Worker → Flue Worker via **service binding** (internal Cloudflare request, no HTTP overhead).
 
 ### 2. Services Stay Headless
-Every capability is a **pure function** `(userId, input: Zod) → output: Zod`:
+Every service function is a **pure function** `(userId, input: Zod) → output: Zod`:
 
 ```typescript
 // src/lib/services/quizzes.ts

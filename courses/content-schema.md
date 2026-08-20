@@ -135,3 +135,34 @@ Model the plausible real structure of the McGill course (assignments + midterm +
 ## Validation
 
 The seed validates every content.json against the Zod schema in `src/lib/schemas/courseContent.ts` (owned by the foundation track; this document is authoritative on shape). Validation failures abort the seed with the file + path. Cross-reference resolution (prereqs, kc_slugs) happens after all files load; unresolvable references warn and are skipped, cycles abort.
+
+## Capabilities (`courses/capabilities.json`) — v1.9, sibling file
+
+A single **global** file (not per-course, unlike `content.json`) authoring seed-sourced competencies — higher-order aggregates of KCs that intentionally cross course boundaries (e.g. "transport phenomena intuition" spanning fluid mechanics and heat-and-mass transfer). Resolved in a second seed pass, after every `content.json` has loaded, since a competency's members reference KCs across the whole content graph.
+
+```jsonc
+{
+  "schema_version": 1,
+  "capabilities": [
+    {
+      "slug": "transport-phenomena-intuition",   // kebab-case, unique in this file
+      "name": "Transport phenomena intuition",
+      "description": "1-2 sentences: what unifies these concepts as one competency.",
+      "members": [
+        // "<course-slug>/<kc-slug>" — same two KCs this file's schema uses
+        // elsewhere, but "/" separated (not "#", to read as a plain cross-file
+        // path rather than a same-file-relative ref). Every ref must resolve
+        // to a real KC in some seeded course's content.json.
+        { "ref": "chee-314-fluid-mechanics/bernoulli-equation", "weight": 2 },
+        { "ref": "chee-315-heat-and-mass-transfer/fouriers-law-and-conduction", "weight": 1 }
+      ]
+    }
+  ]
+}
+```
+
+- `weight` (optional, default 1): relative contribution to the competency's weighted-mean derived mastery (`src/lib/capabilityMastery.ts::foldCapabilityMastery`) — an integer, matching `capability_kcs.weight`.
+- Target **3-5 competencies**, each genuinely crossing at least two courses (a competency scoped to one course's KCs is just a branch — model it as one instead) — aim for real integrative reasoning, not an arbitrary bundle.
+- Unresolvable `ref`s warn and are skipped (same posture as `content.json`'s prereq/kc_slugs refs), not a hard abort — a typo in one competency shouldn't block the rest of the seed.
+- Seeded rows carry `source: 'seed'` on `capabilities`; `source: 'user'` is schema-ready for a future user-authored-competency UI, but nothing writes it yet.
+- Idempotent across reseeds: `scripts/seed.ts` upserts by a deterministic id derived from `(userId, slug)`, and purges any `capability_kcs` row (or whole seed-sourced `capabilities` row) no longer present in this file — editing membership or removing a competency here and re-running the seed reflects the change, it doesn't just accumulate.

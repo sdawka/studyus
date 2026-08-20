@@ -13,7 +13,7 @@
 ## Key Principles
 
 ### Headless, Tool-Shaped Services
-Every capability is a **pure function** over `(db, userId, input)` with Zod-validated input, implemented in `src/lib/services/` — one file per domain: `courses.ts`, `kcs.ts`, `events.ts`, `mastery.ts` (pure fold, no db writes), `assessments.ts`, `grades.ts`, `calendar.ts`, `notes.ts`, `tasks.ts`, `resources.ts`, `sessions.ts`, `attachments.ts`, `profile.ts`, `user.ts`, plus shared ownership/error helpers in `util.ts`.
+Every service function is a **pure function** over `(db, userId, input)` with Zod-validated input, implemented in `src/lib/services/` — one file per domain: `courses.ts`, `kcs.ts`, `events.ts`, `mastery.ts` (pure fold, no db writes), `assessments.ts`, `grades.ts`, `calendar.ts`, `notes.ts`, `tasks.ts`, `resources.ts`, `sessions.ts`, `attachments.ts`, `profile.ts`, `user.ts`, plus shared ownership/error helpers in `util.ts`.
 - Callable from HTTP routes today; from Flue tools or MCP later, with no route-handler logic to duplicate.
 - Route handlers under `src/pages/api/v1/**` only: parse the request (Zod), call one service function, wrap the result in `apiOk(toApi(result))` (or `apiError`/`withServiceErrors` on failure). See `docs/api.md` for the full endpoint list and the "Notes for M2+ agents" section for the calling convention from `.astro` pages vs. islands.
 - Ownership is enforced *inside* services (`requireOwnedCourse`/`requireOwnedKc` in `util.ts`) — a route never queries a table directly.

@@ -33,6 +33,14 @@ type CourseBranch = {
 
 type CourseLink = { label: string; url: string };
 
+// courses/capabilities.json (v1.9) — see courses/content-schema.md's
+// "Capabilities" section. `ref` is "<course-slug>/<kc-slug>", resolved
+// against the content graph's `${courseSlug}#${kcSlug}` catalog keys built
+// from the loaded courses/<slug>/content.json files.
+type CapabilityMemberRef = { ref: string; weight?: number };
+type CapabilityDef = { slug: string; name: string; description?: string; members: CapabilityMemberRef[] };
+type CapabilitiesFile = { schema_version: 1; capabilities: CapabilityDef[] };
+
 type CourseJson = {
   code: string;
   slug: string;
@@ -392,6 +400,65 @@ async function main() {
        VALUES (${sqlStr(linkId)}, ${sqlStr(assessmentId)}, ${sqlStr(kcId)}, 1, ${now})
        ON CONFLICT(id) DO NOTHING;`,
     );
+  }
+
+  // Capabilities (v1.9) — second pass, same idea as the kc_edges pass above:
+  // courses/capabilities.json's members reference "<course-slug>/<kc-slug>"
+  // KCs across the content graph, so this needs every content.json already
+  // loaded (contentKcIdByKey, built above) before it can resolve them.
+  // Global (not per-course) and user-scoped (competencies are cross-course),
+  // for the single seeded demo user. See courses/content-schema.md's
+  // "Capabilities" section for the file format.
+  const capabilitiesPath = join(process.cwd(), 'courses', 'capabilities.json');
+  if (existsSync(capabilitiesPath)) {
+    const capabilitiesData: CapabilitiesFile = JSON.parse(readFileSync(capabilitiesPath, 'utf-8'));
+    const seededCapabilityIds: string[] = [];
+
+    for (const cap of capabilitiesData.capabilities) {
+      const capabilityId = deterministicId('capability', `${userId}:${cap.slug}`);
+      seededCapabilityIds.push(capabilityId);
+      statements.push(
+        `INSERT INTO capabilities (id, user_id, slug, name, description, source, created_at)
+         VALUES (${sqlStr(capabilityId)}, ${sqlStr(userId)}, ${sqlStr(cap.slug)}, ${sqlStr(cap.name)}, ${sqlStr(cap.description ?? null)}, 'seed', ${now})
+         ON CONFLICT(id) DO UPDATE SET name=excluded.name, description=excluded.description;`,
+      );
+
+      const memberKcIds: string[] = [];
+      for (const member of cap.members) {
+        const [courseSlug, kcSlug] = member.ref.split('/');
+        const kcKey = `${courseSlug}#${kcSlug}`;
+        const kcId = contentKcIdByKey.get(kcKey);
+        if (!kcId) {
+          console.warn(`  capabilities.json: unresolvable member ref "${member.ref}" on capability "${cap.slug}" — skipped.`);
+          continue;
+        }
+        memberKcIds.push(kcId);
+        const capabilityKcId = deterministicId('capabilitykc', `${capabilityId}:${kcId}`);
+        statements.push(
+          `INSERT INTO capability_kcs (id, capability_id, kc_id, weight, created_at)
+           VALUES (${sqlStr(capabilityKcId)}, ${sqlStr(capabilityId)}, ${sqlStr(kcId)}, ${member.weight ?? 1}, ${now})
+           ON CONFLICT(capability_id, kc_id) DO UPDATE SET weight=excluded.weight;`,
+        );
+      }
+
+      // Purge members no longer listed in capabilities.json for this
+      // capability (mirrors the class_sessions "not in the current valid
+      // set" delete pattern below), so editing the file's member list is
+      // idempotent across reseeds instead of only ever growing.
+      if (memberKcIds.length > 0) {
+        statements.push(
+          `DELETE FROM capability_kcs WHERE capability_id=${sqlStr(capabilityId)} AND kc_id NOT IN (${memberKcIds.map((id) => sqlStr(id)).join(', ')});`,
+        );
+      }
+    }
+
+    // Purge seed-sourced capabilities no longer listed in capabilities.json
+    // at all (e.g. a competency renamed/removed between reseeds).
+    if (seededCapabilityIds.length > 0) {
+      statements.push(
+        `DELETE FROM capabilities WHERE user_id=${sqlStr(userId)} AND source='seed' AND id NOT IN (${seededCapabilityIds.map((id) => sqlStr(id)).join(', ')});`,
+      );
+    }
   }
 
   // ---------------------------------------------------------------------

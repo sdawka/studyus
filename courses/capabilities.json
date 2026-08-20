@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "capabilities": [
+    {
+      "slug": "transport-phenomena-intuition",
+      "name": "Transport phenomena intuition",
+      "description": "Reading fluid and thermal/mass transport problems the same way — conservation, driving forces, and the momentum/heat/mass analogy — across fluid mechanics and heat-and-mass transfer.",
+      "members": [
+        { "ref": "chee-314-fluid-mechanics/fluid-properties", "weight": 1 },
+        { "ref": "chee-314-fluid-mechanics/reynolds-number-and-flow-regime", "weight": 2 },
+        { "ref": "chee-314-fluid-mechanics/bernoulli-equation", "weight": 2 },
+        { "ref": "chee-314-fluid-mechanics/mechanical-energy-balance-with-losses", "weight": 1 },
+        { "ref": "chee-315-heat-and-mass-transfer/fouriers-law-and-conduction", "weight": 1 },
+        { "ref": "chee-315-heat-and-mass-transfer/convection-heat-transfer-coefficient", "weight": 2 },
+        { "ref": "chee-315-heat-and-mass-transfer/ficks-law-and-diffusive-flux", "weight": 1 },
+        { "ref": "chee-315-heat-and-mass-transfer/heat-and-mass-transfer-analogy", "weight": 2 }
+      ]
+    },
+    {
+      "slug": "reaction-kinetics-reasoning",
+      "name": "Reaction kinetics reasoning",
+      "description": "Modeling how fast a process happens and why — rate laws, temperature dependence, and mechanism — whether the reactor is a beaker or a bioreactor.",
+      "members": [
+        { "ref": "chee-310-physical-chemistry-for-engineers/rate-laws-and-reaction-order", "weight": 2 },
+        { "ref": "chee-310-physical-chemistry-for-engineers/arrhenius-equation-and-temperature-dependence", "weight": 1 },
+        { "ref": "chee-310-physical-chemistry-for-engineers/reaction-mechanisms-and-rate-determining-step", "weight": 2 },
+        { "ref": "chee-370-elements-of-biotechnology/monod-growth-kinetics", "weight": 1 },
+        { "ref": "chee-370-elements-of-biotechnology/michaelis-menten-kinetics", "weight": 2 }
+      ]
+    },
+    {
+      "slug": "separation-and-equilibrium-stage-design",
+      "name": "Separation and equilibrium-stage design",
+      "description": "Sizing a separation as a sequence of equilibrium stages — graphical and algebraic — and recognizing gas-liquid equilibrium as the same underlying idea.",
+      "members": [
+        { "ref": "chee-351-separation-processes/equilibrium-stage-concept", "weight": 1 },
+        { "ref": "chee-351-separation-processes/mccabe-thiele-method", "weight": 2 },
+        { "ref": "chee-351-separation-processes/minimum-reflux-minimum-stages", "weight": 1 },
+        { "ref": "chee-351-separation-processes/kremser-equation-absorption-stripping", "weight": 2 },
+        { "ref": "chee-351-separation-processes/staged-extraction-design", "weight": 1 },
+        { "ref": "chee-315-heat-and-mass-transfer/absorption-and-gas-liquid-equilibrium", "weight": 1 }
+      ]
+    },
+    {
+      "slug": "materials-structure-property-processing",
+      "name": "Materials structure-property-processing reasoning",
+      "description": "Connecting a material's microstructure to its properties, and its processing history to its microstructure — from phase diagrams through nucleation/growth to final part selection.",
+      "members": [
+        { "ref": "chee-380-materials-science/phase-diagram-reading", "weight": 2 },
+        { "ref": "chee-380-materials-science/lever-rule", "weight": 1 },
+        { "ref": "chee-380-materials-science/stress-strain-curve-quantities", "weight": 1 },
+        { "ref": "chee-380-materials-science/griffith-fracture-principle", "weight": 2 },
+        { "ref": "chee-484-materials-engineering/nucleation-classification", "weight": 1 },
+        { "ref": "chee-484-materials-engineering/growth-kinetics-avrami", "weight": 1 },
+        { "ref": "chee-484-materials-engineering/processing-variable-property-principle", "weight": 2 },
+        { "ref": "chee-484-materials-engineering/materials-selection-for-processing", "weight": 1 }
+      ]
+    },
+    {
+      "slug": "engineering-judgment-under-responsibility",
+      "name": "Engineering judgment under professional responsibility",
+      "description": "Weighing safety, risk, and tradeoffs the way a licensed engineer must — applied to a concrete design decision, not just the abstract code of ethics.",
+      "members": [
+        { "ref": "facc-250-responsibilities-of-the-professional-engineer/duty-of-competence-and-scope-of-practice", "weight": 1 },
+        { "ref": "facc-250-responsibilities-of-the-professional-engineer/paramountcy-of-public-safety-principle", "weight": 2 },
+        { "ref": "facc-250-responsibilities-of-the-professional-engineer/negligence-and-safety-factor", "weight": 1 },
+        { "ref": "facc-250-responsibilities-of-the-professional-engineer/sustainability-tradeoff-analysis", "weight": 1 },
+        { "ref": "facc-250-responsibilities-of-the-professional-engineer/risk-communication-to-public", "weight": 1 },
+        { "ref": "chee-484-materials-engineering/pressure-vessel-design-basics", "weight": 2 }
+      ]
+    }
+  ]
+}
