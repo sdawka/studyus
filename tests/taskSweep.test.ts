@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:test';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
 import {
@@ -464,6 +464,60 @@ describe('collectRituals', () => {
 
     await sweepTasks(db, userId, now);
     expect(await tasksOfType('ritual')).toHaveLength(7);
+  });
+
+  it('mints backfilled past occurrences already dismissed (never overdue), leaving only today active', async () => {
+    const now = Date.now();
+    const todayNoon = localNoon(now);
+    await makeRitual({ cadence: 'daily' });
+
+    await sweepTasks(db, userId, now);
+    const rows = await tasksOfType('ritual');
+    const todayRow = rows.find((r) => r.dueDate === todayNoon)!;
+    const pastRows = rows.filter((r) => r.dueDate !== todayNoon);
+
+    expect(todayRow.dismissedAt).toBeNull();
+    expect(pastRows).toHaveLength(6);
+    expect(pastRows.every((r) => r.dismissedAt !== null)).toBe(true);
+
+    // listTasks (the /tasks read path) never shows a dismissed row at all —
+    // so none of the backfilled past occurrences can ever render as overdue.
+    const visible = await db.select().from(tasks).where(and(eq(tasks.userId, userId), isNull(tasks.dismissedAt)));
+    expect(visible.filter((t) => t.type === 'ritual')).toHaveLength(1);
+  });
+
+  it('auto-dismisses ("skips") a stale not-done ritual task once its due date has passed, on a later sweep', async () => {
+    const day1 = Date.now();
+    const day1Noon = localNoon(day1);
+    await makeRitual({ cadence: 'daily' });
+
+    await sweepTasks(db, userId, day1);
+    const todayRow = (await tasksOfType('ritual')).find((r) => r.dueDate === day1Noon)!;
+    expect(todayRow.dismissedAt).toBeNull();
+
+    // A day later, that occurrence's due date is now in the past — dedupe
+    // means it's never re-minted, so without the expiry step it would sit
+    // as an undismissed, overdue row forever.
+    const day2 = day1 + DAY_MS;
+    await sweepTasks(db, userId, day2);
+    const [after] = await db.select().from(tasks).where(eq(tasks.id, todayRow.id));
+    expect(after.dismissedAt).not.toBeNull();
+    expect(after.done).toBe(false);
+  });
+
+  it('never dismisses a done ritual task, even once its due date has passed', async () => {
+    const day1 = Date.now();
+    const day1Noon = localNoon(day1);
+    await makeRitual({ cadence: 'daily' });
+
+    await sweepTasks(db, userId, day1);
+    const todayRow = (await tasksOfType('ritual')).find((r) => r.dueDate === day1Noon)!;
+    await db.update(tasks).set({ done: true, completedAt: day1 }).where(eq(tasks.id, todayRow.id));
+
+    await sweepTasks(db, userId, day1 + DAY_MS);
+    const [after] = await db.select().from(tasks).where(eq(tasks.id, todayRow.id));
+    expect(after.done).toBe(true);
+    expect(after.dismissedAt).toBeNull();
   });
 
   it('weekly cadence only mints on matching by_weekday days within the trailing window', async () => {

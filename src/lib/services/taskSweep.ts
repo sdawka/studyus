@@ -327,24 +327,37 @@ function ritualDedupeKey(ritualId: string, occurrenceDay: number): string {
 // occurrence dot); `dueDateOverride` lets after_class/before_class shift the
 // task's actual due date a day off of that occurrence day, same as
 // collectReviewAfterClass/collectPrepBeforeClass do for their own dedupe keys.
+//
+// Anti-gamification (vision.md): a ritual occurrence is never allowed to
+// show up as red/overdue in /tasks — it's either still open (today or a
+// legitimately pre-minted near-future before_class occurrence) or it's
+// 'skipped'. A backfilled occurrence whose due date already fell before
+// today is therefore minted pre-dismissed (dismissedAt set at insert time —
+// listTasks filters dismissed rows out entirely, and
+// services/rituals.ts::listRitualsWithAdherence reads a dismissed row as
+// the 'skipped' dot). `todayNoon` is only ever compared against, never
+// mutated, so this stays pure.
 function makeRitualTask(
   ritual: typeof rituals.$inferSelect,
   userId: string,
   occurrenceDay: number,
   now: number,
+  todayNoon: number,
   dueDateOverride?: number,
 ): NewTask {
+  const dueDate = dueDateOverride ?? occurrenceDay;
   return {
     id: crypto.randomUUID(),
     userId,
     title: ritual.name,
     description: ritual.description,
     type: 'ritual',
-    dueDate: dueDateOverride ?? occurrenceDay,
+    dueDate,
     courseId: ritual.courseId,
     ritualId: ritual.id,
     source: 'system',
     dedupeKey: ritualDedupeKey(ritual.id, occurrenceDay),
+    dismissedAt: dueDate < todayNoon ? now : null,
     createdAt: now,
   };
 }
@@ -391,14 +404,14 @@ async function collectRituals(db: Db, userId: string, now: number): Promise<NewT
 
     if (ritual.cadence === 'daily') {
       for (let offset = 0; offset <= RITUAL_RECURRING_LOOKBACK_DAYS; offset++) {
-        candidates.push(makeRitualTask(ritual, userId, todayNoon - offset * DAY_MS, now));
+        candidates.push(makeRitualTask(ritual, userId, todayNoon - offset * DAY_MS, now, todayNoon));
       }
     } else if (ritual.cadence === 'weekly') {
       const weekdays = parseMeetingDays(ritual.byWeekday);
       if (weekdays.length === 0) continue;
       for (let offset = 0; offset <= RITUAL_RECURRING_LOOKBACK_DAYS; offset++) {
         const day = todayNoon - offset * DAY_MS;
-        if (weekdays.includes(isoWeekday(day))) candidates.push(makeRitualTask(ritual, userId, day, now));
+        if (weekdays.includes(isoWeekday(day))) candidates.push(makeRitualTask(ritual, userId, day, now, todayNoon));
       }
     } else if (ritual.cadence === 'after_class') {
       if (!ritual.courseId) continue;
@@ -415,7 +428,7 @@ async function collectRituals(db: Db, userId: string, now: number): Promise<NewT
           ),
         );
       for (const session of sessions) {
-        candidates.push(makeRitualTask(ritual, userId, session.date, now, session.date + DAY_MS));
+        candidates.push(makeRitualTask(ritual, userId, session.date, now, todayNoon, session.date + DAY_MS));
       }
     } else if (ritual.cadence === 'before_class') {
       if (!ritual.courseId) continue;
@@ -424,7 +437,7 @@ async function collectRituals(db: Db, userId: string, now: number): Promise<NewT
       for (let offsetDays = 1; offsetDays <= PREP_BEFORE_CLASS_WINDOW_DAYS; offsetDays++) {
         const classDay = todayNoon + offsetDays * DAY_MS;
         if (meetingDays.includes(isoWeekday(classDay))) {
-          candidates.push(makeRitualTask(ritual, userId, classDay, now, classDay - DAY_MS));
+          candidates.push(makeRitualTask(ritual, userId, classDay, now, todayNoon, classDay - DAY_MS));
         }
       }
     }
@@ -459,6 +472,30 @@ export async function sweepTasks(db: Db, userId: string, now: number = Date.now(
     const inserts = candidates.map((row) => db.insert(tasks).values(row).onConflictDoNothing({ target: tasks.dedupeKey }));
     await db.batch(inserts as [(typeof inserts)[number], ...(typeof inserts)[number][]]);
   }
+
+  // Ritual expiry: a not-done, not-yet-dismissed ritual task whose due date
+  // has already passed quietly becomes 'skipped' (dismissedAt set) rather
+  // than lingering as a red "overdue" row forever — dedupe means it's never
+  // re-minted, so without this an unfinished today-occurrence would turn
+  // overdue tomorrow and stay that way indefinitely. Anti-gamification
+  // (vision.md): a ritual occurrence is either done today, or it quietly
+  // becomes skipped — never a debt. Scoped to this user, mirroring the
+  // retention purge below; runs regardless of which generator families are
+  // enabled — existing tasks still need cleanup even if their family (or
+  // every family) has since been toggled off.
+  await db
+    .update(tasks)
+    .set({ dismissedAt: now })
+    .where(
+      and(
+        eq(tasks.userId, userId),
+        eq(tasks.type, 'ritual'),
+        eq(tasks.done, false),
+        isNull(tasks.dismissedAt),
+        isNotNull(tasks.dueDate),
+        lt(tasks.dueDate, localNoon(now)),
+      ),
+    );
 
   // Two-pass task_courses backfill — load-bearing, must NOT be folded into
   // the insert batch above. After ON CONFLICT DO NOTHING, a candidate whose
