@@ -172,6 +172,15 @@ Flagged during the ZPD/capabilities/rituals verify pass, not fixed there because
 
 **Scope**: Requires multi-user, moderation policy, feed algorithm.
 
+### Exercise Bank
+
+**Shipped, v2.0**: Real per-KC auto-gradeable exercises — `exercises` table, seeded from `courses/<slug>/exercises.json` (sibling to `content.json`, frozen contract `courses/exercise-schema.md`): 748 exercises across 172 KCs (25 KCs added this wave) over the 9 seeded courses. `mcq`/`numeric` kinds are auto-graded (`POST /exercises/:id/attempt`); `worked` is self-checkable study material. `POST /flows/quick_quiz` now prefers this seeded `mcq` bank over an OpenRouter call, so quiz assessment works end-to-end with no `OPENROUTER_API_KEY` configured for any KC the bank covers. See `docs/architecture/data-model.md`'s `exercises` section and `docs/architecture/events-and-mastery.md`'s "Exercises: The Auto-Gradeable Complement to Scaffolds" section.
+
+**Still open**:
+- **Coverage stats surface**: no UI shows which KCs have a thin or missing exercise bank (e.g. an instructor/content-admin view, or just a `practice-summary`-style aggregate) — the 748/172 count above is a one-off wave tally, not a queryable metric today.
+- **User-authored exercises UI**: `exercises.origin` is schema-ready for `'user'` (mirrors `misconceptions`/`scaffolds`' seed/user split), but there's no authoring route or form — a student can't add their own practice item to a KC yet.
+- **Difficulty-adaptive selection**: `exercises.difficulty` (1–3, mirrors scaffold fading) is stored but unused for selection — QuickQuiz and the KC-detail Exercises section both show the seeded set undifferentiated by mastery level, rather than picking harder items as mastery climbs.
+
 ### Global Knowledge Map
 
 **Resolved, v1.9**: `LearnerProfile.knowledge_map` is no longer `null` — `GET /api/v1/profile/frontier` (`src/lib/zpd.ts`/`src/lib/services/zpd.ts`) computes the ZPD learning frontier (unmastered KCs whose every prerequisite is `ready`) across all non-archived courses, grouped by course, on `/profile`'s Frontier panel. This is the "nodes: KCs across all courses, edges: prerequisite" half of what was scoped below — still a pure per-request traversal, no persisted closure table.

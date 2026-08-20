@@ -1,6 +1,6 @@
 # studyus Data Model
 
-**Re-derived 2026-08-15, updated 2026-08-19 for v1.9, from `src/db/schema.ts` and `migrations/0000_dashing_cammi.sql`** (the sole migration file — see ADR-003's "Schema Management" section for why this is a single regenerated baseline, not an incremental history; this filename is the v1.9 regen — capabilities/capability_kcs/rituals + tasks.ritual_id/study_sessions.ritual_id — superseding the v1.6-era `0000_chemical_ink.sql`, which itself superseded the v1.5-era `0000_yielding_nocturne.sql`).
+**Re-derived 2026-08-15, updated 2026-08-19 for v1.9, updated 2026-08-20 for v2.0, from `src/db/schema.ts` and `migrations/0000_lively_proteus.sql`** (the sole migration file — see ADR-003's "Schema Management" section for why this is a single regenerated baseline, not an incremental history; this filename is the v2.0 regen — adds `exercises` — superseding the v1.9-era `0000_dashing_cammi.sql`, which itself superseded the v1.6-era `0000_chemical_ink.sql` and the v1.5-era `0000_yielding_nocturne.sql`).
 
 **Glossary note**: "capability" means two different things in this codebase, deliberately not unified. The `capabilities` table (below) is a **domain noun** — a competency a learner is building. Elsewhere (`docs/architecture/overview.md`, `agentic-channels.md`), "capability" was used loosely to mean *a pure service function* — those two docs were reworded to say "service function" instead once the domain table landed, to kill the collision at the source rather than footnote around it. Column names below are the actual snake_case DB names; `src/db/schema.ts` uses camelCase Drizzle field names that map onto them (e.g. `userId` → `user_id`). Every table's primary key is `id` (text, UUID from `crypto.randomUUID()`) unless noted otherwise; every table has `created_at` (integer epoch ms) unless noted.
 
@@ -146,6 +146,24 @@ KLI-matched instructional scaffolds for a KC (worked examples, retrieval prompts
 - `created_at`
 
 **No `user_id` column** (ownership via `kc_id`). Index: `scaffolds_kc_id_idx` on (`kc_id`).
+
+### exercises (v2.0)
+
+Auto-gradeable / self-checkable items attached to a KC — the assess-and-check complement to scaffolds (which teach, no answers). Seeded from `courses/<slug>/exercises.json` (sibling file to `content.json`; frozen contract `courses/exercise-schema.md`).
+
+- `id` (text, pk)
+- `kc_id` → `kcs.id`, **ON DELETE CASCADE**
+- `slug` (text) — unique within the KC (like `misconceptions`, not index-keyed like `scaffolds`)
+- `kind` (text enum: `mcq | numeric | worked`)
+- `difficulty` (integer, default `2`) — mirrors scaffold fading: `1` = supported/recall, `2` = standard, `3` = independent/transfer
+- `prompt` (text) — markdown; the full problem statement including given values and units
+- `details` (text, JSON mode, default `'{}'`) — kind-specific payload: `mcq` → `{options, correct_index, explanation}`; `numeric` → `{answer: {value, unit, tolerance_pct}, solution}`; `worked` → `{solution}`. Opaque here, shaped by the Zod mirror in `src/lib/content/exercises.ts`. `GET /kcs/:id/exercises` strips `correct_index`/`answer`/`solution` before serializing (see `docs/api.md`)
+- `source` (text) — real citation (textbook + chapter/section, or a course-material/OCW URL); named `source` rather than reusing `origin` because `origin` already means seed-vs-user
+- `origin` (text enum: `seed | user`, default `'seed'`) — `'user'` is schema-ready; no authoring UI yet
+- `sort_order` (integer, default `0`)
+- `created_at`
+
+Identity: `deterministicId('exercise', "<courseSlug>#<kcSlug>:<exerciseSlug>")` — slug-keyed like `misconceptions` so reordering the authoring file is safe; the seed pass upserts by id and purges seed-sourced rows whose `(kc, slug)` no longer appears in the file (same purge-on-reseed idiom as `scaffolds`/`misconceptions`). **No `user_id` column** (ownership via `kc_id`). Indexes: `exercises_kc_slug_unique` (unique) on (`kc_id`, `slug`); `exercises_kc_id_idx` on (`kc_id`).
 
 ### user_corrections (v1.7 — the accepted-correction ledger)
 
@@ -374,7 +392,7 @@ A learner-authored study structure — recurring practice, in-session shape, or 
 
 **No adherence table** (ADR-004, computed on read) — recurring adherence folds sweep-minted `ritual` tasks (`tasks.ritual_id`, dedupe key `ritual:<ritual_id>:<yyyymmdd>`) over a trailing window; session-shape adherence folds `study_sessions.ritual_id` usage over the same window. Index: `rituals_user_id_idx` on (`user_id`).
 
-## Index Inventory (full, from `migrations/0000_dashing_cammi.sql`)
+## Index Inventory (full, from `migrations/0000_lively_proteus.sql`)
 
 Every non-PK index currently in the schema:
 
@@ -385,6 +403,8 @@ Every non-PK index currently in the schema:
 | `courses_slug_unique` | courses | slug | ✓ |
 | `events_kc_id_idx` | events | kc_id | |
 | `events_user_ts_idx` | events | user_id, ts | |
+| `exercises_kc_slug_unique` | exercises | kc_id, slug | ✓ |
+| `exercises_kc_id_idx` | exercises | kc_id | |
 | `kcs_course_id_idx` | kcs | course_id | |
 | `kcs_course_slug_unique` | kcs | course_id, slug | ✓ |
 | `kc_edges_kc_prereq_unique` | kc_edges | kc_id, prereq_kc_id | ✓ |
@@ -410,7 +430,7 @@ Every table's `id` primary key is implicitly indexed by SQLite on top of the abo
 
 ## Foreign Keys & ON DELETE Behavior (full inventory)
 
-All FKs below are real SQL `FOREIGN KEY ... ON DELETE ...` constraints emitted into `migrations/0000_dashing_cammi.sql` from each column's `.references()` call in `schema.ts` — **D1 does enforce these**, contrary to a stale claim in ADR-003 (see that ADR's erratum).
+All FKs below are real SQL `FOREIGN KEY ... ON DELETE ...` constraints emitted into `migrations/0000_lively_proteus.sql` from each column's `.references()` call in `schema.ts` — **D1 does enforce these**, contrary to a stale claim in ADR-003 (see that ADR's erratum).
 
 | Column | References | ON DELETE |
 |---|---|---|
@@ -430,6 +450,7 @@ All FKs below are real SQL `FOREIGN KEY ... ON DELETE ...` constraints emitted i
 | study_sessions.ritual_id | rituals.id | set null |
 | misconceptions.kc_id | kcs.id | cascade |
 | scaffolds.kc_id | kcs.id | cascade |
+| exercises.kc_id | kcs.id | cascade |
 | user_corrections.user_id | users.id | cascade |
 | user_corrections.kc_id | kcs.id | set null |
 | user_corrections.misconception_id | misconceptions.id | set null |

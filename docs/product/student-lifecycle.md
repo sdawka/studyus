@@ -111,7 +111,7 @@ flowchart TD
 
 ## 6. Before an Exam
 
-As an assessment's due date approaches, review sharpens toward the KCs it actually covers. The `practice_kc` sweep generator ties an ungraded assessment to its lowest-mastery linked KCs (via `assessment_kcs`, the "Concepts covered" picker on `AssessmentsCard`) and the student works them through the course's Practice or Play tab, with the tutor's mode chosen by `kc_type` rather than by mastery level.
+As an assessment's due date approaches, review sharpens toward the KCs it actually covers. The `practice_kc` sweep generator ties an ungraded assessment to its lowest-mastery linked KCs (via `assessment_kcs`, the "Concepts covered" picker on `AssessmentsCard`) and the student works them through the course's Practice or Play tab, with the tutor's mode chosen by `kc_type` rather than by mastery level. **v2.0**: the Practice tab's QuickQuiz now grades against a seeded per-KC `mcq` bank first (falling back to AI generation only for KCs the bank doesn't cover yet), and a KC's own detail page gets a standalone Exercises section (`mcq`/`numeric`/`worked`) for direct, ungated drilling outside the quiz flow — both paths append the same `retrieval_practice` event and feed the identical mastery fold, just tagged with a different `channel` (`quick_quiz` vs. `exercise`; see `docs/architecture/events-and-mastery.md`).
 
 ```mermaid
 flowchart TD

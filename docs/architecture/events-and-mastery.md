@@ -157,6 +157,12 @@ A **ritual** is a learner-authored structure around studying, in either (or both
 
 Adherence is **computed on read, never stored** (no adherence table, per ADR-004): recurring adherence folds the trailing-28-day window of sweep-minted `ritual` tasks (done/generated ratio, plus a per-day dot row), session-shape adherence is a plain usage count off `study_sessions.ritualId`. Per the same anti-gamification stance as meta-skills above, the vocabulary is deliberately flat — **"skipped," never "missed"**, "N of M done in the last 4 weeks" rather than a streak counter, and there is no streak/badge/broken-chain framing anywhere in the adherence display. `groupId` is a schema-only forward-looking hook (always `null` in v1) for a future scope where a group of learners could share a ritual's cadence or shape (e.g. a study group mixing study with a shared activity) — see `data-model.md` for the read rule this implies.
 
+## Exercises: The Auto-Gradeable Complement to Scaffolds (v2.0)
+
+Scaffolds (above) teach — a `worked_example`, a `retrieval_prompt`, a `derivation_walkthrough` — but carry no structured answer to check against. **Exercises** (`exercises` table, seeded per-KC from `courses/<slug>/exercises.json`; see `data-model.md`) are the assess-and-check counterpart: `mcq` items grade against a stored `correct_index`, `numeric` items grade against a tolerance-checked target value, and `worked` items are self-checkable study material (a full solution, no submission). `POST /exercises/:id/attempt` grades a submission server-side and appends a dual-role `retrieval_practice` event on the exercise's KC, `payload.channel: "exercise"`.
+
+This gives `retrieval_practice` two distinct channels feeding the same event type and the same mastery fold: `channel: "quick_quiz"` (an AI-generated or, as of v2.0, seeded-bank question answered through the quick-quiz flow) and `channel: "exercise"` (a direct per-KC exercise attempt from the KC detail page). Both are dual-role (`is_instructional: true, is_assessment: true`, per `EVENT_ROLE_FLAGS`) and fold into mastery identically — the channel tag is provenance for analytics/debugging, not a different scoring path. `POST /flows/quick_quiz` prefers the seeded `mcq` bank over an OpenRouter call whenever a picked KC has one, which means assessment now works end-to-end with no `OPENROUTER_API_KEY` configured, for any KC the seeded bank covers.
+
 ## TODO
 
 - **AFM (Additive Factors Model)**: Extend the fold to estimate per-KC learning rate and per-instructional-method effectiveness.
