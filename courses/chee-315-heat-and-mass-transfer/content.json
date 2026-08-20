@@ -310,12 +310,61 @@
           "misconceptions": []
         },
         {
+          "slug": "extended-surfaces-and-fins",
+          "name": "Extended surfaces and fin performance",
+          "kc_type": "rule",
+          "description": "Compute the fin parameter m = sqrt(h*P/(k*A_c)), fin efficiency, and heat transfer rate for a straight rectangular or pin fin, and explain why adding fins increases total heat transfer from a surface even though the fin material itself runs cooler than the base as you move along its length.",
+          "practice_notes": "Practice the fixed sequence every time: compute m from h, k, and the fin's perimeter-to-cross-section ratio; correct the fin length for tip losses (L_c = L + t/2 for a rectangular fin with an unfinned tip approximation); evaluate eta_fin = tanh(m*L_c)/(m*L_c); then multiply by h, the total fin surface area, and the base-to-ambient temperature difference to get Q_fin.",
+          "sort_order": 7,
+          "prereqs": [
+            "#convection-heat-transfer-coefficient"
+          ],
+          "resources": [
+            {
+              "label": "LearnChemE — Heat Transfer simulations (conduction, convection, radiation, heat exchangers, LMTD)",
+              "url": "https://learncheme.com/simulations/heat-transfer/",
+              "kind": "canonical",
+              "pinned": true
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Rectangular fin efficiency and heat rate, fully worked (per meter width)",
+              "body": "An aluminum fin (k = 200 W/(m*K)) has thickness t = 3 mm and length L = 25 mm, extending from a base at T_b = 80 degC into air at T_infinity = 20 degC with h = 15 W/(m^2*K). Analyze per unit width (b = 1 m) of fin.\nStep 1: fin parameter m = sqrt(h*P/(k*A_c)). For a thin fin per unit width, perimeter P ~ 2*b = 2 (neglecting the thin edge contribution) and cross-section A_c = t*b = 0.003. So m = sqrt(15*2/(200*0.003)) = sqrt(30/0.6) = sqrt(50) = 7.071 /m.\nStep 2: corrected length (accounts for tip heat loss with an adiabatic-tip approximation) L_c = L + t/2 = 0.025 + 0.0015 = 0.0265 m.\nStep 3: m*L_c = 7.071*0.0265 = 0.1874; fin efficiency eta_fin = tanh(m*L_c)/(m*L_c) = tanh(0.1874)/0.1874 = 0.1853/0.1874 = 0.989 (98.9%).\nStep 4: fin surface area (both faces) per unit width A_fin = 2*L_c*b = 2*0.0265*1 = 0.053 m^2/m. Q_fin = eta_fin*h*A_fin*(T_b - T_infinity) = 0.989*15*0.053*60 = 47.1 W per meter of fin width.\nStep 5: sanity check against the bare base with no fin: Q_bare = h*(t*b)*(T_b-T_infinity) = 15*0.003*60 = 2.7 W -- the fin delivers about 17x more heat transfer than the bare base area alone would, which is the entire point of adding it: extra surface area, even at a slightly reduced average temperature, vastly outweighs the small efficiency loss from the temperature drop along the fin."
+            },
+            {
+              "kind": "self_explanation_prompt",
+              "level": 2,
+              "title": "Why does eta_fin approach 1 here, and when would it not?",
+              "body": "The worked example above found eta_fin = 0.989, very close to the ideal (isothermal, eta=1) limit. In your own words, explain why a small m*L_c value (short, thick, high-conductivity fin, or low h) pushes efficiency toward 1, and what would happen to eta_fin if the same fin were placed in boiling water (h ~ 5,000-20,000 W/(m^2*K)) instead of air (h ~ 15 W/(m^2*K)) -- would the fin still be as effective a design choice?"
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "Fin parameter, cold",
+              "body": "Without looking it up: write the formula for the fin parameter m in terms of h, k, and the fin's perimeter P and cross-sectional area A_c, and state (in words) what physical competition m represents -- between which two rates?"
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "fins-always-improve-heat-transfer",
+              "name": "Adding fins always improves heat transfer, regardless of the flow condition",
+              "description": "Learner treats fins as a universally beneficial add-on to any heated surface, without recognizing that fin effectiveness depends on the ratio of the fin material's conductivity to the surface heat-transfer coefficient (k/h) -- and can even be counterproductive when h is already very high (e.g., boiling or high-velocity liquid convection with a low-conductivity fin material).",
+              "root_cause": "Air-cooled examples (radiators, heat sinks, CPU coolers) dominate early instruction, and in all of them h is small enough that fins help enormously, so the underlying condition for fin effectiveness (large k, small h) never gets tested against a counterexample.",
+              "diagnostic_probe": "A student proposes adding thin steel fins (k ~ 15 W/(m*K), much lower than aluminum) to a surface submerged in boiling water (h ~ 10,000 W/(m^2*K)) to 'obviously' boost heat transfer, the same way fins help an air-cooled heat sink. Is this a safe assumption?",
+              "correction": "Fin effectiveness (heat transfer with the fin divided by heat transfer from the same base area without it) is large only when the fin's conductivity is high relative to the surface's convective coefficient (large k, small h) -- exactly the case for finned air-cooled surfaces. When h is very large (boiling, high-velocity liquid) and the fin's conductivity is comparatively low, the fin's own internal conduction resistance can make it barely better, or in extreme cases worse, than an unfinned surface with the same base area; fin effectiveness must be checked, not assumed."
+            }
+          ]
+        },
+        {
           "slug": "heat-exchanger-effectiveness-ntu",
           "name": "Heat exchanger effectiveness-NTU method",
           "kc_type": "rule",
           "description": "Apply the effectiveness-NTU method (epsilon, NTU=UA/C_min, C_r=C_min/C_max) as an alternative to LMTD when one or more outlet temperatures are unknown and cannot be found without iteration under the LMTD approach.",
           "practice_notes": "Practice recognizing WHEN to switch methods: if all four terminal temperatures are known, LMTD is direct; if an outlet temperature is unknown (a rating problem, not a sizing problem), effectiveness-NTU avoids the iteration LMTD would otherwise require.",
-          "sort_order": 7,
+          "sort_order": 8,
           "prereqs": [
             "#overall-heat-transfer-coefficient-and-lmtd"
           ],
@@ -440,12 +489,61 @@
           "misconceptions": []
         },
         {
+          "slug": "psychrometry-and-humidification",
+          "name": "Psychrometry and adiabatic humidification",
+          "kc_type": "rule",
+          "description": "Use humid-air relationships (humidity ratio, relative humidity, adiabatic saturation temperature, wet-bulb temperature) to determine the state of moist air from partial pressures or a psychrometric chart, and predict the outcome of an adiabatic humidification process.",
+          "practice_notes": "Practice computing humidity ratio from relative humidity and saturation vapor pressure (Y = 0.622*p_v/(P-p_v)) as a fluency drill before moving to wet-bulb/adiabatic-saturation reasoning, and keep clear that the wet-bulb temperature is a MEASURED steady-state temperature reached by a wetted thermometer, while the adiabatic saturation temperature is a THEORETICAL air-water contact endpoint -- for the air-water system the Lewis relation makes the two numerically almost equal, but they are conceptually distinct.",
+          "sort_order": 4,
+          "prereqs": [
+            "#ficks-law-and-diffusive-flux",
+            "#convective-mass-transfer-coefficient"
+          ],
+          "resources": [
+            {
+              "label": "NPTEL — Mass Transfer Operations I syllabus (drying, absorption, adsorption operations)",
+              "url": "https://archive.nptel.ac.in/content/syllabus_pdf/103103035.pdf",
+              "kind": "feed"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Humidity ratio from relative humidity, fully worked",
+              "body": "Air at 25 degC and 60% relative humidity is at atmospheric pressure P = 101.325 kPa. The saturation vapor pressure of water at 25 degC is p_sat = 3.169 kPa. Find the humidity ratio Y (kg water per kg dry air).\nStep 1: partial pressure of water vapor p_v = RH*p_sat = 0.60*3.169 = 1.901 kPa.\nStep 2: humidity ratio Y = 0.622*p_v/(P - p_v) = 0.622*1.901/(101.325-1.901) = 1.182/99.424 = 0.0119 kg water/kg dry air.\nStep 3: sanity check -- if the air were fully saturated (RH=100%), Y would rise to 0.622*3.169/(101.325-3.169) = 1.971/98.156 = 0.0201 kg/kg, about 69% higher; 60% RH giving roughly 60% of the saturated-air enrichment (0.0119 vs 0.0201, a ratio of 0.59) is the expected order of magnitude, since Y is nearly proportional to p_v at these dilute conditions."
+            },
+            {
+              "kind": "self_explanation_prompt",
+              "level": 2,
+              "title": "Wet-bulb vs. adiabatic saturation temperature",
+              "body": "In your own words, explain the physical difference between the wet-bulb temperature (measured by a thermometer with a wetted wick, ventilated by moving air) and the adiabatic saturation temperature (the temperature moist air would reach if brought to full saturation in an adiabatic humidifier with a large reservoir of liquid water at that same temperature). Why does the Lewis relation (Le ~ 1 for the air-water system) make these two nearly equal numerically even though they come from different physical setups?"
+            },
+            {
+              "kind": "procedure_outline",
+              "level": 2,
+              "title": "Reading a psychrometric chart",
+              "body": "1. Locate the dry-bulb temperature on the horizontal axis.\n2. Move vertically to the given relative-humidity curve (or wet-bulb-temperature line) to fix the air state as one point.\n3. Read the humidity ratio directly off the vertical axis (or right-hand scale) at that point.\n4. To predict an adiabatic humidification outcome, follow the constant-wet-bulb-temperature line (very nearly a constant-enthalpy line for the air-water system) from the starting state toward higher humidity ratio until reaching the target relative humidity or saturation."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "wet-bulb-and-adiabatic-saturation-are-the-same-concept",
+              "name": "Wet-bulb temperature and adiabatic saturation temperature are the same thing by definition",
+              "description": "Learner treats the near-numerical-equality of wet-bulb temperature and adiabatic saturation temperature (true for the air-water system) as if it were a definitional identity that holds for any gas-liquid pair, rather than a coincidence of the air-water system's Lewis number being close to 1.",
+              "root_cause": "Textbook problems almost exclusively use air and water, where the two temperatures agree closely enough that homework answers come out the same either way, so the underlying distinction (a measured wet-wick steady state vs. a theoretical adiabatic contacting limit) never gets tested against a system where they diverge.",
+              "diagnostic_probe": "A student is asked to find the wet-bulb temperature for a volatile organic solvent evaporating into air (not water) and simply looks up the adiabatic saturation temperature formula, assuming the two must be identical 'like for water.' Is that assumption safe?",
+              "correction": "Wet-bulb temperature and adiabatic saturation temperature are conceptually different quantities -- one is a measured steady-state wick temperature set by a simultaneous heat and mass balance at the wick surface, the other is the theoretical endpoint of adiabatic gas-liquid contact -- and they coincide numerically only when the Lewis number (Le = alpha/D, ratio of thermal to mass diffusivity) is close to 1, which happens to be true for air-water but is not true in general for other vapor-gas systems."
+            }
+          ]
+        },
+        {
           "slug": "drying-and-moisture-removal",
           "name": "Drying and moisture removal",
           "kc_type": "concept",
           "description": "Identify the constant-rate and falling-rate periods on a drying-rate-vs-moisture-content curve, and compute drying time for each period given the critical moisture content and equilibrium moisture content.",
           "practice_notes": "Practice reading a drying curve as two distinct physical regimes (surface-evaporation-controlled vs. internal-diffusion-controlled), not as one continuous process, and always locate the critical moisture content before choosing which period's time formula to use.",
-          "sort_order": 4,
+          "sort_order": 5,
           "prereqs": [
             "#ficks-law-and-diffusive-flux",
             "chee-310-physical-chemistry-for-engineers#surface-tension-and-capillarity"
@@ -696,11 +794,12 @@
       ]
     },
     {
-      "title": "Assignment 3 -- Heat exchanger design",
+      "title": "Assignment 3 -- Fins and heat exchanger design",
       "type": "assignment",
       "kind": "official",
       "weight_pct": 8,
       "kc_slugs": [
+        "#extended-surfaces-and-fins",
         "#overall-heat-transfer-coefficient-and-lmtd",
         "#heat-exchanger-effectiveness-ntu"
       ]
@@ -716,12 +815,13 @@
       ]
     },
     {
-      "title": "Assignment 5 -- Absorption and drying",
+      "title": "Assignment 5 -- Absorption, psychrometry, and drying",
       "type": "assignment",
       "kind": "official",
       "weight_pct": 8,
       "kc_slugs": [
         "#absorption-and-gas-liquid-equilibrium",
+        "#psychrometry-and-humidification",
         "#drying-and-moisture-removal"
       ]
     },
@@ -747,6 +847,7 @@
         "#transient-conduction-and-biot-number",
         "#convection-heat-transfer-coefficient",
         "#radiation-heat-transfer",
+        "#extended-surfaces-and-fins",
         "#overall-heat-transfer-coefficient-and-lmtd",
         "#heat-exchanger-effectiveness-ntu"
       ]
@@ -760,6 +861,7 @@
         "#ficks-law-and-diffusive-flux",
         "#convective-mass-transfer-coefficient",
         "#absorption-and-gas-liquid-equilibrium",
+        "#psychrometry-and-humidification",
         "#drying-and-moisture-removal",
         "#mathematical-formulation-of-transport-problems",
         "#boundary-conditions-for-transport",

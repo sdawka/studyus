@@ -383,6 +383,98 @@
             }
           ],
           "misconceptions": []
+        },
+        {
+          "slug": "multicomponent-key-components",
+          "name": "Multicomponent distillation: key components and feasibility",
+          "kc_type": "concept",
+          "description": "Identify the light key (LK) and heavy key (HK) components in a multicomponent distillation feed from specified product recoveries or purity targets, and classify the resulting split as sharp (negligible amounts of non-key components crossing to the 'wrong' product) or non-sharp.",
+          "practice_notes": "Practice by ranking components by relative volatility first, then finding which adjacent pair the distillate/bottoms specification actually constrains — the LK is the most volatile component present in meaningful amounts in the bottoms, and the HK is the least volatile component present in meaningful amounts in the distillate; components more volatile than the LK go essentially entirely overhead, and components less volatile than the HK go essentially entirely to the bottoms.",
+          "sort_order": 6,
+          "prereqs": [
+            "#relative-volatility",
+            "#mccabe-thiele-method"
+          ],
+          "resources": [],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Identifying LK and HK, fully worked",
+              "body": "A feed contains four components ranked by decreasing volatility: propane (C3), n-butane (nC4), n-pentane (nC5), n-hexane (nC6). The column specification requires 98% recovery of n-butane to the distillate and 99% recovery of n-pentane to the bottoms, with propane and n-hexane essentially fully separated already by volatility.\nStep 1: rank components by relative volatility (already given, most volatile first): C3 > nC4 > nC5 > nC6.\nStep 2: the specification directly constrains a recovery split between nC4 and nC5 — these are the two components whose distribution the design must actually control.\nStep 3: since nC4 is the more volatile of the two constrained components and appears in the distillate spec, it is the light key (LK); nC5 is the less volatile of the two and appears in the bottoms spec, so it is the heavy key (HK).\nStep 4: propane (more volatile than the LK) is expected to go essentially entirely to the distillate, and n-hexane (less volatile than the HK) essentially entirely to the bottoms — a sharp split for the non-key components, which is the assumption the Fenske/Underwood/Gilliland shortcut method relies on."
+            },
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Sharp or non-sharp split?",
+              "body": "For each scenario, classify the split as sharp or non-sharp with respect to the non-key components: (1) a five-component feed where the two components lighter than the LK each appear at less than 0.1 mol% in the bottoms; (2) a three-component feed where a component lighter than the LK still appears at 8 mol% in the bottoms because its volatility is close to the LK's.\nAnswers: (1) sharp — negligible amounts of non-key components cross to the product they 'shouldn't' reach, consistent with the constant-relative-volatility shortcut assumptions. (2) non-sharp — a non-key component crossing over at a non-negligible level means the simple key-component-only shortcut method (Fenske/Underwood/Gilliland) will be less accurate, and a full multicomponent stage-by-stage (rigorous) calculation is more appropriate."
+            },
+            {
+              "kind": "retrieval_prompt",
+              "level": 3,
+              "title": "LK/HK definitions, cold",
+              "body": "Without looking it up: define the light key and heavy key components of a multicomponent distillation feed in terms of which product stream each is specified in, and state what 'sharp split' means for the non-key components."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "key-components-are-always-the-most-and-least-volatile",
+              "name": "The light key and heavy key are always the most volatile and least volatile components in the feed",
+              "description": "Learner assumes the LK and HK are automatically the extreme components in the volatility ranking (most volatile and least volatile), rather than recognizing they are whichever adjacent pair the product specifications actually constrain, which may sit anywhere in the middle of a multicomponent feed's volatility ranking.",
+              "root_cause": "Binary distillation (only two components) makes 'light component' and 'heavy component' synonymous with 'most volatile' and 'least volatile' by necessity, and that binary framing carries over unexamined once a third or fourth component is added to the feed.",
+              "diagnostic_probe": "A five-component feed is ranked by volatility as A > B > C > D > E. The design specification actually constrains the split between B and C (with A expected essentially fully overhead and D, E essentially fully to the bottoms). A student identifies A as the light key and E as the heavy key because they are the most and least volatile. What is wrong?",
+              "correction": "The light key and heavy key are defined by which adjacent pair of components the product specification actually constrains — here, B (light key) and C (heavy key) — not by which components are most and least volatile overall. Components more volatile than the light key, and less volatile than the heavy key, are expected to distribute essentially completely to one product each and are not themselves keys."
+            }
+          ]
+        },
+        {
+          "slug": "fenske-underwood-gilliland-method",
+          "name": "Fenske-Underwood-Gilliland shortcut method",
+          "kc_type": "rule",
+          "description": "Apply the Fenske equation (minimum stages at total reflux), the Underwood equations (minimum reflux ratio), and the Gilliland correlation (actual stages at a chosen operating reflux ratio) as a shortcut sequence for sizing a multicomponent distillation column from key-component recovery specifications.",
+          "practice_notes": "Practice the method as three chained steps that must run in this order: Fenske gives N_min from the two key-component recoveries and their relative volatility; Underwood gives R_min (often taken as given or estimated in course problems); Gilliland then converts (N_min, R_min, a chosen operating R) into an actual stage count N — never skip straight to Gilliland without first computing N_min, since Gilliland's correlation is expressed in terms of it.",
+          "sort_order": 7,
+          "prereqs": [
+            "#multicomponent-key-components",
+            "#minimum-reflux-minimum-stages"
+          ],
+          "resources": [
+            {
+              "label": "MIT OCW — 10.32 Separation Processes (Spring 2005)",
+              "url": "https://ocw.mit.edu/courses/10-32-separation-processes-spring-2005/",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Fenske minimum stages for a multicomponent split, fully worked",
+              "body": "A column must recover 98% of the light key (LK) to the distillate and 99% of the heavy key (HK) to the bottoms. The LK-HK relative volatility is alpha_LK,HK = 2.5 (assumed constant through the column).\nStep 1: Fenske equation in recovery form: N_min = ln[ (x_LK/x_HK)_D * (x_HK/x_LK)_B ] / ln(alpha_LK,HK), where the recovery fractions substitute directly for the mole-fraction ratios at each end.\nStep 2: at the distillate end, (x_LK/x_HK)_D = 0.98/0.02 = 49 (98% of the LK fed ends up in the distillate, only 2% of the HK crosses over, in a sharp-split approximation). At the bottoms end, (x_HK/x_LK)_B = 0.99/0.01 = 99.\nStep 3: N_min = ln(49*99)/ln(2.5) = ln(4851)/0.9163 = 8.487/0.9163 = 9.26.\nStep 4: N_min ~ 9.3 theoretical stages (about 10 stages including the reboiler) — the fewest stages this multicomponent split could ever be done in, at total reflux with zero net product withdrawal, exactly analogous to the binary Fenske limit."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Gilliland correlation for actual stages, partially faded",
+              "body": "Continuing the example above (N_min = 9.26). Underwood analysis gives R_min = 1.5, and the column will operate at R = 1.5*R_min = 2.25 (the standard 1.5x heuristic).\n\n1. Compute X = (R - R_min)/(R + 1) = ___.\n2. Using the Eduljee form of the Gilliland correlation, Y = 1 - exp{ [(1+54.4*X)/(11+117.2*X)] * [(X-1)/sqrt(X)] }, evaluate Y.\n3. Solve Y = (N - N_min)/(N + 1) for the actual stage count N.\n\n(Answer: X = (2.25-1.5)/3.25 = 0.2308; Y = 1 - exp[(13.556/38.05)*(-0.7692/0.4804)] = 1 - exp(0.3563*(-1.601)) = 1 - exp(-0.5705) = 0.4347; solving 0.4347 = (N-9.26)/(N+1) gives N = (9.26+0.4347)/(1-0.4347) = 9.695/0.5653 ≈ 17.2, so about 18 actual theoretical stages at R = 2.25.)"
+            },
+            {
+              "kind": "procedure_outline",
+              "level": 2,
+              "title": "The FUG sequence, in order",
+              "body": "1. Identify the light key and heavy key from the recovery specification (prerequisite KC).\n2. Fenske: compute N_min from the key recoveries and alpha_LK,HK, evaluated at total reflux.\n3. Underwood: compute R_min from the feed condition (q), relative volatilities of all components, and the key-component recoveries (course problems often estimate or provide R_min directly given the algebra's complexity for many components).\n4. Choose an operating reflux R, typically 1.2-1.5 x R_min (same economic tradeoff as the binary minimum-reflux KC).\n5. Gilliland: convert (N_min, R_min, R) into the actual stage count N using an empirical correlation (e.g. the Eduljee form).\n6. Optionally, use a Kirkbride-type correlation to estimate the optimal feed stage location — outside the scope of the shortcut stage count itself, but the natural next step in a full column design."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "gilliland-can-be-used-without-fenske",
+              "name": "The Gilliland correlation can estimate actual stages without first finding N_min",
+              "description": "Learner attempts to apply the Gilliland correlation using only a chosen reflux ratio and a rough guess at stage count, without first computing N_min from the Fenske equation, not recognizing that N_min is a required input to the Gilliland correlation itself.",
+              "root_cause": "The three-equation FUG sequence is taught as three separate named results, and students sometimes remember the destination (Gilliland gives N) without tracking that its formula is written entirely in terms of two upstream quantities, N_min and R_min, that must be computed first.",
+              "diagnostic_probe": "A student is asked to estimate the number of actual stages for a multicomponent column at R = 2.0 and jumps straight to a Gilliland-style chart using only R, without computing N_min or R_min first. What is missing from this approach?",
+              "correction": "The Gilliland correlation expresses the actual stage count as a function Y = f(X) where X = (R-R_min)/(R+1) and Y = (N-N_min)/(N+1) — both N_min (from the Fenske equation at total reflux) and R_min (from the Underwood equations at the pinch condition) are required inputs computed before Gilliland can be applied; the reflux ratio alone is not enough to estimate the actual stage count."
+            }
+          ]
         }
       ]
     },
@@ -705,7 +797,9 @@
       "kc_slugs": [
         "#mccabe-thiele-method",
         "#minimum-reflux-minimum-stages",
-        "#rayleigh-batch-distillation"
+        "#rayleigh-batch-distillation",
+        "#multicomponent-key-components",
+        "#fenske-underwood-gilliland-method"
       ]
     },
     {
@@ -756,6 +850,8 @@
       "due_date": "2025-04-22",
       "kc_slugs": [
         "#rayleigh-batch-distillation",
+        "#multicomponent-key-components",
+        "#fenske-underwood-gilliland-method",
         "#kremser-equation-absorption-stripping",
         "#absorption-factor-and-minimum-lg",
         "#liquid-liquid-equilibrium-ternary",

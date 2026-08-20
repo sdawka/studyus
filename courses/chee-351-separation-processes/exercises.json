@@ -1,0 +1,950 @@
+{
+  "schema_version": 1,
+  "exercises": [
+    {
+      "kc": "equilibrium-stage-concept",
+      "slug": "classify-flash-drum",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "A flash drum throttles a feed into a large vessel and allows vapor and liquid several minutes of residence time to disengage before either stream leaves. How close is this to an ideal equilibrium stage?",
+      "source": "equilibrium stage idealization, standard classification drill",
+      "options": [
+        "Close to ideal -- the long residence time and disengagement let both phases approach true thermodynamic equilibrium",
+        "Far from ideal -- flash drums never approach equilibrium regardless of residence time",
+        "It depends only on the drum's physical volume, not residence time",
+        "Equilibrium stage behavior is impossible in any single-vessel contactor"
+      ],
+      "correct_index": 0,
+      "explanation": "Long residence time with good vapor-liquid disengagement is exactly the physical picture the equilibrium-stage idealization is built from -- the two phases have ample time and contact to approach true equilibrium before separating. Residence time (not raw volume) is the controlling factor."
+    },
+    {
+      "kc": "equilibrium-stage-concept",
+      "slug": "wetted-wall-not-equilibrium",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A falling-film wetted-wall contactor uses a thin, fast-flowing liquid layer in brief contact with a gas stream. Why is this device usually used to MEASURE mass-transfer coefficients rather than to achieve equilibrium separation?",
+      "source": "rate-limited contactor vs equilibrium stage, conceptual",
+      "options": [
+        "Its very short gas-liquid contact time means the streams leave far from equilibrium, so the departure from equilibrium (rather than the equilibrium state itself) is what's measurable and useful",
+        "Wetted-wall contactors always reach equilibrium instantly regardless of contact time",
+        "Wetted-wall contactors cannot support any mass transfer at all",
+        "The device's thinness makes equilibrium physically impossible by definition"
+      ],
+      "correct_index": 0,
+      "explanation": "A wetted-wall column's brief contact time is deliberate: it keeps the system far from equilibrium so that the RATE of mass transfer (not the equilibrium endpoint) can be inferred from how much composition change occurs -- exactly the opposite design goal from an equilibrium-stage contactor."
+    },
+    {
+      "kc": "equilibrium-stage-concept",
+      "slug": "two-stream-condition-recall",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "What condition must hold between the vapor and liquid streams LEAVING an ideal equilibrium stage?",
+      "source": "equilibrium stage definition, cold recall",
+      "options": [
+        "They must be in thermodynamic equilibrium with each other (equal chemical potential / satisfying the VLE relationship, e.g. y=Kx for each component)",
+        "They must have equal flow rates",
+        "They must have equal temperature only, with no composition requirement",
+        "They must leave at the same physical exit port"
+      ],
+      "correct_index": 0,
+      "explanation": "An ideal equilibrium stage is defined by the vapor and liquid streams leaving it being in true thermodynamic equilibrium with each other (satisfying the VLE relationship for every component) -- not by equal flow rates, temperature alone, or physical exit geometry."
+    },
+    {
+      "kc": "equilibrium-stage-concept",
+      "slug": "bubble-cap-tray-classification-worked",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "A bubble-cap tray operates at low vapor velocity with deep, well-agitated liquid holdup and small rising bubbles that give long gas-liquid contact time. Explain why this design is closer to an ideal equilibrium stage than a fast-moving thin-film contactor would be.",
+      "source": "equilibrium stage design rationale, bubble-cap tray",
+      "solution": "Step 1: the equilibrium-stage idealization requires enough contact time and interfacial area for the vapor and liquid to closely approach their equilibrium compositions before separating.\nStep 2: small bubbles rising through a deep liquid pool maximize both interfacial area (many small bubbles have much more surface area per unit gas volume than a few large ones) and residence time (low vapor velocity means bubbles take longer to traverse the liquid depth).\nStep 3: a fast-moving thin-film contactor, by contrast, minimizes contact time by design (thin film, high velocity) -- exactly the opposite of what favors equilibrium approach. This is why real trayed distillation columns are engineered around bubble-cap, sieve, or valve trays that promote this deep, agitated, long-contact-time picture, and why real tray efficiencies (Murphree efficiency) are typically 60-90% rather than 100%, reflecting how closely the physical tray approximates but never fully reaches the idealization."
+    },
+    {
+      "kc": "relative-volatility",
+      "slug": "alpha-from-k-values",
+      "kind": "numeric",
+      "difficulty": 1,
+      "prompt": "At a given temperature and pressure, component A has K_A=1.8 and component B has K_B=0.75. Find the relative volatility alpha_AB.",
+      "source": "relative volatility definition, direct application",
+      "answer": { "value": 2.4, "unit": null, "tolerance_pct": 1 },
+      "solution": "alpha_AB = K_A/K_B = 1.8/0.75 = 2.4."
+    },
+    {
+      "kc": "relative-volatility",
+      "slug": "alpha-near-one-meaning",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "Two components have a measured relative volatility of alpha_AB=1.05. What does this suggest about the separation?",
+      "source": "relative volatility qualitative interpretation",
+      "options": [
+        "A hard separation, requiring many stages or a high reflux ratio",
+        "An easy separation, achievable in very few stages",
+        "The two components cannot be separated by distillation under any conditions",
+        "alpha near 1 has no bearing on separation difficulty"
+      ],
+      "correct_index": 0,
+      "explanation": "alpha close to 1 means the two components' K-values (and hence their vapor-liquid equilibrium behavior) are nearly identical, providing very little driving force for separation at each stage -- this signals a hard separation needing many equilibrium stages and/or a high reflux ratio, the opposite of alpha far from 1."
+    },
+    {
+      "kc": "relative-volatility",
+      "slug": "alpha-does-not-depend-on-composition-mcq",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "For an ideal (Raoult's law) binary system, how does relative volatility alpha_AB typically vary with liquid composition x_A, compared to how K_A and K_B individually vary?",
+      "source": "relative volatility composition-dependence, ideal system behavior",
+      "options": [
+        "alpha_AB is often nearly constant across the composition range even though K_A and K_B individually vary strongly with x_A, because the ratio K_A/K_B partially cancels their shared pressure/temperature dependence",
+        "alpha_AB varies far more strongly with composition than either K_A or K_B alone",
+        "alpha_AB is always exactly 1 regardless of composition for any binary system",
+        "alpha_AB and the individual K-values are entirely unrelated quantities"
+      ],
+      "correct_index": 0,
+      "explanation": "For many ideal or near-ideal systems, K_A and K_B both depend strongly on total pressure and vapor pressures (via Raoult's law), but taking their RATIO cancels much of this shared dependence, leaving alpha_AB comparatively stable across the composition range -- this is exactly why 'constant relative volatility' is such a useful simplifying assumption in the Fenske equation and Rayleigh distillation."
+    },
+    {
+      "kc": "relative-volatility",
+      "slug": "alpha-mnemonic-worked",
+      "kind": "worked",
+      "difficulty": 1,
+      "prompt": "Write the definition of relative volatility in terms of both K-values and equilibrium mole fractions, then compute alpha_AB for ethanol (K=2.4) relative to water (K=0.42) at a given T and P.",
+      "source": "relative volatility definition and mnemonic application",
+      "solution": "Step 1: alpha_AB = (y_A/x_A)/(y_B/x_B) = K_A/K_B -- 'A over B, y over x': the more-volatile component (A) goes on top, and each K-value is itself vapor-over-liquid mole fraction.\nStep 2: alpha_AB = K_ethanol/K_water = 2.4/0.42 = 5.71.\nStep 3: an alpha this far from 1 signals a relatively easy separation by distillation at these conditions (before accounting for the ethanol-water azeotrope, which caps how far ordinary distillation can push the separation regardless of alpha at more concentrated ethanol compositions)."
+    },
+    {
+      "kc": "txy-and-xy-diagrams",
+      "slug": "constant-alpha-equilibrium-curve-point",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "For a binary system with constant relative volatility alpha=2.5, find the equilibrium vapor composition y when the liquid composition is x=0.3.",
+      "source": "equilibrium curve from constant relative volatility, standard formula application",
+      "answer": { "value": 0.517, "unit": null, "tolerance_pct": 2 },
+      "solution": "y = alpha*x/(1+(alpha-1)*x) = 2.5*0.3/(1+1.5*0.3) = 0.75/1.45 = 0.517."
+    },
+    {
+      "kc": "txy-and-xy-diagrams",
+      "slug": "azeotrope-diagonal-crossing",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "An x-y equilibrium diagram's curve crosses the y=x diagonal once at x~0.894. What does this indicate about ordinary single-column distillation?",
+      "source": "azeotrope identification from x-y diagram feature",
+      "options": [
+        "The system has a minimum- or maximum-boiling azeotrope at that composition; ordinary distillation cannot cross it regardless of stages or reflux",
+        "This is a drafting error -- equilibrium curves for real systems never cross the diagonal",
+        "The crossing point simply marks where the column should be operated for best efficiency",
+        "The crossing indicates the mixture is actually a pure single component"
+      ],
+      "correct_index": 0,
+      "explanation": "A crossing of the equilibrium curve with the y=x diagonal is the defining signature of an azeotrope -- at that composition, vapor and liquid have identical composition, leaving no driving force for further separation by ordinary distillation, no matter how many stages or how much reflux are added."
+    },
+    {
+      "kc": "txy-and-xy-diagrams",
+      "slug": "distillation-cannot-cross-azeotrope",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A student designs a column to purify ethanol from 40 mol% to 99.5 mol% using ordinary distillation, but the McCabe-Thiele composition never climbs past about 89.4 mol% no matter how many stages are added. What is happening?",
+      "source": "distillation-can-always-reach-pure-components misconception, ethanol-water azeotrope",
+      "options": [
+        "The ethanol-water azeotrope at ~89.4 mol% caps ordinary distillation; reaching higher purity requires changing the equilibrium itself (entrainer, pressure swing, or another separation method)",
+        "The student simply needs to add more stages past a certain threshold to break through",
+        "Increasing the reflux ratio indefinitely will eventually cross the azeotrope",
+        "This indicates a calculation error, since distillation can always reach any target purity"
+      ],
+      "correct_index": 0,
+      "explanation": "This is exactly the ethanol-water minimum-boiling azeotrope: ordinary (single-pressure, single-column) distillation cannot cross an azeotropic composition because vapor and liquid become identical there, eliminating any further separating driving force -- neither more stages nor more reflux fixes this; only changing the equilibrium (entrainer, pressure-swing distillation, or molecular sieves) can."
+    },
+    {
+      "kc": "txy-and-xy-diagrams",
+      "slug": "read-tie-line-worked",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Explain how to use a T-x-y diagram's bubble-point and dew-point curves together with a tie line to find the equilibrium vapor and liquid compositions for a mixture at a given overall composition and temperature.",
+      "source": "T-x-y diagram reading procedure",
+      "solution": "Step 1: locate the given overall composition and temperature as a point on the T-x-y diagram.\nStep 2: if this point falls between the bubble-point curve (lower boundary) and the dew-point curve (upper boundary), the mixture is a two-phase (vapor+liquid) system at that temperature.\nStep 3: draw a horizontal line (a tie line, at constant temperature) through this point -- it intersects the bubble-point curve at the equilibrium LIQUID composition x, and the dew-point curve at the equilibrium VAPOR composition y.\nStep 4: these two intersection points give the compositions of the two phases in equilibrium at that temperature -- the overall composition itself generally lies between x and y and represents the combined (not either individual phase's) composition."
+    },
+    {
+      "kc": "mass-transfer-stage-efficiency",
+      "slug": "actual-trays-from-efficiency",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "A McCabe-Thiele construction gives 10 ideal (theoretical) stages, and the column's overall Murphree efficiency is 55%. Find the number of actual trays needed.",
+      "source": "ideal-to-actual stage conversion via efficiency, standard drill",
+      "answer": { "value": 18.2, "unit": null, "tolerance_pct": 2 },
+      "solution": "Actual trays = ideal stages / efficiency = 10/0.55 = 18.18, so 19 actual trays would be specified (rounding up, since a fractional tray cannot be built)."
+    },
+    {
+      "kc": "mass-transfer-stage-efficiency",
+      "slug": "why-divide-not-multiply",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A student is unsure whether to multiply or divide the ideal stage count by the efficiency to get actual trays. Which is correct, and why?",
+      "source": "efficiency application direction, procedural discipline",
+      "options": [
+        "Divide -- since each real tray achieves only a FRACTION of an ideal stage's separation, MORE real trays than ideal stages are needed to achieve the same overall separation",
+        "Multiply -- since efficiency 'boosts' the stage count",
+        "Neither -- efficiency only affects column diameter, not stage count",
+        "It depends on whether the column is trayed or packed"
+      ],
+      "correct_index": 0,
+      "explanation": "Since efficiency < 100% means each real tray falls short of full equilibrium performance, more real trays are needed to accomplish the separation that fewer IDEAL stages would achieve -- dividing (not multiplying) by efficiency correctly produces a LARGER actual-tray count than the ideal-stage count."
+    },
+    {
+      "kc": "mass-transfer-stage-efficiency",
+      "slug": "real-tray-never-reaches-equilibrium",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A student is told a column has 6 actual trays and immediately reads 6 ideal stages off their McCabe-Thiele diagram to size the column. What assumption did they make, and when does it fail?",
+      "source": "equilibrium-stage-achieves-full-equilibrium misconception",
+      "options": [
+        "They assumed each real tray achieves full thermodynamic equilibrium (100% efficiency); this fails whenever efficiency is below 100%, which is essentially always in practice",
+        "They made no assumption; actual trays and ideal stages are always numerically identical",
+        "The assumption only fails for packed columns, never for trayed columns",
+        "The assumption only matters if the column has more than 20 trays"
+      ],
+      "correct_index": 0,
+      "explanation": "Equating actual trays directly with ideal stages assumes every real tray reaches full thermodynamic equilibrium (Murphree efficiency = 100%), an idealization that real trays only approach; since real efficiencies are typically 60-90%, treating the two counts as interchangeable without dividing by efficiency understates the real column's required tray count."
+    },
+    {
+      "kc": "mass-transfer-stage-efficiency",
+      "slug": "efficiency-limiting-factors-worked",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Name two physical factors that keep the vapor leaving a real tray from fully reaching the equilibrium composition with the liquid on that tray, and explain how each limits efficiency.",
+      "source": "physical origins of stage efficiency shortfall",
+      "solution": "Factor 1 -- finite contact time: vapor bubbles rising through the liquid on a tray spend only a limited time in contact with it before disengaging; if that contact time is too short for the two phases' compositions to fully equilibrate (a rate-limited mass-transfer process, governed by the same convective-mass-transfer-coefficient physics from CHEE 315), the vapor leaves the tray still short of true equilibrium.\nFactor 2 -- incomplete mixing / liquid composition variation across the tray: real trays don't have perfectly uniform liquid composition everywhere on the tray surface (there can be composition gradients from inlet to outlet weir); vapor bubbling up through different regions of the tray contacts liquid at slightly different compositions, so the AVERAGE vapor leaving the tray reflects a blend that falls short of equilibrium with any single well-defined liquid composition. Both factors push Murphree efficiency below 100%, and better tray design (more bubble/froth contact area, better liquid distribution) is aimed at reducing both."
+    },
+    {
+      "kc": "operating-lines-and-reflux",
+      "slug": "rectifying-line-from-r-and-xd",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "A column has reflux ratio R=2.2 and distillate composition x_D=0.92. Find the rectifying operating line's slope.",
+      "source": "rectifying operating line slope, direct formula application",
+      "answer": { "value": 0.6875, "unit": null, "tolerance_pct": 1 },
+      "solution": "Slope = R/(R+1) = 2.2/3.2 = 0.6875."
+    },
+    {
+      "kc": "operating-lines-and-reflux",
+      "slug": "operating-line-passes-through-xd",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "Every rectifying operating line, regardless of reflux ratio R, passes through which fixed point?",
+      "source": "rectifying operating line invariant point, cold recall",
+      "options": ["(x_D, x_D), on the y=x diagonal", "(0, 0), the origin", "(x_B, x_B)", "(1, 0)"],
+      "correct_index": 0,
+      "explanation": "Substituting x=x_D into y=(R/(R+1))*x + x_D/(R+1) always gives y=x_D, so the rectifying operating line always passes through (x_D, x_D) on the diagonal, regardless of R -- this is a built-in check for any derived rectifying line."
+    },
+    {
+      "kc": "operating-lines-and-reflux",
+      "slug": "total-vs-component-envelope",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Deriving the rectifying operating line requires both a total mass balance (V=L+D) and a component balance around the same envelope. Why is the total balance needed at all if the component balance is what ultimately gives the y-x relationship?",
+      "source": "operating line derivation, role of the total balance",
+      "options": [
+        "The total balance provides the relationship between V and L (via V=L+D and L=R*D) needed to eliminate V and L from the component balance, leaving a relationship purely between y and x",
+        "The total balance is not actually needed; it is included only by convention",
+        "The total balance replaces the component balance entirely once R is known",
+        "The total balance only matters when the column has more than one feed"
+      ],
+      "correct_index": 0,
+      "explanation": "The component balance (V*y = L*x + D*x_D) alone still has THREE flow-rate unknowns (V, L, D) mixed in; the total balance (V=L+D, with L=R*D) supplies the extra relationships needed to express V and L purely in terms of R and D, which then cancels out of the final y-x operating-line equation."
+    },
+    {
+      "kc": "operating-lines-and-reflux",
+      "slug": "stripping-line-derivation-worked",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Derive the stripping-section operating line for a column with bottoms composition x_B=0.04 and boilup ratio V_bar/L_bar such that L_bar/V_bar = 1.8 (i.e. the stripping section's liquid-to-vapor ratio).",
+      "source": "stripping operating line derivation, mass-balance envelope around the column base",
+      "solution": "Step 1: draw a mass-balance envelope around the bottom of the column (below any given tray in the stripping section) plus the reboiler.\nStep 2: total balance: L_bar = V_bar + B (bottoms product B leaves the reboiler).\nStep 3: component balance: L_bar*x_m = V_bar*y_(m+1) + B*x_B, rearranged to y_(m+1) = (L_bar/V_bar)*x_m - (B/V_bar)*x_B.\nStep 4: using L_bar/V_bar=1.8, and noting B/V_bar = (L_bar-V_bar)/V_bar = (L_bar/V_bar)-1 = 0.8: y = 1.8*x - 0.8*0.04 = 1.8*x - 0.032.\nStep 5: verify the line passes through (x_B,x_B)=(0.04,0.04): 1.8*0.04-0.032=0.072-0.032=0.04 -- matches, confirming the derivation, exactly analogous to how the rectifying line must pass through (x_D,x_D)."
+    },
+    {
+      "kc": "operating-lines-and-reflux",
+      "slug": "high-r-narrow-operating-region",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "As reflux ratio R increases toward very large values (approaching total reflux), what happens to the rectifying operating line's position relative to the y=x diagonal?",
+      "source": "reflux ratio effect on operating line position, limiting behavior",
+      "options": [
+        "The operating line approaches the diagonal itself (slope R/(R+1) approaches 1), since at total reflux L=V and the operating line coincides with y=x",
+        "The operating line moves further away from the diagonal as R increases",
+        "The operating line's slope approaches 0 as R increases",
+        "R has no effect on the operating line's position"
+      ],
+      "correct_index": 0,
+      "explanation": "As R->infinity, slope=R/(R+1)->1 and intercept=x_D/(R+1)->0, so the line approaches y=x -- exactly the total-reflux condition where L=V throughout the column (no net product withdrawal) and every stage does the maximum possible separation, setting up the Fenske minimum-stages limit."
+    },
+    {
+      "kc": "feed-condition-q-line",
+      "slug": "q-line-slope-two-phase-feed",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "A feed at x_F=0.4 enters as a two-phase mixture that is 70% liquid by mole (q=0.7). Find the q-line's slope.",
+      "source": "q-line slope from feed vapor fraction, standard drill",
+      "answer": { "value": -2.333, "unit": null, "tolerance_pct": 2 },
+      "solution": "Slope = q/(q-1) = 0.7/(0.7-1) = 0.7/(-0.3) = -2.333."
+    },
+    {
+      "kc": "feed-condition-q-line",
+      "slug": "classify-q-from-feed-state",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "A feed enters a distillation column as a subcooled liquid (below its bubble point). What is the expected value of q?",
+      "source": "q classification from physical feed state",
+      "options": ["q > 1", "q = 1 exactly", "0 < q < 1", "q < 0"],
+      "correct_index": 0,
+      "explanation": "q represents the moles of saturated liquid produced per mole of feed (in one common convention) and exceeds 1 for a subcooled feed, since condensing the vapor generated by flashing the feed to its bubble point ALSO requires removing the feed's own subcooling first -- q=1 is exactly saturated liquid, 0<q<1 is a two-phase (partially vaporized) feed, and q<0 is superheated vapor."
+    },
+    {
+      "kc": "feed-condition-q-line",
+      "slug": "q-line-vertical-saturated-liquid",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "For a saturated liquid feed (q=1), what is the geometric shape of the q-line on the equilibrium diagram?",
+      "source": "q-line special case, saturated liquid feed",
+      "options": [
+        "A vertical line at x=x_F, since slope=q/(q-1)=1/0 is undefined (infinite)",
+        "A horizontal line at y=x_F",
+        "A line with slope exactly 1, coinciding with the diagonal",
+        "The q-line does not exist for q=1"
+      ],
+      "correct_index": 0,
+      "explanation": "Slope = q/(q-1) = 1/0 is undefined, which corresponds geometrically to a VERTICAL line through (x_F, x_F) -- a saturated liquid feed enters at its bubble point with no additional vaporization or condensation needed, so the feed composition itself sets a fixed x value across all y, giving a vertical q-line."
+    },
+    {
+      "kc": "feed-condition-q-line",
+      "slug": "five-step-q-procedure-worked",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "A feed at x_F=0.55 is 20% vaporized by mole (so 80% liquid) upon flashing into the column. Find q, the q-line slope, and its equation.",
+      "source": "q-line full procedure, flash-feed application",
+      "solution": "Step 1: for a flash feed, q equals the liquid fraction: q = 1 - (vapor fraction) = 1 - 0.20 = 0.80.\nStep 2: q-line slope = q/(q-1) = 0.80/(0.80-1) = 0.80/(-0.20) = -4.0.\nStep 3: the q-line passes through (x_F, x_F) = (0.55, 0.55): y - 0.55 = -4.0*(x - 0.55), i.e. y = -4.0*x + 2.2 + 0.55 = -4.0*x + 2.75.\nStep 4: check at x=0.55: y=-4.0*0.55+2.75=-2.2+2.75=0.55 -- confirms the line passes through the required point."
+    },
+    {
+      "kc": "mccabe-thiele-method",
+      "slug": "why-switch-at-feed-stage",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Why must the McCabe-Thiele stepping procedure switch from the rectifying operating line to the stripping operating line exactly at the feed stage, rather than at some other stage?",
+      "source": "feed-stage line-switching rule, procedural discipline",
+      "options": [
+        "The rectifying line's mass balance is only valid above the feed (where flows are L, V); the stripping line's mass balance is only valid below the feed (where flows are L_bar, V_bar) -- switching elsewhere applies the wrong flow rates to a section of the column",
+        "The switch point is arbitrary and can be made at any convenient stage",
+        "Switching should always happen at the stage closest to x=0.5",
+        "The rectifying line applies to the whole column; the stripping line is only a visual aid"
+      ],
+      "correct_index": 0,
+      "explanation": "Each operating line encodes a mass balance valid only for the flow rates on ITS side of the feed (L,V above; L_bar,V_bar below, which differ because the feed itself adds material at that point) -- switching at any stage other than the true feed stage would apply an operating line's mass balance to a region where the actual flow rates don't match its assumptions, giving a wrong stage count."
+    },
+    {
+      "kc": "mccabe-thiele-method",
+      "slug": "stage-count-from-lines-worked",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "Given x_D=0.90, x_B=0.10, x_F=0.50, R=1.5, and a saturated liquid feed (q=1), find the rectifying operating line, the q-line, and their intersection point.",
+      "source": "McCabe-Thiele setup, worked line construction",
+      "solution": "Step 1: rectifying line: y=(R/(R+1))*x + x_D/(R+1) = (1.5/2.5)*x + 0.90/2.5 = 0.6*x + 0.36.\nStep 2: q-line for saturated liquid (q=1) is vertical at x=x_F=0.50.\nStep 3: intersection: substitute x=0.50 into the rectifying line: y=0.6*0.50+0.36=0.30+0.36=0.66.\nStep 4: the stripping operating line must connect (x_B,x_B)=(0.10,0.10) to this same intersection point (0.50, 0.66) -- from here, stepping between the equilibrium curve and whichever operating line is active (switching at x=0.50, the feed composition) gives the theoretical stage count."
+    },
+    {
+      "kc": "mccabe-thiele-method",
+      "slug": "feed-stage-mislocation-mcq",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A student steps off stages correctly but switches from the rectifying to the stripping line one stage too early (before actually crossing x_F). What is the most likely consequence?",
+      "source": "feed-stage location error, common execution mistake",
+      "options": [
+        "The stage count found will generally not be the MINIMUM possible for the given R -- an incorrectly placed feed stage produces a suboptimal (usually larger) total stage count",
+        "The stage count is unaffected, since both operating lines give the same answer",
+        "The column will violate mass balance if the switch happens even one stage early",
+        "Switching early always REDUCES the total stage count needed"
+      ],
+      "correct_index": 0,
+      "explanation": "The optimal feed stage (the one that minimizes total stages for a given R) is the one where the step first crosses the q-line/intersection point; switching earlier or later than this optimal point still gives a mathematically valid (mass-balance-consistent) staircase, but requires MORE total stages than necessary -- this is why the KC emphasizes identifying the optimal feed stage location, not merely 'a' feed stage."
+    },
+    {
+      "kc": "mccabe-thiele-method",
+      "slug": "new-spec-independent-practice",
+      "kind": "mcq",
+      "difficulty": 3,
+      "prompt": "For x_D=0.96, x_B=0.04, x_F=0.5, R=1.2, and a saturated vapor feed (q=0), which statement about the q-line is correct?",
+      "source": "q-line orientation for saturated vapor feed",
+      "options": [
+        "The q-line is horizontal at y=x_F=0.5, since slope=q/(q-1)=0/(-1)=0",
+        "The q-line is vertical at x=0.5",
+        "The q-line has slope 1, coinciding with the diagonal",
+        "A saturated vapor feed has no q-line at all"
+      ],
+      "correct_index": 0,
+      "explanation": "For q=0 (saturated vapor feed), slope=q/(q-1)=0/(0-1)=0, giving a HORIZONTAL line through (x_F,x_F) -- this is the opposite geometric extreme from the vertical q-line for a saturated liquid feed (q=1), reflecting that a saturated vapor feed adds no liquid to the column at the feed stage."
+    },
+    {
+      "kc": "minimum-reflux-minimum-stages",
+      "slug": "fenske-minimum-stages-calc",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "For a binary distillation with x_D=0.97, x_B=0.03, and constant relative volatility alpha=2.2, find the Fenske minimum number of stages (at total reflux).",
+      "source": "Fenske equation, binary total-reflux limit",
+      "answer": { "value": 8.82, "unit": null, "tolerance_pct": 2 },
+      "solution": "N_min = ln[(x_D/(1-x_D))*((1-x_B)/x_B)]/ln(alpha) = ln[(0.97/0.03)*(0.97/0.03)]/ln(2.2) = ln(32.33*32.33)/ln(2.2) = ln(1045.4)/0.7885 = 6.952/0.7885 = 8.82."
+    },
+    {
+      "kc": "minimum-reflux-minimum-stages",
+      "slug": "why-rmin-gives-infinite-stages",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "As reflux ratio R is lowered toward R_min, the operating line rotates until it touches the equilibrium curve at a pinch point. Why does the McCabe-Thiele staircase need infinitely many steps to actually reach that point?",
+      "source": "minimum reflux pinch-point mechanism, conceptual",
+      "options": [
+        "At the pinch, the driving force (vertical distance between operating and equilibrium lines) shrinks to zero, so each step near that point makes vanishingly small progress in composition, requiring ever more steps to approach it",
+        "The staircase always requires exactly R stages to reach any point",
+        "The equilibrium curve becomes undefined exactly at the pinch point",
+        "Infinite stages are needed only if the feed is subcooled"
+      ],
+      "correct_index": 0,
+      "explanation": "At a pinch point, the operating line touches (or asymptotically approaches) the equilibrium curve, meaning the composition change achievable by one stage there shrinks toward zero -- the staircase can get arbitrarily close to the pinch composition but needs progressively smaller (and thus progressively more numerous) steps to approach it, formally requiring infinite stages to reach it exactly."
+    },
+    {
+      "kc": "minimum-reflux-minimum-stages",
+      "slug": "operating-near-rmin-not-optimal",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A student recommends designing a column at R=1.02*R_min to minimize reboiler duty. What is being neglected?",
+      "source": "operating-near-minimum-reflux-is-always-optimal misconception",
+      "options": [
+        "The capital cost of the column, which rises sharply (toward infinity) as R approaches R_min due to the pinch-point stage-count explosion",
+        "Nothing -- minimizing reboiler duty is always the single correct design objective",
+        "The relative volatility, which becomes irrelevant near R_min",
+        "The feed composition, which must be re-optimized separately from R"
+      ],
+      "correct_index": 0,
+      "explanation": "Column design trades off operating cost (falling as R decreases toward R_min) against capital cost (rising sharply as stage count grows without bound near the pinch) -- operating at R just barely above R_min minimizes utility cost but requires an impractically tall (or infinite) column, which is why real designs use the 1.2-1.5x R_min heuristic near the true total-annualized-cost minimum instead."
+    },
+    {
+      "kc": "minimum-reflux-minimum-stages",
+      "slug": "total-reflux-fewest-stages-worked",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Explain why total reflux gives the FEWEST possible stages for a given separation, even though it corresponds to zero net product withdrawal.",
+      "source": "total reflux limiting-case explanation",
+      "solution": "Step 1: at total reflux, L=V throughout the column (no distillate or bottoms product is withdrawn), so both operating lines collapse exactly onto the y=x diagonal.\nStep 2: the diagonal is the LINE FARTHEST from the equilibrium curve that is geometrically possible for an operating line (since the equilibrium curve for alpha>1 always lies above the diagonal in x-y space) -- maximum separation per stage occurs when the operating line is as far as possible from the equilibrium curve, because that maximizes the vertical step size at each stage.\nStep 3: since every other feasible R value pulls the operating line(s) closer to the equilibrium curve (reducing per-stage step size), NO finite-R operation can achieve the separation in fewer stages than the total-reflux (Fenske) limit -- the price paid for this stage-count minimum is that at total reflux, D=0 and B=0, so no actual product is being made, making it a theoretical bound rather than an operable design point."
+    },
+    {
+      "kc": "rayleigh-batch-distillation",
+      "slug": "still-pot-liquid-remaining",
+      "kind": "numeric",
+      "difficulty": 3,
+      "prompt": "A still pot starts with L0=100 mol of liquid at x0=0.6 (light-component mole fraction), with constant relative volatility alpha=2.5. Using the Rayleigh equation, find the moles of liquid L remaining when the composition has dropped to x=0.3.",
+      "source": "Rayleigh equation, constant-alpha closed form",
+      "answer": { "value": 24.8, "unit": "mol", "tolerance_pct": 3 },
+      "solution": "For constant relative volatility, the Rayleigh equation integrates in closed form to ln(L0/L) = [1/(alpha-1)]*[ln(x0/x) + alpha*ln((1-x)/(1-x0))]. Substituting: ln(L0/L) = [1/1.5]*[ln(0.6/0.3) + 2.5*ln(0.7/0.4)] = 0.6667*[ln(2) + 2.5*ln(1.75)] = 0.6667*[0.6931 + 2.5*0.5596] = 0.6667*[0.6931+1.3990] = 0.6667*2.0921 = 1.3948. So L = L0*exp(-1.3948) = 100*0.2479 = 24.8 mol -- about 75% of the original liquid has been vaporized off to drop the pot composition from 0.6 to 0.3."
+    },
+    {
+      "kc": "rayleigh-batch-distillation",
+      "slug": "why-composition-drifts",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Why does the still-pot composition of the light component always decrease over the course of a batch distillation, even though the only thing leaving the pot is vapor?",
+      "source": "Rayleigh distillation composition drift, conceptual",
+      "options": [
+        "The vapor leaving the pot is always richer in the light component than the liquid it came from (y* > x whenever alpha > 1), so continuously removing that vapor steadily depletes the light component from the remaining liquid",
+        "The pot composition only changes if heat is added inconsistently",
+        "Composition stays constant in an ideal Rayleigh distillation; only the total liquid mass changes",
+        "The composition change is caused by the vessel's shape, not the phase equilibrium"
+      ],
+      "correct_index": 0,
+      "explanation": "Because y* (the instantaneous equilibrium vapor composition) exceeds x (the liquid composition) whenever alpha>1, each increment of vapor removed carries away a disproportionate share of the light component -- this is a direct, unavoidable consequence of the equilibrium relationship, not an independent modeling assumption, and it's precisely why still-pot composition must drift over a batch run."
+    },
+    {
+      "kc": "rayleigh-batch-distillation",
+      "slug": "batch-vs-continuous-contrast-worked",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Contrast why a continuous distillation column can operate at a fixed steady-state composition profile while a batch still-pot's composition necessarily drifts over time.",
+      "source": "batch vs. continuous distillation, conceptual contrast",
+      "solution": "Step 1: a continuous column has fresh feed CONTINUOUSLY entering at a fixed composition and rate, with distillate and bottoms products continuously withdrawn -- at steady state, the composition profile throughout the column (and hence the feed material balance) stops changing with time, because inflow replenishes exactly what outflow removes at every point.\nStep 2: a batch still pot, by contrast, has NO continuous feed replenishing the light component being preferentially vaporized off -- every mole of vapor removed permanently depletes the finite charge of liquid in the pot, with nothing added back.\nStep 3: this fundamental difference (continuous replenishment vs. a fixed, depleting charge) is why continuous columns reach and hold a steady-state composition profile while batch stills necessarily drift over the course of a run -- the Rayleigh equation is specifically the tool for tracking that drift, with no steady-state analog needed for the batch case."
+    },
+    {
+      "kc": "multicomponent-key-components",
+      "slug": "identify-lk-hk-from-spec",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A five-component feed is ranked by volatility A > B > C > D > E. The design specification constrains a recovery split between B and C, with A expected essentially fully overhead and D, E essentially fully to the bottoms. What are the light key and heavy key?",
+      "source": "key component identification, standard multicomponent setup",
+      "options": [
+        "B is the light key, C is the heavy key",
+        "A is the light key, E is the heavy key (the most and least volatile components)",
+        "A is the light key, D is the heavy key",
+        "There are no keys unless all five components are constrained by the specification"
+      ],
+      "correct_index": 0,
+      "explanation": "The light key and heavy key are defined by which adjacent pair of components the product specification actually constrains -- here B and C -- not by which components are overall most and least volatile. A (more volatile than the LK) and D, E (less volatile than the HK) are non-key components expected to distribute essentially completely to one product each."
+    },
+    {
+      "kc": "multicomponent-key-components",
+      "slug": "sharp-split-recognition",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A three-component feed's design shows a component lighter than the light key appearing at 8 mol% in the bottoms (rather than a negligible amount). What does this indicate?",
+      "source": "sharp vs non-sharp split classification",
+      "options": [
+        "A non-sharp split -- the non-key component crossing over at a non-negligible level means the shortcut key-component-only method will be less accurate, favoring a rigorous stage-by-stage calculation instead",
+        "A sharp split, since any nonzero recovery is expected",
+        "This indicates a calculation error, since non-key components must always be exactly zero in the 'wrong' product",
+        "The component's volatility ranking must have been assigned incorrectly"
+      ],
+      "correct_index": 0,
+      "explanation": "A sharp split requires non-key components to appear at negligible levels in the product they 'shouldn't' reach; 8 mol% is a substantial, non-negligible crossover, signaling a non-sharp split where the FUG shortcut method's simplifying assumptions are weaker and a full multicomponent rigorous calculation would be more reliable."
+    },
+    {
+      "kc": "multicomponent-key-components",
+      "slug": "lk-hk-identification-worked",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "A feed contains methane, ethane, propane, and n-butane (ranked by decreasing volatility). The specification requires 99% recovery of ethane to the overhead and 98% recovery of propane to the bottoms. Identify the light key, heavy key, and expected behavior of the non-key components.",
+      "source": "key component identification, light-hydrocarbon distillation example",
+      "solution": "Step 1: rank by volatility (most volatile first): methane > ethane > propane > n-butane.\nStep 2: the specification directly constrains the split between ethane and propane -- these are the two components the design controls.\nStep 3: ethane, the more volatile of the constrained pair and specified for the overhead, is the light key. Propane, the less volatile of the pair and specified for the bottoms, is the heavy key.\nStep 4: methane (more volatile than the light key) is expected to go essentially completely overhead, and n-butane (less volatile than the heavy key) is expected to go essentially completely to the bottoms -- consistent with a sharp split on the non-key components, the assumption underlying the Fenske-Underwood-Gilliland shortcut method."
+    },
+    {
+      "kc": "fenske-underwood-gilliland-method",
+      "slug": "fenske-nmin-multicomponent",
+      "kind": "numeric",
+      "difficulty": 3,
+      "prompt": "A column must recover 98% of the light key to the distillate and 99% of the heavy key to the bottoms, with alpha_LK,HK=2.5. Find the Fenske minimum number of stages.",
+      "source": "Fenske equation, multicomponent recovery-based form",
+      "answer": { "value": 9.26, "unit": null, "tolerance_pct": 2 },
+      "solution": "N_min = ln[(x_LK/x_HK)_D * (x_HK/x_LK)_B]/ln(alpha) = ln[(0.98/0.02)*(0.99/0.01)]/ln(2.5) = ln(49*99)/ln(2.5) = ln(4851)/0.9163 = 8.487/0.9163 = 9.26."
+    },
+    {
+      "kc": "fenske-underwood-gilliland-method",
+      "slug": "gilliland-actual-stages",
+      "kind": "numeric",
+      "difficulty": 3,
+      "prompt": "Continuing from N_min=9.26 (previous exercise), with R_min=1.5 and the column operating at R=1.5*R_min=2.25, use the Eduljee form of the Gilliland correlation to find the actual number of theoretical stages N.",
+      "source": "Gilliland correlation, Eduljee form application",
+      "answer": { "value": 17.2, "unit": null, "tolerance_pct": 3 },
+      "solution": "X = (R-R_min)/(R+1) = (2.25-1.5)/3.25 = 0.2308. Y = 1 - exp{[(1+54.4*X)/(11+117.2*X)]*[(X-1)/sqrt(X)]} = 1 - exp{(13.556/38.05)*(-1.601)} = 1 - exp(-0.5705) = 0.4347. Solving Y=(N-N_min)/(N+1) for N: N = (N_min+Y)/(1-Y) = (9.26+0.4347)/(1-0.4347) = 9.695/0.5653 = 17.15, so about 18 actual theoretical stages."
+    },
+    {
+      "kc": "fenske-underwood-gilliland-method",
+      "slug": "gilliland-needs-nmin-first",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A student tries to estimate actual stages using the Gilliland correlation with only a chosen reflux ratio R, without computing N_min or R_min first. What is missing?",
+      "source": "gilliland-can-be-used-without-fenske misconception",
+      "options": [
+        "N_min (from Fenske) and R_min (from Underwood) are both required inputs to the Gilliland correlation's X and Y variables; R alone is not enough",
+        "Nothing is missing; Gilliland only ever needs R as an input",
+        "The feed composition is the only missing input, not N_min or R_min",
+        "Gilliland requires the number of components, not N_min or R_min"
+      ],
+      "correct_index": 0,
+      "explanation": "The Gilliland correlation is expressed as Y=f(X) where X=(R-R_min)/(R+1) and Y=(N-N_min)/(N+1) -- both N_min (Fenske, at total reflux) and R_min (Underwood, at the pinch) must be computed upstream before Gilliland can be evaluated; the reflux ratio alone cannot substitute for either."
+    },
+    {
+      "kc": "fenske-underwood-gilliland-method",
+      "slug": "fug-sequence-order-worked",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Outline the correct order of the Fenske-Underwood-Gilliland shortcut method, explaining what each step requires as input from the previous one.",
+      "source": "FUG method sequencing, procedural discipline",
+      "solution": "Step 1 (prerequisite): identify the light key and heavy key from the recovery specification.\nStep 2 (Fenske): using the key-component recoveries and alpha_LK,HK, compute N_min -- the minimum stage count at total reflux. This requires only the key recoveries and alpha as inputs.\nStep 3 (Underwood): using the feed condition (q), the relative volatilities of ALL components, and the key recoveries, compute R_min -- the minimum reflux ratio at the pinch condition. This is independent of N_min.\nStep 4 (choose operating R): select an operating reflux ratio, typically R=1.2-1.5*R_min, balancing capital and operating cost.\nStep 5 (Gilliland): using N_min (from step 2), R_min (from step 3), and the chosen R (from step 4) together, compute X and Y and solve for the actual stage count N. Skipping steps 2 or 3 leaves Gilliland's X or Y undefined, since both explicitly require N_min and R_min as inputs."
+    },
+    {
+      "kc": "kremser-equation-absorption-stripping",
+      "slug": "kremser-stage-count",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "An absorber has absorption factor A=1.5, inlet gas mole ratio Y_in=0.025, target 90% recovery (Y_out=0.1*Y_in), and pure solvent entering (X_in=0). Find the number of equilibrium stages using the Kremser equation.",
+      "source": "Kremser equation, dilute absorption standard drill",
+      "answer": { "value": 3.42, "unit": null, "tolerance_pct": 2 },
+      "solution": "N = ln[(1-1/A)*(Y_in/Y_out) + 1/A]/ln(A). With Y_out=0.0025: N = ln[(1-1/1.5)*(0.025/0.0025) + 1/1.5]/ln(1.5) = ln[(0.333)*(10) + 0.667]/ln(1.5) = ln[3.333+0.667]/0.4055 = ln(4.0)/0.4055 = 1.386/0.4055 = 3.42, so 4 equilibrium stages (rounding up)."
+    },
+    {
+      "kc": "kremser-equation-absorption-stripping",
+      "slug": "a-vs-s-definitions",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "How is the stripping factor S related to the absorption factor A, both defined in terms of L, V, and equilibrium slope m?",
+      "source": "absorption factor vs stripping factor, cold recall",
+      "options": ["S = 1/A, since A=L/(mV) and S=mV/L", "S = A, they are identical", "S = A^2", "S and A are unrelated quantities"],
+      "correct_index": 0,
+      "explanation": "A = L/(m*V) and S = m*V/L are reciprocals of each other by definition -- A is used for absorption (comparing liquid capacity to the gas's equilibrium-scaled flow), and S is used for stripping (the reciprocal ratio, natural for the opposite mass-transfer direction)."
+    },
+    {
+      "kc": "kremser-equation-absorption-stripping",
+      "slug": "separate-a-and-formula-steps",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A student gets a wrong Kremser stage count and wants to debug it. Why is it good practice to have computed A separately, before ever touching the stage-count formula?",
+      "source": "Kremser calculation debugging discipline",
+      "options": [
+        "It isolates a possible error: if A itself is correct but N is wrong, the mistake is in the formula algebra; if A is wrong, no amount of care with the Kremser formula will fix the result",
+        "There is no benefit; both steps should always be combined into one calculation",
+        "Computing A separately is required only when A>1",
+        "The Kremser formula does not actually use A as an input"
+      ],
+      "correct_index": 0,
+      "explanation": "Keeping the two steps (computing A from L, V, m; then plugging A into the Kremser formula) separate localizes errors -- a wrong final answer with a verified-correct A points to an algebra mistake in the Kremser formula itself, while a wrong A points to an error in the underlying flow-rate or equilibrium-slope data, regardless of how carefully the Kremser formula itself is then applied."
+    },
+    {
+      "kc": "kremser-equation-absorption-stripping",
+      "slug": "stripping-factor-worked",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "A stripping column has equilibrium slope m=1.3, L/V=1.0 (liquid to gas). Given x_in=0.03, target x_out=0.003, y_in(gas)=0, find the number of equilibrium stages.",
+      "source": "Kremser equation, stripping-factor form",
+      "solution": "Step 1: compute the stripping factor S = m*V/L = 1.3/1.0 = 1.3.\nStep 2: the Kremser equation in stripping form: N = ln[(1-1/S)*(x_in/x_out) + 1/S]/ln(S).\nStep 3: N = ln[(1-1/1.3)*(0.03/0.003) + 1/1.3]/ln(1.3) = ln[(0.2308)*(10) + 0.7692]/ln(1.3) = ln[2.308+0.7692]/0.2624 = ln(3.077)/0.2624 = 1.1244/0.2624 = 4.28, so 5 equilibrium stages (rounding up).\nStep 4: note S>1 was required here for the stripping factor to give a well-behaved, feasible result at this recovery target -- just as absorption typically needs A>1 for practical stage counts, stripping typically needs S>1, since S is the reciprocal role-swap of A between the two operations."
+    },
+    {
+      "kc": "absorption-factor-and-minimum-lg",
+      "slug": "lv-minimum-from-pinch",
+      "kind": "numeric",
+      "difficulty": 3,
+      "prompt": "An absorber has inlet gas Y_in=0.03 (mole ratio), outlet target Y_out=0.003, equilibrium slope m=1.3, pure solvent entering (X_in=0), and inert gas flow G_s=10 mol/s. Find the minimum liquid flow L_s,min from the pinch-point condition.",
+      "source": "minimum liquid-to-gas ratio, pinch-point analysis",
+      "answer": { "value": 11.7, "unit": "mol/s", "tolerance_pct": 3 },
+      "solution": "At the pinch (minimum L/V), the exiting liquid reaches the maximum composition in equilibrium with the ENTERING gas: X_out,max = Y_in/m = 0.03/1.3 = 0.02308. Overall solute balance: G_s*(Y_in-Y_out) = L_s,min*(X_out,max - X_in). 10*(0.03-0.003) = L_s,min*(0.02308-0). L_s,min = 10*0.027/0.02308 = 0.27/0.02308 = 11.7 mol/s."
+    },
+    {
+      "kc": "absorption-factor-and-minimum-lg",
+      "slug": "diminishing-returns-above-a1",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A student proposes tripling an absorber's liquid flow rate to 'guarantee' near-100% recovery with minimum stages, reasoning that more liquid always helps. What two costs are being ignored?",
+      "source": "higher-liquid-flow-always-improves-absorption misconception",
+      "options": [
+        "Rising pumping/solvent-recovery costs, and the column approaching its flooding (hydraulic) limit as liquid flow increases",
+        "There are no real costs to increasing liquid flow; the proposal is sound",
+        "Only pumping cost matters; flooding is irrelevant to liquid flow rate",
+        "Only flooding matters; pumping cost is negligible regardless of flow rate"
+      ],
+      "correct_index": 0,
+      "explanation": "Once the absorption factor A is comfortably above 1, further increases in L/V give sharply diminishing stage-count benefits while pumping and solvent-recovery costs keep rising, and the column risks approaching its flooding limit (a hydraulic ceiling on how much liquid it can handle) -- absorption design is an optimization, not a 'more liquid is always better' relationship."
+    },
+    {
+      "kc": "absorption-factor-and-minimum-lg",
+      "slug": "pinch-location-worked",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Explain at which end of an absorption column the operating line typically pinches against the equilibrium line as L/V is reduced toward its minimum, and why that end matters.",
+      "source": "absorption pinch location, conceptual",
+      "solution": "Step 1: for a typical absorber (solute-lean liquid entering at the top, solute-rich gas entering at the bottom, countercurrent flow), the driving force (gap between operating and equilibrium lines) is generally smallest where the gas is richest in solute and the liquid has had the least chance to pick up solute -- near the BOTTOM of the column, where the entering gas (Y_in) meets the liquid leaving the column (X_out).\nStep 2: as L/V is reduced, X_out (the maximum liquid concentration achievable) rises, and the operating line's slope (L/V) decreases, pulling the bottom end of the operating line ever closer to the equilibrium line evaluated at Y_in.\nStep 3: the pinch condition is reached when X_out exactly reaches the value in equilibrium with the entering gas (X_out,max=Y_in/m) -- this is exactly why the minimum-L/V calculation uses the ENTERING gas composition and the equilibrium relationship, rather than any other point along the column."
+    },
+    {
+      "kc": "liquid-liquid-equilibrium-ternary",
+      "slug": "inside-outside-binodal",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "An overall mixture composition point falls well inside the two-phase 'lens' region on a ternary LLE diagram. What does this indicate?",
+      "source": "binodal curve interpretation, standard classification",
+      "options": [
+        "The mixture splits into two liquid phases (raffinate and extract) connected by the tie line through that point",
+        "The mixture remains single-phase",
+        "The mixture is at the plait point",
+        "The diagram cannot determine phase behavior for points inside the lens"
+      ],
+      "correct_index": 0,
+      "explanation": "Points inside the binodal (solubility) curve's two-phase region correspond to an overall composition that splits into two coexisting liquid phases -- a raffinate and an extract -- whose individual compositions are read from the ends of the tie line passing through that overall point."
+    },
+    {
+      "kc": "liquid-liquid-equilibrium-ternary",
+      "slug": "kd-not-constant",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A student uses a single handbook distribution coefficient K_D to design an extraction cascade spanning a wide composition range, including stages near the plait point. Where is this design most likely to go wrong?",
+      "source": "distribution-coefficient-is-constant-across-compositions misconception",
+      "options": [
+        "Near the plait point, where K_D approaches 1 and the actual tie-line slope differs substantially from the single handbook value used everywhere else",
+        "Nowhere -- K_D is a true constant for any solvent-diluent-solute system",
+        "Only at the dilute end of the composition range, never near the plait point",
+        "The design is safe as long as the solvent choice is correct"
+      ],
+      "correct_index": 0,
+      "explanation": "The distribution coefficient is the LOCAL slope of a tie line and varies along the binodal curve, changing most sharply near the plait point (where it approaches 1 as the two phases become identical) -- a single handbook K_D value, likely measured at dilute conditions far from the plait point, will be increasingly inaccurate for stages operating near that region."
+    },
+    {
+      "kc": "liquid-liquid-equilibrium-ternary",
+      "slug": "plait-point-tie-line-length",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Explain what happens to tie-line length as a ternary system's overall composition approaches the plait point, and why this makes separation there ineffective regardless of how many stages are used.",
+      "source": "plait point tie-line behavior, extraction feasibility limit",
+      "solution": "Step 1: a tie line connects the compositions of the two liquid phases (raffinate and extract) in equilibrium at a given point inside the two-phase region; its length reflects how DIFFERENT the two phases' compositions are.\nStep 2: as the overall composition approaches the plait point, the tie line shrinks toward zero length -- the two phases in equilibrium become progressively more similar in composition.\nStep 3: at the plait point itself, tie-line length is exactly zero: the two phases are identical, meaning there is no compositional difference left to exploit for separation, no matter how many equilibrium stages are added -- this is the direct liquid-liquid-extraction analog of an azeotrope in distillation, where the equilibrium relationship itself removes any further separating driving force."
+    },
+    {
+      "kc": "staged-extraction-design",
+      "slug": "mixing-point-lever-rule",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "A feed stream of 1000 kg/h is combined with a solvent stream of 800 kg/h. Using the inverse-lever-arm rule, find the ratio of the distance from the mixing point M to the feed point, divided by the distance from M to the solvent point (FM/MS).",
+      "source": "Hunter-Nash mixing point, inverse lever rule application",
+      "answer": { "value": 0.8, "unit": null, "tolerance_pct": 2 },
+      "solution": "By the inverse-lever-arm rule, the mixing point M divides the feed-solvent line such that FM/MS = (solvent flow)/(feed flow) = 800/1000 = 0.8 -- M sits closer to the feed point (the larger-flow stream), consistent with M being 'pulled toward' whichever stream contributes more mass to the mixture."
+    },
+    {
+      "kc": "staged-extraction-design",
+      "slug": "difference-point-purpose",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "What is the role of the difference point (Delta) in the Hunter-Nash graphical staged-extraction procedure?",
+      "source": "Hunter-Nash difference point, procedural role",
+      "options": [
+        "It is a fixed operating point (generally lying outside the ternary diagram) that ties every stage's mass balance together, letting successive stages be stepped off by drawing lines through it",
+        "It marks the exact composition of the final raffinate product",
+        "It is simply the midpoint between the feed and solvent compositions",
+        "It has no functional role and is only used for labeling the diagram"
+      ],
+      "correct_index": 0,
+      "explanation": "The difference point represents a fictitious 'net flow' quantity (the algebraic difference between streams entering and leaving a section of the cascade) that stays CONSTANT stage-to-stage in a countercurrent cascade -- this constancy is exactly what lets the stepping procedure locate each successive stage's compositions by drawing a line from the previous stage's extract composition through Delta."
+    },
+    {
+      "kc": "staged-extraction-design",
+      "slug": "stage-count-vs-mass-flow-worked",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Explain why the mixing point M in the Hunter-Nash construction must lie ON the straight line connecting the feed and solvent compositions, rather than anywhere else on the ternary diagram.",
+      "source": "mixing point geometric constraint, mass-balance justification",
+      "solution": "Step 1: when feed and solvent streams are combined, the resulting mixture's overall composition is a mass-weighted AVERAGE of the two input compositions (a straightforward mixing mass balance on each of the three components).\nStep 2: on a ternary diagram (where the three axes/edges represent mass or mole fractions of each component, summing to 1), any mass-weighted average of two points lies geometrically ON the straight line segment connecting them -- this is a general property of composition (barycentric-style) diagrams, not specific to extraction.\nStep 3: the mixing point's PRECISE location along that line (not just that it lies somewhere on it) is fixed by the inverse-lever-arm rule, which encodes exactly how much of each input stream contributes to the mixture -- together, these two facts (lies on the line; position set by mass ratio) fully determine M from the feed and solvent flow rates and compositions alone."
+    },
+    {
+      "kc": "washing-leaching-stage-calculations",
+      "slug": "leaching-kremser-style-stages",
+      "kind": "numeric",
+      "difficulty": 3,
+      "prompt": "A counter-current leaching cascade with constant underflow-overflow and wash ratio A=2.0 must reduce solute-ratio concentration from x_in=0.30 to x_out=0.02 (fresh solvent basis). Using a Kremser-style formula, find the number of ideal stages.",
+      "source": "leaching stage count, Kremser-analog formula",
+      "answer": { "value": 3.0, "unit": null, "tolerance_pct": 3 },
+      "solution": "N = ln[(1-1/A)*(x_in/x_out) + 1/A]/ln(A) = ln[(1-0.5)*(0.30/0.02) + 0.5]/ln(2.0) = ln[(0.5)*(15) + 0.5]/ln(2.0) = ln(7.5+0.5)/0.6931 = ln(8.0)/0.6931 = 2.079/0.6931 = 3.0 -- exactly 3 ideal stages for this specification."
+    },
+    {
+      "kc": "washing-leaching-stage-calculations",
+      "slug": "constant-underflow-assumption",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Why does the constant underflow-overflow assumption let leaching/washing calculations avoid the full ternary-diagram construction used for general liquid-liquid extraction?",
+      "source": "constant underflow assumption, simplification rationale",
+      "options": [
+        "Assuming each stage's solid-plus-retained-liquid stream carries a FIXED liquid-to-solid ratio reduces the problem to simple ratio-based mass balances, since the inert solid flow and total liquid-per-stage stay constant across the cascade",
+        "The assumption eliminates the need for any mass balance at all",
+        "It applies only when the solute concentration exceeds 50%",
+        "It replaces the need for equilibrium data entirely"
+      ],
+      "correct_index": 0,
+      "explanation": "With inert solid flow and a fixed liquid-retention ratio per stage held constant, the mass balances reduce to simple solute-ratio relationships (structurally identical to the Kremser equation), avoiding the more general ternary-diagram graphical construction that varying underflow/overflow compositions would otherwise require."
+    },
+    {
+      "kc": "washing-leaching-stage-calculations",
+      "slug": "four-step-procedure-worked",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Outline the four-step procedure for a counter-current leaching/washing calculation under the constant underflow-overflow assumption, and identify what check should be made regarding fresh-solvent flow.",
+      "source": "leaching/washing procedure, house-style procedure outline",
+      "solution": "Step 1: confirm the constant underflow-overflow assumption holds -- each stage's underflow (solid plus retained liquid) carries a fixed liquid-to-solid ratio across the cascade.\nStep 2: write a solute balance around each stage (or the whole cascade) in solute-ratio units (solute per unit inert solid; solute per unit fresh solvent).\nStep 3: apply counter-current stage-stepping, or the Kremser-style closed form (valid when the stage ratio is constant), to find the number of stages meeting the target recovery.\nStep 4: check the fresh-solvent-to-feed ratio against the target recovery -- as in absorption, too little fresh solvent forces the required stage count toward infinity as the design approaches a pinch condition, so this ratio should be verified comfortably above its minimum before finalizing the stage count."
+    },
+    {
+      "kc": "column-hydraulics-flooding-hetp",
+      "slug": "diameter-from-flooding-velocity",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "A distillation column must handle a vapor volumetric flow of 0.5 m^3/s. The flooding velocity is 2.0 m/s, and the column is designed to operate at 70% of flooding. Find the required column diameter.",
+      "source": "column diameter sizing from flooding velocity, standard drill",
+      "answer": { "value": 0.674, "unit": "m", "tolerance_pct": 2 },
+      "solution": "Operating velocity = 0.70*2.0 = 1.4 m/s. Required area A = Q/v_op = 0.5/1.4 = 0.3571 m^2. Diameter D = sqrt(4*A/pi) = sqrt(4*0.3571/3.1416) = sqrt(0.4547) = 0.674 m."
+    },
+    {
+      "kc": "column-hydraulics-flooding-hetp",
+      "slug": "stages-vs-size-two-questions",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A McCabe-Thiele construction says a separation needs 9 theoretical stages. What two additional pieces of information are needed to finish sizing the column?",
+      "source": "stage count vs. physical column size, conceptual distinction",
+      "options": [
+        "A hydraulic quantity (flooding velocity, to set diameter) and a packing-specific quantity (HETP, to convert stages to packed height)",
+        "Only the relative volatility -- everything else follows automatically from stage count",
+        "Only the feed composition -- diameter and height both follow directly from x_F",
+        "Nothing further is needed; stage count alone fully specifies the column"
+      ],
+      "correct_index": 0,
+      "explanation": "Theoretical stage count is purely an equilibrium-thermodynamics result and carries no information about physical size -- diameter requires a separate hydraulic calculation (flooding velocity, which depends on vapor/liquid flow rates and properties), and packed height (for a packed column) requires a packing-specific HETP to convert the stage count into a physical length."
+    },
+    {
+      "kc": "column-hydraulics-flooding-hetp",
+      "slug": "hetp-conversion-worked",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "A shortcut design gives 12 theoretical stages, and the selected packing has HETP=0.45 m. Find the required packed height, and explain what happens physically if the column is operated above its flooding velocity.",
+      "source": "packed height from HETP, and flooding failure mode",
+      "solution": "Step 1: packed height = (number of theoretical stages) * HETP = 12*0.45 = 5.4 m.\nStep 2: above the flooding velocity, the rising vapor's drag on the descending liquid becomes strong enough that liquid can no longer drain downward against it -- liquid begins to accumulate and back up in the column instead of flowing down to the reboiler, a condition called flooding.\nStep 3: flooding causes a sharp, often sudden rise in pressure drop, entrainment of liquid into the vapor stream leaving the top, and a severe loss of the column's separation efficiency -- this is why the operating velocity is deliberately kept at some safe fraction (e.g. 60-80%) of the flooding velocity rather than pushed close to it."
+    },
+    {
+      "kc": "separation-process-selection",
+      "slug": "three-factors-cold",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "Besides raw construction cost, which set of factors should drive the choice between distillation, absorption, and liquid-liquid extraction for a new separation task?",
+      "source": "separation process selection, key decision factors",
+      "options": [
+        "Relative volatility (or analogous equilibrium driving force), thermal sensitivity of the components, and solvent availability/recoverability",
+        "Only the color of the process stream",
+        "Only which method the plant has used historically, regardless of the current feed",
+        "Only the ambient embient temperature at the plant site"
+      ],
+      "correct_index": 0,
+      "explanation": "Equilibrium driving force (how easily the components' properties can be exploited), thermal sensitivity (whether reboiler duty would damage the product), and solvent-related costs (availability, recoverability) are the core technical factors -- process selection should follow from the separation's physical characteristics and product constraints, not incidental factors like stream color or unexamined historical precedent."
+    },
+    {
+      "kc": "separation-process-selection",
+      "slug": "heat-sensitive-product-selection",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A heat-sensitive pharmaceutical intermediate is dissolved at low concentration in water and degrades above 40 degC. Which separation method is most likely preferable to ordinary distillation?",
+      "source": "process selection for thermally sensitive products",
+      "options": [
+        "Liquid-liquid extraction, which can operate near ambient temperature without exposing the product to reboiler temperatures",
+        "Distillation at atmospheric pressure, since it is the cheapest option regardless of product sensitivity",
+        "Distillation under high pressure, to increase throughput",
+        "Absorption, since it always operates at the lowest possible temperature of any separation method"
+      ],
+      "correct_index": 0,
+      "explanation": "Distillation requires vaporizing (at least partially) the mixture, exposing the product to reboiler temperatures that would exceed the 40 degC degradation limit; liquid-liquid extraction exploits a solubility difference between two liquid phases and can typically operate near ambient temperature, avoiding thermal degradation -- exactly the kind of tradeoff process selection is meant to weigh."
+    },
+    {
+      "kc": "separation-process-selection",
+      "slug": "driving-force-analogy-worked",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Using the 'pick your driving force' framing, explain what physical property difference each of distillation, extraction, and absorption exploits, and how this framing helps choose between them for a new separation.",
+      "source": "separation method selection, driving-force framing",
+      "solution": "Step 1: distillation exploits differences in VOLATILITY (boiling point / vapor pressure) between components -- it works well when relative volatility is comfortably away from 1 and the components tolerate the associated vaporization temperatures.\nStep 2: liquid-liquid extraction exploits differences in SOLUBILITY between two immiscible (or partially miscible) liquid phases -- it is attractive when volatility differences are small, when thermal sensitivity rules out distillation, or when a suitable selective solvent exists and can be economically recovered.\nStep 3: absorption exploits differences in SOLUBILITY between a gas and a liquid -- it is the natural choice for removing a dilute solute from a large inert gas stream, where condensing the whole gas stream (as distillation effectively would) is impractical.\nStep 4: framing the choice as 'which driving force is largest and most exploitable for these specific components, without damaging a sensitive product' turns process selection into a structured comparison (given the feed's actual properties and constraints) rather than a default choice based on habit or unexamined precedent."
+    },
+    {
+      "kc": "separation-process-selection",
+      "slug": "close-relative-volatility-alternative",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Two components have a relative volatility very close to 1 and are both thermally stable. Which alternative to a very tall ordinary-distillation column is most commonly considered?",
+      "source": "difficult-separation process alternatives, selection reasoning",
+      "options": [
+        "Liquid-liquid extraction (or another method exploiting a different property, such as adsorption), since distillation becomes impractically expensive as alpha approaches 1",
+        "Simply adding a fan to increase vapor velocity",
+        "Switching to a batch Rayleigh still, which handles alpha near 1 more easily than continuous columns",
+        "There is no alternative; distillation must always be used regardless of alpha"
+      ],
+      "correct_index": 0,
+      "explanation": "As relative volatility approaches 1, distillation requires an ever-larger number of stages (and/or reflux), making it increasingly capital- and energy-intensive; extraction (exploiting a solubility difference instead of a volatility difference) or another separation method is often considered as an alternative when the components are thermally stable but poorly separated by volatility alone. A batch still does not fundamentally help with a difficult alpha -- it still faces the same equilibrium-curve constraint."
+    },
+    {
+      "kc": "column-hydraulics-flooding-hetp",
+      "slug": "hetp-not-fixed-property",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A student assumes a packing's HETP value from a manufacturer's datasheet applies unchanged to any separation and any operating condition. What is the flaw?",
+      "source": "HETP dependence on system and operating conditions",
+      "options": [
+        "HETP depends on the specific system's physical properties and flow rates (not just the packing type), so a datasheet HETP measured for one system/condition may not transfer directly to another",
+        "HETP is a universal constant for a given packing type, so the assumption is correct",
+        "HETP only depends on column diameter, never on the chemical system",
+        "HETP is only relevant for trayed columns, never for packed columns"
+      ],
+      "correct_index": 0,
+      "explanation": "HETP is influenced by the specific vapor-liquid system's mass-transfer characteristics, physical properties, and flow rates in addition to the packing geometry -- a manufacturer's datasheet value is typically measured for a specific test system and should be used with caution (or re-measured/estimated) for a substantially different separation."
+    },
+    {
+      "kc": "fenske-underwood-gilliland-method",
+      "slug": "underwood-purpose",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "What specific quantity does the Underwood equations step in the FUG method provide, and what condition is it evaluated at?",
+      "source": "Underwood equations role in the FUG sequence",
+      "options": [
+        "The minimum reflux ratio R_min, evaluated at the pinch condition (using feed condition and relative volatilities of all components)",
+        "The minimum number of stages N_min, evaluated at total reflux",
+        "The actual number of stages N, evaluated at the chosen operating reflux",
+        "The optimal feed stage location"
+      ],
+      "correct_index": 0,
+      "explanation": "The Underwood equations specifically solve for the minimum reflux ratio R_min at the pinch-point condition, using the feed's thermal condition (q) and the relative volatilities of ALL components (not just the keys) -- distinct from Fenske's N_min (at total reflux) and Gilliland's N (at a chosen operating R)."
+    },
+    {
+      "kc": "rayleigh-batch-distillation",
+      "slug": "instantaneous-vs-cumulative",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A student confuses the INSTANTANEOUS vapor composition y* (equilibrium with the current still-pot liquid) with the CUMULATIVE composition of all distillate collected up to that point. Why are these different quantities?",
+      "source": "instantaneous vs cumulative distillate composition, conceptual",
+      "options": [
+        "y* is the composition of vapor leaving the pot RIGHT NOW (in equilibrium with the current, evolving liquid composition), while the cumulative distillate is a time-integrated AVERAGE over all the vapor collected so far, which was richer earlier in the run and progressively leaner as x drifts down",
+        "They are always numerically identical for any batch distillation",
+        "The cumulative distillate composition is always higher than any instantaneous y* during the run",
+        "y* only has meaning at the very start of the batch run"
+      ],
+      "correct_index": 0,
+      "explanation": "Because the still-pot composition x (and hence the equilibrium vapor y*) drifts downward over the course of the run, the vapor collected EARLY in the batch is richer in the light component than vapor collected LATER -- the cumulative (collected) distillate composition is a flow-weighted average of all these instantaneous values, and is generally NOT equal to any single instantaneous y* value except in the trivial limit of an infinitesimally short batch."
+    },
+    {
+      "kc": "liquid-liquid-equilibrium-ternary",
+      "slug": "single-phase-region-recognition",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "An overall mixture composition point lies outside the binodal curve, near the pure-diluent corner of a ternary diagram. Explain what this means for extraction, and why adding more solvent might change this classification.",
+      "source": "single-phase region and solvent-addition effect, ternary diagram reasoning",
+      "solution": "Step 1: a point outside the binodal (solubility) curve represents a composition that is fully miscible -- a single liquid phase, with no phase split and therefore no raffinate/extract pair to separate.\nStep 2: at this overall composition, liquid-liquid extraction is simply not possible; there is nothing for a tie line to connect, since the mixture doesn't split.\nStep 3: adding more solvent moves the overall mixture point along the line connecting the original composition to the pure-solvent corner (per the mixing-point geometry from the staged-extraction-design KC) -- if this shifts the point across the binodal curve into the two-phase region, extraction becomes possible; this is exactly why real extraction processes must be designed with enough solvent to land the mixing point inside the two-phase 'lens,' not simply 'more solvent is generically better' but rather 'enough solvent to cross into the region where phase splitting -- and hence separation -- can occur at all.'"
+    },
+    {
+      "kc": "absorption-factor-and-minimum-lg",
+      "slug": "a-less-than-one-consequence",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "An absorber is designed with A=0.6 (absorption factor below 1). What is the most likely consequence for achieving a high recovery target?",
+      "source": "absorption factor below 1, feasibility consequence",
+      "options": [
+        "High recovery becomes very difficult or requires an impractically large number of stages, since A<1 means the operating line has a shallower slope than what favors easy absorption, pushing the design toward a pinch even at modest recovery targets",
+        "A<1 has no effect on stage count; only A>1 designs are ever affected by the pinch",
+        "A<1 always makes absorption easier, requiring fewer stages than A>1",
+        "A<1 means the column will operate below its flooding limit automatically"
+      ],
+      "correct_index": 0,
+      "explanation": "The absorption factor A=L/(mV) compares the liquid's capacity to absorb solute against the equilibrium-scaled gas flow; A well below 1 means insufficient liquid flow relative to what the equilibrium relationship demands, pushing the operating line close to the equilibrium line and toward a pinch even at modest recovery targets -- exactly the same diminishing-returns/pinch logic as minimum reflux in distillation, but here signaling that MORE liquid (not less) is needed to escape the difficulty."
+    },
+    {
+      "kc": "staged-extraction-design",
+      "slug": "why-alternate-tie-line-and-difference-point",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "In the Hunter-Nash stepping procedure, why does each stage require alternating between drawing a TIE LINE and drawing a line through the DIFFERENCE POINT, rather than using just one type of construction repeatedly?",
+      "source": "Hunter-Nash stepping logic, alternating construction rationale",
+      "options": [
+        "The tie line enforces the EQUILIBRIUM condition (finding the two phases actually in equilibrium at that stage), while the difference-point line enforces the MASS BALANCE condition connecting one stage's exiting streams to the next stage's compositions -- exactly analogous to alternating between the equilibrium curve and operating line in McCabe-Thiele",
+        "Both constructions serve an identical purpose and either alone would work",
+        "The tie line is used only for odd-numbered stages and the difference-point line only for even-numbered stages",
+        "Alternating constructions is purely a drafting convenience with no physical meaning"
+      ],
+      "correct_index": 0,
+      "explanation": "This mirrors the McCabe-Thiele logic exactly: the tie line encodes the equilibrium relationship (what compositions the two phases reach when in contact at a given stage), while the difference-point construction encodes the overall mass balance connecting successive stages -- stepping requires both pieces of physics, alternating between them, just as McCabe-Thiele alternates between the equilibrium curve and the operating line."
+    },
+    {
+      "kc": "washing-leaching-stage-calculations",
+      "slug": "washing-vs-leaching-distinction",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "What is the key physical distinction between 'washing' and 'leaching' in this KC's scope?",
+      "source": "washing vs leaching terminology, conceptual distinction",
+      "options": [
+        "Leaching extracts a solute FROM a solid matrix into a solvent; washing removes ENTRAINED liquid (already-dissolved solute in adhering liquid) from a solid or slurry using additional solvent -- both use the same constant-underflow-overflow stage math",
+        "Washing and leaching are two names for exactly the same physical process with no distinction",
+        "Leaching always requires more stages than washing regardless of the system",
+        "Washing only applies to gases, never to solids or slurries"
+      ],
+      "correct_index": 0,
+      "explanation": "Leaching dissolves a solute OUT of a solid (e.g. extracting sugar from beets, minerals from ore); washing removes liquid (with its dissolved solute) that is ENTRAINED with a solid or slurry, using fresh solvent to displace and dilute it further -- physically distinct starting points, but both are modeled with the same constant-underflow-overflow, Kremser-style stage mathematics."
+    },
+    {
+      "kc": "multicomponent-key-components",
+      "slug": "why-keys-matter-for-fug",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Explain why the Fenske-Underwood-Gilliland shortcut method needs the light-key/heavy-key identification as a PREREQUISITE step, rather than working with all components' recoveries simultaneously from the start.",
+      "source": "key components as FUG method prerequisite, conceptual rationale",
+      "solution": "Step 1: the FUG shortcut method's core equations (Fenske's N_min, in particular) are built around a SINGLE pair of components whose relative volatility and recovery specifications directly constrain the design -- trying to specify independent recovery targets for every component in a multicomponent feed would generally over-constrain the problem (more specifications than the column has genuine degrees of freedom to satisfy).\nStep 2: identifying the light key and heavy key isolates the two components the design specification ACTUALLY controls, while the sharp-split assumption for non-key components (everything more volatile than the LK goes overhead, everything less volatile than the HK goes to the bottoms) provides a tractable approximation for the REST of the components without needing separate equations for each.\nStep 3: this is why key-component identification must happen BEFORE Fenske, Underwood, or Gilliland can be applied -- those equations are written explicitly in terms of the key components' relative volatility and recoveries, and have no defined meaning until the keys have been identified from the specification."
+    }
+  ]
+}

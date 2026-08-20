@@ -1,0 +1,978 @@
+{
+  "schema_version": 1,
+  "exercises": [
+    {
+      "kc": "fluid-properties",
+      "slug": "identify-relevant-property",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "A tank designer needs to know how a floating object will settle in a liquid. Which fluid property is directly relevant to this buoyancy calculation?",
+      "source": "Munson, Fundamentals of Fluid Mechanics 7e, Ch.1 style",
+      "options": ["Density", "Viscosity", "Compressibility", "Vapor pressure"],
+      "correct_index": 0,
+      "explanation": "Buoyancy (Archimedes' principle) depends only on the displaced fluid's density and gravity. Viscosity governs drag/friction (irrelevant to static buoyancy), compressibility matters for high-speed gas flow, and vapor pressure governs cavitation/boiling risk -- none of these determine how deep an object floats."
+    },
+    {
+      "kc": "fluid-properties",
+      "slug": "cp-to-pas-conversion",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "A lubricant has a dynamic viscosity of 250 cP. What is this in SI units (Pa*s)?",
+      "source": "standard unit-conversion drill, Munson style",
+      "options": ["0.25 Pa*s", "2.5 Pa*s", "25 Pa*s", "250,000 Pa*s"],
+      "correct_index": 0,
+      "explanation": "1 cP = 1e-3 Pa*s, so 250 cP = 250 * 1e-3 = 0.25 Pa*s. The 2.5 Pa*s distractor forgets one factor of 10; the 25 Pa*s distractor treats cP as if it equals 0.1 Pa*s; the 250,000 Pa*s distractor inverts the conversion (multiplying by 1000 instead of dividing)."
+    },
+    {
+      "kc": "fluid-properties",
+      "slug": "glycerol-density-from-sg",
+      "kind": "numeric",
+      "difficulty": 1,
+      "prompt": "Glycerol has a specific gravity of 1.26 relative to water (rho_water = 1000 kg/m^3). Find the density of glycerol in kg/m^3.",
+      "source": "standard property-table drill",
+      "answer": { "value": 1260, "unit": "kg/m^3", "tolerance_pct": 1 },
+      "solution": "SG = rho_fluid / rho_water, so rho_fluid = SG * rho_water = 1.26 * 1000 = 1260 kg/m^3."
+    },
+    {
+      "kc": "fluid-properties",
+      "slug": "order-of-magnitude-air-vs-water",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "A student claims that because air is about 1000x less dense than water, it must also be about 1000x less viscous. Evaluate this claim using standard property values (water: rho=998 kg/m^3, mu=1.0e-3 Pa*s; air: rho=1.2 kg/m^3, mu=1.8e-5 Pa*s).",
+      "source": "conceptual property-scaling exercise",
+      "solution": "Density ratio: rho_water/rho_air = 998/1.2 = 832 (about 3 orders of magnitude). Viscosity ratio: mu_water/mu_air = 1.0e-3/1.8e-5 = 55.6 (less than 2 orders of magnitude). The claim is false: density and viscosity do not scale together between fluids -- air is roughly 800x less dense than water but only about 56x less viscous. This is why air still exerts noticeable viscous drag (e.g., on a hot-air balloon) despite feeling 'thin.'"
+    },
+    {
+      "kc": "fluid-statics-and-manometry",
+      "slug": "seawater-pressure-at-depth",
+      "kind": "numeric",
+      "difficulty": 1,
+      "prompt": "Find the gauge pressure at a depth of 10 m in seawater (rho = 1025 kg/m^3, g = 9.81 m/s^2).",
+      "source": "Munson, Fundamentals of Fluid Mechanics 7e, Ch.2 style",
+      "answer": { "value": 100552.5, "unit": "Pa", "tolerance_pct": 1 },
+      "solution": "P = rho*g*h = 1025*9.81*10 = 100,552.5 Pa (about 100.6 kPa gauge)."
+    },
+    {
+      "kc": "fluid-statics-and-manometry",
+      "slug": "mercury-manometer-reading",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A differential mercury (rho_Hg=13,600 kg/m^3) manometer connected across two taps in a water (rho_w=1000 kg/m^3) line reads h=0.08 m. What is the correct expression and value for P1-P2?",
+      "source": "differential manometer style, Munson Ch.2",
+      "options": [
+        "(rho_Hg - rho_w)*g*h = 9,888 Pa",
+        "rho_Hg*g*h = 10,673 Pa",
+        "rho_w*g*h = 785 Pa",
+        "(rho_Hg + rho_w)*g*h = 11,461 Pa"
+      ],
+      "correct_index": 0,
+      "explanation": "For a differential manometer where both legs are filled with the working fluid up to the manometer fluid, the water columns cancel except for the reading height, leaving P1-P2 = (rho_Hg - rho_w)*g*h = (13,600-1000)*9.81*0.08 = 9,888 Pa. Using rho_Hg alone (10,673 Pa) forgets to subtract the connecting fluid's density, overstating the reading; using rho_w alone drastically understates it; adding the densities has no physical basis."
+      },
+    {
+      "kc": "fluid-statics-and-manometry",
+      "slug": "hydrostatic-paradox-vessel-shape",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Two open vessels -- one a narrow vertical tube, one a wide conical tank -- are both filled with the same oil to the same height H. How does the gauge pressure at the bottom of each vessel compare?",
+      "source": "hydrostatic paradox (Pascal's vases), conceptual",
+      "options": [
+        "Identical in both vessels, since pressure at depth depends only on rho*g*H",
+        "Higher in the wide tank, since it holds more total fluid weight",
+        "Higher in the narrow tube, since the fluid is more 'concentrated'",
+        "Impossible to compare without knowing each vessel's exact volume"
+      ],
+      "correct_index": 0,
+      "explanation": "Hydrostatic pressure at a point depends only on the vertical depth below the free surface and the fluid's density (P=rho*g*h), never on the vessel's shape, cross-sectional area, or total fluid volume -- this is the classical hydrostatic paradox. Both 'more total weight' distractors confuse total force on the base (which does differ) with pressure (force per unit area, which does not)."
+    },
+    {
+      "kc": "fluid-statics-and-manometry",
+      "slug": "manometer-walk-procedure",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "A U-tube manometer has one leg open to atmosphere and the other connected to a closed gas tank, both above a common oil-filled bottom (oil rho=880 kg/m^3). The oil level on the tank side sits 0.35 m higher than on the open side. Find the gauge pressure of the gas in the tank.",
+      "source": "manometer walking-rule drill",
+      "solution": "Step 1: equate pressure at the bottom of the U-tube (the same physical point, reached two ways) by walking down each leg from its top: P_gas + rho*g*z_tank = P_atm + rho*g*z_open, where z_tank and z_open are the oil column heights measured from the U-tube bottom up to each free surface.\nStep 2: rearrange: P_gas = P_atm + rho*g*(z_open - z_tank) = P_atm - rho*g*(z_tank - z_open).\nStep 3: the tank-side level is higher, so z_tank - z_open = 0.35 m. In gauge pressure (P_atm=0): P_gas = -rho*g*(0.35) = -880*9.81*0.35 = -3021.7 Pa gauge.\nStep 4: sanity check -- a higher oil level on the gas side means the gas is pushing down on its column LESS effectively than atmosphere pushes on the open side, which is exactly what a below-atmospheric (vacuum) reading of about 3.0 kPa represents."
+    },
+    {
+      "kc": "newtonian-vs-non-newtonian-behavior",
+      "slug": "classify-shear-thinning",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "A polymer solution's apparent viscosity decreases as the shear rate applied to it increases (e.g., it flows more easily when stirred faster). How should this fluid be classified?",
+      "source": "rheology classification drill",
+      "options": ["Shear-thinning (pseudoplastic)", "Shear-thickening (dilatant)", "Bingham plastic", "Newtonian"],
+      "correct_index": 0,
+      "explanation": "Apparent viscosity decreasing with increasing shear rate is the definition of shear-thinning (pseudoplastic) behavior, e.g. many polymer solutions and paints. Shear-thickening is the opposite (viscosity rises with shear rate, e.g. cornstarch suspensions). A Bingham plastic requires a yield stress before any flow occurs at all, and a Newtonian fluid has constant viscosity regardless of shear rate."
+    },
+    {
+      "kc": "newtonian-vs-non-newtonian-behavior",
+      "slug": "bingham-plastic-yield-stress",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A fluid does not flow at all under shear stresses below 8 Pa but flows linearly (tau = 8 + 0.4*gamma_dot) above that threshold. What kind of fluid is this?",
+      "source": "rheology classification, drilling-mud / toothpaste style",
+      "options": ["Bingham plastic", "Shear-thinning", "Shear-thickening", "Newtonian with an offset"],
+      "correct_index": 0,
+      "explanation": "A nonzero yield stress (8 Pa) that must be exceeded before flow begins, followed by a linear stress-shear-rate relationship, is the defining signature of a Bingham plastic (e.g. drilling mud, toothpaste, some slurries). 'Newtonian with an offset' is not a real rheological category -- Newtonian fluids by definition pass through the origin."
+    },
+    {
+      "kc": "newtonian-vs-non-newtonian-behavior",
+      "slug": "classify-four-fluids",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Classify each fluid from its tau-vs-gamma_dot behavior: (A) tau = 2*gamma_dot (straight line through origin); (B) tau = 3*gamma_dot^0.7 (concave down); (C) tau = 1.5*gamma_dot^1.4 (concave up); (D) tau = 4 + 0.6*gamma_dot for gamma_dot>0, tau=0 below.",
+      "source": "rheology classification, comprehensive drill",
+      "solution": "(A) Newtonian -- constant slope (viscosity) of 2 Pa*s at every shear rate, straight line through the origin. (B) Shear-thinning (pseudoplastic) -- the exponent 0.7 < 1 makes the curve concave down, so apparent viscosity (tau/gamma_dot) decreases as gamma_dot increases. (C) Shear-thickening (dilatant) -- exponent 1.4 > 1 makes the curve concave up, so apparent viscosity increases with gamma_dot. (D) Bingham plastic -- a nonzero yield stress (4 Pa) must be exceeded before any flow, then a linear relationship takes over."
+    },
+    {
+      "kc": "dimensional-analysis-and-buckingham-pi-theorem",
+      "slug": "count-pi-groups-drag",
+      "kind": "numeric",
+      "difficulty": 1,
+      "prompt": "Drag force F on a sphere depends on diameter D, velocity v, fluid density rho, and viscosity mu. Using the Buckingham Pi theorem with primary dimensions M, L, T, how many independent dimensionless groups are needed?",
+      "source": "Bird, Stewart & Lightfoot, Transport Phenomena 2e, dimensional analysis style",
+      "answer": { "value": 2, "unit": null, "tolerance_pct": 0 },
+      "solution": "Variables: F, D, v, rho, mu -- n=5. Primary dimensions spanned: M, L, T -- m=3. Number of pi groups = n - m = 5 - 3 = 2 (these turn out to be a drag coefficient and the Reynolds number)."
+    },
+    {
+      "kc": "dimensional-analysis-and-buckingham-pi-theorem",
+      "slug": "repeating-variables-choice",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "When constructing pi groups by the repeating-variables method, which requirement must the chosen set of repeating variables satisfy?",
+      "source": "Buckingham Pi method, conceptual",
+      "options": [
+        "They must collectively contain all the primary dimensions and be dimensionally independent of one another",
+        "They must be the variables with the largest numeric values in the problem",
+        "They must include the dependent variable being solved for",
+        "There must be exactly one repeating variable per dimensionless group formed"
+      ],
+      "correct_index": 0,
+      "explanation": "Repeating variables must together span all the primary dimensions (M, L, T, etc.) present and be dimensionally independent (no one of them can be formed from a power-law combination of the others) -- this ensures every other variable can be combined with them to form a valid dimensionless group. Numeric magnitude is irrelevant; the dependent variable is deliberately excluded from the repeating set (each dimensionless group is built by combining ONE remaining variable with the full repeating set)."
+    },
+    {
+      "kc": "dimensional-analysis-and-buckingham-pi-theorem",
+      "slug": "different-repeating-variables-same-groups",
+      "kind": "mcq",
+      "difficulty": 3,
+      "prompt": "Two students independently apply the repeating-variables method to the same pipe-flow pressure-drop problem, choosing different (but both valid) repeating variable sets, and end up with pi_2 = 1/Re for one and pi_2 = Re^2 for the other. What should be concluded?",
+      "source": "misconception-targeted drill, Bird/Stewart/Lightfoot style",
+      "options": [
+        "Both are valid; the specific groups constructed depend on the repeating-variable choice, though the number of independent groups is fixed",
+        "One of the two students made an arithmetic error, since there is only one correct pi_2",
+        "The Buckingham Pi theorem does not apply when repeating variables differ",
+        "Only the group matching a textbook-named number (like Re) can be correct"
+      ],
+      "correct_index": 0,
+      "explanation": "The Buckingham Pi theorem guarantees the NUMBER of independent dimensionless groups, but the specific groups constructed depend on which repeating variables are chosen -- both Re^-1 and Re^2 are valid (if differently combined) dimensionless results, since one is just a power of the other. Assuming an error was made, or that only 'named' groups are valid, are both documented misconceptions about the method's flexibility."
+    },
+    {
+      "kc": "dimensional-analysis-and-buckingham-pi-theorem",
+      "slug": "pi-groups-orifice-flow",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "Volumetric flow rate Q through a sharp-edged orifice of diameter d in a pipe of diameter D depends on the pressure drop dP across it, the fluid density rho, and viscosity mu. Find the number of pi groups and construct them using D, rho, and (dP)^0.5 as repeating variables where convenient -- or state why viscosity must appear in a separate group.",
+      "source": "orifice-meter dimensional analysis, Bird/Stewart/Lightfoot style",
+      "solution": "Variables: Q, d, D, dP, rho, mu -- n=6. Primary dimensions M, L, T -- m=3. Number of pi groups = 6-3 = 3. A natural (though not unique) choice: pi_1 = d/D (a geometric ratio, already dimensionless -- any purely geometric ratio among length variables is automatically one of the pi groups and needs no repeating-variable construction). pi_2 built from Q using D, rho, dP as repeating variables gives the discharge coefficient form Q/(D^2*sqrt(dP/rho)). pi_3 built from mu gives a Reynolds-number-like group mu/(D*rho*sqrt(dP/rho)) = mu/(D*sqrt(rho*dP)). Any dimensionally independent repeating set works; the three resulting groups (diameter ratio, discharge coefficient, Reynolds number) are exactly the variables real orifice-meter correlations (C_d = f(d/D, Re)) are expressed in terms of."
+    },
+    {
+      "kc": "reynolds-number-and-flow-regime",
+      "slug": "classify-three-flows",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Water (rho=998 kg/m^3, mu=1.0e-3 Pa*s) flows through a 0.05 m diameter pipe. Classify the flow regime at v=0.2 m/s.",
+      "source": "Reynolds number classification, standard drill",
+      "options": ["Turbulent (Re ~ 9980)", "Laminar (Re ~ 998)", "Transitional (Re ~ 2500)", "Cannot classify without pipe length"],
+      "correct_index": 0,
+      "explanation": "Re = rho*v*D/mu = 998*0.2*0.05/1.0e-3 = 9980, which is above the ~4000 threshold, so this flow is turbulent. Pipe length does not enter the Reynolds number classification for fully developed flow."
+    },
+    {
+      "kc": "reynolds-number-and-flow-regime",
+      "slug": "critical-re-not-sharp-switch",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A pipe flow has Re = 2600, just above the commonly cited laminar limit of 2300. What is the most accurate characterization of this flow?",
+      "source": "misconception-targeted, transition-regime reasoning",
+      "options": [
+        "It is in the transitional regime; whether it behaves laminar or turbulent depends on entrance conditions, roughness, and disturbances",
+        "It is definitely fully turbulent, since it exceeds 2300",
+        "It is definitely laminar, since it is well below 4000",
+        "Re alone cannot describe pipe flow regime at all"
+      ],
+      "correct_index": 0,
+      "explanation": "Re=2600 falls in the transitional band (roughly 2300-4000) where the actual flow state is sensitive to entrance effects, surface roughness, and disturbances rather than being a deterministic function of Re alone. Treating 2300 as a hard laminar/turbulent switch is a well-documented misconception."
+    },
+    {
+      "kc": "reynolds-number-and-flow-regime",
+      "slug": "re-for-glycerol-vs-water",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "Glycerol (rho=1260 kg/m^3, mu=1.5 Pa*s) flows through a 0.03 m pipe at v=1.5 m/s. Compute the Reynolds number.",
+      "source": "high-viscosity fluid Reynolds number drill",
+      "answer": { "value": 37.8, "unit": null, "tolerance_pct": 2 },
+      "solution": "Re = rho*v*D/mu = 1260*1.5*0.03/1.5 = 56.7/1.5 = 37.8. This is deep in the laminar regime despite a substantial velocity, because glycerol's high viscosity suppresses turbulence."
+    },
+    {
+      "kc": "reynolds-number-and-flow-regime",
+      "slug": "re-external-flow-classification",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Air (rho=1.2 kg/m^3, mu=1.8e-5 Pa*s) flows past a 0.02 m diameter cylinder at 5 m/s. Compute the Reynolds number and comment on what flow regime past the cylinder this suggests.",
+      "source": "external-flow Reynolds number, cylinder drag correlation style",
+      "solution": "Re = rho*v*D/mu = 1.2*5*0.02/1.8e-5 = 0.12/1.8e-5 = 6,667. For flow past a circular cylinder, this Re falls in the range where a well-defined laminar boundary layer forms on the upstream side with vortex shedding in the wake (subcritical regime, Re roughly 40 to 2x10^5) -- consistent with the boundary-layer and turbulence-characterization KCs that follow this course's development of external flow."
+    },
+    {
+      "kc": "drag-and-friction-factor",
+      "slug": "stokes-law-validity",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A small particle settles in a viscous fluid at Re=0.05. Which drag relation is appropriate?",
+      "source": "Stokes-law regime classification",
+      "options": ["Stokes' law (C_D = 24/Re)", "Newton's law regime (C_D ~ 0.44)", "The Ergun equation", "Darcy-Weisbach friction factor"],
+      "correct_index": 0,
+      "explanation": "Re=0.05 is well below the Stokes-law limit of Re<1, where viscous forces dominate and C_D=24/Re applies exactly for a sphere. The Newton's-law regime (constant C_D~0.44) applies at high Re (10^3-10^5); the Ergun equation is for packed beds, not single particles; Darcy-Weisbach is for pipe flow."
+    },
+    {
+      "kc": "drag-and-friction-factor",
+      "slug": "darcy-vs-fanning-factor",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A textbook reports a 'friction factor' of 0.005 for a laminar pipe flow at Re=3200 (theoretical laminar value would be f=64/Re). Which friction factor convention is being used?",
+      "source": "Darcy vs Fanning friction factor distinction",
+      "options": [
+        "Fanning friction factor (f_F = 16/Re for laminar flow)",
+        "Darcy friction factor (f_D = 64/Re for laminar flow)",
+        "Both conventions give the same laminar value",
+        "Neither -- the value must be a measurement error"
+      ],
+      "correct_index": 0,
+      "explanation": "f_D = 64/Re = 64/3200 = 0.02 (Darcy), while f_F = 16/Re = 16/3200 = 0.005 (Fanning) -- exactly the Fanning value reported. The Darcy factor is always 4x the Fanning factor for the same flow; mixing up which convention a formula or reported value uses is a classic source of a factor-of-4 error in head-loss calculations."
+    },
+    {
+      "kc": "drag-and-friction-factor",
+      "slug": "terminal-velocity-check",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "A 1.5 mm glass sphere (rho_s=2500 kg/m^3) settles in water (rho=998 kg/m^3, mu=1.0e-3 Pa*s) at terminal velocity 0.018 m/s. Compute the Reynolds number to check whether Stokes' law (valid for Re<1) applies.",
+      "source": "Stokes-law validity check, settling-sphere drill",
+      "answer": { "value": 26.9, "unit": null, "tolerance_pct": 3 },
+      "solution": "Re = rho*v*D/mu = 998*0.018*0.0015/1.0e-3 = 0.02695/1.0e-3 = 26.95. Since Re > 1, this is well outside the Stokes-law regime, so a Stokes-law-based terminal velocity calculation for this sphere would be invalid -- an intermediate-regime drag correlation (e.g. C_D = 24/Re*(1+0.15*Re^0.687)) is needed instead."
+    },
+    {
+      "kc": "drag-and-friction-factor",
+      "slug": "drag-force-full-derivation",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "A 4 mm steel sphere (rho_s=7800 kg/m^3) falls through glycerol (rho=1260 kg/m^3, mu=1.5 Pa*s) at terminal velocity 0.05 m/s. Verify this is consistent with Stokes' law and back out the drag coefficient.",
+      "source": "settling-velocity verification, Stokes regime",
+      "solution": "Step 1: Re = rho*v*D/mu = 1260*0.05*0.004/1.5 = 0.252/1.5 = 0.168 -- well within Re<1, so Stokes' law should apply.\nStep 2: at terminal velocity, drag balances net weight: F_drag = (rho_s-rho)*g*(pi/6)*D^3 = (7800-1260)*9.81*(pi/6)*(0.004)^3 = 6540*9.81*(pi/6)*6.4e-8 = 6540*9.81*3.351e-8 = 2.150e-3 N.\nStep 3: C_D = F_drag/(0.5*rho*v^2*(pi/4)*D^2) = 2.150e-3/(0.5*1260*0.05^2*(pi/4)*0.004^2) = 2.150e-3/(0.5*1260*0.0025*1.2566e-5) = 2.150e-3/1.978e-5 = 108.7.\nStep 4: Stokes' law predicts C_D=24/Re=24/0.168=142.9 -- the same order of magnitude but not an exact match, which is expected since real terminal-velocity data at Re~0.17 sits slightly below the pure Stokes prediction due to the finite (non-zero) Reynolds number; the check confirms the regime assignment is reasonable, not that the two numbers must match exactly."
+    },
+    {
+      "kc": "macroscopic-mass-balance",
+      "slug": "contraction-velocity",
+      "kind": "numeric",
+      "difficulty": 1,
+      "prompt": "Water flows steadily through a pipe that contracts from diameter 0.15 m to 0.075 m. The velocity in the larger section is 1.5 m/s. Find the velocity in the smaller section.",
+      "source": "continuity/contraction drill, Munson style",
+      "answer": { "value": 6.0, "unit": "m/s", "tolerance_pct": 1 },
+      "solution": "A1*v1=A2*v2, and A1/A2=(D1/D2)^2=(0.15/0.075)^2=4, so v2=v1*4=1.5*4=6.0 m/s."
+    },
+    {
+      "kc": "macroscopic-mass-balance",
+      "slug": "three-stream-mixing",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Two inlet streams (rho*v*A = 3 kg/s and 5 kg/s) feed a mixing tee with a single outlet at steady state. What is the outlet mass flow rate?",
+      "source": "multi-stream mass balance, control-volume drill",
+      "options": ["8 kg/s", "2 kg/s (the difference)", "15 kg/s (the product)", "Cannot determine without densities"],
+      "correct_index": 0,
+      "explanation": "At steady state, mass in = mass out: sum of inlet mass flow rates equals the single outlet mass flow rate, so 3+5=8 kg/s. The difference and product have no physical basis for a simple mixing balance, and densities are already embedded in the given rho*v*A products, so nothing further is needed."
+    },
+    {
+      "kc": "macroscopic-mass-balance",
+      "slug": "missing-inlet-forgotten",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A student sets up a mass balance on a three-inlet, one-outlet vessel but only labels two of the three inlets on their control-volume sketch before writing sum(in)=sum(out). What is the most likely consequence?",
+      "source": "control-volume setup discipline, common-error drill",
+      "options": [
+        "The balance will be wrong because it omits one inlet's mass flow term entirely",
+        "The balance is still correct because outlet flow is unaffected by how many inlets are drawn",
+        "The balance only fails if the missing inlet has a different density",
+        "The balance only fails if the missing inlet is larger in area than the others"
+      ],
+      "correct_index": 0,
+      "explanation": "Every inlet and outlet stream must appear in the balance; omitting any one -- regardless of its size, density, or area -- produces a balance equation missing a real physical mass flow term and will give a wrong answer. This is exactly why the KC's practice_notes emphasize labeling every inlet/outlet with rho, v, A before writing the balance."
+    },
+    {
+      "kc": "macroscopic-mass-balance",
+      "slug": "tank-filling-rate",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "A cylindrical tank (diameter 2 m) is filled by an inlet pipe carrying water at 0.03 m^3/s while a drain removes water at 0.01 m^3/s. Find the rate at which the water level in the tank rises.",
+      "source": "unsteady macroscopic mass balance, tank-filling style",
+      "solution": "Step 1: unsteady mass balance on the tank: d(rho*V)/dt = rho*Q_in - rho*Q_out (density constant, cancels). \nStep 2: d(A_tank*h)/dt = Q_in - Q_out, so A_tank*(dh/dt) = 0.03-0.01 = 0.02 m^3/s.\nStep 3: A_tank = pi/4*(2)^2 = 3.1416 m^2.\nStep 4: dh/dt = 0.02/3.1416 = 6.37e-3 m/s (about 6.4 mm/s, or roughly 23 cm every 10 minutes)."
+    },
+    {
+      "kc": "bernoulli-equation",
+      "slug": "torricelli-exit-velocity",
+      "kind": "numeric",
+      "difficulty": 1,
+      "prompt": "A large open tank drains through a small hole 6 m below the free surface. Using Bernoulli's equation (steady, inviscid, incompressible, negligible surface velocity), find the exit velocity from the hole.",
+      "source": "Torricelli's theorem, classic Bernoulli application",
+      "answer": { "value": 10.85, "unit": "m/s", "tolerance_pct": 1 },
+      "solution": "Bernoulli between the free surface (P=0 gauge, v~0, z=h) and the hole (P=0 gauge, v=v_exit, z=0): rho*g*h = rho*v_exit^2/2, so v_exit = sqrt(2*g*h) = sqrt(2*9.81*6) = sqrt(117.72) = 10.85 m/s."
+    },
+    {
+      "kc": "bernoulli-equation",
+      "slug": "bernoulli-assumption-violation",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A student applies Bernoulli's equation between a point upstream of a centrifugal pump and a point downstream of it in the same pipeline, and gets a physically impossible negative pressure. What is the most likely cause?",
+      "source": "misconception-targeted, Bernoulli-with-pump error",
+      "options": [
+        "Bernoulli's equation ignores shaft work; a pump adds energy that Bernoulli's basic form cannot account for",
+        "The pipe diameter must have been measured incorrectly",
+        "Bernoulli's equation cannot be used for water, only for gases",
+        "The two points must not be at the same elevation"
+      ],
+      "correct_index": 0,
+      "explanation": "Plain Bernoulli's equation assumes no shaft work is added or removed between the two points; a pump violates this assumption directly by adding mechanical energy, so applying Bernoulli across it (rather than the extended mechanical energy balance with a pump-head term) produces nonsensical results. The other options misdiagnose the actual cause."
+    },
+    {
+      "kc": "bernoulli-equation",
+      "slug": "high-speed-low-pressure-scope",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Water flows through a long pipe that narrows partway along its length, with a pump located just before the narrowing. A student says 'the pipe narrows, so velocity increases there, so pressure must drop -- end of story.' What is the flaw in this reasoning?",
+      "source": "Bernoulli's-muddle misconception drill, arXiv:2012.13639 style",
+      "options": [
+        "It ignores that the pump adds shaft work, which the simple Bernoulli velocity-pressure trade-off does not account for",
+        "There is no flaw; velocity increase always implies pressure decrease in any flow",
+        "The reasoning is backwards -- narrowing a pipe should decrease velocity",
+        "Pressure and velocity are unrelated in real pipe flows"
+      ],
+      "correct_index": 0,
+      "explanation": "The inverse velocity-pressure relationship in Bernoulli's equation holds only along a streamline in steady, incompressible, inviscid flow with no added shaft work. Since a pump sits upstream of the narrowing, mechanical energy has been added, and the extended mechanical energy balance (not plain Bernoulli) is required -- the student's rule is a documented overgeneralization of the qualitative slogan."
+    },
+    {
+      "kc": "bernoulli-equation",
+      "slug": "bernoulli-full-derivation-check",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "Water at 3 m/s and 150,000 Pa gauge flows through a horizontal pipe that narrows so the velocity becomes 12 m/s. Using Bernoulli's equation, find the downstream pressure.",
+      "source": "horizontal Bernoulli application, elevation term dropped",
+      "solution": "Step 1: horizontal pipe means z1=z2, so the elevation terms cancel from Bernoulli's equation, leaving P1 + rho*v1^2/2 = P2 + rho*v2^2/2.\nStep 2: P2 = P1 + rho*(v1^2-v2^2)/2 = 150,000 + 1000*(3^2-12^2)/2 = 150,000 + 1000*(9-144)/2 = 150,000 + 1000*(-135)/2 = 150,000 - 67,500 = 82,500 Pa.\nStep 3: sanity check -- velocity increased (from continuity, the pipe narrowed), so pressure decreased (82,500 < 150,000 Pa), consistent with the Bernoulli trade-off in this specific case where the assumptions (steady, incompressible, inviscid, same streamline, no shaft work) all genuinely hold."
+    },
+    {
+      "kc": "mechanical-energy-balance-with-losses",
+      "slug": "pump-head-for-lift-and-friction",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "Water is pumped from an open tank to a second open tank 12 m higher, through a pipe with friction head loss of 4 m. Both tank surfaces are at atmospheric pressure with negligible velocity. Find the required pump head.",
+      "source": "extended mechanical energy balance, pump sizing drill",
+      "answer": { "value": 16, "unit": "m", "tolerance_pct": 1 },
+      "solution": "Extended mechanical energy balance between the two free surfaces (P1=P2=0 gauge, v1=v2~0): h_pump = (z2-z1) + h_L = 12 + 4 = 16 m of head."
+    },
+    {
+      "kc": "mechanical-energy-balance-with-losses",
+      "slug": "turbine-extracted-head",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "In the extended mechanical energy balance, how does a turbine's effect on the balance differ from a pump's?",
+      "source": "sign convention, mechanical energy balance",
+      "options": [
+        "A pump adds head to the flow, while a turbine removes head from it -- opposite signs of the same shaft-work term",
+        "A turbine adds head to the flow just like a pump does",
+        "Turbines only affect the friction-loss term, not the shaft-work term",
+        "Pumps and turbines both only affect the elevation term"
+      ],
+      "correct_index": 0,
+      "explanation": "Both are shaft-work terms in the same balance, but with opposite signs: a pump adds mechanical energy (positive head added), while a turbine extracts mechanical energy from the flow to do external work (head removed). Neither affects friction loss or elevation terms directly -- those are separate physical effects."
+    },
+    {
+      "kc": "mechanical-energy-balance-with-losses",
+      "slug": "identify-missing-terms",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A student writes plain Bernoulli's equation (no friction, no shaft work terms) for a real pipeline that includes both a pump and 50 m of pipe with known roughness. What is missing from their equation?",
+      "source": "extended mechanical energy balance setup discipline",
+      "options": [
+        "Both a friction head-loss term and a pump shaft-work term",
+        "Only a friction head-loss term -- the pump can be ignored if it's far from the points of interest",
+        "Only a pump shaft-work term -- friction is negligible in short-to-medium pipes",
+        "Nothing is missing; Bernoulli's equation already accounts for real pipeline effects"
+      ],
+      "correct_index": 0,
+      "explanation": "A real pipeline with a pump and a pipe of known roughness needs both terms: friction head loss (since real pipe flow always has some, and roughness/length are explicitly given) and a pump shaft-work term (since a pump is present anywhere in the system between the two points). Dropping either term produces the extended-mechanical-energy-balance-with-losses KC's namesake error."
+    },
+    {
+      "kc": "mechanical-energy-balance-with-losses",
+      "slug": "pump-power-from-head",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "A pump delivers 25 m of head to water (rho=1000 kg/m^3) flowing at 0.05 m^3/s. Find the hydraulic power delivered to the fluid.",
+      "source": "pump power calculation from head and flow rate",
+      "solution": "Step 1: hydraulic power = rho*g*Q*h_pump.\nStep 2: P = 1000*9.81*0.05*25 = 1000*9.81*1.25 = 12,262.5 W (about 12.26 kW).\nStep 3: this is the power delivered TO the fluid; the actual electrical power drawn by the pump motor would be higher by a factor of 1/efficiency, since real pumps are not 100% efficient."
+    },
+    {
+      "kc": "linear-momentum-theorem",
+      "slug": "why-momentum-and-energy-differ",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "For the same pipe bend, why does the momentum balance give different information than the energy (Bernoulli) balance, even though both use v and A at each opening?",
+      "source": "conceptual, momentum vs energy balance distinction",
+      "options": [
+        "Momentum is a vector balance capturing direction-dependent force effects (like the bend's reaction force), while energy is a scalar balance that cannot capture directional force information",
+        "They give the same information; using both is redundant",
+        "Momentum only applies to turbulent flow, while energy balances only apply to laminar flow",
+        "Energy balances require compressible flow; momentum balances do not"
+      ],
+      "correct_index": 0,
+      "explanation": "The momentum balance is inherently a vector equation (with x, y, z components), capturing forces like the reaction force a bend exerts on its supports -- information a scalar energy balance simply cannot represent, since energy has no direction. This is why fitting-force problems require the momentum balance specifically, not the energy balance."
+    },
+    {
+      "kc": "linear-momentum-theorem",
+      "slug": "elbow-force-computation",
+      "kind": "numeric",
+      "difficulty": 3,
+      "prompt": "Water flows through a horizontal 90-degree elbow, entering with A1=0.015 m^2, v1=4 m/s, P1=120,000 Pa gauge, and exiting with A2=0.008 m^2 (rho=1000 kg/m^3). Find the x-component of the force the elbow exerts on the fluid (taking the inlet direction as +x).",
+      "source": "momentum balance on pipe fitting, Munson Ch.5 style",
+      "answer": { "value": -2040, "unit": "N", "tolerance_pct": 3 },
+      "solution": "Momentum balance in x: sum(F_x) = (rate of x-momentum out) - (rate of x-momentum in). All inlet momentum is in +x; none of the outlet momentum has an x-component (it exits in +y after the 90-degree turn). So sum(F_x) = 0 - rho*v1^2*A1. Forces in x: P1*A1 (pressure pushing in +x) plus the unknown reaction force Rx. P1*A1 + Rx = -rho*v1^2*A1, so Rx = -P1*A1 - rho*v1^2*A1 = -(120,000*0.015) - (1000*4^2*0.015) = -1800 - 240 = -2040 N. The negative sign means the elbow pushes back against the fluid in the -x direction, consistent with turning the flow away from its original direction."
+    },
+    {
+      "kc": "linear-momentum-theorem",
+      "slug": "control-volume-force-labeling",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "When setting up a momentum balance on a pipe fitting, which forces must be included on the control volume besides the momentum flux terms?",
+      "source": "control-volume setup discipline for momentum balances",
+      "options": [
+        "Pressure forces at every open face and the unknown reaction force from the pipe wall/supports (plus gravity if relevant)",
+        "Only the reaction force from the supports; pressure is already captured in the momentum flux terms",
+        "Only pressure forces; support reactions are never part of a momentum balance",
+        "Viscous shear forces on the pipe wall, since these dominate over pressure in fittings"
+      ],
+      "correct_index": 0,
+      "explanation": "A momentum balance requires labeling every external force on the control volume: pressure acting on each open face, the (usually unknown) reaction force from whatever holds the fitting in place, and gravity if the geometry makes it relevant -- separately from the momentum flux terms (rho*v*v*A) at each opening, which represent momentum carried by the flow itself, not an external force."
+    },
+    {
+      "kc": "linear-momentum-theorem",
+      "slug": "nozzle-thrust-derivation",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "Water enters a converging nozzle at A1=0.02 m^2, v1=4 m/s, P1=200,000 Pa gauge and exits to atmosphere (P2=0 gauge) at A2=0.008 m^2. Find the force needed to hold the nozzle in place.",
+      "source": "nozzle thrust, momentum balance with pressure and exit-to-atmosphere condition",
+      "solution": "Step 1: continuity gives v2 = v1*A1/A2 = 4*0.02/0.008 = 10 m/s.\nStep 2: momentum balance in x (flow direction): sum(F_x) = rho*v2^2*A2 - rho*v1^2*A1 = 1000*100*0.008 - 1000*16*0.02 = 800 - 320 = 480 N (net outflow of momentum).\nStep 3: forces on the fluid in x: P1*A1 (pushing in +x, since P1 is gauge and P2=0 contributes nothing) plus the reaction force R from the nozzle holding it in place: P1*A1 + R = 480, so R = 480 - P1*A1 = 480 - (200,000*0.02) = 480 - 4000 = -3520 N.\nStep 4: the negative sign means the nozzle must pull back on the fluid (in -x) with 3520 N to keep the momentum balance consistent -- by Newton's third law, the fluid pushes the nozzle forward (in +x, the flow direction) with 3520 N, which is the thrust the mounting bolts must resist."
+    },
+    {
+      "kc": "flowmeters",
+      "slug": "venturi-flow-rate",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "A venturi meter has throat diameter 0.04 m in a pipe of diameter 0.08 m carrying water (rho=1000 kg/m^3). The measured pressure drop between approach and throat is 15,000 Pa. Find the flow rate (discharge coefficient = 1).",
+      "source": "venturi meter, Bernoulli+continuity application",
+      "answer": { "value": 0.00711, "unit": "m^3/s", "tolerance_pct": 3 },
+      "solution": "A1/A2 = (D1/D2)^2 = (0.08/0.04)^2 = 4, so v1=v2/4. Bernoulli: dP = rho*(v2^2-v1^2)/2 = rho*v2^2*(1-1/16)/2. Solving: v2 = sqrt(2*dP/(rho*(1-1/16))) = sqrt(2*15,000/(1000*0.9375)) = sqrt(30,000/937.5) = sqrt(32.0) = 5.657 m/s. Q = v2*A2 = 5.657*(pi/4*0.04^2) = 5.657*1.2566e-3 = 7.11e-3 m^3/s (7.11 L/s)."
+    },
+    {
+      "kc": "flowmeters",
+      "slug": "orifice-vs-venturi-losses",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "An orifice meter and a venturi meter are installed to measure the same flow rate, both calibrated with realistic discharge coefficients. Which statement correctly compares them?",
+      "source": "flowmeter comparison, real-device discharge coefficients",
+      "options": [
+        "The orifice meter causes a larger permanent pressure loss than the venturi meter for the same flow rate, because its abrupt geometry dissipates more mechanical energy",
+        "Both cause identical permanent pressure loss since both rely on the same Bernoulli-plus-continuity derivation",
+        "The venturi meter always causes MORE permanent pressure loss because its throat is narrower",
+        "Neither meter causes any permanent pressure loss since Bernoulli's equation is reversible"
+      ],
+      "correct_index": 0,
+      "explanation": "While both meters use the same idealized Bernoulli+continuity derivation for the pressure-drop-to-flow-rate relationship, the orifice's abrupt contraction and expansion causes more turbulent dissipation (permanent, non-recoverable pressure loss) than the venturi's smoothly tapered throat -- this is exactly why discharge coefficients differ between meter types and why venturis, though bulkier, are preferred when minimizing permanent loss matters."
+    },
+    {
+      "kc": "flowmeters",
+      "slug": "discharge-coefficient-role",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Why does a real flowmeter equation include a discharge coefficient C_d (typically 0.6-0.98) multiplying the ideal Bernoulli-derived flow rate?",
+      "source": "discharge coefficient conceptual role",
+      "options": [
+        "To correct for real effects the ideal derivation ignores, such as viscous losses and the vena contracta (flow area smaller than the physical opening)",
+        "To convert between Darcy and Fanning friction factor conventions",
+        "To account for compressibility effects in liquid flows",
+        "Because the ideal Bernoulli equation is dimensionally inconsistent without it"
+      ],
+      "correct_index": 0,
+      "explanation": "The ideal Bernoulli+continuity derivation assumes inviscid flow and that the fluid's minimum cross-section exactly equals the physical orifice/throat area; real flows have viscous losses and a vena contracta (especially pronounced for sharp-edged orifices) where the jet necks down past the opening, so C_d empirically corrects the ideal flow rate down to the real value. It has nothing to do with friction-factor conventions or compressibility here."
+    },
+    {
+      "kc": "flowmeters",
+      "slug": "venturi-derivation-from-scratch",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Derive the general venturi-meter flow-rate formula in terms of A1, A2, dP, and rho, starting from Bernoulli's equation and continuity.",
+      "source": "venturi meter general derivation",
+      "solution": "Step 1: Bernoulli between approach (1) and throat (2), same elevation: P1 + rho*v1^2/2 = P2 + rho*v2^2/2, so dP = P1-P2 = rho*(v2^2-v1^2)/2.\nStep 2: continuity: v1*A1 = v2*A2, so v1 = v2*(A2/A1).\nStep 3: substitute: dP = rho*v2^2*(1 - (A2/A1)^2)/2, so v2 = sqrt(2*dP / (rho*(1-(A2/A1)^2))).\nStep 4: Q = v2*A2 = A2*sqrt(2*dP/(rho*(1-(A2/A1)^2))) -- this is the general ideal venturi formula; multiplying by a discharge coefficient C_d (typically 0.95-0.98 for a well-made venturi) gives the practical working equation."
+    },
+    {
+      "kc": "pipeline-systems-and-friction-loss",
+      "slug": "friction-head-loss-computation",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "Water flows at 2.5 m/s through 500 m of pipe with internal diameter 0.15 m. Given a Darcy friction factor f=0.025, find the friction head loss.",
+      "source": "Darcy-Weisbach friction loss, standard drill",
+      "answer": { "value": 26.5, "unit": "m", "tolerance_pct": 2 },
+      "solution": "h_L = f*(L/D)*(v^2/(2g)) = 0.025*(500/0.15)*(2.5^2/(2*9.81)) = 0.025*3333.3*(6.25/19.62) = 0.025*3333.3*0.3186 = 26.55 m of water."
+    },
+    {
+      "kc": "pipeline-systems-and-friction-loss",
+      "slug": "diameter-sizing-iteration",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A pipeline problem asks you to find the pipe diameter needed to deliver a specified flow rate at a specified allowable head loss. Why can't this typically be solved in one algebraic step?",
+      "source": "iterative pipe-sizing, procedural drill",
+      "options": [
+        "The friction factor depends on Reynolds number and roughness ratio, both of which depend on the diameter you're solving for -- so you must guess, compute, and refine",
+        "The Darcy-Weisbach equation is not solvable algebraically for any unknown",
+        "Head loss does not depend on diameter, so there is nothing to iterate on",
+        "Diameter-sizing problems always have multiple valid diameters with no way to choose"
+      ],
+      "correct_index": 0,
+      "explanation": "Because f depends on Re = rho*v*D/mu (and v itself depends on D at fixed Q, since v=Q/A), and on the relative roughness eps/D, the friction factor is coupled to the very diameter being solved for -- this circularity is what forces an iterative (guess-compute-refine) approach rather than a single algebraic solution."
+    },
+    {
+      "kc": "pipeline-systems-and-friction-loss",
+      "slug": "friction-loss-scaling-with-length",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "For a fixed friction factor, diameter, and velocity, how does friction head loss scale if the pipe length is tripled?",
+      "source": "Darcy-Weisbach scaling relationship",
+      "options": ["It triples", "It stays the same", "It increases ninefold", "It increases by the square root of 3"],
+      "correct_index": 0,
+      "explanation": "h_L = f*(L/D)*(v^2/2g) is directly proportional to L when f, D, and v are held fixed, so tripling L triples h_L. The other options confuse this linear dependence with a quadratic one (which would apply if velocity, not length, were tripled)."
+    },
+    {
+      "kc": "pipeline-systems-and-friction-loss",
+      "slug": "pipe-network-total-loss",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "A pipeline consists of 300 m of pipe (D=0.1 m, f=0.022) followed by a sudden expansion to D=0.2 m, then 200 m of the larger pipe (f=0.020), carrying water at Q=0.02 m^3/s. Find the total friction head loss in the straight pipe sections (ignore the expansion loss itself).",
+      "source": "series pipeline segments, combined friction loss",
+      "solution": "Step 1: velocity in the small pipe: v1 = Q/A1 = 0.02/(pi/4*0.1^2) = 0.02/7.854e-3 = 2.546 m/s.\nStep 2: velocity in the large pipe: v2 = Q/A2 = 0.02/(pi/4*0.2^2) = 0.02/0.03142 = 0.637 m/s.\nStep 3: h_L1 = f1*(L1/D1)*(v1^2/2g) = 0.022*(300/0.1)*(2.546^2/19.62) = 0.022*3000*(6.482/19.62) = 66*0.3304 = 21.81 m.\nStep 4: h_L2 = f2*(L2/D2)*(v2^2/2g) = 0.020*(200/0.2)*(0.637^2/19.62) = 0.020*1000*(0.4058/19.62) = 20*0.02069 = 0.414 m.\nStep 5: total = 21.81+0.414 = 22.22 m -- note how the smaller pipe, despite being shorter, dominates the total loss because velocity (and its square) is so much higher there."
+    },
+    {
+      "kc": "pump-performance-and-npsh",
+      "slug": "pump-system-intersection",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "A pump curve is H_pump = 35 - 150*Q^2 (H in m, Q in m^3/s), and the system curve is H_sys = 8 + 3000*Q^2. Find the operating flow rate Q.",
+      "source": "pump/system curve intersection, standard drill",
+      "answer": { "value": 0.0926, "unit": "m^3/s", "tolerance_pct": 2 },
+      "solution": "Set curves equal: 35-150*Q^2 = 8+3000*Q^2, so 27 = 3150*Q^2, Q^2 = 8.571e-3, Q = 0.0926 m^3/s. Check H: 35-150*(8.571e-3)=35-1.286=33.71 m; 8+3000*(8.571e-3)=8+25.71=33.71 m -- matches."
+    },
+    {
+      "kc": "pump-performance-and-npsh",
+      "slug": "npsh-margin-check",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A pump installation has NPSH_A = 5.2 m and the pump's NPSH_R at the operating flow is 6.0 m. What should be concluded?",
+      "source": "NPSH margin check, cavitation risk assessment",
+      "options": [
+        "The pump is at risk of cavitation, since NPSH_A < NPSH_R",
+        "The pump is safe, since NPSH_A is a positive number",
+        "There is no risk as long as NPSH_A and NPSH_R are both above zero",
+        "NPSH_A and NPSH_R cannot be compared directly; only their ratio matters"
+      ],
+      "correct_index": 0,
+      "explanation": "Cavitation risk exists whenever the available margin (NPSH_A) falls below what the pump requires (NPSH_R) at that flow -- here 5.2 m < 6.0 m means the pressure at the impeller eye will likely drop below the fluid's vapor pressure, causing vapor bubbles to form and collapse. Both being 'positive' is irrelevant; what matters is the comparison between them."
+    },
+    {
+      "kc": "pump-performance-and-npsh",
+      "slug": "npsh-layout-not-pump-property",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A plant relocates a pump 2 m higher above its feed tank, keeping the exact same pump model and flow rate. What happens to NPSH_A and NPSH_R respectively?",
+      "source": "misconception-targeted, NPSH layout dependence",
+      "options": [
+        "NPSH_A decreases (worse suction condition); NPSH_R is unchanged (it's a pump-specific quantity at a given flow)",
+        "Both NPSH_A and NPSH_R decrease equally, since it's the same pump",
+        "NPSH_A is unchanged because it's a pump-specific quantity; NPSH_R changes with layout",
+        "Neither changes, since NPSH values are fixed manufacturer specifications"
+      ],
+      "correct_index": 0,
+      "explanation": "NPSH_A depends on the suction-side layout (elevation, friction loss, fluid vapor pressure, atmospheric pressure) and decreases as suction lift increases; NPSH_R is a property of the pump itself at a given flow rate and does not change with piping layout. Cavitation risk rises here because the (unchanged) NPSH_R now has a smaller NPSH_A margin to work with."
+    },
+    {
+      "kc": "pump-performance-and-npsh",
+      "slug": "npsh-available-full-calc",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "Water at 25 degC (vapor pressure 3169 Pa, rho=997 kg/m^3) is drawn from an open reservoir into a pump located 2.5 m above the reservoir surface, with suction-line friction loss 0.3 m of water. Atmospheric pressure is 101,325 Pa. Find NPSH_A.",
+      "source": "NPSH_A full calculation, elevated-suction pump",
+      "solution": "Step 1: NPSH_A = (P_atm - P_vap)/(rho*g) - z_s - h_f,suction.\nStep 2: (P_atm-P_vap)/(rho*g) = (101,325-3169)/(997*9.81) = 98,156/9,780.6 = 10.03 m.\nStep 3: NPSH_A = 10.03 - 2.5 - 0.3 = 7.23 m.\nStep 4: this 7.23 m is the margin available before the pressure at the pump suction would drop to the fluid's vapor pressure; it must be compared against the pump's NPSH_R at the actual operating flow rate (from the manufacturer's curve) to assess cavitation risk."
+    },
+    {
+      "kc": "packed-bed-pressure-drop",
+      "slug": "ergun-dominant-term",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "For fine particles (small d_p) at low superficial velocity, which term of the Ergun equation typically dominates the pressure drop?",
+      "source": "Ergun equation regime identification",
+      "options": ["The viscous (laminar) term", "The inertial (turbulent) term", "Both contribute exactly equally by definition", "Neither -- gravity dominates in packed beds"],
+      "correct_index": 0,
+      "explanation": "The viscous term scales as v/d_p^2 and dominates at low Reynolds number (fine particles, low velocity), while the inertial term scales as v^2/d_p and dominates at high Re (coarse particles, high velocity). Gravity does not appear in the Ergun equation itself -- it's a separate force balance used only at minimum fluidization."
+    },
+    {
+      "kc": "packed-bed-pressure-drop",
+      "slug": "ergun-pressure-drop-calc",
+      "kind": "numeric",
+      "difficulty": 3,
+      "prompt": "Water (rho=1000 kg/m^3, mu=1.0e-3 Pa*s) flows upward through a packed bed of 2 mm spherical particles, voidage 0.38, superficial velocity 0.005 m/s, bed height 0.8 m. Find the pressure drop using the Ergun equation.",
+      "source": "Ergun equation, standard packed-bed drill",
+      "answer": { "value": 1249, "unit": "Pa", "tolerance_pct": 3 },
+      "solution": "dP/L = 150*mu*(1-eps)^2*v/(eps^3*dp^2) + 1.75*rho*(1-eps)*v^2/(eps^3*dp). Viscous term: 150*1.0e-3*(0.62)^2*0.005/((0.38)^3*(0.002)^2) = 150*1.0e-3*0.3844*0.005/(0.05487*4e-6) = 2.883e-4/2.195e-7 = 1313.5 Pa/m. Inertial term: 1.75*1000*0.62*(0.005)^2/((0.38)^3*0.002) = 1.75*1000*0.62*2.5e-5/(0.05487*0.002) = 0.02713/1.097e-4 = 247.2 Pa/m. Total dP/L = 1313.5+247.2 = 1560.7 Pa/m (the viscous term dominates, as expected for fine particles at low velocity). dP = 1560.7*0.8 = 1248.5 Pa (about 1249 Pa)."
+    },
+    {
+      "kc": "packed-bed-pressure-drop",
+      "slug": "particle-size-effect-on-dp",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "In the Ergun equation's viscous term, pressure drop scales as 1/d_p^2. If particle diameter is halved (all else fixed), what happens to the viscous contribution to pressure drop?",
+      "source": "Ergun equation scaling sensitivity",
+      "options": ["It increases fourfold", "It doubles", "It stays the same", "It is halved"],
+      "correct_index": 0,
+      "explanation": "Since the viscous term is proportional to 1/d_p^2, halving d_p multiplies that term by 1/(0.5)^2 = 4. This strong sensitivity to particle size is why fine-particle packed beds require much more pumping power than coarse-particle beds at the same flow rate."
+    },
+    {
+      "kc": "packed-bed-pressure-drop",
+      "slug": "ergun-air-bed-worked",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "Air (rho=1.2 kg/m^3, mu=1.8e-5 Pa*s) flows through a packed bed of 3 mm spherical particles (voidage 0.4) at superficial velocity 0.1 m/s, bed height 0.5 m. Find the pressure drop using the Ergun equation.",
+      "source": "Ergun equation, air/coarse-particle worked example (content.json house style)",
+      "solution": "Step 1: viscous term = 150*mu*(1-eps)^2*v/(eps^3*dp^2) = 150*1.8e-5*(0.6)^2*0.1/((0.4)^3*(0.003)^2) = 150*1.8e-5*0.36*0.1/(0.064*9e-6) = 9.72e-5/5.76e-7 = 168.8 Pa/m.\nStep 2: inertial term = 1.75*rho*(1-eps)*v^2/(eps^3*dp) = 1.75*1.2*0.6*0.01/(0.064*0.003) = 0.0126/1.92e-4 = 65.6 Pa/m.\nStep 3: total dP/L = 168.8+65.6 = 234.4 Pa/m; dP = 234.4*0.5 = 117.2 Pa across the bed.\nStep 4: the viscous term (72% of the total) dominates here because the particles, while not tiny, are combined with a low superficial velocity that keeps the flow in a viscous-dominated regime for this bed."
+    },
+    {
+      "kc": "fluidization-and-minimum-fluidization-velocity",
+      "slug": "classify-bed-states",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "A bed's minimum fluidization velocity is v_mf=0.03 m/s. At superficial velocity 0.08 m/s, how should the bed be classified?",
+      "source": "fluidization state classification",
+      "options": ["Fluidized bed", "Fixed (packed) bed", "Below onset of fluidization", "Cannot classify without particle density"],
+      "correct_index": 0,
+      "explanation": "Since 0.08 m/s exceeds v_mf=0.03 m/s, the bed is fluidized: pressure drop plateaus (just supporting the particle weight) while the bed expands and particles circulate freely, unlike a fixed bed where pressure drop keeps rising with velocity below v_mf."
+    },
+    {
+      "kc": "fluidization-and-minimum-fluidization-velocity",
+      "slug": "pressure-drop-plateau-explanation",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Why does packed-bed pressure drop plateau (stop increasing) once the superficial velocity exceeds v_mf, even as velocity keeps rising further?",
+      "source": "fluidization physical mechanism, conceptual",
+      "options": [
+        "Once fluidized, the bed's pressure drop is fixed by the requirement that drag support the particles' net weight per unit area -- it cannot exceed that regardless of velocity",
+        "The Ergun equation predicts pressure drop always plateaus above a certain Reynolds number, for any bed",
+        "Fluidized particles stop experiencing drag entirely once suspended",
+        "Pressure drop only plateaus if the fluid is a gas, not a liquid"
+      ],
+      "correct_index": 0,
+      "explanation": "Above v_mf, the bed is free to expand; any additional drag beyond what supports the particles' net weight per unit cross-sectional area would accelerate the particles upward, so the bed instead expands (increasing voidage, which reduces resistance) to keep pressure drop pinned at that weight-support value. This is a force-balance argument specific to fluidization, not a general Ergun-equation property, and drag on the particles is very much still present (it's what's holding them up)."
+    },
+    {
+      "kc": "fluidization-and-minimum-fluidization-velocity",
+      "slug": "vmf-from-ergun-balance",
+      "kind": "numeric",
+      "difficulty": 3,
+      "prompt": "A bed of 0.5 mm spherical particles (rho_s=2600 kg/m^3, voidage at minimum fluidization eps=0.45) is fluidized by air (rho=1.2 kg/m^3, mu=1.8e-5 Pa*s). Using the Ergun equation set equal to the particles' net weight per unit bed volume, find the minimum fluidization velocity.",
+      "source": "minimum fluidization velocity from force balance, Ergun-based derivation",
+      "answer": { "value": 0.319, "unit": "m/s", "tolerance_pct": 5 },
+      "solution": "At minimum fluidization, dP/L = (1-eps)*(rho_s-rho)*g = (0.55)*(2600-1.2)*9.81 = 0.55*2598.8*9.81 = 14,022 Pa/m. Setting the Ergun equation equal to this and solving the resulting quadratic in v_mf (inertial coefficient A=25,350, viscous coefficient B=35,852, from the bed's eps, dp, rho, mu) gives v_mf = 0.319 m/s. This value can be checked by substituting back into the Ergun equation and confirming dP/L comes out to 14,022 Pa/m."
+    },
+    {
+      "kc": "fluidization-and-minimum-fluidization-velocity",
+      "slug": "four-regime-classification",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "For a bed with v_mf=0.02 m/s, classify and explain the bed's physical state at superficial velocities of 0.005, 0.02, 0.05, and a very high entraining velocity.",
+      "source": "fluidization regime classification, comprehensive (mirrors content.json house scaffold)",
+      "solution": "At 0.005 m/s (below v_mf): fixed (packed) bed -- pressure drop rises with velocity per the Ergun equation, no bed expansion. At 0.02 m/s (= v_mf): onset of fluidization -- pressure drop just balances the bed's weight per unit area, bed begins to expand. At 0.05 m/s (above v_mf): fluidized bed -- pressure drop stays roughly constant while the bed height expands and particles circulate, behaving like a boiling liquid. At very high velocity (above the particles' terminal settling velocity): pneumatic transport/entrainment -- particles are carried out of the vessel with the fluid rather than remaining in a bounded, expanded bed."
+    },
+    {
+      "kc": "continuity-equation",
+      "slug": "divergence-zero-meaning",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "For an incompressible flow field with div(v)=0 at every point, which statement is correct?",
+      "source": "continuity equation, incompressibility conceptual check",
+      "options": [
+        "The velocity can still vary in space; div(v)=0 only requires zero net outflow from any infinitesimal volume, not a uniform or zero velocity field",
+        "The velocity must be zero everywhere",
+        "The velocity must be constant (uniform) everywhere",
+        "div(v)=0 only applies to fluids at rest"
+      ],
+      "correct_index": 0,
+      "explanation": "div(v)=0 is a statement about local mass conservation (net volumetric outflow from any point is zero), which is fully compatible with a spatially varying velocity field -- e.g. u=2x, v=-2y (in 2D) has du/dx+dv/dy=2-2=0 everywhere despite u and v both varying with position. It says nothing about the flow being at rest or uniform."
+    },
+    {
+      "kc": "continuity-equation",
+      "slug": "check-incompressible-field",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A 2D velocity field is given by u=3x^2, v=-6xy. Does this field satisfy the incompressible continuity equation du/dx+dv/dy=0?",
+      "source": "continuity equation verification, common exam-style check",
+      "options": ["Yes -- du/dx=6x and dv/dy=-6x, which sum to zero", "No -- du/dx and dv/dy do not cancel", "Cannot be determined without density", "Only if the flow is also steady"],
+      "correct_index": 0,
+      "explanation": "du/dx = d(3x^2)/dx = 6x, and dv/dy = d(-6xy)/dy = -6x. Sum: 6x + (-6x) = 0 everywhere, so the field satisfies incompressible continuity regardless of steadiness or density (which doesn't appear in this reduced incompressible form)."
+    },
+    {
+      "kc": "continuity-equation",
+      "slug": "shell-balance-terms",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Explain, term by term, how the shell (infinitesimal control volume) balance produces the divergence term in the microscopic continuity equation, focusing on the x-direction contribution.",
+      "source": "continuity equation derivation, conceptual walkthrough",
+      "solution": "Consider a box of dimensions dx*dy*dz. Mass flux entering through the face at x is rho*vx evaluated at x, times the face area dy*dz. Mass flux leaving through the face at x+dx is rho*vx evaluated at x+dx, times dy*dz. Taylor-expanding rho*vx at x+dx to first order: rho*vx|_(x+dx) ~ rho*vx|_x + d(rho*vx)/dx * dx. Net accumulation contribution from the x-direction alone: [rho*vx|_x - rho*vx|_(x+dx)]*dy*dz = -d(rho*vx)/dx * dx*dy*dz. Repeating for y and z and summing gives -[d(rho*vx)/dx+d(rho*vy)/dy+d(rho*vz)/dz]*dV = -div(rho*v)*dV, which equals the rate of mass accumulation d(rho)/dt * dV -- rearranged, this is exactly d(rho)/dt + div(rho*v) = 0."
+    },
+    {
+      "kc": "continuity-equation",
+      "slug": "steady-compressible-continuity",
+      "kind": "mcq",
+      "difficulty": 3,
+      "prompt": "For a steady (but NOT incompressible) flow, which form of the continuity equation applies?",
+      "source": "steady vs incompressible continuity, distinguishing the two simplifications",
+      "options": [
+        "div(rho*v)=0 -- the time-derivative term vanishes (steady), but density can still vary in space so it stays inside the divergence",
+        "div(v)=0 -- the same simplified form used for incompressible flow",
+        "d(rho)/dt=0 alone, with no further simplification possible",
+        "The continuity equation cannot be applied unless the flow is both steady and incompressible"
+      ],
+      "correct_index": 0,
+      "explanation": "Steady flow means d(rho)/dt=0 at any fixed point, reducing the continuity equation to div(rho*v)=0 -- but density rho can still vary from point to point (e.g. in compressible gas flow with spatial density gradients), so rho must stay inside the divergence rather than being pulled out as in the fully incompressible case (which additionally assumes rho is constant everywhere, giving div(v)=0)."
+    },
+    {
+      "kc": "navier-stokes-equations",
+      "slug": "identify-terms",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "In the Navier-Stokes equation rho*(dv/dt + (v.grad)v) = -grad(P) + mu*laplacian(v) + rho*g, which term represents convective acceleration?",
+      "source": "Navier-Stokes term identification, conceptual",
+      "options": ["(v.grad)v", "dv/dt", "-grad(P)", "mu*laplacian(v)"],
+      "correct_index": 0,
+      "explanation": "(v.grad)v is the convective acceleration -- the acceleration a fluid element experiences from moving into a region of different velocity, even in steady flow. dv/dt is the local (unsteady) acceleration at a fixed point; -grad(P) is the pressure force; mu*laplacian(v) is the viscous force."
+    },
+    {
+      "kc": "navier-stokes-equations",
+      "slug": "reynolds-number-term-dominance",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "Water (rho=1000 kg/m^3, mu=1.0e-3 Pa*s) flows past an object at v=2 m/s over a length scale L=0.05 m. Which term of the Navier-Stokes equation is expected to dominate?",
+      "source": "Reynolds-number-based term scaling in Navier-Stokes",
+      "options": [
+        "The convective acceleration term, since Re=rho*v*L/mu=100,000 is very large",
+        "The viscous term, since Re is very large",
+        "The pressure term always dominates regardless of Re",
+        "Gravity dominates since water is being considered"
+      ],
+      "correct_index": 0,
+      "explanation": "Re = rho*v*L/mu = 1000*2*0.05/1.0e-3 = 100,000, a very high Reynolds number, meaning convective (inertial) effects dominate over viscous effects away from solid boundaries -- exactly the regime where inviscid (Bernoulli-like) analysis becomes a good approximation outside boundary layers."
+    },
+    {
+      "kc": "navier-stokes-equations",
+      "slug": "term-by-term-derivation-walkthrough",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "Starting from Newton's second law applied to an infinitesimal fluid element, explain how each force (pressure, viscous, gravity) enters the Navier-Stokes equation and why the acceleration term must be the material derivative rather than just dv/dt.",
+      "source": "Navier-Stokes derivation from F=ma, conceptual walkthrough",
+      "solution": "Step 1: Newton's second law on a fluid element of mass rho*dV: (mass)*(acceleration) = sum of forces.\nStep 2: the acceleration of a fluid element FOLLOWING the flow is the material derivative Dv/Dt = dv/dt + (v.grad)v -- dv/dt alone would only capture how velocity changes at a FIXED point in space, missing the additional acceleration the element feels simply by moving into a region of different velocity (convective acceleration), which is nonzero even in steady flow (e.g. fluid speeding up through a nozzle at steady state).\nStep 3: the forces per unit volume are: -grad(P), the net pressure force pushing from high to low pressure; mu*laplacian(v), the net viscous force for a Newtonian fluid with constant viscosity (arising from the divergence of the viscous stress tensor); and rho*g, the body force from gravity.\nStep 4: assembling: rho*(dv/dt + (v.grad)v) = -grad(P) + mu*laplacian(v) + rho*g -- every term on the right traces to one distinct physical force mechanism, and the left side captures the TOTAL acceleration of a tracked fluid element, not just the local time-rate-of-change at a fixed point."
+    },
+    {
+      "kc": "boundary-layer-approximation",
+      "slug": "classify-region",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "For high-Reynolds-number flow over a flat plate, where is the velocity gradient normal to the wall the largest?",
+      "source": "boundary layer identification, classic",
+      "options": ["Inside the boundary layer, near the wall", "In the free stream, far from the wall", "Equally large everywhere in the flow", "At the leading edge only, nowhere else"],
+      "correct_index": 0,
+      "explanation": "Inside the boundary layer, velocity rises rapidly from zero at the wall (no-slip) to the free-stream value over a thin layer, producing a large velocity gradient. In the free stream, velocity is essentially uniform, so the gradient there is nearly zero."
+    },
+    {
+      "kc": "boundary-layer-approximation",
+      "slug": "blasius-thickness-estimate",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "Air (rho=1.2 kg/m^3, mu=1.8e-5 Pa*s) flows at 10 m/s over a flat plate. Using the Blasius estimate delta = 5.0*x/sqrt(Re_x), find the boundary-layer thickness at x=0.5 m from the leading edge.",
+      "source": "Blasius laminar boundary layer thickness correlation",
+      "answer": { "value": 0.00433, "unit": "m", "tolerance_pct": 3 },
+      "solution": "Re_x = rho*v*x/mu = 1.2*10*0.5/1.8e-5 = 6/1.8e-5 = 333,333. delta = 5.0*x/sqrt(Re_x) = 5.0*0.5/sqrt(333,333) = 2.5/577.4 = 4.33e-3 m (4.33 mm)."
+    },
+    {
+      "kc": "boundary-layer-approximation",
+      "slug": "why-viscous-effects-never-vanish-at-wall",
+      "kind": "worked",
+      "difficulty": 3,
+      "prompt": "Explain why, however high the Reynolds number, viscous effects can never be entirely neglected right at a solid wall -- and connect this to why boundary layers exist at all.",
+      "source": "boundary layer physical reasoning, conceptual",
+      "solution": "The no-slip condition requires fluid velocity to equal the wall's velocity (zero, for a stationary wall) exactly at the surface, regardless of how fast the free-stream flow is. This forces an enormous velocity gradient in some thin region near the wall no matter how high Re is, and a large velocity gradient means a large viscous stress (tau=mu*du/dy) there, even if mu itself is small. High Re only shrinks the THICKNESS of the region where this matters (the boundary layer gets thinner as Re increases, delta ~ 1/sqrt(Re)) -- it never eliminates the region entirely. This is precisely why the flow field splits into two zones: a thin boundary layer near the wall where viscous effects are essential (however high Re is), and an outer free-stream region where they are negligible and inviscid (Bernoulli-like) analysis applies well."
+    },
+    {
+      "kc": "turbulence-characterization",
+      "slug": "reynolds-decomposition-identify",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "In the Reynolds decomposition of a turbulent velocity component, u(t) = u_bar + u'(t), what is true of the time-average of u'(t) alone?",
+      "source": "Reynolds decomposition, foundational definition",
+      "options": ["It is zero by construction", "It equals u_bar", "It is always positive", "It equals the turbulence intensity"],
+      "correct_index": 0,
+      "explanation": "u_bar is defined as the time-average of u(t), so by construction the fluctuating part u'(t)=u(t)-u_bar has zero time-average -- any systematic (non-zero-mean) component would, by definition, already be part of u_bar, not u'."
+    },
+    {
+      "kc": "turbulence-characterization",
+      "slug": "laminar-vs-turbulent-trace",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "A velocity probe records a flat, non-fluctuating signal at a point in a pipe. What does this suggest about the flow regime?",
+      "source": "velocity-trace interpretation, laminar vs turbulent",
+      "options": ["Laminar flow", "Turbulent flow", "Transitional flow", "The probe must be malfunctioning"],
+      "correct_index": 0,
+      "explanation": "A flat, non-fluctuating velocity-vs-time trace is the signature of laminar flow, where fluid moves in smooth, orderly layers with no random fluctuations. A turbulent flow would show broadband random fluctuations superimposed on a mean value."
+    },
+    {
+      "kc": "turbulence-characterization",
+      "slug": "why-statistical-description",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "Explain why turbulent flows are described statistically (mean plus fluctuation) rather than by a single deterministic velocity value, connecting this to why the Reynolds decomposition is useful for engineering calculations.",
+      "source": "turbulence description rationale, conceptual",
+      "solution": "Turbulent velocity fields fluctuate randomly and chaotically in time and space in a way that is (for practical engineering purposes) unpredictable in exact detail -- reproducing the same nominal flow conditions twice gives different instantaneous velocity traces, even though the same overall (mean) behavior emerges. Rather than trying to track every chaotic fluctuation exactly, the Reynolds decomposition separates the velocity into a well-behaved, reproducible mean (u_bar) plus a fluctuating part (u') whose STATISTICS (variance, correlations) are reproducible even though its exact time history is not. This lets engineering correlations (friction factors, heat/mass transfer coefficients) be built on the predictable mean-flow behavior, while the fluctuations' statistical effects (enhanced mixing, momentum transfer) are folded into empirical parameters like the turbulent (eddy) viscosity, rather than needing to solve for the exact chaotic details."
+    },
+    {
+      "kc": "fluid-mechanics-lab-methods",
+      "slug": "match-instrument-goal",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "You need to measure the local point velocity of a gas stream at a specific location in a duct. Which instrument directly gives this?",
+      "source": "lab instrumentation selection, standard drill",
+      "options": ["Pitot tube", "Venturi meter", "Manometer alone", "Rotameter"],
+      "correct_index": 0,
+      "explanation": "A pitot tube measures local point velocity from the difference between stagnation and static pressure at a specific location. A venturi meter and rotameter measure overall volumetric flow rate (not a local point value), and a manometer alone only reads a pressure difference, which must be converted using another principle (like the pitot tube's) to get velocity."
+    },
+    {
+      "kc": "fluid-mechanics-lab-methods",
+      "slug": "match-flow-rate-instrument",
+      "kind": "mcq",
+      "difficulty": 1,
+      "prompt": "A rotameter reading shows a float sitting higher in its tapered tube than usual. What does this indicate?",
+      "source": "rotameter operating principle",
+      "options": [
+        "A higher volumetric flow rate, since the float rises to a position where drag balances its weight at the larger local tube area",
+        "A lower volumetric flow rate",
+        "A higher fluid viscosity, unrelated to flow rate",
+        "A leak somewhere downstream of the rotameter"
+      ],
+      "correct_index": 0,
+      "explanation": "A rotameter's float rises until the drag force (from the flow accelerating through the annular gap between float and tapered tube) balances the float's net weight; a higher float position corresponds to a larger annular gap, which the calibration relates directly to a higher volumetric flow rate."
+    },
+    {
+      "kc": "fluid-mechanics-lab-methods",
+      "slug": "diagnose-measurement-goal",
+      "kind": "worked",
+      "difficulty": 2,
+      "prompt": "A lab technician needs to determine both the total volumetric flow rate through a pipe AND verify the flow regime (laminar/turbulent) at that condition. Outline which instruments/techniques to use and what each one directly measures.",
+      "source": "lab methods selection, multi-goal diagnostic",
+      "solution": "For total volumetric flow rate: use a venturi meter, orifice meter, or rotameter -- each directly gives Q (the venturi/orifice from a measured pressure drop via Bernoulli+continuity, the rotameter from a float position calibrated against Q). For verifying flow regime: compute Re = rho*v*D/mu using the measured Q (converted to velocity via v=Q/A) together with known fluid properties and pipe diameter, then compare to the laminar (<2300) and turbulent (>4000) thresholds -- flow regime itself is not read directly off any single instrument but inferred from the computed Reynolds number using the flow-rate measurement as an input. A manometer alone is insufficient for either goal without pairing it with a meter's geometry-specific calibration equation."
+    },
+    {
+      "kc": "newtonian-vs-non-newtonian-behavior",
+      "slug": "power-law-apparent-viscosity",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "A shear-thinning fluid follows the power-law model tau = K*gamma_dot^n with K=2.0 Pa*s^n and n=0.6. Find the apparent viscosity (tau/gamma_dot) at a shear rate of 50 1/s.",
+      "source": "power-law fluid apparent viscosity, non-Newtonian rheology drill",
+      "answer": { "value": 0.418, "unit": "Pa*s", "tolerance_pct": 3 },
+      "solution": "Apparent viscosity mu_app = tau/gamma_dot = K*gamma_dot^n/gamma_dot = K*gamma_dot^(n-1) = 2.0*50^(0.6-1) = 2.0*50^(-0.4) = 2.0*0.2091 = 0.418 Pa*s. Since n<1 (shear-thinning), mu_app decreases as gamma_dot increases -- doubling the shear rate to 100 1/s drops mu_app further, to 2.0*100^(-0.4) = 0.317 Pa*s."
+    },
+    {
+      "kc": "fluid-mechanics-lab-methods",
+      "slug": "pitot-vs-orifice-selection",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A technician wants to map how velocity varies across a duct's cross-section (a velocity profile), not just get one overall flow rate number. Which instrument is best suited?",
+      "source": "lab instrument selection for velocity profiling",
+      "options": [
+        "A pitot tube, traversed to multiple points across the duct",
+        "An orifice meter, since it directly reports a velocity profile",
+        "A rotameter, since it is the most common flow instrument",
+        "A single manometer reading at the duct wall"
+      ],
+      "correct_index": 0,
+      "explanation": "A pitot tube measures LOCAL point velocity, so traversing it across the duct at multiple positions builds up a velocity profile. Orifice meters and rotameters report a single overall volumetric flow rate, not spatial detail, and a single wall-mounted manometer reading gives only one pressure value, not a velocity profile."
+    },
+    {
+      "kc": "turbulence-characterization",
+      "slug": "turbulence-intensity-calc",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "At a point in a turbulent pipe flow, the mean velocity is 3.0 m/s and the root-mean-square velocity fluctuation is 0.24 m/s. Find the turbulence intensity (RMS fluctuation divided by mean velocity), expressed as a percentage.",
+      "source": "turbulence intensity definition, standard drill",
+      "answer": { "value": 8.0, "unit": null, "tolerance_pct": 2 },
+      "solution": "Turbulence intensity = (u'_rms / u_bar)*100% = (0.24/3.0)*100% = 8.0%. This is a typical turbulence intensity for developed pipe flow (often in the 3-10% range depending on Reynolds number and position in the pipe)."
+    },
+    {
+      "kc": "navier-stokes-equations",
+      "slug": "creeping-flow-limit",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "A very slow, highly viscous flow has Re = 0.02. Which simplification of the Navier-Stokes equation is most appropriate?",
+      "source": "creeping (Stokes) flow limit, Navier-Stokes term dropping",
+      "options": [
+        "Drop the convective acceleration term, keeping pressure, viscous, and body-force terms (the Stokes/creeping-flow equation)",
+        "Drop the viscous term, since Re is small",
+        "Drop the pressure term entirely",
+        "No simplification is valid; the full equation must always be solved numerically"
+      ],
+      "correct_index": 0,
+      "explanation": "At very low Re, convective (inertial) acceleration is negligible compared to viscous forces, so the (v.grad)v term can be dropped, leaving the linear Stokes equation: -grad(P) + mu*laplacian(v) + rho*g = 0. Dropping the viscous term would be backwards -- viscous effects DOMINATE at low Re, not vanish."
+    },
+    {
+      "kc": "boundary-layer-approximation",
+      "slug": "boundary-layer-growth-with-x",
+      "kind": "mcq",
+      "difficulty": 2,
+      "prompt": "For laminar flow over a flat plate, boundary-layer thickness grows as delta ~ x/sqrt(Re_x), where Re_x = rho*v*x/mu. How does delta scale with distance x from the leading edge?",
+      "source": "boundary-layer growth scaling, Blasius solution",
+      "options": [
+        "delta grows proportional to sqrt(x), since Re_x is proportional to x and delta ~ x/sqrt(x) = sqrt(x)",
+        "delta grows linearly with x",
+        "delta is independent of x once the flow is fully developed",
+        "delta shrinks as x increases, since Re_x increases"
+      ],
+      "correct_index": 0,
+      "explanation": "Since Re_x = rho*v*x/mu is proportional to x (for fixed v), delta ~ x/sqrt(Re_x) ~ x/sqrt(x) = sqrt(x) -- boundary-layer thickness grows with the square root of distance from the leading edge, not linearly, and it never becomes independent of x or shrinks in the laminar region."
+    },
+    {
+      "kc": "continuity-equation",
+      "slug": "density-time-derivative-from-divergence",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "At a point in a compressible gas flow, div(rho*v) = -25 kg/(m^3*s). Using the continuity equation, find d(rho)/dt at that point.",
+      "source": "microscopic continuity equation, direct application",
+      "answer": { "value": 25, "unit": "kg/(m^3*s)", "tolerance_pct": 1 },
+      "solution": "The continuity equation states d(rho)/dt + div(rho*v) = 0, so d(rho)/dt = -div(rho*v) = -(-25) = 25 kg/(m^3*s). A negative divergence (net inflow of mass flux into the point) corresponds to local density increasing with time, which matches the positive result here."
+    },
+    {
+      "kc": "navier-stokes-equations",
+      "slug": "convective-acceleration-magnitude",
+      "kind": "numeric",
+      "difficulty": 2,
+      "prompt": "For a 1-D steady flow with velocity field u(x) = 3*x^2 (m/s, x in m), find the convective acceleration u*(du/dx) at x = 2 m.",
+      "source": "convective acceleration term evaluation, Navier-Stokes application",
+      "answer": { "value": 144, "unit": "m/s^2", "tolerance_pct": 1 },
+      "solution": "du/dx = 6*x, so at x=2, du/dx = 12 1/s and u = 3*(2)^2 = 12 m/s. Convective acceleration = u*(du/dx) = 12*12 = 144 m/s^2. Note this is nonzero even though the flow is steady (d/dt=0 everywhere) -- convective acceleration arises purely from the fluid element moving into a region of different velocity, not from any time-dependence."
+    }
+  ]
+}
