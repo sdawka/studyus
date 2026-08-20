@@ -40,7 +40,9 @@
           "description": "Classify whether a scenario is primarily a legal/regulatory matter, a professional Code-of-Ethics matter that goes beyond the law, or both — recognizing that the two overlap substantially but are not identical.",
           "practice_notes": "For each scenario, ask two separate questions — 'is this legal?' and 'does this meet the Code's paramount-safety/competence/integrity obligations?' — before classifying; don't collapse them into one question.",
           "sort_order": 2,
-          "prereqs": ["#engineer-definition-and-licensure"],
+          "prereqs": [
+            "#engineer-definition-and-licensure"
+          ],
           "resources": [
             {
               "label": "NSPE Code of Ethics for Engineers",
@@ -87,7 +89,9 @@
           "description": "Apply the accept/decline/refer decision procedure to determine whether an engineer may ethically take on a mandate, based on whether it falls within their actual training and practice experience.",
           "practice_notes": "Always work the procedure in order: (1) identify the specific expertise the mandate actually requires, (2) compare honestly against your own training/practice experience, (3) decide to accept, accept-with-collaboration/supervision, decline, or refer — don't skip straight to a gut-feel answer.",
           "sort_order": 3,
-          "prereqs": ["#code-of-ethics-vs-law-distinction"],
+          "prereqs": [
+            "#code-of-ethics-vs-law-distinction"
+          ],
           "resources": [],
           "scaffolds": [
             {
@@ -118,7 +122,9 @@
           "description": "Explain why an engineer remains professionally responsible for work performed under their direction or supervision even when specific tasks were delegated, and why this rule protects the public rather than merely assigning individual blame.",
           "practice_notes": "Focus on the WHY: the public relies on the licensed engineer's credential and certification, not on tracking exactly which team member did which sub-task — that's the reasoning that generalizes to any delegation scenario.",
           "sort_order": 4,
-          "prereqs": ["#duty-of-competence-and-scope-of-practice"],
+          "prereqs": [
+            "#duty-of-competence-and-scope-of-practice"
+          ],
           "resources": [
             {
               "label": "OIQ — Your Obligations: Ethics",
@@ -141,6 +147,146 @@
             }
           ],
           "misconceptions": []
+        },
+        {
+          "slug": "confidentiality-and-professional-secrecy",
+          "name": "Duty of confidentiality and professional secrecy",
+          "kc_type": "rule",
+          "description": "Apply the engineer's duty to keep information obtained through professional practice confidential, and recognize the narrow, specific exceptions under which disclosure is permitted -- client/employer authorization, a requirement of law or court order, or preventing an act of violence (including suicide) where there is serious risk of death or serious bodily harm.",
+          "practice_notes": "For any scenario, run the same two-question check: (1) is this information confidential because it was obtained in the practice of the profession, and (2) does it fall under one of the narrow named exceptions? If the answer to (2) is no, silence is the default, not disclosure -- even when disclosure would be convenient or feel like 'the right thing to do' in some looser sense.",
+          "sort_order": 5,
+          "prereqs": [
+            "#code-of-ethics-vs-law-distinction"
+          ],
+          "resources": [
+            {
+              "label": "OIQ -- Code of Ethics of Engineers (official text, PDF)",
+              "url": "https://www.oiq.qc.ca/wp-content/uploads/documents/DAJ/Lois/TheCodeofEthicsofEngineers.pdf",
+              "kind": "canonical"
+            },
+            {
+              "label": "OIQ -- Your Obligations: Ethics",
+              "url": "https://www.oiq.qc.ca/en/membres/your-obligations/ethics/",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "retrieval_prompt",
+              "level": 1,
+              "title": "Cold recall: the named exceptions to professional secrecy",
+              "body": "Without looking it up: what are the specific, named circumstances under which an engineer is permitted to disclose confidential client/employer information obtained in the practice of the profession? List as many of the narrow exceptions as you can (there are a small, fixed number -- not a general 'when it seems right' standard)."
+            },
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Confidential, exception, or neither?",
+              "body": "For each scenario, classify the disclosure as (a) a violation of professional secrecy, (b) covered by a recognized exception, or (c) not confidential information in the first place: (1) An engineer mentions at a dinner party, in general terms with no names, that 'a client's plant had an unusual corrosion problem last year.' (2) An engineer discloses to the police, after documenting a specific credible threat, that a former client stated an intention to sabotage a competitor's pressure vessel. (3) An engineer discloses a client's proprietary process design to a new employer without the original client's consent, believing it will 'help everyone innovate faster.' (4) A court orders an engineer to produce project files as evidence in litigation, and the engineer complies."
+            },
+            {
+              "kind": "contrast_examples",
+              "level": 2,
+              "title": "Disclosure that's covered vs. disclosure that isn't",
+              "body": "Contrast: An engineer discloses confidential design details after being served a valid court subpoena (covered -- requirement of law). Versus: An engineer discloses the same design details to a journalist because the engineer personally believes the public 'deserves to know,' with no court order, no client consent, and no imminent-violence exception applicable (a violation -- personal judgment that disclosure is beneficial does not create an exception)."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "good-intentions-create-a-disclosure-exception",
+              "name": "Well-intentioned disclosure is assumed to be automatically acceptable",
+              "description": "The learner believes that disclosing confidential information is fine as long as the engineer's motive is good (helping someone, preventing a business loss, promoting innovation), rather than recognizing that only the specific, narrow, named exceptions (client/employer consent, legal requirement, imminent-violence risk) permit disclosure -- good intent is irrelevant if none of those apply.",
+              "root_cause": "Importing an everyday moral intuition ('if my motive is good, the action is fine') into a professional-conduct rule that is deliberately motive-independent and exception-based, precisely because relying on individual engineers' case-by-case judgment about when disclosure 'feels right' would make confidentiality unenforceable and unpredictable for clients.",
+              "diagnostic_probe": "An engineer discloses a former employer's unpatented process innovation to a new employer, reasoning that 'the industry as a whole benefits from faster innovation.' Is this disclosure permitted under the Code of Ethics? Why or why not?",
+              "correction": "Confidential information obtained in the practice of the profession may only be disclosed under one of the narrow, named exceptions -- authorization by the client/employer, a requirement of law, or a serious and imminent risk of death or bodily harm. A belief that disclosure would produce a good outcome does not, by itself, create a permitted exception."
+            }
+          ]
+        },
+        {
+          "slug": "sealing-and-signing-engineering-documents",
+          "name": "Sealing and signing engineering documents",
+          "kc_type": "rule",
+          "description": "Determine whether an engineer may ethically affix their seal and signature to a plan, specification, or report -- only work personally prepared, or prepared under the engineer's immediate control and supervision -- and recognize 'plan stamping' (sealing another party's unsupervised work for a fee) as a serious violation distinct from ordinary delegation to a supervised team.",
+          "practice_notes": "Ask two questions before sealing anything: did I personally prepare this, or did I exercise real, ongoing, immediate technical control and supervision over the person who did? If the honest answer to both is no, sealing it is a violation regardless of how minor the review felt or how much you trust the preparer.",
+          "sort_order": 6,
+          "prereqs": [
+            "#duty-of-competence-and-scope-of-practice",
+            "#accountability-and-supervision-principle"
+          ],
+          "resources": [
+            {
+              "label": "OIQ -- Seal and Signature (member obligations)",
+              "url": "https://www.oiq.qc.ca/en/membres/your-obligations/seal-and-signature/",
+              "kind": "canonical"
+            },
+            {
+              "label": "OIQ -- Code of Ethics of Engineers (official text, PDF)",
+              "url": "https://www.oiq.qc.ca/wp-content/uploads/documents/DAJ/Lois/TheCodeofEthicsofEngineers.pdf",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "The two-question sealing test -- fully worked",
+              "body": "A junior colleague at another firm, who is not an OIQ member, emails a completed set of structural calculations and asks an engineer to 'just stamp these, I'll pay your usual rate.' The engineer has never met the colleague, has not reviewed the underlying design assumptions, and has not directed any part of the work.\n\nQuestion 1 -- did the engineer personally prepare this work? No.\n\nQuestion 2 -- did the engineer exercise immediate, ongoing technical control and supervision over the person who did? No -- there was no supervision at all, only a request to sign off after the fact.\n\nConclusion: sealing this work would be a clear violation -- this is the textbook definition of 'plan stamping,' and it remains a violation regardless of the fee arrangement, the requester's confidence in their own work, or how competent the underlying calculations might actually be. Competence of the work is irrelevant; the violation is the absence of personal preparation or genuine supervision."
+            },
+            {
+              "kind": "classification_task",
+              "level": 2,
+              "title": "Ethical sealing, or plan-stamping violation?",
+              "body": "Classify each scenario as ethical sealing or a plan-stamping violation: (1) An engineer assigns a detailed design to two EITs on their team, reviews intermediate calculations at each stage, holds weekly technical meetings, and signs the final drawings. (2) An engineer receives a finished drawing set from an unlicensed designer at a different company and seals it after a 10-minute visual read-through, having had no role in the design process. (3) An engineer personally performs 100% of the analysis and drafting alone and seals their own work. (4) An engineer supervises one EIT closely for the first month of a project, then is reassigned to another project and has no further contact, but still seals the EIT's final deliverable six months later without reviewing the intervening changes."
+            },
+            {
+              "kind": "contrast_examples",
+              "level": 2,
+              "title": "Genuine supervision vs. rubber-stamping",
+              "body": "Contrast: An engineer directs a junior designer's work throughout a project -- setting design criteria, reviewing calculations at defined milestones, catching and correcting errors before they propagate -- then seals the final product (ethical: immediate control and supervision was real and continuous). Versus: An engineer is listed as 'supervisor of record' in name only, never reviews the technical content, and seals the final drawings solely because their name is on the org chart (a violation: supervision must be substantive and technical, not a formality)."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "brief-review-counts-as-supervision",
+              "name": "A quick review is assumed to satisfy the supervision requirement",
+              "description": "The learner believes that briefly reading over someone else's finished work, or having an informal conversation with the preparer, satisfies the 'immediate control and supervision' standard required before sealing -- rather than recognizing that it requires genuine, ongoing technical direction of the work as it is produced, not a final check performed after the fact.",
+              "root_cause": "Confusing quality-assurance review (checking a finished deliverable for errors) with supervision (directing the work while it is being produced) -- the two serve different purposes, and a clean-looking final review cannot retroactively substitute for the absence of technical control during the work's creation.",
+              "diagnostic_probe": "An engineer reviews a colleague's completed foundation design for 20 minutes, finds no obvious errors, and seals it. The engineer had no involvement in the design process before that review. Does this satisfy the sealing standard? Why or why not?",
+              "correction": "Sealing requires that the engineer personally prepared the work, or exercised immediate, ongoing, substantive technical control and supervision over the person who did, throughout the work's production. A post-hoc review of a finished deliverable, however careful, is quality assurance, not supervision, and does not by itself justify sealing someone else's unsupervised work."
+            }
+          ]
+        },
+        {
+          "slug": "mandatory-continuing-education-requirement",
+          "name": "Mandatory continuing education requirement",
+          "kc_type": "fact",
+          "description": "Recall the OIQ's mandatory continuing education requirement -- a minimum number of professional development hours over each two-year reference period -- and the consequence of non-compliance (restriction of the right to practice, up to being struck from the roll).",
+          "practice_notes": "Drill as a fast fact: how many hours, over what length of period, and what happens if a member doesn't meet it. Don't overthink which specific activities qualify -- that's a lookup detail, not the examinable core.",
+          "sort_order": 7,
+          "prereqs": [
+            "#engineer-definition-and-licensure"
+          ],
+          "resources": [
+            {
+              "label": "OIQ -- Continuing Education",
+              "url": "https://www.oiq.qc.ca/en/membres/your-obligations/continuing-education/",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "retrieval_prompt",
+              "level": 1,
+              "title": "Cold recall: hours, period, consequence",
+              "body": "Without looking it up: (1) How many hours of continuing education must an OIQ member complete? (2) Over what length of reference period? (3) What can happen to a member's right to practice if they fail to meet the requirement?"
+            },
+            {
+              "kind": "mnemonic",
+              "level": 1,
+              "title": "\"30 in 2\"",
+              "body": "Remember the requirement as \"30 in 2\": a minimum of 30 hours of continuing education activities, completed within each 2-year reference period, for the duration of an engineer's career (with limited exceptions). Falling short can lead to restrictions on the right to practice, and in persistent cases, being struck from the roll of the Order."
+            }
+          ],
+          "misconceptions": []
         }
       ]
     },
@@ -156,7 +302,9 @@
           "description": "Explain why the obligation to hold paramount the safety, health, and welfare of the public overrides ordinary deference to an employer's or client's instructions, and derive the implication for a conflicting-instruction scenario.",
           "practice_notes": "Practice stating the priority ORDER explicitly (public safety, then client/employer, then profession, then self) rather than just asserting 'safety matters' — the ordering is what resolves real conflicts.",
           "sort_order": 1,
-          "prereqs": ["#code-of-ethics-vs-law-distinction"],
+          "prereqs": [
+            "#code-of-ethics-vs-law-distinction"
+          ],
           "resources": [],
           "scaffolds": [
             {
@@ -181,7 +329,9 @@
           "description": "Classify a design decision as meeting the professional standard of care, or as negligent despite (or because of) meeting a code-mandated numeric safety factor — recognizing that the safety factor addresses specific failure modes, not the full standard-of-care obligation.",
           "practice_notes": "Ask: does the numeric safety factor actually cover the failure mode that occurred? A design can pass its static safety factor and still be negligent if a different, foreseeable failure mode (fatigue, corrosion, a known defect pattern) was never checked.",
           "sort_order": 2,
-          "prereqs": ["#paramountcy-of-public-safety-principle"],
+          "prereqs": [
+            "#paramountcy-of-public-safety-principle"
+          ],
           "resources": [
             {
               "label": "Texas A&M — Negligence, Risk and the Professional Debate Over Responsibility for Design",
@@ -221,7 +371,9 @@
           "description": "Classify scenarios as an acceptable, properly managed conflict of interest, or a live/unresolved conflict of interest, recognizing that disclosure alone does not automatically resolve a conflict if the other party cannot meaningfully evaluate the engineer's judgment despite the disclosure.",
           "practice_notes": "After disclosure, always ask a second question: can the client/employer actually evaluate or counterbalance the engineer's judgment on this specific point? If not, disclosure alone hasn't resolved anything.",
           "sort_order": 3,
-          "prereqs": ["#code-of-ethics-vs-law-distinction"],
+          "prereqs": [
+            "#code-of-ethics-vs-law-distinction"
+          ],
           "resources": [
             {
               "label": "NSPE — Engineer's Disclosure of Potential Conflict of Interest (Board of Ethical Review case)",
@@ -262,7 +414,10 @@
           "description": "Apply the escalation procedure an engineer follows on discovering a danger to public safety: document the finding, raise it internally first, then escalate to the professional order or relevant authority if internal channels fail and the danger persists.",
           "practice_notes": "Follow the order every time: document with evidence/calculations → raise internally with the responsible party → escalate externally (order/regulator) only if internal escalation fails and the risk to public safety remains — skipping straight to external reporting, or never escalating past the internal step, are both common errors.",
           "sort_order": 4,
-          "prereqs": ["#paramountcy-of-public-safety-principle", "#negligence-and-safety-factor"],
+          "prereqs": [
+            "#paramountcy-of-public-safety-principle",
+            "#negligence-and-safety-factor"
+          ],
           "resources": [
             {
               "label": "NSPE — Whistleblowing: City Engineer (Board of Ethical Review case)",
@@ -319,7 +474,9 @@
           "description": "Classify instances of inequitable treatment or bias in engineering practice (design decisions, hiring, risk communication) as distinct from neutral technical decisions.",
           "practice_notes": "Look past the technical framing of a decision to ask who bears the consequence disproportionately — that's usually where an equity issue is hiding inside what looks like an ordinary technical or cost tradeoff.",
           "sort_order": 5,
-          "prereqs": ["#code-of-ethics-vs-law-distinction"],
+          "prereqs": [
+            "#code-of-ethics-vs-law-distinction"
+          ],
           "resources": [],
           "scaffolds": [
             {
@@ -345,7 +502,9 @@
           "description": "Apply a tradeoff framework (cost, service life/lifecycle cost, embodied environmental impact, end-of-life, safety/reliability) to evaluate competing design options rather than judging sustainability from a single criterion in isolation.",
           "practice_notes": "Always normalize per unit of service life (e.g., embodied-impact-per-service-year, annualized cost) before comparing two options with different lifespans — comparing raw totals without normalizing is the most common error.",
           "sort_order": 1,
-          "prereqs": ["#paramountcy-of-public-safety-principle"],
+          "prereqs": [
+            "#paramountcy-of-public-safety-principle"
+          ],
           "resources": [],
           "scaffolds": [
             {
@@ -376,7 +535,9 @@
           "description": "Explain why an engineer's professional ethical obligation regarding environmental protection extends beyond the minimum applicable regulatory or permit requirement, and why meeting a permit's numeric limits does not automatically satisfy that broader obligation.",
           "practice_notes": "When a design meets every applicable permit/code number, practice asking the follow-up question anyway: 'does the engineer have specific knowledge that the permit's assumptions don't hold right now?' — that's where the ethical obligation can exceed the legal one.",
           "sort_order": 2,
-          "prereqs": ["#sustainability-tradeoff-analysis"],
+          "prereqs": [
+            "#sustainability-tradeoff-analysis"
+          ],
           "resources": [],
           "scaffolds": [
             {
@@ -410,7 +571,9 @@
           "description": "Apply plain-language, honest risk-communication practice when disclosing engineering risk to non-expert stakeholders or the public, including stating likelihood and consequence without minimizing or overstating either.",
           "practice_notes": "Every risk communication should hit four elements in order: plain-language finding, honest likelihood/consequence framing, what's being done and by when, and a channel for follow-up questions — missing any one of these is the most common gap.",
           "sort_order": 3,
-          "prereqs": ["#paramountcy-of-public-safety-principle"],
+          "prereqs": [
+            "#paramountcy-of-public-safety-principle"
+          ],
           "resources": [],
           "scaffolds": [
             {
@@ -448,7 +611,11 @@
           "description": "Apply a four-step method — identify the facts, identify stakeholders, identify applicable Code/law provisions, identify where obligations compete and which takes precedence — to classify a novel ethics case by its dominant issue and likely resolution.",
           "practice_notes": "Always work all four steps in order for a new case, even when the answer feels obvious after step one — the value of the method is catching competing obligations (step 4) that a snap judgment would miss.",
           "sort_order": 1,
-          "prereqs": ["#duty-of-competence-and-scope-of-practice", "#conflict-of-interest-classification", "#whistleblowing-and-duty-to-report"],
+          "prereqs": [
+            "#duty-of-competence-and-scope-of-practice",
+            "#conflict-of-interest-classification",
+            "#whistleblowing-and-duty-to-report"
+          ],
           "resources": [],
           "scaffolds": [
             {
@@ -479,7 +646,9 @@
           "description": "Recall the procedural path a complaint against a Quebec engineer follows within the professional order (syndic investigation, discipline committee, sanction), as distinct from a separate civil lawsuit or criminal proceeding.",
           "practice_notes": "Drill the three-stage order and keep it distinct from civil/criminal court processes, which run on entirely separate tracks and can happen alongside (not instead of) the disciplinary process.",
           "sort_order": 2,
-          "prereqs": ["#code-of-ethics-vs-law-distinction"],
+          "prereqs": [
+            "#code-of-ethics-vs-law-distinction"
+          ],
           "resources": [
             {
               "label": "OIQ — Your Obligations: Ethics",
@@ -531,14 +700,22 @@
       "kind": "official",
       "weight_pct": 40,
       "due_date": "2024-11-01",
-      "kc_slugs": ["#duty-of-competence-and-scope-of-practice", "#conflict-of-interest-classification", "#whistleblowing-and-duty-to-report", "#sustainability-tradeoff-analysis"]
+      "kc_slugs": [
+        "#duty-of-competence-and-scope-of-practice",
+        "#conflict-of-interest-classification",
+        "#whistleblowing-and-duty-to-report",
+        "#sustainability-tradeoff-analysis"
+      ]
     },
     {
       "title": "Class Participation & Case Discussions",
       "type": "assignment",
       "kind": "official",
       "weight_pct": 15,
-      "kc_slugs": ["#code-of-ethics-vs-law-distinction", "#equitable-behaviour-and-bias-recognition"]
+      "kc_slugs": [
+        "#code-of-ethics-vs-law-distinction",
+        "#equitable-behaviour-and-bias-recognition"
+      ]
     },
     {
       "title": "Midterm Case Exam",
@@ -546,7 +723,14 @@
       "kind": "official",
       "weight_pct": 20,
       "due_date": "2024-12-05",
-      "kc_slugs": ["#engineer-definition-and-licensure", "#code-of-ethics-vs-law-distinction", "#duty-of-competence-and-scope-of-practice", "#accountability-and-supervision-principle", "#paramountcy-of-public-safety-principle", "#negligence-and-safety-factor"]
+      "kc_slugs": [
+        "#engineer-definition-and-licensure",
+        "#code-of-ethics-vs-law-distinction",
+        "#duty-of-competence-and-scope-of-practice",
+        "#accountability-and-supervision-principle",
+        "#paramountcy-of-public-safety-principle",
+        "#negligence-and-safety-factor"
+      ]
     },
     {
       "title": "Final Exam / Reflective Case Paper",
@@ -554,31 +738,54 @@
       "kind": "official",
       "weight_pct": 25,
       "due_date": "2025-04-10",
-      "kc_slugs": ["#conflict-of-interest-classification", "#whistleblowing-and-duty-to-report", "#sustainability-tradeoff-analysis", "#environmental-responsibility-principle", "#risk-communication-to-public", "#ethics-case-classification-method", "#disciplinary-process-and-consequences"]
+      "kc_slugs": [
+        "#conflict-of-interest-classification",
+        "#whistleblowing-and-duty-to-report",
+        "#sustainability-tradeoff-analysis",
+        "#environmental-responsibility-principle",
+        "#risk-communication-to-public",
+        "#ethics-case-classification-method",
+        "#disciplinary-process-and-consequences"
+      ]
     },
     {
       "title": "Practice case set: professionalism & competence",
       "type": "quiz",
       "kind": "practice",
-      "kc_slugs": ["#engineer-definition-and-licensure", "#code-of-ethics-vs-law-distinction", "#duty-of-competence-and-scope-of-practice"]
+      "kc_slugs": [
+        "#engineer-definition-and-licensure",
+        "#code-of-ethics-vs-law-distinction",
+        "#duty-of-competence-and-scope-of-practice"
+      ]
     },
     {
       "title": "Practice case set: safety, negligence & whistleblowing",
       "type": "quiz",
       "kind": "practice",
-      "kc_slugs": ["#paramountcy-of-public-safety-principle", "#negligence-and-safety-factor", "#whistleblowing-and-duty-to-report"]
+      "kc_slugs": [
+        "#paramountcy-of-public-safety-principle",
+        "#negligence-and-safety-factor",
+        "#whistleblowing-and-duty-to-report"
+      ]
     },
     {
       "title": "Practice case set: conflict of interest & equity",
       "type": "quiz",
       "kind": "practice",
-      "kc_slugs": ["#conflict-of-interest-classification", "#equitable-behaviour-and-bias-recognition"]
+      "kc_slugs": [
+        "#conflict-of-interest-classification",
+        "#equitable-behaviour-and-bias-recognition"
+      ]
     },
     {
       "title": "Practice case set: sustainability & risk communication",
       "type": "quiz",
       "kind": "practice",
-      "kc_slugs": ["#sustainability-tradeoff-analysis", "#environmental-responsibility-principle", "#risk-communication-to-public"]
+      "kc_slugs": [
+        "#sustainability-tradeoff-analysis",
+        "#environmental-responsibility-principle",
+        "#risk-communication-to-public"
+      ]
     }
   ]
 }

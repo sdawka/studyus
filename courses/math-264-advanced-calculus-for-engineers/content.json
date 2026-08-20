@@ -217,6 +217,54 @@
               "correction": "A partial derivative measures the rate of change along one specific coordinate direction only, holding all other variables fixed — it is the slope of one particular trace curve, not a single overall 'slope of the surface.' At a saddle point, both ∂f/∂x=0 and ∂f/∂y=0 (it is a critical point), but the surface is far from flat: it curves upward in some directions and downward in others, which is exactly what the directional derivative in intermediate directions (and the second-derivative/discriminant test) is needed to reveal."
             }
           ]
+        },
+        {
+          "slug": "implicit-differentiation-multivariable",
+          "name": "Implicit differentiation for multivariable functions",
+          "kc_type": "rule",
+          "description": "Given a relation F(x,y,z) = c defining z implicitly as a function of x and y, compute partial z/partial x and partial z/partial y using partial z/partial x = -F_x/F_z and partial z/partial y = -F_y/F_z, without ever solving the relation explicitly for z.",
+          "practice_notes": "Always identify F first (move every term to one side so the relation reads F(x,y,z) = constant), then take the three partials F_x, F_y, F_z of that single function -- never differentiate the original two-sided equation term-by-term directly, which is the most common way to lose a sign or drop a term.",
+          "sort_order": 5,
+          "prereqs": [
+            "#partial-derivatives"
+          ],
+          "resources": [
+            {
+              "label": "Paul's Notes -- Calculus III (Partial Derivatives, incl. implicit differentiation)",
+              "url": "https://tutorial.math.lamar.edu/classes/calciii/PartialDerivatives.aspx",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Implicit partials on a sphere -- fully worked",
+              "body": "The relation x^2 + y^2 + z^2 = 9 defines z implicitly as a function of x and y near a point where z > 0. Find partial z/partial x and partial z/partial y.\n\nStep 1: Write the relation as F(x,y,z) = x^2 + y^2 + z^2 - 9 = 0 (moved everything to one side; the right-hand constant is now 0).\n\nStep 2: Compute the three partials of F, treating x, y, z as independent variables of F itself: F_x = 2x, F_y = 2y, F_z = 2z.\n\nStep 3: Apply the implicit differentiation formulas: partial z/partial x = -F_x/F_z = -2x/2z = -x/z. partial z/partial y = -F_y/F_z = -2y/2z = -y/z.\n\nCheck at (x,y,z) = (2,1,2) (since 4+1+4=9... actually 2^2+1^2+2^2=9, checks out): partial z/partial x = -2/2 = -1, partial z/partial y = -1/2. These match what you'd get differentiating z = sqrt(9-x^2-y^2) explicitly and plugging in, which is a good self-check whenever solving explicitly is feasible."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Implicit partials on e^(xz) + y z^2 = 4 -- you complete the last step",
+              "body": "The relation e^(xz) + y z^2 = 4 defines z implicitly as a function of x and y. Find partial z/partial x.\n\nStep 1 (given): F(x,y,z) = e^(xz) + y z^2 - 4.\n\nStep 2 (given): F_x = z e^(xz) (treat z as a plain variable of F when differentiating F itself with respect to x -- this is NOT the same as treating z as constant in the original implicit relation; it's just how partial derivatives of the auxiliary function F work). F_z = x e^(xz) + 2yz.\n\nYour turn: apply partial z/partial x = -F_x/F_z using the two pieces above, and simplify as far as it goes. (Answer: partial z/partial x = -[z e^(xz)] / [x e^(xz) + 2yz].)"
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Implicit partials on xyz + x^2 y - z^3 = 7 -- solve independently",
+              "body": "The relation xyz + x^2 y - z^3 = 7 defines z implicitly as a function of x and y near the point (x,y,z) = (2,1,1) (check: 2*1*1 + 4*1 - 1 = 2+4-1 = 5... adjust the constant to 5 if you want a clean check point, or just work the derivatives symbolically). Find partial z/partial x and partial z/partial y in terms of x, y, z. Set up F, compute F_x, F_y, F_z, and apply the implicit differentiation formulas -- no explicit solving for z."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "forgets-fz-term-implicit-diff",
+              "name": "Treating z as an ordinary constant instead of an implicitly-defined function",
+              "description": "The learner differentiates the original relation with respect to x while treating z exactly like a constant (the way you'd treat y when computing an ordinary partial derivative of an explicit function), producing F_x = 0 and completely missing that z depends on x -- rather than forming the auxiliary function F(x,y,z) and using partial z/partial x = -F_x/F_z.",
+              "root_cause": "Over-generalizing the 'hold the other variables constant' rule from explicit-function partial differentiation to an implicit relation, without recognizing that here z is itself an unknown function of x and y defined by the equation, not a free independent variable being held fixed.",
+              "diagnostic_probe": "For x^2 + y^2 + z^2 = 9, a student writes 'differentiating both sides with respect to x, since z is held constant we just get 2x = 0.' What did they get wrong, and what should the right-hand side of that differentiation actually include?",
+              "correction": "When a relation F(x,y,z) = constant implicitly defines z as a function of x and y, differentiating with respect to x must account for z's dependence on x via the chain rule, giving F_x + F_z * (partial z/partial x) = 0, which rearranges to partial z/partial x = -F_x/F_z. z is never held constant in this process -- it is the very quantity being differentiated for."
+            }
+          ]
         }
       ]
     },
@@ -329,7 +377,7 @@
           "kc_type": "rule",
           "description": "Set up multiple integrals to compute physical quantities relevant to engineering components — total mass and center of mass from a density function, and moment of inertia about an axis — over two- and three-dimensional regions.",
           "practice_notes": "Always write the general formula (e.g. mass = ∬_D ρ(x,y) dA) before substituting a specific density function and region — separating 'which formula applies' from 'evaluating this particular integral' keeps the two skills from being confused when errors occur.",
-          "sort_order": 3,
+          "sort_order": 4,
           "prereqs": [
             "#coordinate-changes-for-integration"
           ],
@@ -355,6 +403,54 @@
             }
           ],
           "misconceptions": []
+        },
+        {
+          "slug": "general-change-of-variables-jacobian",
+          "name": "General change of variables via the Jacobian",
+          "kc_type": "rule",
+          "description": "Transform a double integral of f(x,y) over a region R into new coordinates (u,v) via x = x(u,v), y = y(u,v), computing the Jacobian determinant partial(x,y)/partial(u,v) and using dA = |partial(x,y)/partial(u,v)| du dv, to evaluate integrals over regions that are awkward in x,y (parallelograms, regions bounded by two families of curves) but become rectangles in u,v.",
+          "practice_notes": "Choose u and v to be the two quantities that are literally constant along the region's boundary curves (e.g. if the region is bounded by xy=1, xy=4, y/x=1, y/x=3, set u=xy and v=y/x) -- the boundary becomes a rectangle in (u,v) by construction. The remaining work is computing the Jacobian and correctly inverting/expressing x,y (or dx dy) in terms of u,v.",
+          "sort_order": 3,
+          "prereqs": [
+            "#coordinate-changes-for-integration"
+          ],
+          "resources": [
+            {
+              "label": "Paul's Notes -- Calculus III (Change of Variables)",
+              "url": "https://tutorial.math.lamar.edu/classes/calciii/ChangeOfVariables.aspx",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Parallelogram region via u = x+y, v = x-y -- fully worked",
+              "body": "Evaluate the double integral of f(x,y) = (x+y) e^(x-y) over the region R bounded by the lines x+y=0, x+y=2, x-y=0, x-y=3.\n\nStep 1: The boundary curves are literally u=const, v=const if we set u = x+y, v = x-y. So R maps to the rectangle 0 <= u <= 2, 0 <= v <= 3 in the uv-plane.\n\nStep 2: Solve for x, y in terms of u, v: x = (u+v)/2, y = (u-v)/2.\n\nStep 3: Compute the Jacobian. partial x/partial u = 1/2, partial x/partial v = 1/2, partial y/partial u = 1/2, partial y/partial v = -1/2. Jacobian = (1/2)(-1/2) - (1/2)(1/2) = -1/4 - 1/4 = -1/2. So dA = |-1/2| du dv = (1/2) du dv.\n\nStep 4: Rewrite the integrand: (x+y) e^(x-y) = u e^v.\n\nStep 5: Integral = integral_{u=0}^{2} integral_{v=0}^{3} u e^v * (1/2) dv du = (1/2) * [integral_0^2 u du] * [integral_0^3 e^v dv] = (1/2) * [u^2/2]_0^2 * [e^v]_0^3 = (1/2)(2)(e^3 - 1) = e^3 - 1."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Region bounded by xy=1, xy=3, y=x, y=4x -- you complete the integral",
+              "body": "Evaluate the double integral of f(x,y) = xy over the region R (in the first quadrant) bounded by xy=1, xy=3, y=x, y=4x, using u = xy, v = y/x.\n\nGiven: R maps to the rectangle 1 <= u <= 3, 1 <= v <= 4 in uv-space, since u and v are each constant on a pair of the boundary curves.\n\nGiven: x^2 = u/v so x = sqrt(u/v), and y = u/x = sqrt(uv). The Jacobian works out to partial(x,y)/partial(u,v) = 1/(2v) (you may take this as given, or verify it by direct differentiation of x=sqrt(u/v), y=sqrt(uv)).\n\nYour turn: the integrand xy becomes simply u in the (u,v) variables (since u=xy by definition). Set up and evaluate integral_{u=1}^{3} integral_{v=1}^{4} u * |1/(2v)| dv du, and simplify to a single number involving ln(4)."
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Region bounded by x-2y=0, x-2y=4, x+y=1, x+y=3 -- solve independently",
+              "body": "Evaluate the double integral of f(x,y) = (x-2y)(x+y)^2 over the region R bounded by the lines x-2y=0, x-2y=4, x+y=1, x+y=3. Choose u and v equal to the two quantities that are constant on the boundary curves, solve for x and y in terms of u and v, compute the Jacobian partial(x,y)/partial(u,v), and evaluate the transformed integral over the resulting rectangle in the uv-plane."
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "wrong-jacobian-direction-or-missing-absolute-value",
+              "name": "Using the wrong Jacobian (or dropping the absolute value)",
+              "description": "The learner computes partial(u,v)/partial(x,y) (the Jacobian of the forward map from x,y to u,v) and uses it directly as the area-scaling factor for dA in terms of du dv, instead of using its reciprocal partial(x,y)/partial(u,v) -- or drops the absolute value bars and carries a negative sign into the final numeric answer.",
+              "root_cause": "Confusing which direction the substitution runs: dA (in the original x,y integral) must be re-expressed in terms of du dv, which requires the Jacobian of x,y with respect to u,v (the inverse map), not the Jacobian of the forward substitution u,v with respect to x,y -- these are reciprocals of each other, not the same, and area scaling is always a magnitude, never signed.",
+              "diagnostic_probe": "A student sets u=x+y, v=x-y, correctly computes partial(u,v)/partial(x,y) = -2, and then writes dA = -2 du dv. What are the two separate errors here, and what should dA actually equal?",
+              "correction": "To change dx dy into du dv, use dA = |partial(x,y)/partial(u,v)| du dv -- the Jacobian of the OLD variables with respect to the NEW ones, taken as an absolute value. If it's easier to compute partial(u,v)/partial(x,y) first, take its reciprocal (1 / that Jacobian) and still apply the absolute value before using it as the scaling factor."
+            }
+          ]
         }
       ]
     },
@@ -785,6 +881,55 @@
             }
           ],
           "misconceptions": []
+        },
+        {
+          "slug": "laplaces-equation-two-dimensional-steady-state",
+          "name": "Laplace's equation and two-dimensional steady state",
+          "kc_type": "rule",
+          "description": "Apply separation of variables u(x,y) = X(x)Y(y) to Laplace's equation u_xx + u_yy = 0 on a rectangle with three homogeneous (zero) Dirichlet boundary sides and one non-homogeneous side, obtaining sine/hyperbolic-sine eigenfunction products whose coefficients come from a Fourier sine series of the non-homogeneous boundary data, and interpret u as the steady-state (time-independent) temperature or potential distribution over the plate.",
+          "practice_notes": "Assign the separation constant's sign so the two homogeneous sides (the pair of boundary conditions in the same variable) produce the eigenvalue problem Y'' + lambda Y = 0 with oscillatory sine eigenfunctions, and the remaining direction produces X'' - lambda X = 0 with hyperbolic sinh/cosh solutions -- get this backwards and no combination of sinh/cosh can satisfy two homogeneous Dirichlet conditions except the trivial solution.",
+          "sort_order": 6,
+          "prereqs": [
+            "#separation-of-variables",
+            "#fourier-series-expansion"
+          ],
+          "resources": [
+            {
+              "label": "LibreTexts (Chasnov) -- The Laplace Equation",
+              "url": "https://math.libretexts.org/Bookshelves/Differential_Equations/Differential_Equations_(Chasnov)/09:_Partial_Differential_Equations/9.07:_The_Laplace_Equation",
+              "kind": "canonical"
+            }
+          ],
+          "scaffolds": [
+            {
+              "kind": "worked_example",
+              "level": 1,
+              "title": "Steady-state temperature on a rectangular plate -- fully worked",
+              "body": "A thin rectangular plate occupies 0 <= x <= a, 0 <= y <= b. Three edges are held at 0 degrees: u(0,y)=0, u(a,y)=0, u(x,0)=0. The fourth edge is held at u(x,b) = f(x). Find the steady-state temperature u(x,y).\n\nStep 1: Steady state means u_t = 0, so the heat equation reduces to Laplace's equation u_xx + u_yy = 0.\n\nStep 2: Separate u=X(x)Y(y): X''Y + XY'' = 0, so X''/X = -Y''/Y = -lambda (a constant, since one side depends only on x and the other only on y).\n\nStep 3: The two homogeneous conditions u(0,y)=u(a,y)=0 give X(0)=X(a)=0 -- a two-point homogeneous BVP in x, so X''+lambda X=0 with X(0)=X(a)=0, giving eigenvalues lambda_n=(n pi/a)^2 and eigenfunctions X_n(x)=sin(n pi x/a), n=1,2,3,...\n\nStep 4: The Y-equation is then Y'' - lambda_n Y = 0, i.e. Y'' - (n pi/a)^2 Y = 0, with general solution Y_n(y) = A_n cosh(n pi y/a) + B_n sinh(n pi y/a). The homogeneous condition u(x,0)=0 forces Y_n(0)=0, so A_n=0, leaving Y_n(y) = B_n sinh(n pi y/a).\n\nStep 5: Superpose: u(x,y) = sum_{n=1}^infty B_n sin(n pi x/a) sinh(n pi y/a). Apply the remaining condition u(x,b)=f(x): f(x) = sum B_n sinh(n pi b/a) sin(n pi x/a), a Fourier sine series of f, so B_n sinh(n pi b/a) = (2/a) integral_0^a f(x) sin(n pi x/a) dx, giving B_n directly."
+            },
+            {
+              "kind": "worked_example",
+              "level": 2,
+              "title": "Same setup, f(x) = sin(3 pi x/a) -- you complete the coefficients",
+              "body": "Same rectangle and boundary pattern as before (three sides at 0, top side u(x,b)=f(x)), now with a=2, b=1, and f(x) = 3 sin(3 pi x / 2).\n\nGiven: the general series solution is u(x,y) = sum_{n=1}^infty B_n sin(n pi x/2) sinh(n pi y/2), and B_n sinh(n pi /2) is the n-th Fourier sine coefficient of f(x) on [0,2].\n\nGiven: because f(x) is ALREADY exactly one sine term (n=3, coefficient 3), the Fourier sine series of f has only a single nonzero term: the n=3 coefficient equals 3, and every other coefficient is 0.\n\nYour turn: use B_3 sinh(3 pi/2) = 3 to solve for B_3, set every other B_n = 0, and write the final closed-form (single-term, not infinite-series) solution u(x,y)."
+            },
+            {
+              "kind": "worked_example",
+              "level": 3,
+              "title": "Non-homogeneous side on the left edge -- solve independently",
+              "body": "A rectangular plate occupies 0 <= x <= 2, 0 <= y <= 3. Three edges are held at 0: u(x,0)=0, u(x,3)=0, u(2,y)=0. The left edge is held at u(0,y) = 5 sin(pi y/3) + 2 sin(2 pi y /3). Find the full steady-state solution u(x,y). (Hint: with the non-homogeneous side now vertical, separate variables so the two homogeneous conditions in y, u(x,0)=u(x,3)=0, produce the eigenvalue problem, and work out which direction gets the hyperbolic solution and which boundary condition pins down which constant.)"
+            }
+          ],
+          "misconceptions": [
+            {
+              "slug": "wrong-direction-gets-hyperbolic-solution",
+              "name": "Assigning the eigenvalue problem to the wrong spatial direction",
+              "description": "The learner sets up the separated ODEs for Laplace's equation on a rectangle but assigns the oscillatory (sine/cosine) eigenfunction solution to the direction with only ONE homogeneous boundary condition and the hyperbolic (sinh/cosh) solution to the direction with TWO homogeneous conditions -- backwards from the correct assignment -- and then cannot satisfy both homogeneous conditions with any nontrivial choice of constants.",
+              "root_cause": "Pattern-matching to the 1D heat/wave equation setup (where the spatial direction always gets the oscillatory eigenfunctions and time gets the exponential/oscillatory-in-time factor) without checking which direction in THIS problem actually has the pair of homogeneous boundary conditions that defines the eigenvalue problem -- in the 2D Laplace case, either x or y can be the 'eigenvalue direction' depending on which pair of parallel sides is held at zero.",
+              "diagnostic_probe": "A student has u(x,0)=u(x,3)=0 (two homogeneous conditions in y) and u(2,y)=0, u(0,y)=f(y) (one homogeneous condition in x). They write X(x)=sin(n pi x/2) and Y(y)=A cosh(n pi y /3)+B sinh(n pi y/3). What's wrong, and which variable's boundary conditions should actually determine the eigenvalue problem?",
+              "correction": "The eigenvalue problem (oscillatory sine/cosine eigenfunctions) always comes from whichever variable has TWO homogeneous boundary conditions, because that's the only way to get a nontrivial two-point BVP with real eigenvalues; the other variable, with only one homogeneous condition, gets the hyperbolic sinh/cosh solution, pinned to zero at its homogeneous end and matched to the given data at its non-homogeneous end."
+            }
+          ]
         }
       ]
     }
