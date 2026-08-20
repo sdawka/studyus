@@ -9,6 +9,7 @@ import {
   classSessions,
   courses,
   kcs,
+  rituals,
   taskCourses,
   tasks,
   users,
@@ -428,6 +429,123 @@ describe('collectGradeEntry', () => {
 
     await sweepTasks(db, userId, now);
     expect(await tasksOfType('grade_entry')).toHaveLength(0);
+  });
+});
+
+describe('collectRituals', () => {
+  async function makeRitual(overrides: Partial<typeof rituals.$inferInsert> = {}) {
+    const id = crypto.randomUUID();
+    await db.insert(rituals).values({
+      id,
+      userId,
+      name: 'Test ritual',
+      kind: 'recurring',
+      active: true,
+      ...overrides,
+    });
+    return id;
+  }
+
+  it('daily cadence mints one task for today and each of the trailing 6 days, idempotent on re-sweep', async () => {
+    const now = Date.now();
+    const todayNoon = localNoon(now);
+    const ritualId = await makeRitual({ cadence: 'daily' });
+
+    await sweepTasks(db, userId, now);
+    const rows = await tasksOfType('ritual');
+    expect(rows).toHaveLength(7);
+    expect(rows.every((r) => r.ritualId === ritualId)).toBe(true);
+    expect(rows.every((r) => r.title === 'Test ritual')).toBe(true);
+    const expectedDueDates = Array.from({ length: 7 }, (_, i) => todayNoon - i * DAY_MS).sort();
+    expect(rows.map((r) => r.dueDate).sort()).toEqual(expectedDueDates);
+    expect(rows.map((r) => r.dedupeKey).sort()).toEqual(
+      expectedDueDates.map((d) => `ritual:${ritualId}:${yyyymmdd(d)}`).sort(),
+    );
+
+    await sweepTasks(db, userId, now);
+    expect(await tasksOfType('ritual')).toHaveLength(7);
+  });
+
+  it('weekly cadence only mints on matching by_weekday days within the trailing window', async () => {
+    const now = Date.now();
+    const todayNoon = localNoon(now);
+    const targetWeekday = isoWeekday(todayNoon);
+    await makeRitual({ cadence: 'weekly', byWeekday: JSON.stringify([targetWeekday]) });
+
+    await sweepTasks(db, userId, now);
+    const rows = await tasksOfType('ritual');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].dueDate).toBe(todayNoon);
+  });
+
+  it('after_class cadence keys off attended class sessions for the ritual\'s course, due the day after', async () => {
+    const now = Date.now();
+    const todayNoon = localNoon(now);
+    const ritualId = await makeRitual({ cadence: 'after_class', courseId });
+
+    const attendedId = crypto.randomUUID();
+    await db.insert(classSessions).values({ id: attendedId, userId, courseId, date: todayNoon - 2 * DAY_MS, status: 'attended', source: 'schedule' });
+    await db.insert(classSessions).values({ id: crypto.randomUUID(), userId, courseId, date: todayNoon - 5 * DAY_MS, status: 'attended', source: 'schedule' });
+
+    await sweepTasks(db, userId, now);
+    const rows = await tasksOfType('ritual');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].dueDate).toBe(todayNoon - 2 * DAY_MS + DAY_MS);
+    expect(rows[0].courseId).toBe(courseId);
+    expect(rows[0].dedupeKey).toBe(`ritual:${ritualId}:${yyyymmdd(todayNoon - 2 * DAY_MS)}`);
+  });
+
+  it('before_class cadence keys off the course\'s meetingDays within the 2-day lookahead, due the day before', async () => {
+    const now = Date.now();
+    const todayNoon = localNoon(now);
+    const tomorrow = todayNoon + DAY_MS;
+    await db.update(courses).set({ meetingDays: JSON.stringify([isoWeekday(tomorrow)]) }).where(eq(courses.id, courseId));
+    await makeRitual({ cadence: 'before_class', courseId });
+
+    await sweepTasks(db, userId, now);
+    const rows = await tasksOfType('ritual');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].dueDate).toBe(todayNoon);
+  });
+
+  it('a deactivated ritual generates nothing', async () => {
+    const now = Date.now();
+    await makeRitual({ cadence: 'daily', active: false });
+
+    await sweepTasks(db, userId, now);
+    expect(await tasksOfType('ritual')).toHaveLength(0);
+  });
+
+  it('a plain session_shape ritual (no recurring cadence) generates nothing', async () => {
+    const now = Date.now();
+    await makeRitual({ kind: 'session_shape', cadence: null, steps: [{ kind: 'reflect' }] });
+
+    await sweepTasks(db, userId, now);
+    expect(await tasksOfType('ritual')).toHaveLength(0);
+  });
+
+  it('never resurrects a dismissed ritual occurrence on re-sweep', async () => {
+    const now = Date.now();
+    const todayNoon = localNoon(now);
+    const ritualId = await makeRitual({ cadence: 'daily' });
+
+    await sweepTasks(db, userId, now);
+    const todayRow = (await tasksOfType('ritual')).find((r) => r.dueDate === todayNoon)!;
+    await db.update(tasks).set({ dismissedAt: now }).where(eq(tasks.id, todayRow.id));
+
+    await sweepTasks(db, userId, now);
+    const after = await db.select().from(tasks).where(eq(tasks.dedupeKey, `ritual:${ritualId}:${yyyymmdd(todayNoon)}`));
+    expect(after).toHaveLength(1);
+    expect(after[0].dismissedAt).not.toBeNull();
+  });
+
+  it('is off by default toggle-respecting: generates nothing when task_generators.ritual is false', async () => {
+    const now = Date.now();
+    await setGenerators({ ritual: false });
+    await makeRitual({ cadence: 'daily' });
+
+    await sweepTasks(db, userId, now);
+    expect(await tasksOfType('ritual')).toHaveLength(0);
   });
 });
 

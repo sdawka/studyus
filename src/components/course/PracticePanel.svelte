@@ -1,6 +1,7 @@
 <script lang="ts">
   import StudyFlow from '../study/StudyFlow.svelte';
   import QuickQuiz from '../tutor/QuickQuiz.svelte';
+  import type { RitualStepKind } from '../../lib/schemas/rituals';
 
   type Kc = { id: string; name: string; kcType: string; mastery: number | null; status: string | null };
   type StudyCourse = { id: string; slug: string; code: string; title: string; mastery: number | null; status: string | null };
@@ -11,21 +12,24 @@
     intendedEventType: string;
     plannedMinutes: number | null;
     startedAt: number;
+    ritualId?: string | null;
   } | null;
+  type RitualOption = { id: string; name: string; steps: { kind: RitualStepKind; label?: string; minutes?: number }[] };
 
   interface Props {
     course: StudyCourse;
     courseSlug: string;
     drillKcs: Kc[];
     openSession: OpenSession;
+    rituals?: RitualOption[];
   }
-  const { course, courseSlug, drillKcs, openSession }: Props = $props();
+  const { course, courseSlug, drillKcs, openSession, rituals = [] }: Props = $props();
 </script>
 
 <div class="practice-panel">
   <section class="section">
     <h2>Study session</h2>
-    <StudyFlow courses={[course]} openSession={openSession} preselectedCourseId={course.id} />
+    <StudyFlow courses={[course]} openSession={openSession} preselectedCourseId={course.id} rituals={rituals} />
   </section>
 
   <section class="section">

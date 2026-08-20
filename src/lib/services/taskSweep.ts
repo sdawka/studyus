@@ -8,9 +8,9 @@
 // rows must set `source: 'system'` and a unique `dedupeKey` — those two
 // fields are what let deleteTask/sweepTasks tell a generated row apart from
 // a user-minted todo.
-import { and, eq, gt, gte, isNotNull, isNull, lt, lte } from 'drizzle-orm';
+import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, lte } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { assessmentKcs, assessments, classSessions, courses, kcs, taskCourses, tasks, users } from '../../db/schema';
+import { assessmentKcs, assessments, classSessions, courses, kcs, rituals, taskCourses, tasks, users } from '../../db/schema';
 import { isoWeekday, localNoon, parseMeetingDays } from './classSessions';
 import { resolveSettings, type ResolvedSettings } from './user';
 
@@ -31,6 +31,12 @@ const STALE_KC_CAP_PER_SWEEP = 3;
 const STALE_KC_CAP_PER_COURSE = 1;
 const GRADE_ENTRY_LOOKBACK_MS = 14 * DAY_MS;
 const GRADE_ENTRY_FOLLOWUP_MS = 3 * DAY_MS;
+// Trailing window (today + 6 days back) daily/weekly ritual occurrences are
+// minted for — a habit task only needs to exist once its day has arrived
+// (unlike prep_before_class's short lookahead, there's no future event to
+// remind the user to prepare for), and this bounds how large a backlog a
+// long-dormant sweep can mint in one call.
+const RITUAL_RECURRING_LOOKBACK_DAYS = 6;
 
 // UTC calendar-day key for a noon-normalized ms value, e.g. "20260813" —
 // same shape as scripts/seed.ts's helper of the same name. Used to re-key
@@ -312,13 +318,120 @@ async function collectGradeEntry(db: Db, userId: string, now: number): Promise<N
   }));
 }
 
-// v1.9 placeholder — COLLECTORS is a Record<GeneratorFamily, ...> and
-// GeneratorFamily now includes 'ritual' (task_generators gained that key),
-// so a no-op entry is needed here to keep check:types green. The rituals
-// track owns the real collectRituals implementation (seventh collector,
-// reusing localNoon/isoWeekday/parseMeetingDays from collectPrepBeforeClass).
-async function collectRituals(_db: Db, _userId: string, _now: number): Promise<NewTask[]> {
-  return [];
+function ritualDedupeKey(ritualId: string, occurrenceDay: number): string {
+  return `ritual:${ritualId}:${yyyymmdd(occurrenceDay)}`;
+}
+
+// `occurrenceDay` is the calendar day the dedupe key encodes (what
+// services/rituals.ts::listRitualsWithAdherence reads back to place the
+// occurrence dot); `dueDateOverride` lets after_class/before_class shift the
+// task's actual due date a day off of that occurrence day, same as
+// collectReviewAfterClass/collectPrepBeforeClass do for their own dedupe keys.
+function makeRitualTask(
+  ritual: typeof rituals.$inferSelect,
+  userId: string,
+  occurrenceDay: number,
+  now: number,
+  dueDateOverride?: number,
+): NewTask {
+  return {
+    id: crypto.randomUUID(),
+    userId,
+    title: ritual.name,
+    description: ritual.description,
+    type: 'ritual',
+    dueDate: dueDateOverride ?? occurrenceDay,
+    courseId: ritual.courseId,
+    ritualId: ritual.id,
+    source: 'system',
+    dedupeKey: ritualDedupeKey(ritual.id, occurrenceDay),
+    createdAt: now,
+  };
+}
+
+// Seventh collector: mints `ritual`-typed tasks from the user's active
+// recurring/both rituals. daily/weekly enumerate occurrence days directly
+// (no existing rows to anchor on, unlike the class-session-backed
+// collectors); after_class/before_class key off class_sessions for the
+// ritual's own courseId, reusing collectReviewAfterClass/
+// collectPrepBeforeClass's exact window constants and dedupe-day convention.
+// A deactivated ritual (active: false) is filtered out up front, so it stops
+// generating without touching tasks already minted for it — existing dedupe/
+// dismissal semantics take care of the rest (a dismissed row's dedupe key
+// still exists, so it can never resurrect).
+async function collectRituals(db: Db, userId: string, now: number): Promise<NewTask[]> {
+  const todayNoon = localNoon(now);
+
+  const activeRituals = await db
+    .select()
+    .from(rituals)
+    .where(and(eq(rituals.userId, userId), eq(rituals.active, true), isNull(rituals.groupId)));
+  const recurringRituals = activeRituals.filter((r) => r.kind === 'recurring' || r.kind === 'both');
+  if (recurringRituals.length === 0) return [];
+
+  const courseIds = [...new Set(recurringRituals.map((r) => r.courseId).filter((id): id is string => !!id))];
+  const courseRows = courseIds.length
+    ? await db
+        .select({ id: courses.id, meetingDays: courses.meetingDays, archived: courses.archived })
+        .from(courses)
+        .where(inArray(courses.id, courseIds))
+    : [];
+  const courseById = new Map(courseRows.map((c) => [c.id, c]));
+
+  const candidates: NewTask[] = [];
+
+  for (const ritual of recurringRituals) {
+    // A course-scoped ritual whose course was archived (or somehow no
+    // longer exists) stops generating, same as every other course-scoped
+    // collector above.
+    if (ritual.courseId) {
+      const course = courseById.get(ritual.courseId);
+      if (!course || course.archived) continue;
+    }
+
+    if (ritual.cadence === 'daily') {
+      for (let offset = 0; offset <= RITUAL_RECURRING_LOOKBACK_DAYS; offset++) {
+        candidates.push(makeRitualTask(ritual, userId, todayNoon - offset * DAY_MS, now));
+      }
+    } else if (ritual.cadence === 'weekly') {
+      const weekdays = parseMeetingDays(ritual.byWeekday);
+      if (weekdays.length === 0) continue;
+      for (let offset = 0; offset <= RITUAL_RECURRING_LOOKBACK_DAYS; offset++) {
+        const day = todayNoon - offset * DAY_MS;
+        if (weekdays.includes(isoWeekday(day))) candidates.push(makeRitualTask(ritual, userId, day, now));
+      }
+    } else if (ritual.cadence === 'after_class') {
+      if (!ritual.courseId) continue;
+      const lookbackStart = todayNoon - REVIEW_AFTER_CLASS_LOOKBACK_MS;
+      const sessions = await db
+        .select({ id: classSessions.id, date: classSessions.date })
+        .from(classSessions)
+        .where(
+          and(
+            eq(classSessions.userId, userId),
+            eq(classSessions.courseId, ritual.courseId),
+            eq(classSessions.status, 'attended'),
+            gte(classSessions.date, lookbackStart),
+          ),
+        );
+      for (const session of sessions) {
+        candidates.push(makeRitualTask(ritual, userId, session.date, now, session.date + DAY_MS));
+      }
+    } else if (ritual.cadence === 'before_class') {
+      if (!ritual.courseId) continue;
+      const meetingDays = parseMeetingDays(courseById.get(ritual.courseId)?.meetingDays ?? null);
+      if (meetingDays.length === 0) continue;
+      for (let offsetDays = 1; offsetDays <= PREP_BEFORE_CLASS_WINDOW_DAYS; offsetDays++) {
+        const classDay = todayNoon + offsetDays * DAY_MS;
+        if (meetingDays.includes(isoWeekday(classDay))) {
+          candidates.push(makeRitualTask(ritual, userId, classDay, now, classDay - DAY_MS));
+        }
+      }
+    }
+    // cadence null: a ritual whose kind includes recurring generation but
+    // has no cadence set yet generates nothing until one is configured.
+  }
+  return candidates;
 }
 
 const COLLECTORS: Record<GeneratorFamily, (db: Db, userId: string, now: number) => Promise<NewTask[]>> = {

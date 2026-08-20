@@ -22,6 +22,19 @@
     intendedEventType: string;
     plannedMinutes: number | null;
     startedAt: number;
+    ritualId?: string | null;
+  }
+  // v1.9: session-shape ritual picked at session start — steps render as a
+  // guidance rail during the running step (not enforced gates).
+  interface RitualStep {
+    kind: 'game' | 'warmup' | 'retrieval' | 'new_material' | 'reflect' | 'break';
+    label?: string;
+    minutes?: number;
+  }
+  interface RitualOption {
+    id: string;
+    name: string;
+    steps: RitualStep[];
   }
   interface Props {
     courses: Course[];
@@ -30,9 +43,21 @@
     // the session to that course (still falls back to 'course' if the id
     // isn't found among `courses`, e.g. a stale prop).
     preselectedCourseId?: string | null;
+    // Active session_shape/both rituals available to pick at session start.
+    // Empty (the default) skips the ritual-picker step entirely.
+    rituals?: RitualOption[];
   }
-  const { courses, openSession, preselectedCourseId = null }: Props = $props();
+  const { courses, openSession, preselectedCourseId = null, rituals = [] }: Props = $props();
   const preselected = preselectedCourseId ? courses.find((c) => c.id === preselectedCourseId) ?? null : null;
+
+  const RITUAL_STEP_LABELS: Record<RitualStep['kind'], string> = {
+    game: 'Game',
+    warmup: 'Warm-up',
+    retrieval: 'Retrieval practice',
+    new_material: 'New material',
+    reflect: 'Reflect',
+    break: 'Break',
+  };
 
   type StudyType = { label: string; value: 'practice_done' | 'reading_done' | 'retrieval_practice' | 'video_watched' | 'quick_quiz' };
   const STUDY_TYPES: StudyType[] = [
@@ -43,13 +68,14 @@
     { label: 'Quick quiz (AI)', value: 'quick_quiz' },
   ];
 
-  type Step = 'resume' | 'course' | 'duration' | 'type' | 'running' | 'complete' | 'done';
+  type Step = 'resume' | 'course' | 'duration' | 'type' | 'ritual' | 'running' | 'complete' | 'done';
   let step = $state<Step>(openSession ? 'resume' : preselected ? 'duration' : 'course');
 
   let selectedCourse = $state<Course | null>(preselected);
   let plannedMinutes = $state(25);
   let customMinutes = $state('');
   let intendedType = $state<StudyType['value'] | null>(null);
+  let selectedRitual = $state<RitualOption | null>(null);
 
   let sessionId = $state<string | null>(null);
   let sessionStartedAt = $state<number>(0);
@@ -103,6 +129,7 @@
   function resumeSession() {
     if (!openSession) return;
     selectedCourse = courses.find((c) => c.id === openSession.courseId) ?? null;
+    selectedRitual = rituals.find((r) => r.id === openSession.ritualId) ?? null;
     sessionId = openSession.id;
     sessionPlannedMinutes = openSession.plannedMinutes ?? 25;
     sessionStartedAt = openSession.startedAt;
@@ -147,7 +174,7 @@
     if (n > 0) pickDuration(n);
   }
 
-  async function pickType(type: StudyType['value']) {
+  function pickType(type: StudyType['value']) {
     intendedType = type;
     if (type === 'quick_quiz') {
       const params = new URLSearchParams();
@@ -157,6 +184,21 @@
       return;
     }
 
+    // Only worth asking when there's something to pick — skip straight to
+    // starting the session otherwise.
+    if (rituals.length > 0) {
+      step = 'ritual';
+      return;
+    }
+    beginSession(null);
+  }
+
+  function pickRitual(ritual: RitualOption | null) {
+    selectedRitual = ritual;
+    beginSession(ritual);
+  }
+
+  async function beginSession(ritual: RitualOption | null) {
     error = null;
     const result = await apiFetch<{ id: string }>(
       '/api/v1/sessions',
@@ -165,8 +207,9 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           course_id: selectedCourse?.id,
-          intended_event_type: type,
+          intended_event_type: intendedType,
           planned_minutes: plannedMinutes,
+          ritual_id: ritual?.id,
         }),
       },
       'Failed to start session',
@@ -263,6 +306,7 @@
     sessionId = null;
     selectedCourse = preselected;
     intendedType = null;
+    selectedRitual = null;
     elapsedSeconds = 0;
     reflection = '';
     result = null;
@@ -335,6 +379,19 @@
     </div>
   {/if}
 
+  {#if step === 'ritual'}
+    <div class="card">
+      <h2>Shape this session?</h2>
+      <p class="context">Optional — a step rail to guide (not gate) how you move through the session.</p>
+      <div class="actions">
+        {#each rituals as r (r.id)}
+          <button type="button" class="option" onclick={() => pickRitual(r)}>{r.name}</button>
+        {/each}
+      </div>
+      <button type="button" class="link" onclick={() => pickRitual(null)}>Skip — just study</button>
+    </div>
+  {/if}
+
   {#if step === 'running'}
     <div class="card timer-card">
       <p class="context">
@@ -342,6 +399,32 @@
         {#if intendedType}· {STUDY_TYPES.find((t) => t.value === intendedType)?.label}{/if}
       </p>
       <div class="timer">{formatTime(remainingSeconds())}</div>
+      {#if selectedRitual && selectedRitual.steps.length > 0}
+        <div class="ritual-rail">
+          <p class="rail-name">{selectedRitual.name}</p>
+          <ol class="rail-steps">
+            {#each selectedRitual.steps as s, i (i)}
+              {@const totalSeconds = sessionPlannedMinutes * 60}
+              {@const stepShare = totalSeconds / selectedRitual.steps.length}
+              {@const current = Math.min(selectedRitual.steps.length - 1, Math.floor(elapsedSeconds / Math.max(stepShare, 1))) === i}
+              <li class="rail-step" class:current>
+                <span class="rail-kind">{RITUAL_STEP_LABELS[s.kind]}</span>
+                {#if s.label}<span class="rail-detail">{s.label}</span>{/if}
+                {#if s.minutes}<span class="rail-minutes">{s.minutes}m</span>{/if}
+                {#if s.kind === 'retrieval' && selectedCourse}
+                  <a class="rail-link" href={`/courses/${selectedCourse.slug}/practice`}>Quick quiz →</a>
+                {:else if s.kind === 'new_material' && selectedCourse}
+                  <a class="rail-link" href={`/courses/${selectedCourse.slug}`}>Course home →</a>
+                {:else if s.kind === 'game' && selectedCourse}
+                  <a class="rail-link" href={`/courses/${selectedCourse.slug}/play`}>Play →</a>
+                {:else if s.kind === 'reflect'}
+                  <span class="rail-note">You'll reflect when you finish this session.</span>
+                {/if}
+              </li>
+            {/each}
+          </ol>
+        </div>
+      {/if}
       <div class="actions">
         <button type="button" class="ghost" onclick={() => (paused = !paused)}>{paused ? 'Resume' : 'Pause'}</button>
         <button type="button" class="primary" onclick={endSession}>End session</button>
@@ -469,4 +552,27 @@
   .deltas { margin: 0; padding-left: 1.1rem; font-size: 0.88rem; color: var(--text); }
   .muted { color: var(--muted); font-size: 0.9rem; }
   .error { color: var(--danger); font-size: 0.9rem; }
+
+  /* Ritual step rail — a guidance list during 'running', not enforced gates:
+     every step is always visible and clickable, 'current' only highlights
+     roughly where the elapsed time places you. */
+  .ritual-rail { width: 100%; text-align: left; }
+  .rail-name { margin: 0 0 0.5rem; font-size: 0.82rem; color: var(--muted); font-weight: 600; }
+  .rail-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+  .rail-step {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.85rem;
+  }
+  .rail-step.current { border-color: var(--accent); background: var(--accent-soft); }
+  .rail-kind { font-weight: 600; }
+  .rail-detail, .rail-note { color: var(--muted); }
+  .rail-minutes { color: var(--muted); font-size: 0.78rem; }
+  .rail-link { margin-left: auto; color: var(--accent); text-decoration: none; font-weight: 550; }
+  .rail-link:hover { text-decoration: underline; }
 </style>

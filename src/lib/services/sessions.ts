@@ -9,6 +9,7 @@ import type { CompleteStudySessionInput, CreateStudySessionInput, ListSessionsQu
 import { EVENT_TYPES, type EventType } from '../schemas/events';
 import { toEpochMs } from '../schemas/common';
 import { createEvent } from './events';
+import { requireOwnedRitual } from './rituals';
 import { ConflictError, NotFoundError, requireOwnedCourse } from './util';
 
 function resolveEventType(intended: string): EventType {
@@ -17,6 +18,10 @@ function resolveEventType(intended: string): EventType {
 
 export async function createSession(db: Db, userId: string, input: CreateStudySessionInput) {
   if (input.course_id) await requireOwnedCourse(db, userId, input.course_id);
+  // v1.9: session-shape ritual picked at session start — reject a ritual_id
+  // that isn't the caller's own (same NotFoundError-on-mismatch pattern as
+  // course_id above) rather than silently stamping someone else's ritual.
+  if (input.ritual_id) await requireOwnedRitual(db, userId, input.ritual_id);
 
   const id = crypto.randomUUID();
   const scheduledAt = input.scheduled_at ? toEpochMs(input.scheduled_at) : null;
@@ -32,6 +37,7 @@ export async function createSession(db: Db, userId: string, input: CreateStudySe
     plannedMinutes: input.planned_minutes ?? null,
     startedAt,
     scheduledAt,
+    ritualId: input.ritual_id ?? null,
   });
 
   if (input.kc_ids?.length) {

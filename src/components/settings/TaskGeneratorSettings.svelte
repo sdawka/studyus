@@ -17,6 +17,7 @@
     'practice_kc',
     'stale_kc',
     'grade_entry',
+    'ritual',
   ];
 
   const GENERATOR_DESCRIPTIONS: Record<Exclude<TaskType, 'todo'>, string> = {
@@ -26,6 +27,9 @@
     practice_kc: 'Practice tasks for weak concepts on assessments due soon.',
     stale_kc: "A nudge to revisit concepts you haven't touched in a while.",
     grade_entry: 'A reminder to enter a grade once an assessment is past due.',
+    // Master toggle — per-ritual on/off lives on each ritual's own `active`
+    // flag (RitualsPanel), not here.
+    ritual: 'Tasks for your active rituals (see Rituals below), on their own schedule.',
   };
 
   type Generators = Record<Exclude<TaskType, 'todo'>, boolean>;

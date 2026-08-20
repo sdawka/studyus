@@ -8,6 +8,7 @@ import { getProfile } from '../lib/services/profile';
 import { getGlobalFrontier } from '../lib/services/zpd';
 import { listCapabilities, getMetaSkills } from '../lib/services/capabilities';
 import { toApi } from '../lib/serialize';
+import { listRitualsWithAdherence } from '../lib/services/rituals';
 import StandingCard from '../components/profile/StandingCard.astro';
 import MasteryByCourse from '../components/profile/MasteryByCourse.astro';
 import ConceptsByStatus from '../components/profile/ConceptsByStatus.astro';
@@ -42,8 +43,9 @@ const totalKcs = Object.values(statusCounts).reduce((a, b) => a + b, 0);
 const capabilities: CapabilityResponse[] = toApi(await listCapabilities(db, userId)) as unknown as CapabilityResponse[];
 const metaSkills: MetaSkill[] = await getMetaSkills(db, userId);
 const frontier: FrontierResponse = await getGlobalFrontier(db, userId);
-// TODO(track-c): wire listRitualsWithAdherence (src/lib/services/rituals.ts).
-const rituals: RitualResponse[] | null = null;
+// Same toApi bridge as capabilities: service rows are camelCase, the panel's
+// RitualResponse props are the snake_case wire shape.
+const rituals: RitualResponse[] = toApi(await listRitualsWithAdherence(db, userId)) as unknown as RitualResponse[];
 ---
 <AppShell title="Profile">
   <h1>Profile</h1>

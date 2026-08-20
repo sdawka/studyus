@@ -4,6 +4,7 @@ import { env } from 'cloudflare:workers';
 import { getDb } from '../../../db/client';
 import { getCourseBySlug, listCourses } from '../../../lib/services/courses';
 import { listSessions } from '../../../lib/services/sessions';
+import { listSessionShapeRituals } from '../../../lib/services/rituals';
 import { NotFoundError, notFound } from '../../../lib/handleNotFound';
 import PracticePanel from '../../../components/course/PracticePanel.svelte';
 
@@ -36,6 +37,7 @@ const sessions = await listSessions(db, userId, { course: course.id });
 const openSession = sessions
   .filter((s) => !s.endedAt)
   .sort((a, b) => b.startedAt - a.startedAt)[0] ?? null;
+const rituals = await listSessionShapeRituals(db, userId);
 
 const drillKcs = course.branches
   .flatMap((b) => b.kcs)
@@ -62,6 +64,8 @@ const drillKcs = course.branches
       intendedEventType: openSession.intendedEventType,
       plannedMinutes: openSession.plannedMinutes,
       startedAt: openSession.startedAt,
+      ritualId: openSession.ritualId,
     }}
+    rituals={rituals}
   />
 </CourseLayout>

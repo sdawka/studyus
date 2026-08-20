@@ -57,14 +57,12 @@ export const TASK_TYPE_META: Record<TaskType, TaskTypeMetaEntry> = {
     iconPath: 'M6.5 17.5l11-11 M6 8.5a1.5 1.5 0 1 0 3 0 a1.5 1.5 0 1 0 -3 0 M15 15.5a1.5 1.5 0 1 0 3 0 a1.5 1.5 0 1 0 -3 0',
     weight: 6,
   },
-  // v1.9 placeholder — TASK_TYPE_META is an exhaustive Record<TaskType, ...>,
-  // so 'ritual' needs an entry here to keep check:types green. Label/icon are
-  // provisional; the rituals track owns real polish of this entry.
   ritual: {
     label: 'Ritual',
-    // repeat-circle: a near-full circular arc (provisional — placeholder
-    // shape distinct from review_after_class's; rituals track owns final art).
-    iconPath: 'M12 4a8 8 0 1 0 8 8 M16 4v4h-4',
+    // repeat: two opposing arcs with arrowheads (a loop, read top-to-bottom
+    // then bottom-to-top) — distinct from review_after_class's single
+    // near-full arc, reads as "recurring practice" rather than "undo/redo".
+    iconPath: 'M4 12a8 8 0 0 1 8-8c2.5 0 4.7 1.2 6 3 M18 3v4h-4 M20 12a8 8 0 0 1-8 8c-2.5 0-4.7-1.2-6-3 M4 21v-4h4',
     weight: 7,
   },
 };
