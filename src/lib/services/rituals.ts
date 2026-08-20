@@ -3,7 +3,7 @@
 // No adherence table (ADR-004, computed-on-read): recurring adherence folds
 // over sweep-minted `ritual` tasks (services/taskSweep.ts::collectRituals),
 // session-shape adherence folds over study_sessions.ritualId.
-import { and, eq, gte, isNull, lte } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { rituals, studySessions, tasks } from '../../db/schema';
 import type { CreateRitualInput, RitualStep, UpdateRitualInput } from '../schemas/rituals';
@@ -56,17 +56,19 @@ function occurrenceMs(dateStr: string): number {
   return Date.parse(`${dateStr}T12:00:00.000Z`);
 }
 
-async function computeAdherence(db: Db, userId: string, ritual: RitualRow, now: number): Promise<RitualAdherence> {
+type TaskRow = typeof tasks.$inferSelect;
+type StudySessionRow = typeof studySessions.$inferSelect;
+
+// Pure fold over pre-fetched rows — batched loading lives in
+// listRitualsWithAdherence/getRitual below (one query per table across all
+// rituals being computed, not one pair per ritual).
+function computeAdherence(ritual: RitualRow, now: number, ritualTasks: TaskRow[], sessionRows: StudySessionRow[]): RitualAdherence {
   const todayNoon = localNoon(now);
   const windowStart = todayNoon - ADHERENCE_WINDOW_BACK_MS;
   const windowEnd = todayNoon + ADHERENCE_WINDOW_FORWARD_MS;
 
-  const ritualTasks =
-    ritual.kind === 'recurring' || ritual.kind === 'both'
-      ? await db.select().from(tasks).where(and(eq(tasks.userId, userId), eq(tasks.ritualId, ritual.id)))
-      : [];
-
-  const inWindow = ritualTasks
+  const scopedTasks = ritual.kind === 'recurring' || ritual.kind === 'both' ? ritualTasks : [];
+  const inWindow = scopedTasks
     .map((task) => ({ task, date: occurrenceDateFromDedupeKey(task.dedupeKey ?? '') }))
     .filter(({ date }) => {
       const ms = occurrenceMs(date);
@@ -86,25 +88,15 @@ async function computeAdherence(db: Db, userId: string, ritual: RitualRow, now: 
     return { date, state };
   });
 
-  const sessionRows =
+  const scopedSessions =
     ritual.kind === 'session_shape' || ritual.kind === 'both'
-      ? await db
-          .select()
-          .from(studySessions)
-          .where(
-            and(
-              eq(studySessions.userId, userId),
-              eq(studySessions.ritualId, ritual.id),
-              gte(studySessions.startedAt, windowStart),
-              lte(studySessions.startedAt, now),
-            ),
-          )
+      ? sessionRows.filter((s) => s.startedAt >= windowStart && s.startedAt <= now)
       : [];
 
   return {
     done_28d: occurrences.filter((o) => o.state === 'done').length,
     generated_28d: occurrences.length,
-    session_uses_28d: sessionRows.length,
+    session_uses_28d: scopedSessions.length,
     occurrences,
   };
 }
@@ -129,14 +121,51 @@ function shapeRitual(ritual: RitualRow, adherence: RitualAdherence) {
   };
 }
 
+// Batch-loads the tasks/study_sessions rows adherence folds over for a set
+// of rituals in one round trip each — same idiom as listCapabilities's
+// membersByCapability (services/capabilities.ts) — instead of a per-ritual
+// pair of queries (up to 2N+1 D1 round trips for N rituals).
+async function loadAdherenceRows(db: Db, userId: string, ritualIds: string[]) {
+  const tasksByRitual = new Map<string, TaskRow[]>();
+  const sessionsByRitual = new Map<string, StudySessionRow[]>();
+  if (ritualIds.length === 0) return { tasksByRitual, sessionsByRitual };
+
+  const [taskRows, sessionRows] = await Promise.all([
+    db.select().from(tasks).where(and(eq(tasks.userId, userId), inArray(tasks.ritualId, ritualIds))),
+    db.select().from(studySessions).where(and(eq(studySessions.userId, userId), inArray(studySessions.ritualId, ritualIds))),
+  ]);
+
+  for (const row of taskRows) {
+    if (!row.ritualId) continue;
+    const list = tasksByRitual.get(row.ritualId) ?? [];
+    list.push(row);
+    tasksByRitual.set(row.ritualId, list);
+  }
+  for (const row of sessionRows) {
+    if (!row.ritualId) continue;
+    const list = sessionsByRitual.get(row.ritualId) ?? [];
+    list.push(row);
+    sessionsByRitual.set(row.ritualId, list);
+  }
+  return { tasksByRitual, sessionsByRitual };
+}
+
 export async function listRitualsWithAdherence(db: Db, userId: string, now: number = Date.now()) {
   const rows = await db.select().from(rituals).where(and(eq(rituals.userId, userId), isNull(rituals.groupId)));
-  return Promise.all(rows.map(async (ritual) => shapeRitual(ritual, await computeAdherence(db, userId, ritual, now))));
+  const { tasksByRitual, sessionsByRitual } = await loadAdherenceRows(
+    db,
+    userId,
+    rows.map((r) => r.id),
+  );
+  return rows.map((ritual) =>
+    shapeRitual(ritual, computeAdherence(ritual, now, tasksByRitual.get(ritual.id) ?? [], sessionsByRitual.get(ritual.id) ?? [])),
+  );
 }
 
 export async function getRitual(db: Db, userId: string, ritualId: string, now: number = Date.now()) {
   const ritual = await requireOwnedRitual(db, userId, ritualId);
-  return shapeRitual(ritual, await computeAdherence(db, userId, ritual, now));
+  const { tasksByRitual, sessionsByRitual } = await loadAdherenceRows(db, userId, [ritual.id]);
+  return shapeRitual(ritual, computeAdherence(ritual, now, tasksByRitual.get(ritual.id) ?? [], sessionsByRitual.get(ritual.id) ?? []));
 }
 
 // Lightweight list for StudyFlow's session-start ritual picker — active
@@ -171,6 +200,13 @@ export async function createRitual(db: Db, userId: string, input: CreateRitualIn
   return getRitual(db, userId, id);
 }
 
+// No-retraction semantics: a cadence/kind/deactivation change here only
+// affects future sweep occurrences (services/taskSweep.ts::collectRituals
+// reads the ritual row fresh on every sweep). It never retracts tasks
+// already minted — most notably before_class's 2-day lookahead, which may
+// have already minted an occurrence under the old cadence/course. Those
+// survive untouched and simply expire via the sweep's ritual-expiry step
+// once their due date passes, same as any other ritual occurrence.
 export async function updateRitual(db: Db, userId: string, ritualId: string, input: UpdateRitualInput) {
   await requireOwnedRitual(db, userId, ritualId);
   if (input.course_id) await requireOwnedCourse(db, userId, input.course_id);

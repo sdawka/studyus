@@ -449,7 +449,9 @@ describe('collectRituals', () => {
   it('daily cadence mints one task for today and each of the trailing 6 days, idempotent on re-sweep', async () => {
     const now = Date.now();
     const todayNoon = localNoon(now);
-    const ritualId = await makeRitual({ cadence: 'daily' });
+    // Backdated well past the lookback window so the createdAt clamp doesn't
+    // trim any of the 7 trailing days this test asserts on.
+    const ritualId = await makeRitual({ cadence: 'daily', createdAt: now - 30 * DAY_MS });
 
     await sweepTasks(db, userId, now);
     const rows = await tasksOfType('ritual');
@@ -469,7 +471,9 @@ describe('collectRituals', () => {
   it('mints backfilled past occurrences already dismissed (never overdue), leaving only today active', async () => {
     const now = Date.now();
     const todayNoon = localNoon(now);
-    await makeRitual({ cadence: 'daily' });
+    // Backdated so the createdAt clamp doesn't trim the pre-dismissed past
+    // occurrences this test exists to exercise.
+    await makeRitual({ cadence: 'daily', createdAt: now - 30 * DAY_MS });
 
     await sweepTasks(db, userId, now);
     const rows = await tasksOfType('ritual');
@@ -484,6 +488,30 @@ describe('collectRituals', () => {
     // so none of the backfilled past occurrences can ever render as overdue.
     const visible = await db.select().from(tasks).where(and(eq(tasks.userId, userId), isNull(tasks.dismissedAt)));
     expect(visible.filter((t) => t.type === 'ritual')).toHaveLength(1);
+  });
+
+  it('createdAt clamp: a ritual created "now" mints only today\'s occurrence', async () => {
+    const now = Date.now();
+    const todayNoon = localNoon(now);
+    await makeRitual({ cadence: 'daily', createdAt: now });
+
+    await sweepTasks(db, userId, now);
+    const rows = await tasksOfType('ritual');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].dueDate).toBe(todayNoon);
+    expect(rows[0].dismissedAt).toBeNull();
+  });
+
+  it('createdAt clamp: a ritual created 3 days ago mints created-day..today (4 occurrences)', async () => {
+    const now = Date.now();
+    const todayNoon = localNoon(now);
+    await makeRitual({ cadence: 'daily', createdAt: now - 3 * DAY_MS });
+
+    await sweepTasks(db, userId, now);
+    const rows = await tasksOfType('ritual');
+    expect(rows).toHaveLength(4);
+    const expectedDueDates = Array.from({ length: 4 }, (_, i) => todayNoon - i * DAY_MS).sort();
+    expect(rows.map((r) => r.dueDate).sort()).toEqual(expectedDueDates);
   });
 
   it('auto-dismisses ("skips") a stale not-done ritual task once its due date has passed, on a later sweep', async () => {

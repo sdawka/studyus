@@ -391,6 +391,33 @@ async function collectRituals(db: Db, userId: string, now: number): Promise<NewT
     : [];
   const courseById = new Map(courseRows.map((c) => [c.id, c]));
 
+  // Batch-load attended sessions for every after_class ritual's course up
+  // front — same single-query shape as the other six collectors, rather
+  // than one classSessions query per ritual inside the loop below.
+  const afterClassCourseIds = [
+    ...new Set(recurringRituals.filter((r) => r.cadence === 'after_class' && r.courseId).map((r) => r.courseId!)),
+  ];
+  const attendedSessionsByCourse = new Map<string, { id: string; date: number }[]>();
+  if (afterClassCourseIds.length > 0) {
+    const lookbackStart = todayNoon - REVIEW_AFTER_CLASS_LOOKBACK_MS;
+    const sessionRows = await db
+      .select({ id: classSessions.id, date: classSessions.date, courseId: classSessions.courseId })
+      .from(classSessions)
+      .where(
+        and(
+          eq(classSessions.userId, userId),
+          inArray(classSessions.courseId, afterClassCourseIds),
+          eq(classSessions.status, 'attended'),
+          gte(classSessions.date, lookbackStart),
+        ),
+      );
+    for (const row of sessionRows) {
+      const list = attendedSessionsByCourse.get(row.courseId) ?? [];
+      list.push({ id: row.id, date: row.date });
+      attendedSessionsByCourse.set(row.courseId, list);
+    }
+  }
+
   const candidates: NewTask[] = [];
 
   for (const ritual of recurringRituals) {
@@ -402,31 +429,31 @@ async function collectRituals(db: Db, userId: string, now: number): Promise<NewT
       if (!course || course.archived) continue;
     }
 
+    // A ritual's occurrences never predate the ritual itself — otherwise a
+    // brand-new daily/weekly ritual would instantly backfill pre-dismissed
+    // "skipped" dots for days it didn't exist yet, unfairly diluting
+    // adherence. after_class/before_class don't need this clamp: they key
+    // off real class_sessions rows, which can't predate ritual creation
+    // (attended sessions/meeting days only ever look near "now").
+    const createdNoon = localNoon(ritual.createdAt);
+
     if (ritual.cadence === 'daily') {
       for (let offset = 0; offset <= RITUAL_RECURRING_LOOKBACK_DAYS; offset++) {
-        candidates.push(makeRitualTask(ritual, userId, todayNoon - offset * DAY_MS, now, todayNoon));
+        const day = todayNoon - offset * DAY_MS;
+        if (day < createdNoon) continue;
+        candidates.push(makeRitualTask(ritual, userId, day, now, todayNoon));
       }
     } else if (ritual.cadence === 'weekly') {
       const weekdays = parseMeetingDays(ritual.byWeekday);
       if (weekdays.length === 0) continue;
       for (let offset = 0; offset <= RITUAL_RECURRING_LOOKBACK_DAYS; offset++) {
         const day = todayNoon - offset * DAY_MS;
+        if (day < createdNoon) continue;
         if (weekdays.includes(isoWeekday(day))) candidates.push(makeRitualTask(ritual, userId, day, now, todayNoon));
       }
     } else if (ritual.cadence === 'after_class') {
       if (!ritual.courseId) continue;
-      const lookbackStart = todayNoon - REVIEW_AFTER_CLASS_LOOKBACK_MS;
-      const sessions = await db
-        .select({ id: classSessions.id, date: classSessions.date })
-        .from(classSessions)
-        .where(
-          and(
-            eq(classSessions.userId, userId),
-            eq(classSessions.courseId, ritual.courseId),
-            eq(classSessions.status, 'attended'),
-            gte(classSessions.date, lookbackStart),
-          ),
-        );
+      const sessions = attendedSessionsByCourse.get(ritual.courseId) ?? [];
       for (const session of sessions) {
         candidates.push(makeRitualTask(ritual, userId, session.date, now, todayNoon, session.date + DAY_MS));
       }
