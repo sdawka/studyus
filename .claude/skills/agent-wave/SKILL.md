@@ -59,5 +59,14 @@ How this repo runs multi-agent implementation waves (used for v1 M0–M5 and v1.
 - **Astro's Cloudflare adapter snapshots wrangler.jsonc at build time** (config-redirect into the build output): editing `database_id`/bindings after building and then running `wrangler deploy` still deploys the OLD config. Rebuild after any wrangler.jsonc change, then deploy. First-deploy checklist that worked: `wrangler d1 create` → paste real `database_id` → `npm run db:migrate:remote` → `npm run build` → `wrangler deploy`; changing `database_id` re-keys miniflare's local D1 storage, so re-run `db:migrate:local` + `db:seed` afterward to restore local dev.
 - **All 3 Haiku vqa reviewers delivered reports without a nudge** (first time — prompts ended with an explicit "Send your findings via SendMessage to main" as the final instruction, which may be why).
 
+## Lessons from the v1.9 wave (2026-08-19, rituals/capabilities/ZPD)
+
+- **D1's 100-bound-parameter cap bites whole-profile queries**: a single `inArray()` over all of a user's KCs (147 ids) 500s at runtime while every test (small fixtures) stays green. Chunk `inArray` id-lists to ≤100 and union. Grep any new service that queries at profile scope rather than course scope.
+- **Live-walk API pokes leave residue like test attendance marks do** (v1.6 lesson generalizes): the verify agent's POSTed test ritual seeded 8 sweep tasks that then showed up in visual-qa shots as a fake defect surface. Verify-phase walks must delete what they create (cascade FKs help), and the orchestrator should re-check the DB before capture.
+- **Phantom task_assignment messages hit wave agents again** (a completed track got "reassigned" its own done task) — agents should treat an assignment for an already-completed task they own as a glitch to flag, not redo; the orchestrator confirms.
+- **All 3 Haiku vqa reviewers delivered unprompted again** when the prompt's literal last sentence is "Your FINAL action MUST be SendMessage to main" — two waves running; keep the pattern.
+- **Sweep-generated tasks carry UI semantics**: anything minted for a *past* moment inherits the tasks list's red "overdue" framing. For informational/no-guilt features (rituals), mint backfill pre-dismissed and auto-expire stale occurrences in the sweep — state design, not CSS, is what enforces anti-gamification.
+- **Wire-shape seam at .astro page boundaries**: services return camelCase rows, Svelte panels are typed against snake_case Zod wire shapes — bridge with `toApi()` in the page frontmatter (see profile.astro), don't hand-map.
+
 ## TODO
 - Consider worktree isolation per agent if track ownership ever must overlap.
