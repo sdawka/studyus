@@ -340,7 +340,7 @@
     type="button"
     class="docs-fab"
     class:open={$overlayOpen}
-    class:dock-left={$overlayOpen && $dockSide === 'right'}
+    class:dock-left={$overlayOpen}
     aria-pressed={$overlayOpen}
     aria-label={$overlayOpen ? 'Close docs overlay' : 'Open docs overlay'}
     title="Toggle docs overlay (Shift+D)"
@@ -416,10 +416,9 @@
     border-color: #5eead4;
   }
 
-  /* When the panel is open and docked right (its default), the panel covers the
-     bottom-right corner — hop the toggle to the left so it never hides under it.
-     A left-docked panel leaves the right corner free, so the default position is
-     fine there. */
+  /* While the overlay is open, the floating panel defaults to the top-right and
+     can be dragged anywhere — hop the toggle to the bottom-left so it stays
+     clear of the panel's default spot and out of the way of a drag. */
   .docs-fab.dock-left {
     right: auto;
     left: 16px;
