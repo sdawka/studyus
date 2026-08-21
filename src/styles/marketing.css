@@ -35,7 +35,7 @@
   --mk-shadow-pop: 0 12px 40px oklch(20% 0.02 260 / 0.12);
 
   --mk-content-max: 1120px;
-  --mk-pad-x: clamp(20px, 5vw, 48px);
+  --mk-pad-x: clamp(16px, 5vw, 48px);
 
   --mk-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --mk-reveal-duration: 700ms;
@@ -101,6 +101,20 @@ img, svg { max-width: 100%; display: block; }
   padding-inline: var(--mk-pad-x);
 }
 
+
+/* Mobile/grid safety: marketing vignettes must shrink inside 320px screens. */
+:where(.hero-inner > *, .feature-inner > *, .problem-inner > *, .teaser-inner > *, .final-inner > *) {
+  min-width: 0;
+}
+
+:where(.hero-vignette, .feature-vignette) {
+  max-width: 100%;
+}
+
+:where(.feature-copy, .problem-copy, .hero-copy) {
+  max-width: 100%;
+}
+
 /* ---------- shared buttons ---------- */
 
 .mk-btn {
@@ -154,5 +168,13 @@ img, svg { max-width: 100%; display: block; }
   .js .reveal.is-in {
     opacity: 1;
     transform: none;
+  }
+}
+
+
+@media (max-width: 520px) {
+  .mk-btn {
+    min-height: 44px;
+    padding-inline: 18px;
   }
 }

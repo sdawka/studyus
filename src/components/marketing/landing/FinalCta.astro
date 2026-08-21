@@ -3,13 +3,13 @@
 <section class="final">
   <div class="mk-container final-inner">
     <h2 class="reveal">
-      Know what's <span class="mk-highlight">next.</span><br />Every day.
+      Open the right thing <span class="mk-highlight">next.</span><br />Every study day.
     </h2>
     <p class="reveal" style="--reveal-delay: 80ms">
-      Free to start. No credit card, no streak to protect.
+      Free to start. No credit card. No streaks to babysit.
     </p>
     <div class="final-ctas reveal" style="--reveal-delay: 140ms">
-      <a class="mk-btn mk-btn-primary" href="/login">Get started</a>
+      <a class="mk-btn mk-btn-primary" href="/login">Start studying smarter</a>
       <a class="mk-btn mk-btn-ghost" href="/compare">See how it compares →</a>
     </div>
   </div>
@@ -47,5 +47,9 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 14px;
+  }
+  @media (max-width: 520px) {
+    .final-ctas { width: 100%; gap: 10px; }
+    .final-ctas .mk-btn { width: 100%; justify-content: center; }
   }
 </style>
