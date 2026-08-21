@@ -11,16 +11,13 @@ const offset = c * (1 - pct / 100);
     <div class="feature-copy">
       <p class="eyebrow reveal">What to study</p>
       <h2 class="reveal" style="--reveal-delay: 60ms">
-        It picks the next concept, not just the next slot.
+        It picks the concept, not just the time slot.
       </h2>
       <p class="reveal" style="--reveal-delay: 120ms">
-        Every course breaks down into knowledge components — the actual ideas you're
-        graded on. Studyus tracks mastery on each one and surfaces whichever is weakest
-        or going stale first, weighted against what's due soon.
+        Break each course into the ideas you actually get graded on. Studyus tracks mastery, freshness, and deadlines — then pushes the concept that needs attention first.
       </p>
       <p class="reveal" style="--reveal-delay: 180ms">
-        No generic "study 2 hours today." Just: open this, because you're 38% here
-        and the exam isn't waiting.
+        No vague “study for two hours.” Just: open this topic now, because it is weak and the exam clock is moving.
       </p>
     </div>
 
@@ -134,7 +131,12 @@ const offset = c * (1 - pct / 100);
   }
 
   @media (max-width: 860px) {
-    .feature-inner { grid-template-columns: 1fr; }
-    .feature-vignette { max-width: 380px; }
+    .feature-inner { grid-template-columns: 1fr; gap: 24px; }
+    .feature-vignette { width: 100%; max-width: 380px; }
+  }
+  @media (max-width: 420px) {
+    .card { padding: 18px; }
+    .card-body { gap: 14px; }
+    .ring { width: 88px; height: 88px; flex: 0 0 88px; }
   }
 </style>

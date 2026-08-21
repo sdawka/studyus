@@ -47,7 +47,7 @@ const isCompare = Astro.url.pathname.startsWith('/compare');
           <a href="/compare">Compare</a>
           <a href="/login">Log in</a>
         </nav>
-        <span class="mk-footer-note">Built for students who want the plan, not another app to manage.</span>
+        <span class="mk-footer-note">Built for students who want the next move, not another dashboard to manage.</span>
       </div>
     </footer>
 
@@ -142,7 +142,9 @@ const isCompare = Astro.url.pathname.startsWith('/compare');
         font-size: 13px;
       }
       @media (max-width: 560px) {
+        .mk-nav-inner { height: 58px; }
         .mk-nav-links { gap: 14px; }
+        .mk-nav-cta { display: none; }
         .mk-footer-note { margin-left: 0; }
       }
     </style>

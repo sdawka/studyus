@@ -4,17 +4,16 @@ import StatusPill from './StatusPill.astro';
 <section class="hero">
   <div class="mk-container hero-inner">
     <div class="hero-copy">
-      <p class="eyebrow reveal">For students running five apps and one calendar</p>
+      <p class="eyebrow reveal">For students juggling lectures, deadlines, and five apps</p>
       <h1 class="reveal" style="--reveal-delay: 60ms">
-        Stop asking <em>when</em> to study.<br />
-        Start knowing <span class="mk-highlight">what.</span>
+        Stop guessing what to study.<br />
+        Open the right thing <span class="mk-highlight">next.</span>
       </h1>
       <p class="dek reveal" style="--reveal-delay: 140ms">
-        Studyus ranks your weakest, stalest concepts against what's actually due —
-        then tells you exactly what to open. No streaks to keep. No guilt if the week falls apart.
+        Studyus weighs weak concepts, stale topics, and real deadlines — then tells you exactly what to open. No streaks. No guilt spiral. Just the next best move.
       </p>
       <div class="hero-ctas reveal" style="--reveal-delay: 220ms">
-        <a class="mk-btn mk-btn-primary" href="/login">Get started</a>
+        <a class="mk-btn mk-btn-primary" href="/login">Start studying smarter</a>
         <a class="mk-btn mk-btn-ghost" href="/compare">See how it compares →</a>
       </div>
     </div>
@@ -23,8 +22,8 @@ import StatusPill from './StatusPill.astro';
       <div class="vignette-frame">
         <p class="vignette-ticker">
           <span>Recalculating priority…</span>
-          <span>Resonance structures ↑ weak</span>
-          <span>B-trees flagged stale · 9d</span>
+          <span>Resonance structures need work</span>
+          <span>B-trees stale · 9d</span>
         </p>
         <ol class="queue">
           <li class="queue-card is-top">
@@ -71,7 +70,7 @@ import StatusPill from './StatusPill.astro';
   }
   .hero-inner {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 460px);
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 460px);
     gap: clamp(32px, 6vw, 72px);
     align-items: center;
   }
@@ -84,8 +83,8 @@ import StatusPill from './StatusPill.astro';
     margin-bottom: 18px;
   }
   .hero-copy h1 {
-    font-size: clamp(38px, 5.4vw, 68px);
-    max-width: 13ch;
+    font-size: clamp(34px, 5.4vw, 68px);
+    max-width: 14ch;
     font-style: normal;
   }
   .hero-copy h1 em {
@@ -214,13 +213,27 @@ import StatusPill from './StatusPill.astro';
   }
 
   @media (max-width: 860px) {
+    .hero {
+      padding-block: clamp(40px, 12vw, 72px) clamp(42px, 10vw, 64px);
+    }
     .hero-inner {
       grid-template-columns: 1fr;
+      gap: 28px;
     }
-    .hero-vignette { order: -1; max-width: 460px; }
+    .hero-copy h1 { max-width: 11.5ch; }
+    .dek { max-width: 36ch; }
+    .hero-vignette { width: 100%; max-width: 460px; }
   }
-  @media (max-width: 480px) {
-    .queue-card { grid-template-columns: 1fr auto; }
+  @media (max-width: 520px) {
+    .hero-ctas { gap: 10px; }
+    .hero-ctas .mk-btn { width: 100%; justify-content: center; }
+    .vignette-frame { padding: 14px; border-radius: 14px; }
+    .vignette-ticker { overflow: hidden; }
+    .queue-card {
+      grid-template-columns: minmax(0, 1fr) auto;
+      padding: 11px 12px;
+    }
     .queue-course { display: none; }
+    .queue-topic { min-width: 0; font-size: 14px; }
   }
 </style>

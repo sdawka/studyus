@@ -22,14 +22,12 @@ const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
     <div class="feature-copy">
       <p class="eyebrow reveal">When it slips</p>
-      <h2 class="reveal" style="--reveal-delay: 60ms">Your week replans itself.</h2>
+      <h2 class="reveal" style="--reveal-delay: 60ms">When the week slips, the plan moves.</h2>
       <p class="reveal" style="--reveal-delay: 120ms">
-        Miss a day and a rigid planner just sits there, red and judgmental. Studyus
-        moves what didn't happen to where it still fits — before the deadline, not after.
+        Miss a day and most planners just turn red. Studyus moves unfinished work into the next real opening — before the deadline catches you.
       </p>
       <p class="reveal" style="--reveal-delay: 180ms">
-        No streaks to lose. No "you broke your chain." Just a plan that assumes,
-        correctly, that some weeks go sideways.
+        No broken chains. No punishment UI. Just a plan that assumes real student weeks go sideways.
       </p>
     </div>
   </div>
@@ -118,9 +116,9 @@ const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   .task-chip {
     position: absolute;
     top: 0;
-    width: calc(100% / 7 - 6px);
+    width: calc((100% / 7) * 2 - 6px);
     padding: 7px 8px;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 560;
     text-align: center;
     border-radius: var(--mk-radius-sm);
@@ -142,7 +140,14 @@ const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   }
 
   @media (max-width: 860px) {
-    .feature-inner { grid-template-columns: 1fr; }
-    .feature-vignette { max-width: 380px; order: -1; }
+    .feature-inner { grid-template-columns: 1fr; gap: 24px; }
+    .feature-vignette { width: 100%; max-width: 380px; order: -1; }
+  }
+  @media (max-width: 420px) {
+    .card { padding: 18px; }
+    .week { gap: 4px; }
+    .day { min-width: 0; }
+    .day-flag { display: none; }
+    .task-chip { padding-inline: 6px; }
   }
 </style>

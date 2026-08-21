@@ -4,15 +4,12 @@
   <div class="mk-container feature-inner">
     <div class="feature-copy">
       <p class="eyebrow reveal">Why it works</p>
-      <h2 class="reveal" style="--reveal-delay: 60ms">Practice that's actually spaced.</h2>
+      <h2 class="reveal" style="--reveal-delay: 60ms">Practice before you forget.</h2>
       <p class="reveal" style="--reveal-delay: 120ms">
-        Cramming feels productive and mostly isn't. Retrieval spread out over days beats
-        one long session — it's one of the few study techniques with real evidence behind it,
-        not just a study-influencer opinion.
+        Cramming feels productive. Spaced retrieval works better. It is one of the few study techniques with evidence behind it — not just study-influencer advice.
       </p>
       <p class="reveal" style="--reveal-delay: 180ms">
-        Studyus schedules short recall checks automatically, timed to when you're about
-        to forget — not when it's convenient for an app to remind you.
+        Studyus drops in short recall checks when forgetting is about to win — not whenever an app wants another notification.
       </p>
     </div>
 
@@ -115,7 +112,12 @@
   }
 
   @media (max-width: 860px) {
-    .feature-inner { grid-template-columns: 1fr; }
-    .feature-vignette { max-width: 380px; }
+    .feature-inner { grid-template-columns: 1fr; gap: 24px; }
+    .feature-vignette { width: 100%; max-width: 380px; }
+  }
+  @media (max-width: 420px) {
+    .flip-card { height: 170px; }
+    .face { padding: 18px; }
+    .face-topic { font-size: 18px; }
   }
 </style>

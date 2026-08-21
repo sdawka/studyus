@@ -3,7 +3,7 @@ const scattered = [
   { label: 'Google Calendar', rot: -6 },
   { label: 'Notion doc, page 14', rot: 4 },
   { label: 'Class group chat', rot: -2 },
-  { label: 'Syllabus PDF', rot: 7 },
+  { label: 'Moved syllabus PDF', rot: 7 },
   { label: 'Sticky note on the monitor', rot: -8 },
 ];
 ---
@@ -16,14 +16,12 @@ const scattered = [
     </div>
     <div class="problem-copy">
       <p class="eyebrow reveal">The problem</p>
-      <h2 class="reveal" style="--reveal-delay: 60ms">One deadline. Five apps. Zero warning.</h2>
+      <h2 class="reveal" style="--reveal-delay: 60ms">Your deadline was somewhere. Your plan was nowhere.</h2>
       <p class="reveal" style="--reveal-delay: 120ms">
-        The assignment lived in Notion. The reminder lived in a group chat you muted.
-        The syllabus said it moved. Nothing talked to anything else — so nobody told you.
+        The assignment is in one app. The reminder is in a muted chat. The syllabus changed again. Nothing connects, so your study plan breaks quietly.
       </p>
       <p class="stat reveal" style="--reveal-delay: 180ms">
-        <span class="stat-num">47%</span> of students have missed a deadline that was sitting,
-        correctly, in one of their apps — just not the one they opened that day.
+        <span class="stat-num">The fix:</span> one place that turns scattered course inputs into the next study action.
       </p>
     </div>
   </div>
@@ -89,7 +87,11 @@ const scattered = [
   .scatter:hover .tag { transform: rotate(0deg); border-color: var(--mk-ink); }
 
   @media (max-width: 780px) {
-    .problem-inner { grid-template-columns: 1fr; }
-    .scatter { order: 2; }
+    .problem-inner { grid-template-columns: 1fr; gap: 24px; }
+    .scatter { order: 2; padding: 8px 0 0; }
+  }
+  @media (max-width: 520px) {
+    .tag { font-size: 11.5px; padding: 7px 10px; }
+    h2 { max-width: 13ch; }
   }
 </style>

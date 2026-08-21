@@ -1,13 +1,13 @@
 ---
 const stats = [
-  { num: '+25%', label: 'better retention from spaced retrieval vs. cramming the night before' },
+  { num: '+25%', label: 'better retention from spaced retrieval than last-minute cramming' },
   { num: 'd = 0.78', label: 'effect size, meta-analysis of spaced vs. massed practice' },
-  { num: '1', label: 'study technique on this list with consistent evidence behind it' },
+  { num: '1', label: 'simple principle: test yourself, then come back before you forget' },
 ];
 ---
 <section class="evidence">
   <div class="mk-container">
-    <p class="eyebrow reveal">Built on the one technique that holds up</p>
+    <p class="eyebrow reveal">Evidence beats study vibes</p>
     <div class="ledger">
       {stats.map((s, i) => (
         <div class="ledger-item reveal" style={`--reveal-delay: ${i * 100}ms`}>
@@ -17,8 +17,7 @@ const stats = [
       ))}
     </div>
     <p class="citation reveal" style="--reveal-delay: 300ms">
-      Pan, S. C., &amp; Rickard, T. C. (2018), <em>Journal of Educational Psychology</em> — spaced
-      retrieval practice, not massed study.
+      Pan, S. C., &amp; Rickard, T. C. (2018), <em>Journal of Educational Psychology</em> — spaced retrieval beats massed study.
     </p>
   </div>
 </section>
@@ -73,8 +72,9 @@ const stats = [
     .ledger-item {
       border-left: none;
       border-top: 1px solid var(--mk-hairline);
-      padding-inline: 4px;
+      padding: 20px 0;
     }
     .ledger-item:first-child { border-top: none; }
+    .ledger-label { max-width: 34ch; }
   }
 </style>
