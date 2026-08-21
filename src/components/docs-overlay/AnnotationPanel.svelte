@@ -1,3 +1,9 @@
+<!-- css="injected": ship scoped styles inside the JS (see DocsOverlay.svelte).
+     Also fixes the mobile Sheet path — the panelBody snippet's scoped classes
+     render inside the portaled Sheet, which an external CSS file wouldn't cover
+     in a production build either. -->
+<svelte:options css="injected" />
+
 <script lang="ts">
   // TEMPORARY — docs annotation overlay. See docs/product/annotations.md.
   // The panel half of the overlay: route summary + a numbered component list

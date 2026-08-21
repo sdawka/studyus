@@ -1,3 +1,12 @@
+<!-- css="injected" so the scoped styles ship INSIDE this component's JS and are
+     appended to <head> at runtime. This layer mounts via an injected `page`
+     script (mount.ts), not through Astro's component graph, so Astro's build
+     never links a separately-extracted CSS file for it — the default 'external'
+     mode left the overlay completely unstyled in a production build. Injected
+     mode makes the styles self-contained, matching the rest of this
+     deliberately deletable, self-contained layer. -->
+<svelte:options css="injected" />
+
 <script lang="ts">
   // TEMPORARY — docs annotation overlay root. See docs/product/annotations.md.
   //
