@@ -6,30 +6,30 @@
    ============================================================ */
 
 [data-theme='campus'] {
-  --bg:        oklch(95% 0.022 80);
-  --surface:   oklch(97.5% 0.02 82);
-  --surface-2: oklch(95% 0.022 82);
-  --text:      oklch(24% 0.02 50);
-  --muted:     oklch(50% 0.035 55);
-  --faint:     oklch(66% 0.04 60);
-  --border:    oklch(88% 0.035 70);
-  --hairline:  oklch(93% 0.024 76);
+  --bg:        light-dark(oklch(95% 0.022 80), oklch(21% 0.02 50));
+  --surface:   light-dark(oklch(97.5% 0.02 82), oklch(25% 0.026 48));
+  --surface-2: light-dark(oklch(95% 0.022 82), oklch(30% 0.038 44));
+  --text:      light-dark(oklch(24% 0.02 50), oklch(94% 0.025 75));
+  --muted:     light-dark(oklch(50% 0.035 55), oklch(76% 0.038 70));
+  --faint:     light-dark(oklch(66% 0.04 60), oklch(58% 0.04 65));
+  --border:    light-dark(oklch(88% 0.035 70), oklch(35% 0.035 50));
+  --hairline:  light-dark(oklch(93% 0.024 76), oklch(31% 0.03 48));
   --hover:     var(--surface-2);
 
-  --accent:      oklch(52% 0.16 38);
-  --accent-ink:  oklch(42% 0.145 36);
-  --accent-soft: oklch(92% 0.045 46);
-  --accent-contrast: oklch(98% 0.008 40);
+  --accent:      light-dark(oklch(52% 0.16 38), oklch(68% 0.15 45));
+  --accent-ink:  light-dark(oklch(42% 0.145 36), oklch(78% 0.13 50));
+  --accent-soft: light-dark(oklch(92% 0.045 46), oklch(36% 0.07 44));
+  --accent-contrast: light-dark(oklch(98% 0.008 40), oklch(18% 0.02 40));
 
-  --good:      oklch(50% 0.1 145);
-  --good-ink:  oklch(38% 0.09 145);
-  --good-soft: oklch(93% 0.035 140);
-  --warn:        oklch(60% 0.13 75);
-  --warn-ink:    oklch(45% 0.11 75);
-  --warn-soft:   oklch(95% 0.04 85);
-  --danger:      oklch(52% 0.16 20);
-  --danger-ink:  oklch(42% 0.14 18);
-  --danger-soft: oklch(93% 0.035 25);
+  --good:      light-dark(oklch(50% 0.1 145), oklch(68% 0.1 143));
+  --good-ink:  light-dark(oklch(38% 0.09 145), oklch(80% 0.085 143));
+  --good-soft: light-dark(oklch(93% 0.035 140), oklch(30% 0.035 138));
+  --warn:        light-dark(oklch(60% 0.13 75), oklch(73% 0.115 78));
+  --warn-ink:    light-dark(oklch(45% 0.11 75), oklch(84% 0.09 78));
+  --warn-soft:   light-dark(oklch(95% 0.04 85), oklch(30% 0.035 82));
+  --danger:      light-dark(oklch(52% 0.16 20), oklch(68% 0.145 22));
+  --danger-ink:  light-dark(oklch(42% 0.14 18), oklch(80% 0.11 20));
+  --danger-soft: light-dark(oklch(93% 0.035 25), oklch(29% 0.04 25));
 
   --sidebar-bg:          var(--surface);
   --sidebar-text:        var(--text);
@@ -50,15 +50,18 @@
   --kicker-style: italic;
   --font-size-base: 15.5px;
   --text-figure: 34px;
+  /* Geometry-varying effect tokens (offsets/blur differ by scheme, not just
+     color) — light-dark() is color-only and can't fold these, so the light
+     values live here and a minimal dark override sits below. */
   --shadow-card: 0 3px 6px rgba(90,50,20,.10), 0 14px 30px -8px rgba(90,50,20,.16);
   --shadow-pop: 0 8px 18px -4px rgba(90,50,20,.18), 0 24px 48px -14px rgba(90,50,20,.22);
 
-  --course-l: 56%;
+  --course-l: light-dark(56%, 74%);
   --course-c: 0.12;
-  --course-ink-l: 43%;
+  --course-ink-l: light-dark(43%, 82%);
   --course-ink-c: 0.1;
-  --course-soft-l: 93%;
-  --course-soft-c: 0.04;
+  --course-soft-l: light-dark(93%, 33%);
+  --course-soft-c: light-dark(0.04, 0.055);
 
   --weight-med: 550;
   --weight-semi: 650;
@@ -81,91 +84,19 @@
   --pop-w-lg: 350px;
 }
 
-/* KEEP IN SYNC: this media block and the explicit [data-scheme=dark]
-   block below must carry identical values. */
+/* KEEP IN SYNC: the only tokens still duplicated — effect shadows whose
+   geometry (offsets/blur), not just color, changes by scheme. light-dark() is
+   color-only so it can't fold these; every color token above is folded once.
+   Same pattern as focus.css. */
 @media (prefers-color-scheme: dark) {
   [data-theme='campus']:not([data-scheme='light']) {
-    --bg:        oklch(21% 0.02 50);
-    --surface:   oklch(25% 0.026 48);
-    --surface-2: oklch(30% 0.038 44);
-    --text:      oklch(94% 0.025 75);
-    --muted:     oklch(76% 0.038 70);
-    --faint:     oklch(58% 0.04 65);
-    --border:    oklch(35% 0.035 50);
-    --hairline:  oklch(31% 0.03 48);
-    --hover:     var(--surface-2);
-
-    --accent:      oklch(68% 0.15 45);
-    --accent-ink:  oklch(78% 0.13 50);
-    --accent-soft: oklch(36% 0.07 44);
-    --accent-contrast: oklch(18% 0.02 40);
-
-    --good:      oklch(68% 0.1 143);
-    --good-ink:  oklch(80% 0.085 143);
-    --good-soft: oklch(30% 0.035 138);
-    --warn:        oklch(73% 0.115 78);
-    --warn-ink:    oklch(84% 0.09 78);
-    --warn-soft:   oklch(30% 0.035 82);
-    --danger:      oklch(68% 0.145 22);
-    --danger-ink:  oklch(80% 0.11 20);
-    --danger-soft: oklch(29% 0.04 25);
-
-    --sidebar-bg:          var(--surface);
-    --sidebar-text:        var(--text);
-    --sidebar-muted:       var(--muted);
-    --sidebar-border:      var(--border);
-    --sidebar-active-bg:   var(--accent-soft);
-    --sidebar-active-text: var(--accent-ink);
-
     --shadow-card: 0 2px 4px rgba(0,0,0,.35), 0 10px 24px -8px rgba(0,0,0,.45);
     --shadow-pop: 0 6px 14px -4px rgba(0,0,0,.45), 0 20px 40px -12px rgba(0,0,0,.55);
-
-    --course-l: 74%;
-    --course-ink-l: 82%;
-    --course-soft-l: 33%;
-    --course-soft-c: 0.055;
   }
 }
 
 /* KEEP IN SYNC with the media block above. */
 [data-theme='campus'][data-scheme='dark'] {
-  --bg:        oklch(21% 0.02 50);
-  --surface:   oklch(25% 0.026 48);
-  --surface-2: oklch(30% 0.038 44);
-  --text:      oklch(94% 0.025 75);
-  --muted:     oklch(76% 0.038 70);
-  --faint:     oklch(58% 0.04 65);
-  --border:    oklch(35% 0.035 50);
-  --hairline:  oklch(31% 0.03 48);
-  --hover:     var(--surface-2);
-
-  --accent:      oklch(68% 0.15 45);
-  --accent-ink:  oklch(78% 0.13 50);
-  --accent-soft: oklch(36% 0.07 44);
-  --accent-contrast: oklch(18% 0.02 40);
-
-  --good:      oklch(68% 0.1 143);
-  --good-ink:  oklch(80% 0.085 143);
-  --good-soft: oklch(30% 0.035 138);
-  --warn:        oklch(73% 0.115 78);
-  --warn-ink:    oklch(84% 0.09 78);
-  --warn-soft:   oklch(30% 0.035 82);
-  --danger:      oklch(68% 0.145 22);
-  --danger-ink:  oklch(80% 0.11 20);
-  --danger-soft: oklch(29% 0.04 25);
-
-  --sidebar-bg:          var(--surface);
-  --sidebar-text:        var(--text);
-  --sidebar-muted:       var(--muted);
-  --sidebar-border:      var(--border);
-  --sidebar-active-bg:   var(--accent-soft);
-  --sidebar-active-text: var(--accent-ink);
-
   --shadow-card: 0 2px 4px rgba(0,0,0,.35), 0 10px 24px -8px rgba(0,0,0,.45);
   --shadow-pop: 0 6px 14px -4px rgba(0,0,0,.45), 0 20px 40px -12px rgba(0,0,0,.55);
-
-  --course-l: 74%;
-  --course-ink-l: 82%;
-  --course-soft-l: 33%;
-  --course-soft-c: 0.055;
 }

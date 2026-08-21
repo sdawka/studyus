@@ -6,6 +6,14 @@
    ============================================================ */
 
 :root {
+  /* These three lines are what make light-dark() resolve correctly for the
+     three scheme states (OS default / forced light / forced dark), replacing
+     the per-theme duplicated dark ramps. light-dark() picks its arg from the
+     element's color-scheme, and the app drives scheme via data-scheme on
+     <html> (absent = follow OS, 'light' = force light, 'dark' = force dark).
+     Loaded by AppShell before the theme files so it applies to their tokens. */
+  color-scheme: light dark; /* default: follow the OS, same as today's @media default */
+
   /* Default course hue; components override per element. */
   --course-h: 220;
 
@@ -33,6 +41,11 @@
   /* TEMPORARY — docs annotation overlay. Remove with the layer. */
   --z-docs-overlay: 300;
 }
+
+/* Forced-scheme overrides for the data-scheme attribute — these make
+   light-dark() resolve to a fixed side regardless of the OS preference. */
+:root[data-scheme='light'] { color-scheme: light; }
+:root[data-scheme='dark']  { color-scheme: dark; }
 
 /* Mobile shell cutover — see docs/design/mobile-shell.md. Canonical
    breakpoint; JS consumers use MOBILE_QUERY / isMobile from

@@ -2,39 +2,44 @@
    Theme: Focus — "dense, sharp, indigo command-center."
    Space Grotesk display voice over an Inter body, cool blue-violet
    neutrals, the tightest spacing/radii/motion of the three themes.
-   Sidebar is pinned dark in BOTH schemes (declared once, in the
-   light block — nothing in the dark blocks below overrides
-   --sidebar-*, so it stays pinned).
+   Scheme-varying color tokens are folded into light-dark() and
+   defined once in the block below; color-scheme is set centrally
+   in tokens.css. The sidebar rail is pinned dark in BOTH schemes
+   (declared once as a plain value — no light-dark()).
+   Three multi-part effect tokens (--shadow-pop, --accent-glow,
+   --now-line-glow) vary in geometry, not just color, so a color-only
+   light-dark() can't express them; they keep a small scheme override
+   at the bottom.
    ============================================================ */
 
 [data-theme='focus'] {
-  --bg:        oklch(96% 0.003 264);
-  --surface:   oklch(100% 0 0);
-  --surface-2: oklch(97.5% 0.004 264);
-  --text:      oklch(18% 0.014 264);
-  --muted:     oklch(50% 0.02 264);
-  --faint:     oklch(66% 0.016 264);
-  --border:    oklch(91% 0.006 264);
-  --hairline:  oklch(93.5% 0.005 264);
+  --bg:        light-dark(oklch(96% 0.003 264), oklch(16% 0.01 264));
+  --surface:   light-dark(oklch(100% 0 0), oklch(20% 0.013 264));
+  --surface-2: light-dark(oklch(97.5% 0.004 264), oklch(23% 0.015 264));
+  --text:      light-dark(oklch(18% 0.014 264), oklch(94% 0.004 264));
+  --muted:     light-dark(oklch(50% 0.02 264), oklch(69% 0.014 264));
+  --faint:     light-dark(oklch(66% 0.016 264), oklch(52% 0.016 264));
+  --border:    light-dark(oklch(91% 0.006 264), oklch(29% 0.014 264));
+  --hairline:  light-dark(oklch(93.5% 0.005 264), oklch(25% 0.012 264));
   --hover:     var(--surface-2);
 
-  --accent:      oklch(52% 0.19 267);
-  --accent-ink:  oklch(39% 0.165 267);
-  --accent-soft: oklch(94% 0.024 267);
-  --accent-contrast: oklch(99% 0.006 267);
+  --accent:      light-dark(oklch(52% 0.19 267), oklch(64% 0.155 268));
+  --accent-ink:  light-dark(oklch(39% 0.165 267), oklch(76% 0.125 268));
+  --accent-soft: light-dark(oklch(94% 0.024 267), oklch(28% 0.055 267));
+  --accent-contrast: light-dark(oklch(99% 0.006 267), oklch(15% 0.02 267));
 
-  --good:      oklch(55% 0.145 152);
-  --good-ink:  oklch(39% 0.125 152);
-  --good-soft: oklch(95.5% 0.024 160);
-  --warn:        oklch(61% 0.14 73);
-  --warn-ink:    oklch(45% 0.12 73);
-  --warn-soft:   oklch(95.5% 0.03 84);
-  --danger:      oklch(54% 0.185 25);
-  --danger-ink:  oklch(41% 0.16 25);
-  --danger-soft: oklch(94.5% 0.022 18);
+  --good:      light-dark(oklch(55% 0.145 152), oklch(70% 0.15 154));
+  --good-ink:  light-dark(oklch(39% 0.125 152), oklch(80% 0.12 154));
+  --good-soft: light-dark(oklch(95.5% 0.024 160), oklch(25% 0.04 160));
+  --warn:        light-dark(oklch(61% 0.14 73), oklch(74% 0.13 80));
+  --warn-ink:    light-dark(oklch(45% 0.12 73), oklch(84% 0.1 80));
+  --warn-soft:   light-dark(oklch(95.5% 0.03 84), oklch(28% 0.045 87));
+  --danger:      light-dark(oklch(54% 0.185 25), oklch(66% 0.16 20));
+  --danger-ink:  light-dark(oklch(41% 0.16 25), oklch(79% 0.115 20));
+  --danger-soft: light-dark(oklch(94.5% 0.022 18), oklch(24% 0.042 15));
 
   /* Pinned dark rail — the theme's signature, cool blue-violet near-black.
-     Not redeclared in the dark blocks below on purpose. */
+     Identical in both schemes, so a plain single value (no light-dark). */
   --sidebar-bg:          oklch(18% 0.014 264);
   --sidebar-text:        oklch(85% 0.01 264);
   --sidebar-muted:       oklch(64% 0.018 264);
@@ -52,20 +57,20 @@
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
   --font-size-base: 13px;
   --text-figure: 28px;
-  --shadow-card: 0 1px 1px oklch(0% 0 0 / 0.07);
-  --shadow-pop: 0 1px 4px oklch(0% 0 0 / 0.14);
-  --accent-glow: none;
+  --shadow-card: 0 1px 1px light-dark(oklch(0% 0 0 / 0.07), oklch(0% 0 0 / 0.4));
+  --shadow-pop: 0 1px 4px oklch(0% 0 0 / 0.14);  /* dark blur differs — scheme override below */
+  --accent-glow: none;                           /* none vs glow — scheme override below */
 
   --now-line-color: var(--accent);
-  --now-line-glow: 0 0 0 3px oklch(52% 0.19 267 / 0.28), 0 0 10px oklch(52% 0.19 267 / 0.45);
+  --now-line-glow: 0 0 0 3px oklch(52% 0.19 267 / 0.28), 0 0 10px oklch(52% 0.19 267 / 0.45);  /* dark blur differs — scheme override below */
   --nav-active-tick: 2px;
 
-  --course-l: 48%;
+  --course-l: light-dark(48%, 66%);
   --course-c: 0.05;
-  --course-ink-l: 36%;
+  --course-ink-l: light-dark(36%, 74%);
   --course-ink-c: 0.06;
-  --course-soft-l: 94%;
-  --course-soft-c: 0.024;
+  --course-soft-l: light-dark(94%, 26%);
+  --course-soft-c: light-dark(0.024, 0.045);
 
   --weight-med: 520;
   --weight-semi: 600;
@@ -88,84 +93,21 @@
   --pop-w-lg: 340px;
 }
 
-/* KEEP IN SYNC: this media block and the explicit [data-scheme=dark]
-   block below must carry identical values. Sidebar vars intentionally
-   absent — they stay pinned to the light block's dark rail. */
+/* KEEP IN SYNC: effect tokens whose geometry (blur radius, or none-vs-glow)
+   varies by scheme — light-dark() is color-only and can't fold these, so
+   both scheme triggers below must carry identical values. Sidebar and color
+   tokens are handled once above (pinned, or via light-dark). */
 @media (prefers-color-scheme: dark) {
   [data-theme='focus']:not([data-scheme='light']) {
-    --bg:        oklch(16% 0.01 264);
-    --surface:   oklch(20% 0.013 264);
-    --surface-2: oklch(23% 0.015 264);
-    --text:      oklch(94% 0.004 264);
-    --muted:     oklch(69% 0.014 264);
-    --faint:     oklch(52% 0.016 264);
-    --border:    oklch(29% 0.014 264);
-    --hairline:  oklch(25% 0.012 264);
-    --hover:     var(--surface-2);
-
-    --accent:      oklch(64% 0.155 268);
-    --accent-ink:  oklch(76% 0.125 268);
-    --accent-soft: oklch(28% 0.055 267);
-    --accent-contrast: oklch(15% 0.02 267);
-
-    --good:      oklch(70% 0.15 154);
-    --good-ink:  oklch(80% 0.12 154);
-    --good-soft: oklch(25% 0.04 160);
-    --warn:        oklch(74% 0.13 80);
-    --warn-ink:    oklch(84% 0.1 80);
-    --warn-soft:   oklch(28% 0.045 87);
-    --danger:      oklch(66% 0.16 20);
-    --danger-ink:  oklch(79% 0.115 20);
-    --danger-soft: oklch(24% 0.042 15);
-
-    --shadow-card: 0 1px 1px oklch(0% 0 0 / 0.4);
     --shadow-pop: 0 1px 5px oklch(0% 0 0 / 0.5);
     --accent-glow: 0 0 12px oklch(64% 0.155 268 / 0.35);
-
     --now-line-glow: 0 0 0 3px oklch(64% 0.155 268 / 0.3), 0 0 12px oklch(64% 0.155 268 / 0.6);
-
-    --course-l: 66%;
-    --course-ink-l: 74%;
-    --course-soft-l: 26%;
-    --course-soft-c: 0.045;
   }
 }
 
 /* KEEP IN SYNC with the media block above. */
 [data-theme='focus'][data-scheme='dark'] {
-  --bg:        oklch(16% 0.01 264);
-  --surface:   oklch(20% 0.013 264);
-  --surface-2: oklch(23% 0.015 264);
-  --text:      oklch(94% 0.004 264);
-  --muted:     oklch(69% 0.014 264);
-  --faint:     oklch(52% 0.016 264);
-  --border:    oklch(29% 0.014 264);
-  --hairline:  oklch(25% 0.012 264);
-  --hover:     var(--surface-2);
-
-  --accent:      oklch(64% 0.155 268);
-  --accent-ink:  oklch(76% 0.125 268);
-  --accent-soft: oklch(28% 0.055 267);
-  --accent-contrast: oklch(15% 0.02 267);
-
-  --good:      oklch(70% 0.15 154);
-  --good-ink:  oklch(80% 0.12 154);
-  --good-soft: oklch(25% 0.04 160);
-  --warn:        oklch(74% 0.13 80);
-  --warn-ink:    oklch(84% 0.1 80);
-  --warn-soft:   oklch(28% 0.045 87);
-  --danger:      oklch(66% 0.16 20);
-  --danger-ink:  oklch(79% 0.115 20);
-  --danger-soft: oklch(24% 0.042 15);
-
-  --shadow-card: 0 1px 1px oklch(0% 0 0 / 0.4);
   --shadow-pop: 0 1px 5px oklch(0% 0 0 / 0.5);
   --accent-glow: 0 0 12px oklch(64% 0.155 268 / 0.35);
-
   --now-line-glow: 0 0 0 3px oklch(64% 0.155 268 / 0.3), 0 0 12px oklch(64% 0.155 268 / 0.6);
-
-  --course-l: 66%;
-  --course-ink-l: 74%;
-  --course-soft-l: 26%;
-  --course-soft-c: 0.045;
 }
