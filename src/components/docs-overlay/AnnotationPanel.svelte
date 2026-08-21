@@ -1,10 +1,17 @@
+<!-- css="injected": ship scoped styles inside the JS (see DocsOverlay.svelte).
+     Also fixes the mobile Sheet path — the panelBody snippet's scoped classes
+     render inside the portaled Sheet, which an external CSS file wouldn't cover
+     in a production build either. -->
+<svelte:options css="injected" />
+
 <script lang="ts">
   // TEMPORARY — docs annotation overlay. See docs/product/annotations.md.
   // The panel half of the overlay: route summary + a numbered component list
   // matching the badges DocsOverlay.svelte draws over the page. Desktop is a
-  // docked ~340px side panel; ≤767px it renders inside the shared Sheet
-  // primitive instead (isMobile from viewport.ts), same as every other
-  // popover-to-sheet conversion in this app.
+  // ~340px floating card that can be dragged by its header (position persisted,
+  // see below); ≤767px it renders inside the shared Sheet primitive instead
+  // (isMobile from viewport.ts), same as every other popover-to-sheet
+  // conversion in this app.
   //
   // Note on Escape: Sheet.svelte owns Escape-to-close internally and always
   // calls `onClose` unconditionally. `onClose` here is wired to "close the
@@ -13,6 +20,7 @@
   // funneled through Sheet's one callback) just closes everything. The
   // desktop two-stage Escape (card first, then overlay) lives in
   // DocsOverlay.svelte's own keydown handler, gated to skip when isMobile.
+  import { onMount } from 'svelte';
   import Sheet from '../shell/Sheet.svelte';
   import { isMobile } from '../../lib/stores/viewport';
   import type { Annotation, RouteAnnotation } from '../../lib/docs-overlay/types';
@@ -38,7 +46,9 @@
     onClose: () => void;
   }
 
-  let { route, numbered, selected, unresolved, offscreen, dockSide, onSelect, onToggleDock, onClose }: Props = $props();
+  // onToggleDock stays in Props (DocsOverlay still passes it) but is unused now
+  // that the panel free-floats + drags instead of snapping to an edge.
+  let { route, numbered, selected, unresolved, offscreen, dockSide, onSelect, onClose }: Props = $props();
 
   function toggleRow(name: string) {
     onSelect(selected === name ? null : name);
@@ -47,6 +57,101 @@
   function isUnresolved(name: string, list: string[]): boolean {
     return list.includes(name);
   }
+
+  // --- Floating + draggable behavior (desktop only) ---
+  // The panel floats as a card and can be dragged by its header. Position is a
+  // viewport-pixel {x,y} of the card's top-left, persisted so it survives the
+  // full-page reload every MPA navigation triggers. `pos === null` means "use
+  // the default anchored spot" (top, on the dockSide edge). Kept entirely local
+  // to this component — no store/DocsOverlay changes — so the whole layer stays
+  // deletable in one pass.
+  const POS_KEY = 'sb:docs-overlay-pos';
+  const MARGIN = 8;
+
+  let panelEl = $state<HTMLElement | null>(null);
+  let pos = $state<{ x: number; y: number } | null>(null);
+  let dragging = false;
+  let startX = 0;
+  let startY = 0;
+  let originX = 0;
+  let originY = 0;
+
+  function clamp(v: number, min: number, max: number): number {
+    return Math.min(Math.max(v, min), max);
+  }
+
+  // Keep the card on-screen: at least the header stays reachable so it can never
+  // be stranded off the viewport where it couldn't be grabbed again.
+  function clampPos(x: number, y: number): { x: number; y: number } {
+    const w = panelEl?.offsetWidth ?? 340;
+    const h = panelEl?.offsetHeight ?? 200;
+    return {
+      x: clamp(x, MARGIN, Math.max(MARGIN, window.innerWidth - w - MARGIN)),
+      y: clamp(y, MARGIN, Math.max(MARGIN, window.innerHeight - Math.min(h, 120) - MARGIN)),
+    };
+  }
+
+  function onHeadPointerDown(e: PointerEvent) {
+    // Let the action buttons (⇄ reset / × close) work normally.
+    if ((e.target as HTMLElement).closest('.icon-btn')) return;
+    if (!panelEl) return;
+    const rect = panelEl.getBoundingClientRect();
+    dragging = true;
+    originX = rect.left;
+    originY = rect.top;
+    startX = e.clientX;
+    startY = e.clientY;
+    // Switch from CSS-anchored to explicit px at the current spot so the first
+    // move doesn't jump.
+    pos = { x: rect.left, y: rect.top };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    e.preventDefault();
+  }
+
+  function onHeadPointerMove(e: PointerEvent) {
+    if (!dragging) return;
+    pos = clampPos(originX + (e.clientX - startX), originY + (e.clientY - startY));
+  }
+
+  function onHeadPointerUp(e: PointerEvent) {
+    if (!dragging) return;
+    dragging = false;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      /* pointer already released */
+    }
+    try {
+      if (pos) localStorage.setItem(POS_KEY, JSON.stringify(pos));
+    } catch {
+      /* storage unavailable — position just won't persist across reloads */
+    }
+  }
+
+  // Reset to the default anchored spot (also the escape hatch if the card ever
+  // ends up somewhere awkward).
+  function resetPosition() {
+    pos = null;
+    try {
+      localStorage.removeItem(POS_KEY);
+    } catch {
+      /* non-fatal */
+    }
+  }
+
+  onMount(() => {
+    try {
+      const raw = localStorage.getItem(POS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed?.x === 'number' && typeof parsed?.y === 'number') {
+          pos = clampPos(parsed.x, parsed.y);
+        }
+      }
+    } catch {
+      /* ignore malformed/absent stored position */
+    }
+  });
 </script>
 
 {#snippet panelBody()}
@@ -146,19 +251,35 @@
     {@render panelBody()}
   </Sheet>
 {:else}
-  <aside class="docs-panel" class:dock-left={dockSide === 'left'} aria-label="Docs annotation panel">
-    <header class="panel-head">
+  <aside
+    bind:this={panelEl}
+    class="docs-panel"
+    class:dock-left={dockSide === 'left'}
+    class:floating={pos !== null}
+    class:dragging
+    style={pos ? `left:${pos.x}px; top:${pos.y}px; right:auto;` : ''}
+    aria-label="Docs annotation panel"
+  >
+    <!-- Drag handle: the header. onpointerdown starts the drag; the buttons
+         inside opt out via the .icon-btn guard in onHeadPointerDown. -->
+    <header
+      class="panel-head"
+      onpointerdown={onHeadPointerDown}
+      onpointermove={onHeadPointerMove}
+      onpointerup={onHeadPointerUp}
+    >
       <div class="panel-title">
-        <span class="kicker">Docs overlay</span>
+        <span class="kicker">Docs overlay · drag to move</span>
         <h2>{route?.title ?? 'Shell only'}</h2>
       </div>
       <div class="panel-actions">
         <button
           type="button"
           class="icon-btn"
-          onclick={onToggleDock}
-          aria-label={`Move panel to the ${dockSide === 'right' ? 'left' : 'right'}`}
-        >⇄</button>
+          onclick={resetPosition}
+          aria-label="Reset panel position"
+          title="Reset position"
+        >⌖</button>
         <button type="button" class="icon-btn" onclick={onClose} aria-label="Close docs overlay">×</button>
       </div>
     </header>
@@ -170,29 +291,43 @@
 
 <style>
   /* Dev chrome — fixed palette, not theme tokens (see DocsOverlay.svelte). */
+  /* Floating card, not an edge dock. Default anchored top-right with a margin;
+     a dragged position (inline left/top from the .floating state) overrides
+     these. Bordered all round + rounded + drop shadow so it reads as floating
+     over the page, while staying non-modal (no backdrop, app stays usable). */
   .docs-panel {
     position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
+    top: 16px;
+    right: 16px;
     z-index: var(--z-docs-overlay);
     width: 340px;
-    max-width: 92vw;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 32px);
     display: flex;
     flex-direction: column;
     background: #1b2430;
     color: #e6edf3;
-    border-left: 1px solid #2f3b4c;
-    box-shadow: -4px 0 18px rgba(0, 0, 0, 0.35);
+    border: 1px solid #2f3b4c;
+    border-radius: 12px;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
+    overflow: hidden; /* clip children to the rounded corners */
     font: 400 12.5px/1.5 ui-sans-serif, system-ui, sans-serif;
   }
 
+  /* Default side hint when the card hasn't been dragged yet. */
   .docs-panel.dock-left {
     right: auto;
-    left: 0;
-    border-left: none;
-    border-right: 1px solid #2f3b4c;
-    box-shadow: 4px 0 18px rgba(0, 0, 0, 0.35);
+    left: 16px;
+  }
+
+  /* Once dragged, inline left/top win; kill the anchoring so nothing fights. */
+  .docs-panel.floating {
+    right: auto;
+  }
+
+  .docs-panel.dragging {
+    user-select: none;
+    cursor: grabbing;
   }
 
   .panel-head {
@@ -203,6 +338,11 @@
     gap: 8px;
     padding: 14px 14px 12px;
     border-bottom: 1px solid #2f3b4c;
+    cursor: grab;
+    touch-action: none; /* let pointer drag own the gesture, not the browser */
+  }
+  .docs-panel.dragging .panel-head {
+    cursor: grabbing;
   }
 
   .panel-title {

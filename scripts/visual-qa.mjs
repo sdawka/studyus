@@ -50,6 +50,16 @@ const EXPANDED_WEEK_COMBOS = [
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, baseURL: BASE });
+// Hide the docs-overlay dev toggle (FAB) from every shot. The overlay panel is
+// already screenshot-safe (starts closed); this flag suppresses only the
+// always-on toggle, keeping QA captures free of dev chrome. See DocsOverlay.svelte.
+await ctx.addInitScript(() => {
+  try {
+    localStorage.setItem('sb:docs-overlay-chrome', 'hidden');
+  } catch {
+    /* Safari private mode / storage disabled — nothing to hide anyway. */
+  }
+});
 const page = await ctx.newPage();
 const errors = [];
 page.on('console', (m) => m.type() === 'error' && errors.push(`[console] ${page.url()}: ${m.text()}`));

@@ -10,6 +10,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "deploy": "astro build && wrangler deploy",
+    "deploy:demo": "PUBLIC_DOCS_OVERLAY=true astro build && wrangler deploy",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply studyus --local",
     "db:migrate:remote": "wrangler d1 migrations apply studyus --remote",

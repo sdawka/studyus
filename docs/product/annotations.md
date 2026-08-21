@@ -8,13 +8,17 @@ a new contributor (or an agent) a fast "what is this thing and why does it exist
 without leaving the page. It is not a feature; it ships behind a dev-only flag and is designed to
 be deleted in one pass once it's stopped earning its keep (see "Retiring the layer" below).
 
-**Toggle it**: the sidebar nav item labeled "Docs overlay" (between Settings and the collapse
-toggle, desktop only), the mobile avatar-menu sheet's "Docs overlay" row, or `Shift+D` anywhere in
-the app. All three dispatch the same `toggle-docs-overlay` `window` `CustomEvent` — the decoupled
-event idiom the sidebar already uses for `open-add-course` — which the overlay root
+**Toggle it**: the always-visible floating "Docs ⇧D" pill at the bottom corner of any shell page
+(the discoverable default — it hops to the side opposite the panel when open so it never hides
+under it), the sidebar nav item labeled "Docs overlay" (between Settings and the collapse toggle,
+desktop only), the mobile avatar-menu sheet's "Docs overlay" row, or `Shift+D` anywhere in the app.
+All four dispatch the same `toggle-docs-overlay` `window` `CustomEvent` — the decoupled event idiom
+the sidebar already uses for `open-add-course` — which the overlay root
 (`src/components/docs-overlay/DocsOverlay.svelte`) listens for and folds into
 `src/lib/docs-overlay/store.ts`'s `overlayOpen` atom (persisted to `localStorage['sb:docs-overlay']`
-so a reload keeps it open mid-review).
+so a reload keeps it open mid-review). The floating pill renders unless
+`localStorage['sb:docs-overlay-chrome']` is `'hidden'` — `scripts/visual-qa.mjs` sets that so
+screenshots stay free of dev chrome.
 
 ## How it stays out of production
 
