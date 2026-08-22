@@ -5,10 +5,12 @@
 // of gummy .rd-card stat tiles with big Fraunces numbers and a candy accent.
 // The citation stays plain and legible — it's a real reference. Shared scroll
 // entrance via data-reveal / data-reveal-item. No bespoke <script>.
+// `display` is the static/reduced-motion value; the count-up script tweens
+// `value` (with prefix/suffix/decimals) up to it when the tile scrolls in.
 const stats = [
-  { num: '+25%', tone: 'accent', label: 'better retention from spaced retrieval than last-minute cramming' },
-  { num: 'd = 0.78', tone: 'grape', label: 'effect size, meta-analysis of spaced vs. massed practice' },
-  { num: '1', tone: 'tangerine', label: 'simple principle: test yourself, then come back before you forget' },
+  { value: 25, decimals: 0, prefix: '+', suffix: '%', display: '+25%', tone: 'accent', label: 'better retention from spaced retrieval than last-minute cramming' },
+  { value: 0.78, decimals: 2, prefix: 'd = ', suffix: '', display: 'd = 0.78', tone: 'grape', label: 'effect size, meta-analysis of spaced vs. massed practice' },
+  { value: 1, decimals: 0, prefix: '', suffix: '', display: '1', tone: 'tangerine', label: 'simple principle: test yourself, then come back before you forget' },
 ];
 ---
 <section class="evidence rd-section">
@@ -19,7 +21,13 @@ const stats = [
     <div class="tiles" data-reveal-item>
       {stats.map((s) => (
         <div class={`tile rd-card tone-${s.tone}`}>
-          <span class="tile-num">{s.num}</span>
+          <span
+            class="tile-num"
+            data-count-to={s.value}
+            data-decimals={s.decimals}
+            data-prefix={s.prefix}
+            data-suffix={s.suffix}
+          >{s.display}</span>
           <span class="tile-label">{s.label}</span>
         </div>
       ))}
@@ -102,3 +110,36 @@ const stats = [
     .tile-label { max-width: 42ch; }
   }
 </style>
+
+<script>
+  // Count-up: each stat number ticks from 0 to its value when it scrolls in.
+  // Reduced motion skips this entirely — the DOM already holds the final value.
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { initMarketingMotion, reducedMotion } from '../../../lib/marketing/motion';
+
+  initMarketingMotion();
+
+  if (!reducedMotion) {
+    gsap.registerPlugin(ScrollTrigger);
+    const nums = document.querySelectorAll<HTMLElement>('.tile-num[data-count-to]');
+    nums.forEach((el) => {
+      const to = parseFloat(el.dataset.countTo ?? '0');
+      const dec = parseInt(el.dataset.decimals ?? '0', 10);
+      const pre = el.dataset.prefix ?? '';
+      const suf = el.dataset.suffix ?? '';
+      const counter = { v: 0 };
+      const render = () => {
+        el.textContent = pre + counter.v.toFixed(dec) + suf;
+      };
+      render(); // start at 0 so nothing flashes the final value pre-scroll
+      gsap.to(counter, {
+        v: to,
+        duration: 1.1,
+        ease: 'power2.out',
+        onUpdate: render,
+        scrollTrigger: { trigger: el, start: 'top 88%', once: true },
+      });
+    });
+  }
+</script>

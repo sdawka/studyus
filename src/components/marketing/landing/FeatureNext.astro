@@ -181,3 +181,48 @@ const offset = c * (1 - pct / 100);
     .feat-vignette:hover .ring-card { transform: rotate(-1.5deg); }
   }
 </style>
+
+<script>
+  // Draw the readiness ring on + count the % up when the card scrolls in.
+  // Reduced motion skips it — the ring is server-rendered to its final value.
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { initMarketingMotion, reducedMotion } from '../../../lib/marketing/motion';
+
+  initMarketingMotion();
+
+  if (!reducedMotion) {
+    gsap.registerPlugin(ScrollTrigger);
+    const ring = document.querySelector<SVGCircleElement>('.ring-fg');
+    const num = document.querySelector('.ring-num');
+    if (ring && num) {
+      const circumference = parseFloat(ring.getAttribute('stroke-dasharray') ?? '0');
+      const targetOffset = parseFloat(ring.getAttribute('stroke-dashoffset') ?? '0');
+      const targetPct = Math.round((1 - targetOffset / circumference) * 100);
+      const counter = { v: 0 };
+      // start empty
+      gsap.set(ring, { attr: { 'stroke-dashoffset': circumference } });
+      num.textContent = '0%';
+      ScrollTrigger.create({
+        trigger: '.ring-card',
+        start: 'top 82%',
+        once: true,
+        onEnter: () => {
+          gsap.to(ring, {
+            attr: { 'stroke-dashoffset': targetOffset },
+            duration: 1.25,
+            ease: 'power2.out',
+          });
+          gsap.to(counter, {
+            v: targetPct,
+            duration: 1.25,
+            ease: 'power2.out',
+            onUpdate: () => {
+              num.textContent = Math.round(counter.v) + '%';
+            },
+          });
+        },
+      });
+    }
+  }
+</script>
