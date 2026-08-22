@@ -61,6 +61,9 @@
     font-size: 0.85rem;
     font-weight: 600;
     min-width: 0;
+    /* Dense, repeated (one per course on the frontier page) — sans
+       escape hatch. */
+    font-family: var(--font-title, var(--font-display));
   }
   .course-title { color: var(--course-ink); min-width: 0; overflow-wrap: anywhere; }
   .chip-count { font-size: 0.72rem; color: var(--muted); font-weight: 500; }

@@ -128,6 +128,7 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
   height: 34px;
   border-radius: 999px;
   color: var(--muted);
+  transition: background var(--motion-fast) var(--ease);
 }
 .icon-btn:hover { background: var(--hover); }
 
@@ -155,9 +156,11 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
   border-color: var(--accent);
   color: var(--surface);
   box-shadow: var(--accent-glow, none);
+  transition: transform var(--motion-fast) var(--ease-bounce, var(--ease)), box-shadow var(--motion-fast) var(--ease), filter var(--motion-base) var(--ease), border-color var(--motion-base) var(--ease);
 }
 
-.btn-primary:hover { filter: brightness(0.94); }
+.btn-primary:hover { filter: brightness(0.94); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(1px); }
 
 .btn-secondary {
   background: var(--surface-2);

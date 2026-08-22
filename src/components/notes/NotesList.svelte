@@ -201,6 +201,8 @@
     font-size: 1rem;
     font-weight: 600;
     flex: 1;
+    /* Dense, repeated (one per note in the list) — sans escape hatch. */
+    font-family: var(--font-title, var(--font-display));
   }
 
   .note-date {

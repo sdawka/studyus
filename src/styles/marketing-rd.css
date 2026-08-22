@@ -1,0 +1,253 @@
+/* ============================================================
+   Marketing landing REDESIGN — "premium playful" (pastel Y2K, high craft).
+   Phase 1 foundation: pastel OKLCH token layer, type, atmosphere, and the
+   shared primitives the redesigned sections build on. Namespaced `--rd-*` /
+   `.rd-*` so it composes over the existing `--mk-*` marketing system during the
+   phased rollout without clashing. Fonts: Fraunces (expressive display, wonky
+   italic) + Nunito (rounded, friendly body) — both already in the repo.
+   ============================================================ */
+
+:root {
+  /* ---- pastel canvas (mesh stops) ---- */
+  --rd-peach: oklch(95% 0.04 45);
+  --rd-blush: oklch(93% 0.055 12);
+  --rd-lilac: oklch(92% 0.06 305);
+  --rd-sky: oklch(94% 0.05 235);
+  --rd-mint: oklch(93% 0.07 165);
+  --rd-cream: oklch(97.5% 0.02 80);
+
+  /* ---- ink (deep plum — high contrast on the pastels, AA+) ---- */
+  --rd-ink: oklch(26% 0.07 305);
+  --rd-ink-soft: oklch(44% 0.06 305);
+  --rd-ink-faint: oklch(60% 0.04 305);
+
+  /* ---- candy pops (sharp accents against the soft field) ---- */
+  --rd-accent: oklch(65% 0.2 2); /* candy magenta-pink */
+  --rd-accent-deep: oklch(52% 0.2 2);
+  --rd-grape: oklch(58% 0.19 300);
+  --rd-tangerine: oklch(75% 0.15 55);
+  --rd-spring: oklch(80% 0.14 155);
+  --rd-on-accent: oklch(98% 0.01 350);
+
+  /* ---- type ---- */
+  --rd-display: 'Fraunces Variable', 'Fraunces', Georgia, serif;
+  --rd-body: 'Nunito Variable', 'Nunito', -apple-system, system-ui, sans-serif;
+
+  /* ---- shape + depth ---- */
+  --rd-r-lg: 26px;
+  --rd-r-md: 18px;
+  --rd-r-sm: 12px;
+  --rd-r-pill: 999px;
+  /* soft, colored, "gummy" shadows — pastel-tinted, not black */
+  --rd-shadow-sticker: 0 10px 24px -10px oklch(52% 0.2 2 / 0.35);
+  --rd-shadow-card: 0 18px 44px -22px oklch(40% 0.1 305 / 0.5);
+  --rd-shadow-pop: 0 2px 0 oklch(52% 0.2 2 / 0.9); /* candy press shadow */
+
+  --rd-content-max: 1160px;
+  --rd-pad-x: clamp(20px, 5vw, 56px);
+  --rd-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --rd-ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Root wrapper the whole landing lives inside. Sets the type system + ink;
+   `isolation` scopes the fixed mesh backdrop below to this subtree. */
+.rd {
+  position: relative;
+  isolation: isolate;
+  font-family: var(--rd-body);
+  color: var(--rd-ink);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  background: transparent;
+}
+
+/* Fixed pastel-mesh backdrop: soft radial blooms over cream, viewport-anchored
+   so it stays behind the whole page as you scroll (sections sit transparent
+   over it). A fixed pseudo-element rather than background-attachment:fixed —
+   more reliable, and it plays nicely with Lenis + iOS. */
+.rd::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(50% 45% at 12% 6%, var(--rd-blush) 0%, transparent 62%),
+    radial-gradient(48% 42% at 88% 10%, var(--rd-sky) 0%, transparent 60%),
+    radial-gradient(55% 50% at 82% 78%, var(--rd-lilac) 0%, transparent 62%),
+    radial-gradient(52% 48% at 8% 88%, var(--rd-mint) 0%, transparent 60%),
+    radial-gradient(60% 40% at 50% 50%, var(--rd-peach) 0%, transparent 70%),
+    var(--rd-cream);
+}
+
+/* Fine grain so the pastels read premium, not flat/cheap. */
+.rd-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.4;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.rd :where(h1, h2, h3) {
+  font-family: var(--rd-display);
+  font-weight: 600;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+}
+
+/* The "fun italic" accent — Fraunces' soft italic on a keyword, in candy. */
+.rd .rd-em {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--rd-accent);
+}
+
+/* Eyebrow / kicker */
+.rd .rd-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--rd-body);
+  font-weight: 800;
+  font-size: 12.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--rd-grape);
+}
+
+/* ---- shared layout shell ---- */
+.rd-container {
+  width: 100%;
+  max-width: var(--rd-content-max);
+  margin-inline: auto;
+  padding-inline: var(--rd-pad-x);
+}
+
+/* Consistent vertical rhythm for every landing section. */
+.rd-section {
+  position: relative;
+  z-index: 2;
+  padding-block: clamp(64px, 12vh, 140px);
+}
+
+/* Generic gummy card: frosted white floating over the mesh. The go-to surface
+   for feature panels, stat tiles, quotes, etc. */
+.rd-card {
+  background: oklch(100% 0 0 / 0.62);
+  border: 1.5px solid oklch(52% 0.06 305 / 0.14);
+  border-radius: var(--rd-r-lg);
+  box-shadow: var(--rd-shadow-card);
+  backdrop-filter: blur(10px);
+  padding: clamp(20px, 3vw, 32px);
+}
+
+/* Section headings inherit Fraunces from `.rd :where(h2)`; this is the common
+   size for a section title. */
+.rd-h2 {
+  font-size: clamp(30px, 5vw, 58px);
+  max-width: 18ch;
+}
+
+/* ---- buttons: gummy candy pills with a springy press ---- */
+.rd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--rd-body);
+  font-weight: 800;
+  font-size: 16px;
+  padding: 15px 26px;
+  border-radius: var(--rd-r-pill);
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    transform 0.14s var(--rd-ease-bounce),
+    box-shadow 0.14s var(--rd-ease);
+  will-change: transform;
+}
+.rd-btn-primary {
+  background: var(--rd-accent);
+  color: var(--rd-on-accent);
+  box-shadow: var(--rd-shadow-pop), var(--rd-shadow-sticker);
+}
+.rd-btn-primary:hover {
+  transform: translateY(-2px) rotate(-1deg);
+}
+.rd-btn-primary:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--rd-accent-deep);
+}
+.rd-btn-ghost {
+  background: oklch(100% 0 0 / 0.55);
+  color: var(--rd-ink);
+  border: 1.5px solid oklch(52% 0.06 305 / 0.25);
+  backdrop-filter: blur(6px);
+}
+.rd-btn-ghost:hover {
+  transform: translateY(-2px);
+  border-color: var(--rd-grape);
+}
+
+/* ---- sticker: base for floating decorative motifs (JS animates these) ---- */
+.rd-sticker {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border-radius: var(--rd-r-md);
+  box-shadow: var(--rd-shadow-sticker);
+  will-change: transform;
+  user-select: none;
+}
+
+/* Focus: candy ring, never removed. */
+.rd :where(a, button):focus-visible {
+  outline: 3px solid var(--rd-grape);
+  outline-offset: 3px;
+  border-radius: var(--rd-r-sm);
+}
+
+@media (max-width: 560px) {
+  :root {
+    /* Mobile needs a visible frame around the large frosted surfaces. The old
+       20px floor made cards technically fit but visually hug the glass edge. */
+    --rd-pad-x: clamp(22px, 6.5vw, 28px);
+  }
+
+  .rd-card {
+    padding: 22px;
+  }
+}
+
+/* Motion safety: when the user asks for less motion, kill decorative transforms.
+   JS also branches on this (see src/lib/marketing/motion.ts) — the sections must
+   render a clean, complete static layout with no pin/scrub. */
+@media (prefers-reduced-motion: reduce) {
+  .rd-btn { transition: none; }
+  .rd-btn-primary:hover,
+  .rd-btn-ghost:hover { transform: none; }
+}
+
+/* ---- shared motion utilities (src/lib/marketing/motion.ts helpers) ---- */
+
+/* Mark an element as pointer/scroll driven so the browser can promote it to
+   its own layer ahead of time instead of on first transform. Put on elements
+   passed to `pointerParallax`/`pointerTilt`, or any custom scrubbed target. */
+.rd-interactive {
+  will-change: transform;
+}
+
+/* Container for `pointerTilt` targets — gives the tilted children a 3D
+   vanishing point. Put on the grid/wrapper around the cards, not the cards
+   themselves (they get `transform-style: preserve-3d` set by the helper). */
+.rd-tilt {
+  perspective: 900px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rd-interactive {
+    will-change: auto;
+  }
+}

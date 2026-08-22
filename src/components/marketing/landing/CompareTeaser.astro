@@ -1,32 +1,88 @@
 ---
+// Landing REDESIGN Phase 2 — the compare teaser. A short punchy pastel band
+// linking to /compare. Sits transparent over the .rd mesh, uses --rd-* tokens,
+// a Fraunces line with a .rd-em candy-italic accent, and the shared
+// `data-reveal` / `data-reveal-item` scroll entrance. No bespoke <script>.
 ---
-<section class="teaser">
-  <div class="mk-container teaser-inner">
-    <p class="teaser-line reveal">
-      Calendars schedule time. Studyus schedules attention.
-    </p>
-    <a class="mk-btn mk-btn-ghost reveal" style="--reveal-delay: 80ms" href="/compare">
-      See how it compares →
+<section class="teaser rd-section">
+  <div class="rd-container teaser-inner" data-reveal>
+    <div class="teaser-copy" data-reveal-item>
+      <p class="rd-kicker"><span class="kdot"></span>The difference</p>
+      <p class="teaser-line">
+        Calendars schedule time.<br />
+        Studyus schedules <span class="rd-em">attention</span>.
+      </p>
+    </div>
+    <a class="rd-btn rd-btn-ghost teaser-cta" href="/compare" data-reveal-item>
+      See how it compares
+      <span class="arrow" aria-hidden="true">→</span>
     </a>
   </div>
 </section>
 
 <style>
   .teaser {
-    padding-block: clamp(40px, 6vw, 64px);
-    border-top: 1px solid var(--mk-hairline);
-    border-bottom: 1px solid var(--mk-hairline);
+    /* tighter than a full section — this is a band, not a beat */
+    padding-block: clamp(40px, 7vw, 76px);
   }
   .teaser-inner {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 20px;
+    gap: clamp(20px, 4vw, 44px);
+    /* a soft gummy hairline band floating over the mesh */
+    background: oklch(100% 0 0 / 0.5);
+    border: 1.5px solid oklch(52% 0.06 305 / 0.14);
+    border-radius: var(--rd-r-lg);
+    box-shadow: var(--rd-shadow-card);
+    backdrop-filter: blur(10px);
+    padding: clamp(24px, 4vw, 40px) clamp(24px, 5vw, 52px);
+    /* keep the floating band inset from the raw viewport edge on wide screens */
+    max-width: calc(var(--rd-content-max) - 32px);
   }
+  .kdot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--rd-accent);
+    box-shadow: 0 0 0 4px oklch(65% 0.2 2 / 0.16);
+  }
+  .teaser-copy { min-width: 0; }
   .teaser-line {
-    font-family: var(--mk-font-display);
-    font-size: clamp(18px, 2.2vw, 24px);
-    max-width: 30ch;
+    margin: 12px 0 0;
+    font-family: var(--rd-display);
+    font-weight: 600;
+    line-height: 1.04;
+    letter-spacing: -0.02em;
+    font-size: clamp(22px, 3.2vw, 34px);
+    color: var(--rd-ink);
+    max-width: 22ch;
+  }
+  .teaser-cta {
+    flex-shrink: 0;
+  }
+  .teaser-cta .arrow {
+    transition: transform 0.24s var(--rd-ease-bounce);
+  }
+  .teaser-cta:hover .arrow {
+    transform: translateX(4px);
+  }
+
+  @media (max-width: 640px) {
+    .teaser-inner {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 22px;
+    }
+    .teaser-cta {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .teaser-cta .arrow { transition: none; }
+    .teaser-cta:hover .arrow { transform: none; }
   }
 </style>

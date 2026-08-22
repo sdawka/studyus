@@ -16,10 +16,15 @@
   --hairline:  light-dark(oklch(94.5% 0.004 240), oklch(30% 0.009 240));
   --hover:     var(--hairline);
 
-  --accent:      light-dark(oklch(56% 0.12 170), oklch(68% 0.12 170));
-  --accent-ink:  light-dark(oklch(38% 0.1 170), oklch(78% 0.09 170));
-  --accent-soft: light-dark(oklch(95.5% 0.025 170), oklch(28% 0.04 170));
-  --accent-contrast: light-dark(oklch(99% 0.005 170), oklch(18% 0.02 170));
+  /* Raspberry-rose, echoing the marketing redesign's candy-magenta brand
+     accent (src/styles/marketing-rd.css --rd-accent, hue ~2) at lower
+     chroma — same L as the old teal so contrast character is unchanged,
+     just a hue that ties the app to the landing without shouting. */
+  --accent:      light-dark(oklch(56% 0.14 350), oklch(70% 0.13 350));
+  --accent-ink:  light-dark(oklch(40% 0.14 350), oklch(80% 0.11 350));
+  --accent-soft: light-dark(oklch(95% 0.035 350), oklch(30% 0.05 350));
+  --accent-contrast: light-dark(oklch(99% 0.01 350), oklch(18% 0.03 350));
+  --accent-glow: light-dark(0 6px 16px -6px oklch(56% 0.14 350 / 0.35), 0 8px 20px -6px oklch(70% 0.13 350 / 0.4));
 
   --good:      light-dark(oklch(53% 0.13 163), oklch(65% 0.13 163));
   --good-ink:  light-dark(oklch(38% 0.1 163), oklch(78% 0.1 163));
@@ -38,14 +43,22 @@
   --sidebar-active-bg:   var(--accent-soft);
   --sidebar-active-text: var(--accent-ink);
 
-  --radius-lg: 14px;
-  --radius-md: 9px;
-  --radius-sm: 6px;
-  --font-display: 'Figtree Variable', 'Avenir Next', 'Söhne', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  /* Fraunces for real page titles (h1) and singular section headings (h2) —
+     mirrors the landing's display face. .card-title sets --font-title back
+     to Figtree so dense repeated card headers (course grids, task lists)
+     stay legible instead of going serif at small sizes; body text is
+     untouched. See src/styles/base.css for how these tokens are consumed. */
+  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  --font-title: 'Figtree Variable', 'Avenir Next', 'Söhne', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
   --font-size-base: 15px;
-  --shadow-card: none;
+  /* Soft, warm-tinted ambient shadow (not flat, not black) — a calmer
+     cousin of the landing's "gummy" card shadows. */
+  --shadow-card: 0 1px 2px light-dark(oklch(30% 0.03 350 / 0.05), oklch(0% 0 0 / 0.30)), 0 12px 28px -16px light-dark(oklch(30% 0.05 350 / 0.14), oklch(0% 0 0 / 0.45));
   --shadow-pop: 0 10px 30px light-dark(oklch(20% 0.02 240 / 0.10), oklch(0% 0 0 / 0.5));
 
   --course-l: light-dark(50%, 70%);
@@ -73,6 +86,10 @@
   --motion-fast: 130ms;
   --motion-base: 200ms;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Springy curve for the one or two moments that deserve it (primary CTA
+     hover) — same curve as the landing's --rd-ease-bounce. Consumers fall
+     back to --ease, so this is opt-in per rule, not a global motion shift. */
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   --pop-w-sm: 180px;
   --pop-w-md: 300px;

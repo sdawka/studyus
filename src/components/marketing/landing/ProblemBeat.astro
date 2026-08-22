@@ -1,97 +1,182 @@
 ---
+// Landing REDESIGN Phase 2 — the problem beat. Reference pattern for the other
+// restyled sections: sits transparent over the .rd mesh, uses --rd-* tokens,
+// Fraunces headings (.rd-h2 + .rd-em candy italic accent), a .rd-kicker eyebrow,
+// gummy pastel surfaces, and `data-reveal` / `data-reveal-item` for the shared
+// scroll entrance (see src/lib/marketing/motion.ts). The convergence glyph
+// above the fix line is the one bespoke <script> beat — five rays draw on
+// with svgDraw() as the fix line scrolls in, visualizing scatter -> one move.
 const scattered = [
-  { label: 'Google Calendar', rot: -6 },
-  { label: 'Notion doc, page 14', rot: 4 },
-  { label: 'Class group chat', rot: -2 },
-  { label: 'Moved syllabus PDF', rot: 7 },
-  { label: 'Sticky note on the monitor', rot: -8 },
+  { label: 'Google Calendar', tone: 'blush', rot: -6 },
+  { label: 'Notion doc, p.14', tone: 'sky', rot: 4 },
+  { label: 'Class group chat', tone: 'mint', rot: -2 },
+  { label: 'Moved syllabus PDF', tone: 'lilac', rot: 7 },
+  { label: 'Sticky on the monitor', tone: 'tangerine', rot: -8 },
 ];
 ---
-<section class="problem">
-  <div class="mk-container problem-inner">
-    <div class="scatter reveal reveal-left" aria-hidden="true">
+<section class="problem rd-section">
+  <div class="rd-container problem-inner" data-reveal>
+    <div class="scatter" aria-hidden="true" data-reveal-item>
       {scattered.map((tag) => (
-        <span class="tag" style={`--rot: ${tag.rot}deg`}>{tag.label}</span>
+        <span class={`tag tone-${tag.tone}`} style={`--rot: ${tag.rot}deg`}>{tag.label}</span>
       ))}
     </div>
-    <div class="problem-copy">
-      <p class="eyebrow reveal">The problem</p>
-      <h2 class="reveal" style="--reveal-delay: 60ms">Your deadline was somewhere. Your plan was nowhere.</h2>
-      <p class="reveal" style="--reveal-delay: 120ms">
-        The assignment is in one app. The reminder is in a muted chat. The syllabus changed again. Nothing connects, so your study plan breaks quietly.
+    <div class="problem-copy" data-reveal-item>
+      <p class="rd-kicker"><span class="kdot"></span>The problem</p>
+      <h2 class="rd-h2">Five apps, one group chat, and <span class="rd-em">zero</span> real plan.</h2>
+      <p class="lead">
+        The assignment's in one app. The reminder's in a muted chat. The syllabus
+        changed again. Nothing connects — so your study plan quietly falls apart.
       </p>
-      <p class="stat reveal" style="--reveal-delay: 180ms">
-        <span class="stat-num">The fix:</span> one place that turns scattered course inputs into the next study action.
+      <svg class="converge" viewBox="0 0 200 40" aria-hidden="true">
+        <g class="converge-lines">
+          <path d="M6 4 C 30 4, 60 20, 100 36" />
+          <path d="M52 4 C 65 12, 82 22, 100 36" />
+          <path d="M100 2 L100 36" />
+          <path d="M148 4 C 135 12, 118 22, 100 36" />
+          <path d="M194 4 C 170 4, 140 20, 100 36" />
+        </g>
+        <circle class="converge-dot" cx="100" cy="36" r="4" />
+      </svg>
+      <p class="fix">
+        <span class="fix-tag">The fix</span>
+        everything lands here — your next move, ranked.
       </p>
     </div>
   </div>
 </section>
 
 <style>
-  .problem { padding-block: clamp(48px, 8vw, 88px); }
   .problem-inner {
     display: grid;
-    grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
-    gap: clamp(32px, 6vw, 64px);
+    grid-template-columns: minmax(0, 400px) minmax(0, 1fr);
+    gap: clamp(32px, 6vw, 72px);
     align-items: center;
   }
-  .eyebrow {
-    font-family: var(--mk-font-mono);
-    font-size: 12.5px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--mk-muted);
-    margin-bottom: 14px;
+  .kdot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--rd-accent);
+    box-shadow: 0 0 0 4px oklch(65% 0.2 2 / 0.16);
   }
-  h2 {
-    font-size: clamp(26px, 3.4vw, 38px);
-    max-width: 16ch;
-  }
-  .problem-copy p {
-    margin-top: 16px;
-    color: var(--mk-muted);
-    max-width: 52ch;
+  .problem h2 { margin: 16px 0 0; }
+  .lead {
+    margin: 22px 0 0;
+    font-size: clamp(16px, 1.6vw, 18.5px);
+    font-weight: 600;
     line-height: 1.6;
+    color: var(--rd-ink-soft);
+    max-width: 46ch;
   }
-  .stat {
-    color: var(--mk-ink);
-    font-size: 15.5px;
-  }
-  .stat-num {
-    font-family: var(--mk-font-display);
-    font-weight: 640;
-    font-size: 1.3em;
-    color: var(--mk-accent-ink);
+  .fix {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 8px 0 0;
+    font-size: clamp(16px, 1.6vw, 18.5px);
+    font-weight: 700;
+    color: var(--rd-ink);
+    max-width: 44ch;
   }
 
+  /* Scatter -> one move: five rays draw on and converge into a single dot
+     that sits right above the fix line. See <script> for the draw-on. */
+  .converge {
+    display: block;
+    width: min(190px, 60%);
+    height: auto;
+    margin: 26px 0 0;
+    overflow: visible;
+  }
+  .converge-lines path {
+    fill: none;
+    stroke: var(--rd-accent);
+    stroke-width: 2;
+    stroke-linecap: round;
+    opacity: 0.6;
+  }
+  .converge-lines path:nth-child(3) { opacity: 0.9; stroke-width: 2.4; }
+  .converge-dot {
+    fill: var(--rd-accent);
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .fix-tag {
+    font-family: var(--rd-body);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--rd-on-accent);
+    background: var(--rd-accent);
+    padding: 5px 11px;
+    border-radius: var(--rd-r-pill);
+    box-shadow: var(--rd-shadow-sticker);
+  }
+
+  /* the five-apps scatter — gummy pastel chips that straighten on hover */
   .scatter {
-    position: relative;
     display: flex;
     flex-wrap: wrap;
-    gap: 14px 10px;
-    padding: 28px 20px;
+    gap: 14px 12px;
+    padding: 8px;
   }
   .tag {
     display: inline-flex;
     align-items: center;
-    font-family: var(--mk-font-mono);
-    font-size: 12.5px;
-    color: var(--mk-muted);
-    background: var(--mk-surface);
-    border: 1px solid var(--mk-border);
-    border-radius: var(--mk-radius-sm);
-    padding: 8px 12px;
+    font-family: var(--rd-body);
+    font-weight: 700;
+    font-size: 13.5px;
+    color: var(--rd-ink);
+    border-radius: 6px 13px 11px 13px;
+    padding: 10px 14px;
     transform: rotate(var(--rot));
-    transition: transform 220ms var(--mk-ease-out), border-color 220ms;
+    box-shadow: var(--rd-shadow-sticker);
+    transition: transform 0.24s var(--rd-ease-bounce);
   }
-  .scatter:hover .tag { transform: rotate(0deg); border-color: var(--mk-ink); }
+  .scatter:hover .tag { transform: rotate(0deg); }
+  .tone-blush { background: var(--rd-blush); }
+  .tone-sky { background: var(--rd-sky); }
+  .tone-mint { background: var(--rd-mint); }
+  .tone-lilac { background: var(--rd-lilac); }
+  .tone-tangerine { background: oklch(88% 0.09 60); }
 
   @media (max-width: 780px) {
-    .problem-inner { grid-template-columns: 1fr; gap: 24px; }
-    .scatter { order: 2; padding: 8px 0 0; }
+    .problem-inner { grid-template-columns: 1fr; gap: 26px; }
+    .scatter { order: 2; }
   }
-  @media (max-width: 520px) {
-    .tag { font-size: 11.5px; padding: 7px 10px; }
-    h2 { max-width: 13ch; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tag { transition: none; }
+    .scatter:hover .tag { transform: rotate(var(--rot)); }
   }
 </style>
+
+<script>
+  // Scatter -> one move: the five rays draw on as the fix line scrolls into
+  // view, then the dot pops — the literal "everything lands here" beat.
+  // svgDraw() already renders fully-drawn under reduced motion, so the pop
+  // below only runs when it actually has something to animate into.
+  import gsap from 'gsap';
+  import { svgDraw, initMarketingMotion } from '../../../lib/marketing/motion';
+
+  initMarketingMotion();
+
+  const draw = svgDraw('.converge-lines path', {
+    trigger: '.fix',
+    start: 'top 85%',
+    stagger: 0.09,
+  });
+
+  if (draw) {
+    draw.tween.then(() => {
+      gsap.fromTo(
+        '.converge-dot',
+        { scale: 0 },
+        { scale: 1, duration: 0.32, ease: 'back.out(2.4)' },
+      );
+    });
+  }
+</script>

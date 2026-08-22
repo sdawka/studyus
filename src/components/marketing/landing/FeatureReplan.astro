@@ -1,89 +1,108 @@
 ---
+// Landing REDESIGN Phase 2 — "when the plan slips". Sits transparent over the
+// .rd pastel mesh, uses --rd-* tokens, Fraunces heading (.rd-h2 + .rd-em candy
+// italic accent), a .rd-kicker eyebrow, and a gummy .rd-card week vignette.
+// Entrance is the shared scroll reveal (data-reveal / data-reveal-item). The
+// "moved" task is server-rendered in its final resting slot with a ghost of
+// where it was, so the idea reads complete with zero motion — <script> layers
+// a scroll-scrubbed arc + glide on desktop (a lighter triggered version on
+// mobile) on top of that already-correct static state.
 const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const missed = 2; // Wednesday — the sick day
 ---
-<section class="feature">
-  <div class="mk-container feature-inner">
-    <div class="feature-vignette reveal reveal-scale" style="--reveal-delay: 160ms" aria-hidden="true">
-      <div class="card">
+<section class="feat-replan rd-section">
+  <div class="rd-container feat-inner" data-reveal>
+    <div class="feat-vignette" data-reveal-item aria-hidden="true">
+      <div class="rd-card week-card">
         <p class="card-label">This week</p>
         <div class="week">
           {days.map((d, i) => (
-            <div class:list={['day', { missed: i === 2 }]}>
+            <div class:list={['day', { missed: i === missed }]}>
               <span class="day-label">{d}</span>
-              {i === 2 && <span class="day-flag">Sick day</span>}
+              {i === missed && <span class="day-flag">Sick day</span>}
             </div>
           ))}
         </div>
         <div class="chip-track">
-          <div class="task-chip">Problem set 4</div>
+          <div class="task-chip ghost">Problem set 4</div>
+          <svg class="move-arc" viewBox="0 0 120 44" preserveAspectRatio="none" role="presentation">
+            <path class="arc-line" d="M8 30 C 40 2, 80 2, 112 26" fill="none" stroke-width="2.5"
+              stroke-dasharray="4 5" stroke-linecap="round" />
+            <path class="arc-head" d="M104 18 L114 26 L102 30 Z" />
+          </svg>
+          <div class="task-chip live">Problem set 4</div>
         </div>
+        <p class="week-note">Moved to Friday's real opening — before the deadline.</p>
       </div>
     </div>
 
-    <div class="feature-copy">
-      <p class="eyebrow reveal">When it slips</p>
-      <h2 class="reveal" style="--reveal-delay: 60ms">When the week slips, the plan moves.</h2>
-      <p class="reveal" style="--reveal-delay: 120ms">
-        Miss a day and most planners just turn red. Studyus moves unfinished work into the next real opening — before the deadline catches you.
+    <div class="feat-copy" data-reveal-item>
+      <p class="rd-kicker"><span class="kdot"></span>When it slips</p>
+      <h2 class="rd-h2">When the week slips, the plan <span class="rd-em">moves</span>.</h2>
+      <p class="lead">
+        Miss a day and most planners just turn red. Studyus slides the unfinished
+        work into the next real opening — before the deadline catches you.
       </p>
-      <p class="reveal" style="--reveal-delay: 180ms">
-        No broken chains. No punishment UI. Just a plan that assumes real student weeks go sideways.
+      <p class="lead lead-punch">
+        No broken chains. No punishment UI. Just a plan that assumes real student
+        weeks go sideways.
       </p>
     </div>
   </div>
 </section>
 
 <style>
-  .feature { padding-block: clamp(48px, 8vw, 88px); }
-  .feature-inner {
+  .feat-inner {
     display: grid;
-    grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
-    gap: clamp(32px, 6vw, 72px);
+    grid-template-columns: minmax(0, 400px) minmax(0, 1fr);
+    gap: clamp(32px, 6vw, 80px);
     align-items: center;
   }
-  .eyebrow {
-    font-family: var(--mk-font-mono);
-    font-size: 12.5px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--mk-muted);
-    margin-bottom: 14px;
+  .kdot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--rd-accent);
+    box-shadow: 0 0 0 4px oklch(65% 0.2 2 / 0.16);
   }
-  h2 {
-    font-size: clamp(26px, 3.4vw, 38px);
-    max-width: 17ch;
-  }
-  .feature-copy p:not(.eyebrow) {
-    margin-top: 14px;
-    color: var(--mk-muted);
-    max-width: 50ch;
+  .feat-replan h2 { margin: 16px 0 0; }
+  .lead {
+    margin: 22px 0 0;
+    font-size: clamp(16px, 1.6vw, 18.5px);
+    font-weight: 600;
     line-height: 1.6;
+    color: var(--rd-ink-soft);
+    max-width: 46ch;
+  }
+  .lead-punch { color: var(--rd-ink); font-weight: 700; }
+
+  /* Week vignette — gummy frosted card, tipped a touch for tactility. */
+  .week-card {
+    transform: rotate(1.5deg);
+    transition: transform 0.32s var(--rd-ease-bounce);
+  }
+  .feat-vignette:hover .week-card { transform: rotate(0deg) translateY(-3px); }
+
+  .card-label {
+    font-family: var(--rd-body);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--rd-grape);
+    margin: 0 0 16px;
   }
 
-  .card {
-    background: var(--mk-surface);
-    border: 1px solid var(--mk-border);
-    border-radius: var(--mk-radius-lg);
-    box-shadow: var(--mk-shadow-pop);
-    padding: 24px;
-  }
-  .card-label {
-    font-family: var(--mk-font-mono);
-    font-size: 12px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--mk-faint);
-    margin-bottom: 18px;
-  }
   .week {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 6px;
+    gap: 7px;
   }
   .day {
     aspect-ratio: 1;
-    border-radius: var(--mk-radius-sm);
-    border: 1px solid var(--mk-hairline);
+    border-radius: var(--rd-r-sm);
+    background: oklch(100% 0 0 / 0.55);
+    border: 1.5px solid oklch(52% 0.06 305 / 0.14);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -91,63 +110,148 @@ const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     gap: 2px;
   }
   .day-label {
-    font-family: var(--mk-font-mono);
+    font-family: var(--rd-body);
+    font-weight: 800;
     font-size: 13px;
-    color: var(--mk-muted);
+    color: var(--rd-ink-soft);
   }
   .day.missed {
     border-style: dashed;
-    border-color: var(--mk-danger);
-    background: color-mix(in oklch, var(--mk-danger) 8%, var(--mk-surface));
+    border-color: var(--rd-accent);
+    background: var(--rd-blush);
   }
-  .day.missed .day-label { color: var(--mk-danger); text-decoration: line-through; }
+  .day.missed .day-label { color: var(--rd-accent-deep); text-decoration: line-through; }
   .day-flag {
-    font-family: var(--mk-font-mono);
-    font-size: 8px;
-    color: var(--mk-danger);
-    letter-spacing: 0.03em;
+    font-family: var(--rd-body);
+    font-weight: 800;
+    font-size: 7.5px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--rd-accent-deep);
   }
 
+  /* Reschedule track: a faded "was here" ghost + solid candy chip in its new
+     slot, joined by a dashed arc — the "moves" idea, fully static. */
   .chip-track {
     position: relative;
-    margin-top: 14px;
-    height: 34px;
+    margin-top: 16px;
+    height: 40px;
   }
   .task-chip {
     position: absolute;
-    top: 0;
-    width: calc((100% / 7) * 2 - 6px);
-    padding: 7px 8px;
+    top: 4px;
+    width: calc((100% / 7) * 2 - 7px);
+    padding: 8px 8px;
+    font-family: var(--rd-body);
     font-size: 11px;
-    font-weight: 560;
+    font-weight: 800;
     text-align: center;
-    border-radius: var(--mk-radius-sm);
-    background: var(--mk-accent);
-    color: var(--mk-accent-contrast);
-    transform: translateX(calc(3 * (100% / 7)));
+    border-radius: var(--rd-r-sm);
   }
+  .task-chip.ghost {
+    transform: translateX(calc(2 * (100% / 7)));
+    background: oklch(92% 0.03 305 / 0.6);
+    color: var(--rd-ink-faint);
+    border: 1.5px dashed oklch(52% 0.06 305 / 0.3);
+  }
+  .task-chip.live {
+    transform: translateX(calc(4.5 * (100% / 7)));
+    background: var(--rd-spring);
+    color: var(--rd-ink);
+    box-shadow: var(--rd-shadow-sticker);
+  }
+  .move-arc {
+    position: absolute;
+    top: 0;
+    left: calc(2.4 * (100% / 7));
+    width: calc(2.4 * (100% / 7));
+    height: 40px;
+    overflow: visible;
+  }
+  .move-arc path[fill='none'] { stroke: var(--rd-grape); }
+  .move-arc path:not([fill='none']) { fill: var(--rd-grape); }
 
-  @media (prefers-reduced-motion: no-preference) {
-    .js .reveal .task-chip { transform: translateX(calc(2 * (100% / 7))); }
-    .js .reveal.is-in .task-chip {
-      animation: replan 1200ms var(--mk-ease-out) 500ms forwards;
-    }
-  }
-  @keyframes replan {
-    0% { transform: translateX(calc(2 * (100% / 7))) translateY(0); }
-    45% { transform: translateX(calc(2 * (100% / 7))) translateY(-10px); }
-    100% { transform: translateX(calc(3 * (100% / 7))) translateY(0); }
+  .week-note {
+    margin: 18px 0 0;
+    font-family: var(--rd-body);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--rd-ink-faint);
   }
 
   @media (max-width: 860px) {
-    .feature-inner { grid-template-columns: 1fr; gap: 24px; }
-    .feature-vignette { width: 100%; max-width: 380px; order: -1; }
+    .feat-inner { grid-template-columns: 1fr; gap: 30px; }
+    .feat-vignette { width: 100%; max-width: 400px; order: -1; }
+  }
+  @media (max-width: 560px) {
+    .week-card,
+    .feat-vignette:hover .week-card { transform: none; }
   }
   @media (max-width: 420px) {
-    .card { padding: 18px; }
-    .week { gap: 4px; }
+    .week { gap: 5px; }
     .day { min-width: 0; }
-    .day-flag { display: none; }
-    .task-chip { padding-inline: 6px; }
+    .day-flag { font-size: 7px; }
+    .task-chip { padding-inline: 6px; font-size: 10px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .week-card { transition: none; transform: rotate(1.5deg); }
+    .feat-vignette:hover .week-card { transform: rotate(1.5deg); }
   }
 </style>
+
+<script>
+  // "The plan moves": the connector arc draws on and the live task-chip glides
+  // from the sick-day slot to Friday's opening. Desktop scrubs both to scroll
+  // position (the week sliding, literally, as you scroll); mobile — where a
+  // long scrub over a short card feels janky per the existing pin-avoidance
+  // pattern — gets a lighter once-triggered version instead. Reduced motion
+  // skips all of it: the chip is already server-rendered in its final slot.
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { svgDraw, matchMotion, initMarketingMotion, reducedMotion } from '../../../lib/marketing/motion';
+
+  initMarketingMotion();
+
+  if (!reducedMotion) {
+    gsap.registerPlugin(ScrollTrigger);
+    const track = document.querySelector<HTMLElement>('.chip-track');
+    const live = document.querySelector<HTMLElement>('.task-chip.live');
+    const arcLine = document.querySelector<SVGPathElement>('.arc-line');
+    const arcHead = document.querySelector<SVGPathElement>('.arc-head');
+
+    if (track && live) {
+      // 2.5 columns of travel: ghost slot (2) -> live slot (4.5).
+      const delta = () => (track.offsetWidth / 7) * 2.5;
+
+      matchMotion({
+        desktop: () => {
+          const tl = gsap.timeline({
+            scrollTrigger: { trigger: track, start: 'top 88%', end: 'top 45%', scrub: 0.6 },
+          });
+          if (arcLine) svgDraw(arcLine, { timeline: tl, position: 0, duration: 0.85 });
+          tl.from(live, { x: -delta(), opacity: 0, scale: 0.85, duration: 0.85, ease: 'none' }, 0);
+          tl.to(
+            live,
+            {
+              keyframes: [
+                { y: -22, duration: 0.42 },
+                { y: 0, duration: 0.43 },
+              ],
+              ease: 'sine.inOut',
+            },
+            0,
+          );
+          if (arcHead) tl.from(arcHead, { opacity: 0, duration: 0.2 }, 0.65);
+          return () => tl.scrollTrigger?.kill();
+        },
+        mobile: () => {
+          if (arcLine) svgDraw(arcLine, { trigger: track, start: 'top 82%' });
+          const trigger = { trigger: track, start: 'top 82%', once: true };
+          if (arcHead) gsap.from(arcHead, { opacity: 0, duration: 0.3, delay: 0.4, scrollTrigger: trigger });
+          gsap.from(live, { opacity: 0, y: 10, duration: 0.5, ease: 'power2.out', scrollTrigger: trigger });
+        },
+      });
+    }
+  }
+</script>

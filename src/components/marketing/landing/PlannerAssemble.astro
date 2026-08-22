@@ -1,0 +1,582 @@
+---
+// Marketing landing REDESIGN — SIGNATURE scroll section.
+// "Your week lives in five apps -> one plan."
+//
+// A PINNED frame that opens as visual CHAOS (scattered sticky notes, app-source
+// chips, deadline scraps drifting at messy angles) and, as the user scrubs,
+// RESOLVES into a clean weekly planner: an "Open next" hero card + Mon–Fri
+// columns of tidy task cards. Copy crossfades across two scroll beats.
+//
+// Technique (gives a correct reduced-motion fallback for free):
+//   The real planner is rendered in the DOM in its FINAL, resolved layout. On
+//   load (only when !reducedMotion) GSAP `.set()`s every animated element to a
+//   scattered chaos state; the scrubbed timeline animates it BACK home
+//   (x:0,y:0,rotation:0). With reduced motion NO scatter is set and NO pin runs,
+//   so the DOM already shows the tidy planner + resolved headline — a complete,
+//   readable static page with nothing hidden.
+//
+// Chaos scatter is art-directed per element via data-cx/cy (fractions of the
+// viewport) and data-cr (degrees), read by the script. Decorative chips/notes
+// are aria-hidden and default to opacity:0 (invisible in the reduced-motion
+// resolved state); the planner text is real and readable.
+---
+<section class="planner" aria-labelledby="planner-heading">
+  <div class="planner-wrap" data-planner-wrap>
+    <div class="planner-stage" data-planner-stage>
+      <div class="rd-container planner-frame">
+
+        <!-- Two crossfading copy beats stacked in the same box -->
+        <div class="planner-heads">
+          <p class="rd-kicker">The five-apps problem</p>
+          <div class="planner-beats">
+            <h2 class="planner-beat planner-beat--early" data-beat-early>
+              The deadline was <span class="rd-em">somewhere.</span><br />
+              The plan was nowhere.
+            </h2>
+            <h2 id="planner-heading" class="planner-beat planner-beat--late" data-beat-late>
+              One place. The <span class="rd-em">next</span> best move.
+            </h2>
+          </div>
+        </div>
+
+        <!-- The resolved planner board (real, readable content) -->
+        <div class="planner-board" data-board>
+          <div class="board-panel" data-board-panel aria-hidden="true"></div>
+
+          <!-- Connective trails: the five apps' energy flowing into the "one
+               place" card as the chaos resolves. Desktop-pinned scene only —
+               invisible by default, drawn on by the scrub timeline. -->
+          <svg class="planner-trails" data-planner-trails viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path class="trail" d="M4 8C28 20 40 32 50 46" />
+            <path class="trail" d="M96 6C70 18 56 30 50 46" />
+            <path class="trail" d="M8 94C30 76 40 60 50 46" />
+            <path class="trail" d="M92 92C68 76 58 60 50 46" />
+          </svg>
+
+          <!-- Open-next hero card -->
+          <article class="card card--next chaos" data-card data-cx="-0.34" data-cy="-0.30" data-cr="-11">
+            <span class="next-badge" data-next-badge>Open next</span>
+            <p class="card-course">CHEM 220 · Physical Chemistry</p>
+            <p class="card-task">Resonance structures</p>
+            <p class="card-why">Ranked <strong>#1 of 6</strong> — your weakest topic (<strong>24%</strong>), and the quiz is <strong>Friday</strong>.</p>
+            <p class="card-meta">~25 min · unlocks bonding &amp; MO theory next</p>
+          </article>
+
+          <!-- Mon–Fri week grid -->
+          <div class="board-week">
+            <div class="day">
+              <p class="day-label">Mon</p>
+              <article class="card card--day chaos" data-card data-cx="0.30" data-cy="-0.34" data-cr="9">
+                <p class="card-course">BIO 110</p>
+                <p class="card-task">Read ch. 7</p>
+                <p class="card-meta">Before Wed lecture</p>
+              </article>
+            </div>
+            <div class="day">
+              <p class="day-label">Tue</p>
+              <article class="card card--day chaos" data-card data-cx="-0.40" data-cy="0.10" data-cr="-7">
+                <p class="card-course">CHEM 220</p>
+                <p class="card-task">Finish lab report</p>
+                <p class="card-meta">Due Thu 5pm</p>
+              </article>
+            </div>
+            <div class="day">
+              <p class="day-label">Wed</p>
+              <article class="card card--day chaos" data-card data-cx="0.14" data-cy="0.34" data-cr="13">
+                <p class="card-course">MATH 141</p>
+                <p class="card-task">Vectors — quiz prep</p>
+                <p class="card-meta">Quiz Thu · 40% mastery</p>
+              </article>
+            </div>
+            <div class="day">
+              <p class="day-label">Thu</p>
+              <article class="card card--day chaos" data-card data-cx="0.42" data-cy="0.22" data-cr="-10">
+                <p class="card-course">ENG 205</p>
+                <p class="card-task">Essay — draft intro</p>
+                <p class="card-meta">Due Fri noon</p>
+              </article>
+            </div>
+            <div class="day">
+              <p class="day-label">Fri</p>
+              <article class="card card--day chaos" data-card data-cx="-0.18" data-cy="-0.12" data-cr="8">
+                <p class="card-course">PHYS 130</p>
+                <p class="card-task">Problem set 6</p>
+                <p class="card-meta">Due Mon</p>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <!-- Decorative chaos: sticky notes + app-source chips. aria-hidden,
+             invisible by default (reduced-motion resolved state = clean). -->
+        <div class="planner-scatter" aria-hidden="true">
+          <span class="note note--a scrap" data-scrap data-cx="-0.30" data-cy="-0.10" data-cr="-8">CHEM quiz — FRI!! 😩</span>
+          <span class="note note--b scrap" data-scrap data-cx="0.33" data-cy="0.04" data-cr="7">lab report due Thu</span>
+          <span class="note note--c scrap" data-scrap data-cx="0.06" data-cy="0.28" data-cr="-6">read ch.7 before Wed</span>
+          <span class="chip scrap" data-scrap data-cx="-0.42" data-cy="-0.26" data-cr="-5"><span class="chip-i">📅</span> Calendar</span>
+          <span class="chip scrap" data-scrap data-cx="0.40" data-cy="-0.18" data-cr="6"><span class="chip-i">💬</span> Group chat</span>
+          <span class="chip scrap" data-scrap data-cx="0.24" data-cy="-0.32" data-cr="-4"><span class="chip-i">🎓</span> LMS</span>
+          <span class="chip scrap" data-scrap data-cx="-0.16" data-cy="0.30" data-cr="9"><span class="chip-i">✉️</span> Email</span>
+          <span class="chip scrap" data-scrap data-cx="-0.02" data-cy="-0.34" data-cr="-9"><span class="chip-i">📝</span> Notes</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .planner {
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Tall scroll runway; the stage is the pinned 100svh frame. In reduced motion
+     nothing pins, so the wrap collapses to the stage's natural height. */
+  /* Scroll runway: taller than the viewport so pinning the 100svh stage gives
+     ~200vh of scrub distance (wrap 300vh − 100vh stage). Collapsed under
+     reduced motion (no pin) below. */
+  .planner-wrap { position: relative; min-height: 300vh; }
+  .planner-stage {
+    min-height: 100svh;
+    display: grid;
+    align-items: center;
+    padding-block: clamp(56px, 10vh, 120px);
+    overflow: hidden;
+  }
+  .planner-frame { position: relative; }
+
+  /* ---- copy beats ---- */
+  .planner-heads { text-align: center; margin-bottom: clamp(28px, 5vh, 56px); }
+  .planner-beats {
+    position: relative;
+    margin-top: 14px;
+    display: grid;
+    place-items: center;
+    min-height: 2.1em;
+  }
+  .planner-beat {
+    grid-area: 1 / 1;
+    font-size: clamp(28px, 5.2vw, 62px);
+    max-width: 20ch;
+    margin: 0;
+  }
+  /* Default (reduced-motion / no-JS) resolved state: show the late beat. */
+  .planner-beat--early { opacity: 0; }
+  .planner-beat--late { opacity: 1; }
+
+  /* ---- board ---- */
+  .planner-board {
+    position: relative;
+    max-width: 940px;
+    margin-inline: auto;
+  }
+  /* The planner panel behind the cards — the "one place" frame. */
+  .board-panel {
+    position: absolute;
+    inset: -18px -22px;
+    border-radius: var(--rd-r-lg);
+    background: oklch(100% 0 0 / 0.5);
+    border: 1.5px solid oklch(52% 0.06 305 / 0.16);
+    box-shadow: var(--rd-shadow-card);
+    backdrop-filter: blur(8px);
+    z-index: 0;
+  }
+
+  /* Connective trails from the dissolving app-chaos toward the resolving
+     card — invisible by default (same convention as .scrap below); the
+     desktop pinned timeline is the only thing that ever shows them. */
+  .planner-trails {
+    position: absolute;
+    inset: 0;
+    /* Same z-index as .card, but earlier in DOM order, so cards paint on
+       top — the trails read as flowing behind the cards, not over their
+       text. */
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .planner-trails .trail {
+    fill: none;
+    stroke: var(--rd-accent);
+    stroke-width: 0.6;
+    stroke-linecap: round;
+    opacity: 0.6;
+  }
+
+  /* ---- cards ---- */
+  .card {
+    position: relative;
+    z-index: 1;
+    background: oklch(99.5% 0.008 90);
+    border-radius: var(--rd-r-md);
+    box-shadow: var(--rd-shadow-sticker);
+    padding: 16px 18px;
+    text-align: left;
+    will-change: transform;
+  }
+  .card-course {
+    font-family: var(--rd-body);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--rd-ink-faint);
+    margin: 0 0 3px;
+  }
+  .card-task {
+    font-family: var(--rd-display);
+    font-weight: 600;
+    font-size: clamp(16px, 1.7vw, 20px);
+    color: var(--rd-ink);
+    margin: 0;
+    line-height: 1.05;
+  }
+  .card-meta {
+    margin: 8px 0 0;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--rd-ink-soft);
+  }
+  .card-why {
+    margin: 10px 0 0;
+    font-size: 13.5px;
+    line-height: 1.42;
+    font-weight: 600;
+    color: var(--rd-ink-soft);
+  }
+  .card-why strong { color: var(--rd-accent-deep); font-weight: 800; }
+  .card--day .card-meta {
+    margin-top: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--rd-ink-faint);
+  }
+
+  /* Open-next hero card — candy highlight, centered above the week. */
+  .card--next {
+    max-width: 360px;
+    margin: 0 auto clamp(18px, 3.4vh, 34px);
+    padding: 20px 22px 18px;
+    border: 2px solid var(--rd-accent);
+    box-shadow: var(--rd-shadow-pop), 0 18px 40px -18px oklch(52% 0.2 2 / 0.55);
+  }
+  .card--next .card-task { font-size: clamp(20px, 2.4vw, 26px); }
+  .next-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--rd-body);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--rd-on-accent);
+    background: var(--rd-accent);
+    padding: 5px 12px;
+    border-radius: var(--rd-r-pill);
+    margin-bottom: 12px;
+    box-shadow: var(--rd-shadow-sticker);
+    will-change: transform;
+  }
+
+  /* ---- week grid ---- */
+  .board-week {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: clamp(8px, 1vw, 14px);
+  }
+  .day { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .day-label {
+    font-family: var(--rd-body);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--rd-grape);
+    margin: 0 0 2px 2px;
+  }
+  .card--day { padding: 13px 14px; }
+  .card--day .card-task { font-size: clamp(14px, 1.5vw, 17px); }
+
+  /* ---- decorative scatter (sticky notes + app chips) ---- */
+  .planner-scatter {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+  }
+  /* invisible in the resolved state; JS reveals them in the chaos state only. */
+  .scrap { position: absolute; opacity: 0; will-change: transform, opacity; }
+
+  .note {
+    left: 50%;
+    top: 42%;
+    padding: 14px 16px;
+    min-width: 118px;
+    font-family: var(--rd-display);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 16px;
+    color: var(--rd-ink);
+    border-radius: 4px 12px 10px 12px;
+    box-shadow: var(--rd-shadow-sticker);
+    transform-origin: center;
+  }
+  .note--a { background: var(--rd-tangerine); }
+  .note--b { background: var(--rd-spring); }
+  .note--c { background: oklch(88% 0.09 305); }
+
+  .chip {
+    left: 50%;
+    top: 46%;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 15px;
+    font-family: var(--rd-body);
+    font-weight: 800;
+    font-size: 13.5px;
+    color: var(--rd-ink);
+    background: oklch(100% 0 0 / 0.85);
+    border: 1.5px solid oklch(52% 0.06 305 / 0.2);
+    border-radius: var(--rd-r-pill);
+    box-shadow: var(--rd-shadow-sticker);
+  }
+  .chip-i { font-size: 15px; }
+
+  /* ---- responsive ---- */
+  @media (max-width: 720px) {
+    /* Mobile containment is explicit rather than relying on implicit grid
+       shrinkage. This keeps every rounded right edge inside the safe gutter,
+       even while GSAP transforms are active. */
+    .planner-frame {
+      width: 100%;
+      padding-inline: max(24px, var(--rd-pad-x));
+    }
+    .planner-board,
+    .board-week,
+    .day,
+    .card {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .board-panel { inset: -14px 0; }
+    .board-week { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .day:nth-child(5) { grid-column: 1 / -1; }
+    .card--next { max-width: 100%; }
+  }
+  @media (max-width: 440px) {
+    .board-week { grid-template-columns: 1fr; }
+    .day:nth-child(5) { grid-column: auto; }
+  }
+
+  /* Reduced motion: no pin, no scatter — the DOM already renders the resolved
+     planner + "One place. The next best move." headline. Belt-and-braces: make
+     sure the panel/cards read cleanly with no transforms. */
+  /* Mobile: the JS disables the pin here, so collapse the runway (no empty
+     gap) and let the stage flow at natural height. */
+  @media (max-width: 768px) {
+    .planner-wrap { min-height: 0; }
+    .planner-stage {
+      min-height: auto;
+      overflow: visible;
+      padding-block: clamp(48px, 10vh, 96px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .planner-wrap { min-height: 0; }
+    .planner-stage { min-height: 0; overflow: visible; }
+    .card { transform: none !important; }
+  }
+</style>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { initMarketingMotion, reducedMotion, matchMotion, svgDraw } from '../../../lib/marketing/motion';
+
+  initMarketingMotion();
+
+  if (!reducedMotion) {
+    gsap.registerPlugin(ScrollTrigger);
+
+    const wrap = document.querySelector<HTMLElement>('[data-planner-wrap]');
+    const stage = document.querySelector<HTMLElement>('[data-planner-stage]');
+    const board = document.querySelector<HTMLElement>('[data-board]');
+
+    if (wrap && stage && board) {
+      const cards = gsap.utils.toArray<HTMLElement>('[data-card]');
+      const scraps = gsap.utils.toArray<HTMLElement>('[data-scrap]');
+      const panel = document.querySelector<HTMLElement>('[data-board-panel]');
+      const trails = document.querySelector<HTMLElement>('[data-planner-trails]');
+      const earlyBeat = document.querySelector<HTMLElement>('[data-beat-early]');
+      const lateBeat = document.querySelector<HTMLElement>('[data-beat-late]');
+      const nextBadge = document.querySelector<HTMLElement>('[data-next-badge]');
+
+      // Desktop gets the pinned chaos->order scrub; a pinned 300vh scrub is
+      // janky on touch, so mobile gets a lighter scroll-reveal instead (no
+      // pin). Reactive via matchMotion — the branch tears down and re-runs
+      // cleanly if a tablet crosses the breakpoint on rotation, which the old
+      // one-shot `matchMedia(...).matches` load-time check couldn't do. The
+      // breakpoint stays 768px to match this section's own CSS breakpoint
+      // (planner-wrap/planner-stage collapse at the same width).
+      matchMotion({
+        desktopQuery: '(min-width: 769px)',
+        mobileQuery: '(max-width: 768px)',
+
+        mobile: () => {
+          // The board is already rendered resolved in the DOM (scraps hidden
+          // at opacity:0), so we just reveal it as it scrolls into view. The
+          // runway CSS collapses at this same breakpoint (no empty gap).
+          gsap.set(earlyBeat, { opacity: 0 });
+          gsap.set(lateBeat, { opacity: 1, y: 0 });
+          gsap.set(nextBadge, { scale: 0, rotation: -12 });
+
+          const panelTween = gsap.from(panel, {
+            opacity: 0,
+            y: 24,
+            duration: 0.5,
+            ease: 'power2.out',
+            scrollTrigger: { trigger: board, start: 'top 82%' },
+          });
+          const cardsTween = gsap.from(cards, {
+            opacity: 0,
+            y: 30,
+            scale: 0.96,
+            duration: 0.5,
+            ease: 'back.out(1.4)',
+            stagger: 0.06,
+            scrollTrigger: { trigger: board, start: 'top 80%' },
+          });
+          const badgeTween = gsap.to(nextBadge, {
+            scale: 1,
+            rotation: 0,
+            duration: 0.4,
+            ease: 'back.out(2)',
+            scrollTrigger: { trigger: board, start: 'top 66%' },
+          });
+
+          return () => {
+            for (const t of [panelTween, cardsTween, badgeTween]) {
+              t.scrollTrigger?.kill();
+              t.kill();
+            }
+          };
+        },
+
+        desktop: () => {
+          // Scatter one element to its art-directed chaos position (offsets are
+          // fractions of the viewport, so the mess spreads across the pinned frame).
+          const scatter = (el: HTMLElement, extra: gsap.TweenVars = {}) => {
+            const cx = parseFloat(el.dataset.cx ?? '0');
+            const cy = parseFloat(el.dataset.cy ?? '0');
+            const cr = parseFloat(el.dataset.cr ?? '0');
+            gsap.set(el, {
+              x: cx * window.innerWidth,
+              y: cy * window.innerHeight,
+              rotation: cr,
+              ...extra,
+            });
+          };
+
+          // --- CHAOS: place everything scattered, before building the timeline so
+          // the .to() tweens capture "scattered" as their start values. ---
+          const applyChaos = () => {
+            cards.forEach((el) => scatter(el, { scale: 1.04 }));
+            scraps.forEach((el) => scatter(el, { opacity: 1, scale: 1 }));
+            gsap.set(panel, { opacity: 0, scale: 0.94 });
+            gsap.set(trails, { opacity: 0 });
+            gsap.set(earlyBeat, { opacity: 1, y: 0 });
+            gsap.set(lateBeat, { opacity: 0, y: 16 });
+            gsap.set(nextBadge, { scale: 0, rotation: -18 });
+          };
+          applyChaos();
+
+          const tl = gsap.timeline({
+            defaults: { ease: 'none' },
+            scrollTrigger: {
+              trigger: wrap,
+              start: 'top top',
+              end: 'bottom bottom',
+              pin: stage,
+              scrub: 0.6,
+              invalidateOnRefresh: true,
+            },
+          });
+
+          // 0.00–0.12: hold the chaos so the mess registers before it resolves.
+
+          // The "one place" panel firms up as order begins to form.
+          tl.to(panel, { opacity: 1, scale: 1, ease: 'power2.out', duration: 0.32 }, 0.14);
+
+          // Connective trails draw on alongside it — the five apps' energy
+          // visibly flowing into the card that's about to resolve — then
+          // fade once the cards have landed so they don't linger as clutter.
+          tl.set(trails, { opacity: 1 }, 0.13);
+          svgDraw('.planner-trails .trail', {
+            timeline: tl,
+            position: 0.16,
+            duration: 0.34,
+            stagger: 0.04,
+            ease: 'power2.out',
+          });
+          tl.to(trails, { opacity: 0, duration: 0.22, ease: 'power1.in' }, 0.62);
+
+          // Five apps dissolve: source chips + sticky notes drift up and fade out.
+          tl.to(
+            scraps,
+            {
+              opacity: 0,
+              scale: 0.6,
+              y: '-=48',
+              ease: 'power2.in',
+              duration: 0.34,
+              stagger: { each: 0.03, from: 'random' },
+            },
+            0.14,
+          );
+
+          // The scattered task cards SNAP home — staggered like sorting, with a
+          // springy overshoot so the settle feels satisfying.
+          tl.to(
+            cards,
+            {
+              x: 0,
+              y: 0,
+              rotation: 0,
+              scale: 1,
+              ease: 'back.out(1.5)',
+              duration: 0.5,
+              stagger: { each: 0.05, from: 'random' },
+            },
+            0.16,
+          );
+
+          // Copy crossfade: "somewhere / nowhere" -> "One place. Next best move."
+          tl.to(earlyBeat, { opacity: 0, y: -22, ease: 'power1.in', duration: 0.2 }, 0.34);
+          tl.to(lateBeat, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.24 }, 0.46);
+
+          // The promise lands: the "Open next" badge pops in last.
+          tl.to(nextBadge, { scale: 1, rotation: 0, ease: 'back.out(2.2)', duration: 0.22 }, 0.72);
+
+          // Keep chaos offsets correct across resizes/orientation changes.
+          ScrollTrigger.addEventListener('refreshInit', applyChaos);
+
+          return () => {
+            ScrollTrigger.removeEventListener('refreshInit', applyChaos);
+            tl.scrollTrigger?.kill();
+            tl.kill();
+          };
+        },
+      });
+    }
+  }
+</script>

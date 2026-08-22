@@ -164,6 +164,9 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    /* Dense, repeated (one per resource tile) — explicit sans so it can
+       never inherit the page's serif --font-display. */
+    font-family: var(--font-title, var(--font-body));
   }
 
   .resource-tile:hover .tile-label {

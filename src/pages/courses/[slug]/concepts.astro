@@ -51,7 +51,8 @@ try {
   .placeholder { color: var(--muted); font-size: 0.9rem; }
 
   .branch { margin-bottom: 1.75rem; }
-  .branch h3 { margin: 0 0 0.5rem 0; font-size: 1rem; }
+  /* Dense, repeated (one per branch on the page) — sans escape hatch. */
+  .branch h3 { margin: 0 0 0.5rem 0; font-size: 1rem; font-family: var(--font-title, var(--font-display)); }
   .kc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
   .kc-row {
     display: flex;

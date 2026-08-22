@@ -1,19 +1,38 @@
 ---
-// Landing page content — owned by the landing track.
-import Hero from './Hero.astro';
+// Landing page content — "premium playful" pastel redesign. The whole page
+// lives inside the `.rd` canvas (fixed pastel-mesh backdrop + Fraunces/Nunito
+// type from marketing-rd.css) and shares one Lenis + ScrollTrigger engine
+// (lib/marketing/motion.ts). Hero + PlannerAssemble carry bespoke motion; the
+// rest use the shared `data-reveal` scroll entrance. All motion is
+// prefers-reduced-motion safe.
+import '@fontsource-variable/fraunces';
+import '@fontsource-variable/nunito';
+import '../../../styles/marketing-rd.css';
+
+import HeroRD from './HeroRD.astro';
+import PlannerAssemble from './PlannerAssemble.astro';
+
 import ProblemBeat from './ProblemBeat.astro';
 import FeatureNext from './FeatureNext.astro';
 import FeatureReplan from './FeatureReplan.astro';
-import FeaturePractice from './FeaturePractice.astro';
-import EvidenceStrip from './EvidenceStrip.astro';
-import CompareTeaser from './CompareTeaser.astro';
+import StudyLoop from './StudyLoop.astro';
 import FinalCta from './FinalCta.astro';
 ---
-<Hero />
-<ProblemBeat />
-<FeatureNext />
-<FeatureReplan />
-<FeaturePractice />
-<EvidenceStrip />
-<CompareTeaser />
-<FinalCta />
+
+<div class="rd rd-grain">
+  <HeroRD />
+  <PlannerAssemble />
+  <ProblemBeat />
+  <FeatureNext />
+  <FeatureReplan />
+  <StudyLoop />
+  <FinalCta />
+</div>
+
+<script>
+  // Start the shared smooth-scroll / ScrollTrigger engine once for the page.
+  // Section scripts also call this (idempotent); calling here guarantees Lenis
+  // is running even before a section's own trigger registers.
+  import { initMarketingMotion } from '../../../lib/marketing/motion';
+  initMarketingMotion();
+</script>

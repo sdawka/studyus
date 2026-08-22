@@ -1,51 +1,77 @@
 ---
-import StatusPill from './StatusPill.astro';
-
+// Landing REDESIGN Phase 2 — "what to open next". Sits transparent over the .rd
+// pastel mesh, uses --rd-* tokens, Fraunces heading (.rd-h2 + .rd-em candy
+// italic accent), a .rd-kicker eyebrow, and a gummy .rd-card readiness vignette.
+// Entrance is the shared scroll reveal (data-reveal / data-reveal-item). The
+// readiness ring and "Weakest in course" annotation circle are drawn statically
+// to their final value/shape so the card reads complete with zero motion
+// (reduced-motion safe by construction) — <script> only layers the count-up,
+// the circle draw-on, and pointer tilt on top.
 const pct = 38;
-const r = 42;
+const r = 44;
 const c = 2 * Math.PI * r;
 const offset = c * (1 - pct / 100);
 ---
-<section class="feature">
-  <div class="mk-container feature-inner">
-    <div class="feature-copy">
-      <p class="eyebrow reveal">What to open</p>
-      <h2 class="reveal" style="--reveal-delay: 60ms">
-        It picks the concept, not just the time slot.
-      </h2>
-      <p class="reveal" style="--reveal-delay: 120ms">
-        Break each course into the ideas you actually get graded on. Studyus tracks mastery, freshness, and deadlines — then pushes the concept that needs attention first.
+<section class="feat-next rd-section">
+  <div class="rd-container feat-inner" data-reveal>
+    <div class="feat-copy" data-reveal-item>
+      <p class="rd-kicker"><span class="kdot"></span>What to open next</p>
+      <h2 class="rd-h2">It picks the exact <span class="rd-em">concept</span>, not just a time slot.</h2>
+      <p class="lead">
+        Every course breaks into ideas you'll actually get tested on. We check
+        your mastery, when it's due, and what's slipping — then show you the
+        one thing to hit first.
       </p>
-      <p class="reveal" style="--reveal-delay: 180ms">
-        No vague “study for two hours.” Just: open this topic now, because it is weak and the exam clock is moving.
+      <p class="lead lead-punch">
+        No vague “study for two hours.” Just: open this, now — it's weak and the
+        exam clock is moving.
       </p>
     </div>
 
-    <div class="feature-vignette reveal reveal-scale" style="--reveal-delay: 160ms" aria-hidden="true">
-      <div class="card">
-        <p class="card-label">Understand next</p>
+    <div class="feat-vignette rd-tilt" data-reveal-item aria-hidden="true">
+      <div class="rd-card ring-card rd-interactive" data-tilt-card>
+        <p class="card-label">What's next</p>
         <div class="card-body">
-          <svg class="ring" width="104" height="104" viewBox="0 0 104 104">
-            <circle class="ring-bg" cx="52" cy="52" r={r} fill="none" stroke-width="8" />
-            <circle
-              class="ring-fg"
-              cx="52"
-              cy="52"
-              r={r}
-              fill="none"
-              stroke-width="8"
-              stroke-linecap="round"
-              stroke-dasharray={c}
-              stroke-dashoffset={offset}
-              style={`--ring-offset: ${offset}; --ring-empty: ${c}`}
-              transform="rotate(-90 52 52)"
-            />
-            <text x="52" y="58" text-anchor="middle" class="ring-num">{pct}%</text>
-          </svg>
+          <div class="ring-wrap">
+            <svg class="ring" width="112" height="112" viewBox="0 0 112 112" role="presentation">
+              <defs>
+                <linearGradient id="fn-ring" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="var(--rd-accent)" />
+                  <stop offset="1" stop-color="var(--rd-grape)" />
+                </linearGradient>
+              </defs>
+              <circle class="ring-bg" cx="56" cy="56" r={r} fill="none" stroke-width="9" />
+              <circle
+                class="ring-fg"
+                cx="56"
+                cy="56"
+                r={r}
+                fill="none"
+                stroke-width="9"
+                stroke-linecap="round"
+                stroke-dasharray={c}
+                stroke-dashoffset={offset}
+                transform="rotate(-90 56 56)"
+              />
+              <text x="56" y="62" text-anchor="middle" class="ring-num">{pct}%</text>
+            </svg>
+            <span class="ring-spark" aria-hidden="true">✦</span>
+          </div>
           <div class="card-detail">
             <span class="card-course">CHEM 220</span>
             <span class="card-topic">Resonance structures</span>
-            <StatusPill kind="weak">Weakest in course</StatusPill>
+            <span class="chip-wrap">
+              <span class="chip chip-weak">Weakest in course</span>
+              <svg class="chip-ring" viewBox="0 0 148 40" preserveAspectRatio="none" aria-hidden="true">
+                <path
+                  class="chip-ring-path"
+                  d="M6 21 C 6 8, 26 3, 74 3 C 124 3, 142 9, 142 21 C 142 34, 120 38, 74 38 C 24 38, 6 32, 6 21 Z"
+                  fill="none"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </span>
           </div>
         </div>
       </div>
@@ -54,89 +80,191 @@ const offset = c * (1 - pct / 100);
 </section>
 
 <style>
-  .feature { padding-block: clamp(48px, 8vw, 88px); }
-  .feature-inner {
+  .feat-inner {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
-    gap: clamp(32px, 6vw, 72px);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+    gap: clamp(32px, 6vw, 80px);
     align-items: center;
   }
-  .eyebrow {
-    font-family: var(--mk-font-mono);
-    font-size: 12.5px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--mk-muted);
-    margin-bottom: 14px;
+  .kdot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--rd-accent);
+    box-shadow: 0 0 0 4px oklch(65% 0.2 2 / 0.16);
   }
-  h2 {
-    font-size: clamp(26px, 3.4vw, 38px);
-    max-width: 17ch;
-  }
-  .feature-copy p:not(.eyebrow) {
-    margin-top: 14px;
-    color: var(--mk-muted);
-    max-width: 50ch;
+  .feat-next h2 { margin: 16px 0 0; }
+  .lead {
+    margin: 22px 0 0;
+    font-size: clamp(16px, 1.6vw, 18.5px);
+    font-weight: 600;
     line-height: 1.6;
+    color: var(--rd-ink-soft);
+    max-width: 46ch;
   }
+  .lead-punch { color: var(--rd-ink); font-weight: 700; }
 
-  .card {
-    background: var(--mk-surface);
-    border: 1px solid var(--mk-border);
-    border-radius: var(--mk-radius-lg);
-    box-shadow: var(--mk-shadow-pop);
-    padding: 24px;
+  /* Readiness vignette — gummy frosted card floating over the mesh, tipped a
+     touch so it feels tactile. Straightens on hover with the bounce ease. */
+  .ring-card {
+    transform: rotate(-1.5deg);
+    transition: transform 0.32s var(--rd-ease-bounce);
   }
+  .feat-vignette:hover .ring-card { transform: rotate(0deg) translateY(-3px); }
+
   .card-label {
-    font-family: var(--mk-font-mono);
+    font-family: var(--rd-body);
+    font-weight: 800;
     font-size: 12px;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--mk-faint);
-    margin-bottom: 18px;
+    color: var(--rd-grape);
+    margin: 0 0 18px;
   }
   .card-body {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 22px;
   }
-  .ring-bg { stroke: var(--mk-hairline); }
-  .ring-fg { stroke: var(--mk-accent); }
-  @media (prefers-reduced-motion: no-preference) {
-    .js .reveal .ring-fg { stroke-dashoffset: var(--ring-empty); }
-    .js .reveal.is-in .ring-fg {
-      stroke-dashoffset: var(--ring-offset);
-      transition: stroke-dashoffset 1100ms var(--mk-ease-out) 200ms;
-    }
-  }
+  .ring-wrap { position: relative; flex: 0 0 auto; }
+  .ring-bg { stroke: oklch(52% 0.06 305 / 0.14); }
+  .ring-fg { stroke: url(#fn-ring); }
   .ring-num {
-    font-family: var(--mk-font-display);
-    font-size: 20px;
+    font-family: var(--rd-display);
+    font-size: 23px;
     font-weight: 600;
-    fill: var(--mk-ink);
+    fill: var(--rd-ink);
   }
-  .card-detail {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+  .ring-spark {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    font-size: 18px;
+    color: var(--rd-tangerine);
+    filter: drop-shadow(0 2px 4px oklch(75% 0.15 55 / 0.5));
   }
+
+  .card-detail { display: flex; flex-direction: column; gap: 8px; }
   .card-course {
-    font-family: var(--mk-font-mono);
+    font-family: var(--rd-body);
+    font-weight: 800;
     font-size: 11px;
-    color: var(--mk-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--rd-ink-faint);
   }
   .card-topic {
-    font-size: 16px;
-    font-weight: 560;
+    font-family: var(--rd-display);
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--rd-ink);
+    line-height: 1.1;
+  }
+  /* Candy status chip — matches the pastel field rather than the --mk pill. */
+  .chip {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--rd-body);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 6px 11px;
+    border-radius: var(--rd-r-pill);
+    margin-top: 2px;
+  }
+  .chip-weak {
+    color: var(--rd-on-accent);
+    background: var(--rd-accent);
+    box-shadow: var(--rd-shadow-sticker);
+  }
+
+  /* Annotation circle — a loose hand-drawn loop that draws itself around
+     the weak chip, the "it picks the exact concept" beat. See <script>. */
+  .chip-wrap {
+    position: relative;
+    display: inline-flex;
+    align-self: flex-start;
+  }
+  .chip-ring {
+    position: absolute;
+    inset: -5px -9px;
+    width: calc(100% + 18px);
+    height: calc(100% + 10px);
+    pointer-events: none;
+  }
+  .chip-ring-path {
+    stroke: var(--rd-grape);
   }
 
   @media (max-width: 860px) {
-    .feature-inner { grid-template-columns: 1fr; gap: 24px; }
-    .feature-vignette { width: 100%; max-width: 380px; }
+    .feat-inner { grid-template-columns: 1fr; gap: 30px; }
+    .feat-vignette { width: 100%; max-width: 400px; }
+  }
+  @media (max-width: 560px) {
+    /* The desktop tilt steals 3–4px from one mobile gutter and makes the card
+       look accidentally pressed against the glass. Keep mobile edges parallel. */
+    .ring-card,
+    .feat-vignette:hover .ring-card { transform: none; }
   }
   @media (max-width: 420px) {
-    .card { padding: 18px; }
-    .card-body { gap: 14px; }
-    .ring { width: 88px; height: 88px; flex: 0 0 88px; }
+    .card-body { gap: 16px; }
+    .ring { width: 92px; height: 92px; flex: 0 0 92px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ring-card { transition: none; transform: rotate(-1.5deg); }
+    .feat-vignette:hover .ring-card { transform: rotate(-1.5deg); }
   }
 </style>
+
+<script>
+  // Draw the readiness ring on + count the % up when the card scrolls in,
+  // circle the weak chip, and tilt the card toward the pointer on desktop.
+  // Reduced motion skips the ring/counter — it's server-rendered to its
+  // final value; svgDraw() and pointerTilt() already no-op on their own.
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { svgDraw, pointerTilt, initMarketingMotion, reducedMotion } from '../../../lib/marketing/motion';
+
+  initMarketingMotion();
+
+  svgDraw('.chip-ring-path', { trigger: '.ring-card', start: 'top 78%' });
+  pointerTilt('[data-tilt-card]', { max: 8, scale: 1.02 });
+
+  if (!reducedMotion) {
+    gsap.registerPlugin(ScrollTrigger);
+    const ring = document.querySelector<SVGCircleElement>('.ring-fg');
+    const num = document.querySelector('.ring-num');
+    if (ring && num) {
+      const circumference = parseFloat(ring.getAttribute('stroke-dasharray') ?? '0');
+      const targetOffset = parseFloat(ring.getAttribute('stroke-dashoffset') ?? '0');
+      const targetPct = Math.round((1 - targetOffset / circumference) * 100);
+      const counter = { v: 0 };
+      // start empty
+      gsap.set(ring, { attr: { 'stroke-dashoffset': circumference } });
+      num.textContent = '0%';
+      ScrollTrigger.create({
+        trigger: '.ring-card',
+        start: 'top 82%',
+        once: true,
+        onEnter: () => {
+          gsap.to(ring, {
+            attr: { 'stroke-dashoffset': targetOffset },
+            duration: 1.25,
+            ease: 'power2.out',
+          });
+          gsap.to(counter, {
+            v: targetPct,
+            duration: 1.25,
+            ease: 'power2.out',
+            onUpdate: () => {
+              num.textContent = Math.round(counter.v) + '%';
+            },
+          });
+        },
+      });
+    }
+  }
+</script>

@@ -101,6 +101,11 @@ const sidebarAttr = settings.sidebar_collapsed ? 'collapsed' : undefined;
     max-width: var(--content-max);
     width: 100%;
     margin-inline: auto;
+    /* Gentle once-per-navigation entrance (Astro pages are full MPA
+       navigations, so this doesn't replay on every in-page re-render).
+       prefers-reduced-motion is handled globally in base.css, which zeroes
+       animation-duration so this resolves instantly to its end state. */
+    animation: page-enter 360ms var(--ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
     /* Query container for page layout breakpoints (dashboard rail,
        week-strip columns, feed masonry). Pages query the actual content
        width here (content-box, padding-independent), not the viewport, so
@@ -120,5 +125,10 @@ const sidebarAttr = settings.sidebar_collapsed ? 'collapsed' : undefined;
     .shell {
       grid-template-columns: 1fr;
     }
+  }
+
+  @keyframes page-enter {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 </style>
