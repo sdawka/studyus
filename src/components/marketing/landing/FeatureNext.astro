@@ -2,9 +2,11 @@
 // Landing REDESIGN Phase 2 — "what to open next". Sits transparent over the .rd
 // pastel mesh, uses --rd-* tokens, Fraunces heading (.rd-h2 + .rd-em candy
 // italic accent), a .rd-kicker eyebrow, and a gummy .rd-card readiness vignette.
-// Entrance is the shared scroll reveal (data-reveal / data-reveal-item) — no
-// bespoke <script>. The readiness ring is drawn statically to its value so it
-// reads complete with zero motion (reduced-motion safe by construction).
+// Entrance is the shared scroll reveal (data-reveal / data-reveal-item). The
+// readiness ring and "Weakest in course" annotation circle are drawn statically
+// to their final value/shape so the card reads complete with zero motion
+// (reduced-motion safe by construction) — <script> only layers the count-up,
+// the circle draw-on, and pointer tilt on top.
 const pct = 38;
 const r = 44;
 const c = 2 * Math.PI * r;
@@ -16,9 +18,9 @@ const offset = c * (1 - pct / 100);
       <p class="rd-kicker"><span class="kdot"></span>What to open next</p>
       <h2 class="rd-h2">It picks the exact <span class="rd-em">concept</span>, not just a time slot.</h2>
       <p class="lead">
-        Every course breaks into the ideas you actually get graded on. Studyus
-        watches mastery, freshness, and deadlines — then surfaces the one concept
-        that needs you first.
+        Every course breaks into ideas you'll actually get tested on. We check
+        your mastery, when it's due, and what's slipping — then show you the
+        one thing to hit first.
       </p>
       <p class="lead lead-punch">
         No vague “study for two hours.” Just: open this, now — it's weak and the
@@ -26,9 +28,9 @@ const offset = c * (1 - pct / 100);
       </p>
     </div>
 
-    <div class="feat-vignette" data-reveal-item aria-hidden="true">
-      <div class="rd-card ring-card">
-        <p class="card-label">Understand next</p>
+    <div class="feat-vignette rd-tilt" data-reveal-item aria-hidden="true">
+      <div class="rd-card ring-card rd-interactive" data-tilt-card>
+        <p class="card-label">What's next</p>
         <div class="card-body">
           <div class="ring-wrap">
             <svg class="ring" width="112" height="112" viewBox="0 0 112 112" role="presentation">
@@ -58,7 +60,18 @@ const offset = c * (1 - pct / 100);
           <div class="card-detail">
             <span class="card-course">CHEM 220</span>
             <span class="card-topic">Resonance structures</span>
-            <span class="chip chip-weak">Weakest in course</span>
+            <span class="chip-wrap">
+              <span class="chip chip-weak">Weakest in course</span>
+              <svg class="chip-ring" viewBox="0 0 148 40" preserveAspectRatio="none" aria-hidden="true">
+                <path
+                  class="chip-ring-path"
+                  d="M6 21 C 6 8, 26 3, 74 3 C 124 3, 142 9, 142 21 C 142 34, 120 38, 74 38 C 24 38, 6 32, 6 21 Z"
+                  fill="none"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </span>
           </div>
         </div>
       </div>
@@ -167,9 +180,33 @@ const offset = c * (1 - pct / 100);
     box-shadow: var(--rd-shadow-sticker);
   }
 
+  /* Annotation circle — a loose hand-drawn loop that draws itself around
+     the weak chip, the "it picks the exact concept" beat. See <script>. */
+  .chip-wrap {
+    position: relative;
+    display: inline-flex;
+    align-self: flex-start;
+  }
+  .chip-ring {
+    position: absolute;
+    inset: -5px -9px;
+    width: calc(100% + 18px);
+    height: calc(100% + 10px);
+    pointer-events: none;
+  }
+  .chip-ring-path {
+    stroke: var(--rd-grape);
+  }
+
   @media (max-width: 860px) {
     .feat-inner { grid-template-columns: 1fr; gap: 30px; }
     .feat-vignette { width: 100%; max-width: 400px; }
+  }
+  @media (max-width: 560px) {
+    /* The desktop tilt steals 3–4px from one mobile gutter and makes the card
+       look accidentally pressed against the glass. Keep mobile edges parallel. */
+    .ring-card,
+    .feat-vignette:hover .ring-card { transform: none; }
   }
   @media (max-width: 420px) {
     .card-body { gap: 16px; }
@@ -183,13 +220,18 @@ const offset = c * (1 - pct / 100);
 </style>
 
 <script>
-  // Draw the readiness ring on + count the % up when the card scrolls in.
-  // Reduced motion skips it — the ring is server-rendered to its final value.
+  // Draw the readiness ring on + count the % up when the card scrolls in,
+  // circle the weak chip, and tilt the card toward the pointer on desktop.
+  // Reduced motion skips the ring/counter — it's server-rendered to its
+  // final value; svgDraw() and pointerTilt() already no-op on their own.
   import gsap from 'gsap';
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
-  import { initMarketingMotion, reducedMotion } from '../../../lib/marketing/motion';
+  import { svgDraw, pointerTilt, initMarketingMotion, reducedMotion } from '../../../lib/marketing/motion';
 
   initMarketingMotion();
+
+  svgDraw('.chip-ring-path', { trigger: '.ring-card', start: 'top 78%' });
+  pointerTilt('[data-tilt-card]', { max: 8, scale: 1.02 });
 
   if (!reducedMotion) {
     gsap.registerPlugin(ScrollTrigger);

@@ -3,7 +3,9 @@
 // restyled sections: sits transparent over the .rd mesh, uses --rd-* tokens,
 // Fraunces headings (.rd-h2 + .rd-em candy italic accent), a .rd-kicker eyebrow,
 // gummy pastel surfaces, and `data-reveal` / `data-reveal-item` for the shared
-// scroll entrance (see src/lib/marketing/motion.ts). No bespoke <script>.
+// scroll entrance (see src/lib/marketing/motion.ts). The convergence glyph
+// above the fix line is the one bespoke <script> beat — five rays draw on
+// with svgDraw() as the fix line scrolls in, visualizing scatter -> one move.
 const scattered = [
   { label: 'Google Calendar', tone: 'blush', rot: -6 },
   { label: 'Notion doc, p.14', tone: 'sky', rot: 4 },
@@ -26,9 +28,19 @@ const scattered = [
         The assignment's in one app. The reminder's in a muted chat. The syllabus
         changed again. Nothing connects — so your study plan quietly falls apart.
       </p>
+      <svg class="converge" viewBox="0 0 200 40" aria-hidden="true">
+        <g class="converge-lines">
+          <path d="M6 4 C 30 4, 60 20, 100 36" />
+          <path d="M52 4 C 65 12, 82 22, 100 36" />
+          <path d="M100 2 L100 36" />
+          <path d="M148 4 C 135 12, 118 22, 100 36" />
+          <path d="M194 4 C 170 4, 140 20, 100 36" />
+        </g>
+        <circle class="converge-dot" cx="100" cy="36" r="4" />
+      </svg>
       <p class="fix">
         <span class="fix-tag">The fix</span>
-        one place that turns the scatter into your next study move.
+        everything lands here — your next move, ranked.
       </p>
     </div>
   </div>
@@ -62,11 +74,34 @@ const scattered = [
     align-items: baseline;
     flex-wrap: wrap;
     gap: 10px;
-    margin: 22px 0 0;
+    margin: 8px 0 0;
     font-size: clamp(16px, 1.6vw, 18.5px);
     font-weight: 700;
     color: var(--rd-ink);
     max-width: 44ch;
+  }
+
+  /* Scatter -> one move: five rays draw on and converge into a single dot
+     that sits right above the fix line. See <script> for the draw-on. */
+  .converge {
+    display: block;
+    width: min(190px, 60%);
+    height: auto;
+    margin: 26px 0 0;
+    overflow: visible;
+  }
+  .converge-lines path {
+    fill: none;
+    stroke: var(--rd-accent);
+    stroke-width: 2;
+    stroke-linecap: round;
+    opacity: 0.6;
+  }
+  .converge-lines path:nth-child(3) { opacity: 0.9; stroke-width: 2.4; }
+  .converge-dot {
+    fill: var(--rd-accent);
+    transform-box: fill-box;
+    transform-origin: center;
   }
   .fix-tag {
     font-family: var(--rd-body);
@@ -118,3 +153,30 @@ const scattered = [
     .scatter:hover .tag { transform: rotate(var(--rot)); }
   }
 </style>
+
+<script>
+  // Scatter -> one move: the five rays draw on as the fix line scrolls into
+  // view, then the dot pops — the literal "everything lands here" beat.
+  // svgDraw() already renders fully-drawn under reduced motion, so the pop
+  // below only runs when it actually has something to animate into.
+  import gsap from 'gsap';
+  import { svgDraw, initMarketingMotion } from '../../../lib/marketing/motion';
+
+  initMarketingMotion();
+
+  const draw = svgDraw('.converge-lines path', {
+    trigger: '.fix',
+    start: 'top 85%',
+    stagger: 0.09,
+  });
+
+  if (draw) {
+    draw.tween.then(() => {
+      gsap.fromTo(
+        '.converge-dot',
+        { scale: 0 },
+        { scale: 1, duration: 0.32, ease: 'back.out(2.4)' },
+      );
+    });
+  }
+</script>

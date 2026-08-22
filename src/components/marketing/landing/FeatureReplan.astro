@@ -2,9 +2,11 @@
 // Landing REDESIGN Phase 2 — "when the plan slips". Sits transparent over the
 // .rd pastel mesh, uses --rd-* tokens, Fraunces heading (.rd-h2 + .rd-em candy
 // italic accent), a .rd-kicker eyebrow, and a gummy .rd-card week vignette.
-// Entrance is the shared scroll reveal (data-reveal / data-reveal-item) — no
-// bespoke <script>. The "moved" task is shown in its final resting slot with a
-// ghost of where it was, so the idea reads complete with zero motion.
+// Entrance is the shared scroll reveal (data-reveal / data-reveal-item). The
+// "moved" task is server-rendered in its final resting slot with a ghost of
+// where it was, so the idea reads complete with zero motion — <script> layers
+// a scroll-scrubbed arc + glide on desktop (a lighter triggered version on
+// mobile) on top of that already-correct static state.
 const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const missed = 2; // Wednesday — the sick day
 ---
@@ -24,9 +26,9 @@ const missed = 2; // Wednesday — the sick day
         <div class="chip-track">
           <div class="task-chip ghost">Problem set 4</div>
           <svg class="move-arc" viewBox="0 0 120 44" preserveAspectRatio="none" role="presentation">
-            <path d="M8 30 C 40 2, 80 2, 112 26" fill="none" stroke-width="2.5"
+            <path class="arc-line" d="M8 30 C 40 2, 80 2, 112 26" fill="none" stroke-width="2.5"
               stroke-dasharray="4 5" stroke-linecap="round" />
-            <path d="M104 18 L114 26 L102 30 Z" />
+            <path class="arc-head" d="M104 18 L114 26 L102 30 Z" />
           </svg>
           <div class="task-chip live">Problem set 4</div>
         </div>
@@ -181,6 +183,10 @@ const missed = 2; // Wednesday — the sick day
     .feat-inner { grid-template-columns: 1fr; gap: 30px; }
     .feat-vignette { width: 100%; max-width: 400px; order: -1; }
   }
+  @media (max-width: 560px) {
+    .week-card,
+    .feat-vignette:hover .week-card { transform: none; }
+  }
   @media (max-width: 420px) {
     .week { gap: 5px; }
     .day { min-width: 0; }
@@ -195,12 +201,15 @@ const missed = 2; // Wednesday — the sick day
 </style>
 
 <script>
-  // "The plan moves": the live task-chip glides from the sick-day slot to
-  // Friday's opening with an arced hop and a bounce landing, as the card scrolls
-  // in. Reduced motion skips it — the chip is server-rendered in its final slot.
+  // "The plan moves": the connector arc draws on and the live task-chip glides
+  // from the sick-day slot to Friday's opening. Desktop scrubs both to scroll
+  // position (the week sliding, literally, as you scroll); mobile — where a
+  // long scrub over a short card feels janky per the existing pin-avoidance
+  // pattern — gets a lighter once-triggered version instead. Reduced motion
+  // skips all of it: the chip is already server-rendered in its final slot.
   import gsap from 'gsap';
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
-  import { initMarketingMotion, reducedMotion } from '../../../lib/marketing/motion';
+  import { svgDraw, matchMotion, initMarketingMotion, reducedMotion } from '../../../lib/marketing/motion';
 
   initMarketingMotion();
 
@@ -208,29 +217,39 @@ const missed = 2; // Wednesday — the sick day
     gsap.registerPlugin(ScrollTrigger);
     const track = document.querySelector<HTMLElement>('.chip-track');
     const live = document.querySelector<HTMLElement>('.task-chip.live');
-    const arc = document.querySelector<SVGElement>('.move-arc');
+    const arcLine = document.querySelector<SVGPathElement>('.arc-line');
+    const arcHead = document.querySelector<SVGPathElement>('.arc-head');
+
     if (track && live) {
       // 2.5 columns of travel: ghost slot (2) -> live slot (4.5).
       const delta = () => (track.offsetWidth / 7) * 2.5;
-      ScrollTrigger.create({
-        trigger: track,
-        start: 'top 84%',
-        once: true,
-        onEnter: () => {
-          if (arc) gsap.from(arc, { opacity: 0, duration: 0.45, ease: 'power1.out' });
-          gsap
-            .timeline()
-            .from(live, { x: -delta(), opacity: 0, scale: 0.85, duration: 0.9, ease: 'power2.inOut' })
-            .to(
-              live,
-              {
-                keyframes: [
-                  { y: -30, duration: 0.45, ease: 'power2.out' },
-                  { y: 0, duration: 0.45, ease: 'bounce.out' },
-                ],
-              },
-              0,
-            );
+
+      matchMotion({
+        desktop: () => {
+          const tl = gsap.timeline({
+            scrollTrigger: { trigger: track, start: 'top 88%', end: 'top 45%', scrub: 0.6 },
+          });
+          if (arcLine) svgDraw(arcLine, { timeline: tl, position: 0, duration: 0.85 });
+          tl.from(live, { x: -delta(), opacity: 0, scale: 0.85, duration: 0.85, ease: 'none' }, 0);
+          tl.to(
+            live,
+            {
+              keyframes: [
+                { y: -22, duration: 0.42 },
+                { y: 0, duration: 0.43 },
+              ],
+              ease: 'sine.inOut',
+            },
+            0,
+          );
+          if (arcHead) tl.from(arcHead, { opacity: 0, duration: 0.2 }, 0.65);
+          return () => tl.scrollTrigger?.kill();
+        },
+        mobile: () => {
+          if (arcLine) svgDraw(arcLine, { trigger: track, start: 'top 82%' });
+          const trigger = { trigger: track, start: 'top 82%', once: true };
+          if (arcHead) gsap.from(arcHead, { opacity: 0, duration: 0.3, delay: 0.4, scrollTrigger: trigger });
+          gsap.from(live, { opacity: 0, y: 10, duration: 0.5, ease: 'power2.out', scrollTrigger: trigger });
         },
       });
     }
