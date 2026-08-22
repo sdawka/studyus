@@ -15,56 +15,58 @@
 <section class="hero-rd" data-hero>
   <div class="rd-container hero-rd-inner">
     <!-- Decorative floating sticker cluster. Entirely aria-hidden. -->
-    <div class="hero-rd-stickers" aria-hidden="true">
+    <div class="hero-rd-stickers rd-tilt" aria-hidden="true">
       <!-- soft grape blob, deep behind, bottom-left -->
-      <div class="hero-rd-sticker st-blob st-blob-grape" data-rot="-8" data-depth="6">
+      <div class="hero-rd-sticker rd-interactive st-blob st-blob-grape" data-rot="-8" data-depth="6">
         <svg viewBox="0 0 200 200" width="100%" height="100%" role="presentation">
           <path d="M46,-59C58,-49,64,-31,67,-13C69,5,66,24,56,38C46,53,29,63,10,68C-9,73,-30,72,-46,62C-62,52,-73,33,-76,13C-79,-8,-72,-30,-59,-45C-46,-60,-27,-68,-7,-70C13,-72,32,-69,46,-59Z" transform="translate(100 100)"/>
         </svg>
       </div>
 
       <!-- soft mint blob behind the mini-card, top-right -->
-      <div class="hero-rd-sticker st-blob st-blob-mint" data-rot="10" data-depth="8">
+      <div class="hero-rd-sticker rd-interactive st-blob st-blob-mint" data-rot="10" data-depth="8">
         <svg viewBox="0 0 200 200" width="100%" height="100%" role="presentation">
           <path d="M52,-63C65,-52,71,-33,72,-15C73,4,67,22,57,38C46,54,30,67,10,72C-11,77,-33,73,-49,61C-66,49,-76,29,-77,9C-78,-11,-70,-32,-56,-44C-42,-57,-21,-62,0,-62C21,-62,39,-73,52,-63Z" transform="translate(100 100)"/>
         </svg>
       </div>
 
       <!-- big candy 4-point sparkle, top-left -->
-      <div class="hero-rd-sticker st-shape st-star-big" data-rot="-12" data-depth="18">
+      <div class="hero-rd-sticker rd-interactive st-shape st-star-big" data-rot="-12" data-depth="18">
         <svg viewBox="0 0 100 100" width="100%" height="100%" role="presentation">
           <path d="M50 2C53.5 33 67 46.5 98 50C67 53.5 53.5 67 50 98C46.5 67 33 53.5 2 50C33 46.5 46.5 33 50 2Z"/>
         </svg>
       </div>
 
       <!-- small tangerine sparkle winking beside "next." -->
-      <div class="hero-rd-sticker st-shape st-star-sm" data-rot="6" data-depth="26">
+      <div class="hero-rd-sticker rd-interactive st-shape st-star-sm" data-rot="6" data-depth="26">
         <svg viewBox="0 0 100 100" width="100%" height="100%" role="presentation">
           <path d="M50 6C53 34 66 47 94 50C66 53 53 66 50 94C47 66 34 53 6 50C34 47 47 34 50 6Z"/>
         </svg>
       </div>
 
       <!-- spring plus-spark, lower-right accent -->
-      <div class="hero-rd-sticker st-shape st-plus" data-rot="-4" data-depth="22">
+      <div class="hero-rd-sticker rd-interactive st-shape st-plus" data-rot="-4" data-depth="22">
         <svg viewBox="0 0 100 100" width="100%" height="100%" role="presentation">
           <path d="M50 4L58 42L96 50L58 58L50 96L42 58L4 50L42 42Z"/>
         </svg>
       </div>
 
       <!-- app-chaos chip: calendar -->
-      <div class="hero-rd-sticker st-chip st-chip-cal" data-rot="-7" data-depth="14">
+      <div class="hero-rd-sticker rd-interactive st-chip st-chip-cal" data-rot="-7" data-depth="14">
         <span class="chip-emoji">📅</span>
         <span class="chip-dot"></span>
       </div>
 
       <!-- app-chaos chip: group chat -->
-      <div class="hero-rd-sticker st-chip st-chip-chat" data-rot="8" data-depth="12">
+      <div class="hero-rd-sticker rd-interactive st-chip st-chip-chat" data-rot="8" data-depth="12">
         <span class="chip-emoji">💬</span>
         <span class="chip-dot"></span>
       </div>
 
-      <!-- the "what's next" mini-card sticker: the product, in a nutshell -->
-      <div class="hero-rd-sticker st-card" data-rot="5" data-depth="20">
+      <!-- the "what's next" mini-card sticker: the product, in a nutshell.
+           Also the pointerTilt target — the one surface in the hero you can
+           reach out and tip toward you. -->
+      <div class="hero-rd-sticker rd-interactive st-card" data-rot="5" data-depth="20" data-tilt-card>
         <span class="card-label">Next up</span>
         <div class="card-row">
           <span class="card-rank">1</span>
@@ -72,7 +74,13 @@
             <span class="card-course">CHEM 220</span>
             <span class="card-topic">Resonance structures</span>
           </span>
-          <span class="card-pill">Weak · 38%</span>
+          <span class="card-pill-wrap">
+            <span class="card-pill">Weak · 38%</span>
+            <!-- scroll-drawn annotation circle: the reason this card is "next up" -->
+            <svg class="pill-scribble" viewBox="0 0 120 44" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M10 22C10 8 30 3 60 3C92 3 112 9 112 22C112 36 90 41 60 41C28 41 10 35 10 22Z" />
+            </svg>
+          </span>
         </div>
         <span class="card-bar"><span style="--fill: 38%"></span></span>
       </div>
@@ -84,11 +92,11 @@
         <span class="kicker-dot" aria-hidden="true"></span>
         For students juggling lectures, deadlines &amp; five apps
       </p>
-      <h1 class="hero-rd-title">Stop guessing what to study.<br />Open the right thing <span class="rd-em">next.</span></h1>
-      <p class="hero-rd-dek">studyus weighs your weak concepts, stale topics, and real deadlines — then tells you the one thing to open. No streaks. No guilt.</p>
+      <h1 class="hero-rd-title">Know what to study next.<br />Actually <span class="rd-em">remember it.</span></h1>
+      <p class="hero-rd-dek">studyus turns weak concepts, stale topics, and real deadlines into one clear next move — so you study the right thing, every time.</p>
       <div class="hero-rd-ctas">
-        <a class="rd-btn rd-btn-primary" href="/login">Start studying smarter</a>
-        <a class="rd-btn rd-btn-ghost" href="/compare">See how it compares</a>
+        <a class="rd-btn rd-btn-primary" href="/login">Build your study plan</a>
+        <a class="rd-btn rd-btn-ghost" href="/compare">See how it works</a>
       </div>
     </div>
   </div>
@@ -296,6 +304,10 @@
     color: var(--rd-ink);
     line-height: 1.15;
   }
+  .st-card .card-pill-wrap {
+    position: relative;
+    display: inline-flex;
+  }
   .st-card .card-pill {
     font-size: 10px;
     font-weight: 800;
@@ -304,6 +316,23 @@
     background: oklch(65% 0.2 2 / 0.14);
     color: var(--rd-accent-deep);
     white-space: nowrap;
+  }
+  /* Scroll-drawn scribble that circles the "why this card" stat. Sized to
+     overshoot the pill a little, like a hand-drawn annotation. */
+  .st-card .pill-scribble {
+    position: absolute;
+    inset: -7px -9px;
+    width: calc(100% + 18px);
+    height: calc(100% + 14px);
+    pointer-events: none;
+  }
+  .st-card .pill-scribble path {
+    fill: none;
+    stroke: var(--rd-accent);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.85;
   }
   .st-card .card-bar {
     display: block;
@@ -328,7 +357,8 @@
   }
   @media (max-width: 820px) {
     .hero-rd { min-height: auto; padding-block: clamp(64px, 12vh, 120px); }
-    .hero-rd-copy { max-width: 18ch; }
+    .hero-rd-copy { max-width: min(100%, 680px); }
+    .hero-rd-title { max-width: 12ch; margin-inline: auto; }
     /* the crowded product card + chips would collide with copy — drop the
        heavy ones, keep the airy sparkles/blobs for joy */
     .st-card, .st-chip { display: none; }
@@ -349,7 +379,13 @@
   import gsap from 'gsap';
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
   import { SplitText } from 'gsap/SplitText';
-  import { initMarketingMotion, reducedMotion } from '../../../lib/marketing/motion';
+  import {
+    initMarketingMotion,
+    reducedMotion,
+    pointerParallax,
+    pointerTilt,
+    svgDraw,
+  } from '../../../lib/marketing/motion';
 
   initMarketingMotion();
 
@@ -417,6 +453,15 @@
           '-=0.55'
         );
 
+      // The "why this card" scribble draws on right after the sticker cluster
+      // lands — a hand-drawn circle finishing the thought "this is next up."
+      svgDraw('.pill-scribble path', {
+        timeline: tl,
+        position: '-=0.1',
+        duration: 0.55,
+        ease: 'power2.out',
+      });
+
       // --- ambient: lively continuous float on each sticker (y + rotate),
       // plus a twinkle (scale pulse) on the candy sparkles. Bigger amplitude
       // than a typical "calm" float — the hero should feel alive. ---
@@ -448,18 +493,15 @@
       }
 
       // --- pointer parallax: stickers drift on the x axis by their depth.
-      // (x only — ambient owns y/rotate, so the two never fight.) ---
-      const xTos = stickers.map((el) =>
-        gsap.quickTo(el, 'x', { duration: 0.9, ease: 'power3' })
-      );
-      root.addEventListener('pointermove', (e) => {
-        const r = root.getBoundingClientRect();
-        const px = (e.clientX - r.left) / r.width - 0.5;
-        stickers.forEach((el, i) => {
-          const depth = Number((el as HTMLElement).dataset.depth) || 10;
-          xTos[i](px * depth * 1.6);
-        });
-      });
+      // (x only — ambient owns y/rotate, so the two never fight.) Desktop-only
+      // (hover-capable pointers) via the shared helper — no more jitter from
+      // touch drags firing pointermove, which the old hand-rolled listener
+      // didn't guard against.
+      pointerParallax(root, { items: '.hero-rd-sticker', axis: 'x' });
+
+      // --- pointer tilt: the "Next up" mini-card tips toward the pointer,
+      // the one surface in the hero that invites a reach. ---
+      pointerTilt('[data-tilt-card]', { max: 8, scale: 1.03 });
 
       // --- scroll parallax: the whole cluster drifts up as the hero leaves ---
       gsap.to('.hero-rd-stickers', {

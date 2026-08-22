@@ -43,6 +43,16 @@
         <div class="planner-board" data-board>
           <div class="board-panel" data-board-panel aria-hidden="true"></div>
 
+          <!-- Connective trails: the five apps' energy flowing into the "one
+               place" card as the chaos resolves. Desktop-pinned scene only —
+               invisible by default, drawn on by the scrub timeline. -->
+          <svg class="planner-trails" data-planner-trails viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path class="trail" d="M4 8C28 20 40 32 50 46" />
+            <path class="trail" d="M96 6C70 18 56 30 50 46" />
+            <path class="trail" d="M8 94C30 76 40 60 50 46" />
+            <path class="trail" d="M92 92C68 76 58 60 50 46" />
+          </svg>
+
           <!-- Open-next hero card -->
           <article class="card card--next chaos" data-card data-cx="-0.34" data-cy="-0.30" data-cr="-11">
             <span class="next-badge" data-next-badge>Open next</span>
@@ -171,6 +181,30 @@
     box-shadow: var(--rd-shadow-card);
     backdrop-filter: blur(8px);
     z-index: 0;
+  }
+
+  /* Connective trails from the dissolving app-chaos toward the resolving
+     card — invisible by default (same convention as .scrap below); the
+     desktop pinned timeline is the only thing that ever shows them. */
+  .planner-trails {
+    position: absolute;
+    inset: 0;
+    /* Same z-index as .card, but earlier in DOM order, so cards paint on
+       top — the trails read as flowing behind the cards, not over their
+       text. */
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .planner-trails .trail {
+    fill: none;
+    stroke: var(--rd-accent);
+    stroke-width: 0.6;
+    stroke-linecap: round;
+    opacity: 0.6;
   }
 
   /* ---- cards ---- */
@@ -317,7 +351,24 @@
 
   /* ---- responsive ---- */
   @media (max-width: 720px) {
-    .board-week { grid-template-columns: repeat(2, 1fr); }
+    /* Mobile containment is explicit rather than relying on implicit grid
+       shrinkage. This keeps every rounded right edge inside the safe gutter,
+       even while GSAP transforms are active. */
+    .planner-frame {
+      width: 100%;
+      padding-inline: max(24px, var(--rd-pad-x));
+    }
+    .planner-board,
+    .board-week,
+    .day,
+    .card {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .board-panel { inset: -14px 0; }
+    .board-week { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .day:nth-child(5) { grid-column: 1 / -1; }
     .card--next { max-width: 100%; }
   }
@@ -350,7 +401,7 @@
 <script>
   import gsap from 'gsap';
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
-  import { initMarketingMotion, reducedMotion } from '../../../lib/marketing/motion';
+  import { initMarketingMotion, reducedMotion, matchMotion, svgDraw } from '../../../lib/marketing/motion';
 
   initMarketingMotion();
 
@@ -365,127 +416,167 @@
       const cards = gsap.utils.toArray<HTMLElement>('[data-card]');
       const scraps = gsap.utils.toArray<HTMLElement>('[data-scrap]');
       const panel = document.querySelector<HTMLElement>('[data-board-panel]');
+      const trails = document.querySelector<HTMLElement>('[data-planner-trails]');
       const earlyBeat = document.querySelector<HTMLElement>('[data-beat-early]');
       const lateBeat = document.querySelector<HTMLElement>('[data-beat-late]');
       const nextBadge = document.querySelector<HTMLElement>('[data-next-badge]');
 
-      // A pinned 300vh scrub is janky on touch, so mobile gets a lighter
-      // treatment: no pin. The board is already rendered resolved in the DOM
-      // (scraps hidden at opacity:0), so we just reveal it as it scrolls into
-      // view. The runway CSS collapses at this same breakpoint (no empty gap).
-      const isMobile = matchMedia('(max-width: 768px)').matches;
+      // Desktop gets the pinned chaos->order scrub; a pinned 300vh scrub is
+      // janky on touch, so mobile gets a lighter scroll-reveal instead (no
+      // pin). Reactive via matchMotion — the branch tears down and re-runs
+      // cleanly if a tablet crosses the breakpoint on rotation, which the old
+      // one-shot `matchMedia(...).matches` load-time check couldn't do. The
+      // breakpoint stays 768px to match this section's own CSS breakpoint
+      // (planner-wrap/planner-stage collapse at the same width).
+      matchMotion({
+        desktopQuery: '(min-width: 769px)',
+        mobileQuery: '(max-width: 768px)',
 
-      if (isMobile) {
-        gsap.set(earlyBeat, { opacity: 0 });
-        gsap.set(lateBeat, { opacity: 1, y: 0 });
-        gsap.set(nextBadge, { scale: 0, rotation: -12 });
-        gsap.from(panel, {
-          opacity: 0,
-          y: 24,
-          duration: 0.5,
-          ease: 'power2.out',
-          scrollTrigger: { trigger: board, start: 'top 82%' },
-        });
-        gsap.from(cards, {
-          opacity: 0,
-          y: 30,
-          scale: 0.96,
-          duration: 0.5,
-          ease: 'back.out(1.4)',
-          stagger: 0.06,
-          scrollTrigger: { trigger: board, start: 'top 80%' },
-        });
-        gsap.to(nextBadge, {
-          scale: 1,
-          rotation: 0,
-          duration: 0.4,
-          ease: 'back.out(2)',
-          scrollTrigger: { trigger: board, start: 'top 66%' },
-        });
-      } else {
-      // Scatter one element to its art-directed chaos position (offsets are
-      // fractions of the viewport, so the mess spreads across the pinned frame).
-      const scatter = (el: HTMLElement, extra: gsap.TweenVars = {}) => {
-        const cx = parseFloat(el.dataset.cx ?? '0');
-        const cy = parseFloat(el.dataset.cy ?? '0');
-        const cr = parseFloat(el.dataset.cr ?? '0');
-        gsap.set(el, {
-          x: cx * window.innerWidth,
-          y: cy * window.innerHeight,
-          rotation: cr,
-          ...extra,
-        });
-      };
+        mobile: () => {
+          // The board is already rendered resolved in the DOM (scraps hidden
+          // at opacity:0), so we just reveal it as it scrolls into view. The
+          // runway CSS collapses at this same breakpoint (no empty gap).
+          gsap.set(earlyBeat, { opacity: 0 });
+          gsap.set(lateBeat, { opacity: 1, y: 0 });
+          gsap.set(nextBadge, { scale: 0, rotation: -12 });
 
-      // --- CHAOS: place everything scattered, before building the timeline so
-      // the .to() tweens capture "scattered" as their start values. ---
-      const applyChaos = () => {
-        cards.forEach((el) => scatter(el, { scale: 1.04 }));
-        scraps.forEach((el) => scatter(el, { opacity: 1, scale: 1 }));
-        gsap.set(panel, { opacity: 0, scale: 0.94 });
-        gsap.set(earlyBeat, { opacity: 1, y: 0 });
-        gsap.set(lateBeat, { opacity: 0, y: 16 });
-        gsap.set(nextBadge, { scale: 0, rotation: -18 });
-      };
-      applyChaos();
+          const panelTween = gsap.from(panel, {
+            opacity: 0,
+            y: 24,
+            duration: 0.5,
+            ease: 'power2.out',
+            scrollTrigger: { trigger: board, start: 'top 82%' },
+          });
+          const cardsTween = gsap.from(cards, {
+            opacity: 0,
+            y: 30,
+            scale: 0.96,
+            duration: 0.5,
+            ease: 'back.out(1.4)',
+            stagger: 0.06,
+            scrollTrigger: { trigger: board, start: 'top 80%' },
+          });
+          const badgeTween = gsap.to(nextBadge, {
+            scale: 1,
+            rotation: 0,
+            duration: 0.4,
+            ease: 'back.out(2)',
+            scrollTrigger: { trigger: board, start: 'top 66%' },
+          });
 
-      const tl = gsap.timeline({
-        defaults: { ease: 'none' },
-        scrollTrigger: {
-          trigger: wrap,
-          start: 'top top',
-          end: 'bottom bottom',
-          pin: stage,
-          scrub: 0.6,
-          invalidateOnRefresh: true,
+          return () => {
+            for (const t of [panelTween, cardsTween, badgeTween]) {
+              t.scrollTrigger?.kill();
+              t.kill();
+            }
+          };
+        },
+
+        desktop: () => {
+          // Scatter one element to its art-directed chaos position (offsets are
+          // fractions of the viewport, so the mess spreads across the pinned frame).
+          const scatter = (el: HTMLElement, extra: gsap.TweenVars = {}) => {
+            const cx = parseFloat(el.dataset.cx ?? '0');
+            const cy = parseFloat(el.dataset.cy ?? '0');
+            const cr = parseFloat(el.dataset.cr ?? '0');
+            gsap.set(el, {
+              x: cx * window.innerWidth,
+              y: cy * window.innerHeight,
+              rotation: cr,
+              ...extra,
+            });
+          };
+
+          // --- CHAOS: place everything scattered, before building the timeline so
+          // the .to() tweens capture "scattered" as their start values. ---
+          const applyChaos = () => {
+            cards.forEach((el) => scatter(el, { scale: 1.04 }));
+            scraps.forEach((el) => scatter(el, { opacity: 1, scale: 1 }));
+            gsap.set(panel, { opacity: 0, scale: 0.94 });
+            gsap.set(trails, { opacity: 0 });
+            gsap.set(earlyBeat, { opacity: 1, y: 0 });
+            gsap.set(lateBeat, { opacity: 0, y: 16 });
+            gsap.set(nextBadge, { scale: 0, rotation: -18 });
+          };
+          applyChaos();
+
+          const tl = gsap.timeline({
+            defaults: { ease: 'none' },
+            scrollTrigger: {
+              trigger: wrap,
+              start: 'top top',
+              end: 'bottom bottom',
+              pin: stage,
+              scrub: 0.6,
+              invalidateOnRefresh: true,
+            },
+          });
+
+          // 0.00–0.12: hold the chaos so the mess registers before it resolves.
+
+          // The "one place" panel firms up as order begins to form.
+          tl.to(panel, { opacity: 1, scale: 1, ease: 'power2.out', duration: 0.32 }, 0.14);
+
+          // Connective trails draw on alongside it — the five apps' energy
+          // visibly flowing into the card that's about to resolve — then
+          // fade once the cards have landed so they don't linger as clutter.
+          tl.set(trails, { opacity: 1 }, 0.13);
+          svgDraw('.planner-trails .trail', {
+            timeline: tl,
+            position: 0.16,
+            duration: 0.34,
+            stagger: 0.04,
+            ease: 'power2.out',
+          });
+          tl.to(trails, { opacity: 0, duration: 0.22, ease: 'power1.in' }, 0.62);
+
+          // Five apps dissolve: source chips + sticky notes drift up and fade out.
+          tl.to(
+            scraps,
+            {
+              opacity: 0,
+              scale: 0.6,
+              y: '-=48',
+              ease: 'power2.in',
+              duration: 0.34,
+              stagger: { each: 0.03, from: 'random' },
+            },
+            0.14,
+          );
+
+          // The scattered task cards SNAP home — staggered like sorting, with a
+          // springy overshoot so the settle feels satisfying.
+          tl.to(
+            cards,
+            {
+              x: 0,
+              y: 0,
+              rotation: 0,
+              scale: 1,
+              ease: 'back.out(1.5)',
+              duration: 0.5,
+              stagger: { each: 0.05, from: 'random' },
+            },
+            0.16,
+          );
+
+          // Copy crossfade: "somewhere / nowhere" -> "One place. Next best move."
+          tl.to(earlyBeat, { opacity: 0, y: -22, ease: 'power1.in', duration: 0.2 }, 0.34);
+          tl.to(lateBeat, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.24 }, 0.46);
+
+          // The promise lands: the "Open next" badge pops in last.
+          tl.to(nextBadge, { scale: 1, rotation: 0, ease: 'back.out(2.2)', duration: 0.22 }, 0.72);
+
+          // Keep chaos offsets correct across resizes/orientation changes.
+          ScrollTrigger.addEventListener('refreshInit', applyChaos);
+
+          return () => {
+            ScrollTrigger.removeEventListener('refreshInit', applyChaos);
+            tl.scrollTrigger?.kill();
+            tl.kill();
+          };
         },
       });
-
-      // 0.00–0.12: hold the chaos so the mess registers before it resolves.
-
-      // The "one place" panel firms up as order begins to form.
-      tl.to(panel, { opacity: 1, scale: 1, ease: 'power2.out', duration: 0.32 }, 0.14);
-
-      // Five apps dissolve: source chips + sticky notes drift up and fade out.
-      tl.to(
-        scraps,
-        {
-          opacity: 0,
-          scale: 0.6,
-          y: '-=48',
-          ease: 'power2.in',
-          duration: 0.34,
-          stagger: { each: 0.03, from: 'random' },
-        },
-        0.14,
-      );
-
-      // The scattered task cards SNAP home — staggered like sorting, with a
-      // springy overshoot so the settle feels satisfying.
-      tl.to(
-        cards,
-        {
-          x: 0,
-          y: 0,
-          rotation: 0,
-          scale: 1,
-          ease: 'back.out(1.5)',
-          duration: 0.5,
-          stagger: { each: 0.05, from: 'random' },
-        },
-        0.16,
-      );
-
-      // Copy crossfade: "somewhere / nowhere" -> "One place. Next best move."
-      tl.to(earlyBeat, { opacity: 0, y: -22, ease: 'power1.in', duration: 0.2 }, 0.34);
-      tl.to(lateBeat, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.24 }, 0.46);
-
-      // The promise lands: the "Open next" badge pops in last.
-      tl.to(nextBadge, { scale: 1, rotation: 0, ease: 'back.out(2.2)', duration: 0.22 }, 0.72);
-
-      // Keep chaos offsets correct across resizes/orientation changes.
-      ScrollTrigger.addEventListener('refreshInit', applyChaos);
-      }
     }
   }
 </script>
