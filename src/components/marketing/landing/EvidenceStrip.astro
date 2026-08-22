@@ -1,80 +1,104 @@
 ---
+// Landing REDESIGN Phase 2 — the evidence strip (research stats + citation).
+// Restyled into the .rd pastel system: transparent over the mesh, --rd-* tokens,
+// Fraunces heading (.rd-h2 + .rd-em candy accent), and the ledger becomes a row
+// of gummy .rd-card stat tiles with big Fraunces numbers and a candy accent.
+// The citation stays plain and legible — it's a real reference. Shared scroll
+// entrance via data-reveal / data-reveal-item. No bespoke <script>.
 const stats = [
-  { num: '+25%', label: 'better retention from spaced retrieval than last-minute cramming' },
-  { num: 'd = 0.78', label: 'effect size, meta-analysis of spaced vs. massed practice' },
-  { num: '1', label: 'simple principle: test yourself, then come back before you forget' },
+  { num: '+25%', tone: 'accent', label: 'better retention from spaced retrieval than last-minute cramming' },
+  { num: 'd = 0.78', tone: 'grape', label: 'effect size, meta-analysis of spaced vs. massed practice' },
+  { num: '1', tone: 'tangerine', label: 'simple principle: test yourself, then come back before you forget' },
 ];
 ---
-<section class="evidence">
-  <div class="mk-container">
-    <p class="eyebrow reveal">Evidence beats study vibes</p>
-    <div class="ledger">
-      {stats.map((s, i) => (
-        <div class="ledger-item reveal" style={`--reveal-delay: ${i * 100}ms`}>
-          <span class="ledger-num">{s.num}</span>
-          <span class="ledger-label">{s.label}</span>
+<section class="evidence rd-section">
+  <div class="rd-container" data-reveal>
+    <p class="rd-kicker" data-reveal-item><span class="kdot"></span>The evidence</p>
+    <h2 class="rd-h2" data-reveal-item>Evidence beats <span class="rd-em">study vibes</span>.</h2>
+
+    <div class="tiles" data-reveal-item>
+      {stats.map((s) => (
+        <div class={`tile rd-card tone-${s.tone}`}>
+          <span class="tile-num">{s.num}</span>
+          <span class="tile-label">{s.label}</span>
         </div>
       ))}
     </div>
-    <p class="citation reveal" style="--reveal-delay: 300ms">
+
+    <p class="citation" data-reveal-item>
+      <span class="cite-src">Source</span>
       Pan, S. C., &amp; Rickard, T. C. (2018), <em>Journal of Educational Psychology</em> — spaced retrieval beats massed study.
     </p>
   </div>
 </section>
 
 <style>
-  .evidence { padding-block: clamp(48px, 8vw, 88px); }
-  .eyebrow {
-    font-family: var(--mk-font-mono);
-    font-size: 12.5px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--mk-muted);
-    margin-bottom: 24px;
+  .kdot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--rd-accent);
+    box-shadow: 0 0 0 4px oklch(65% 0.2 2 / 0.16);
   }
-  .ledger {
+  .evidence h2 { margin: 16px 0 0; }
+
+  .tiles {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    border-top: 1px solid var(--mk-hairline);
-    border-bottom: 1px solid var(--mk-hairline);
+    gap: clamp(16px, 2.2vw, 24px);
+    margin: clamp(32px, 5vw, 48px) 0 0;
   }
-  .ledger-item {
-    padding: 28px clamp(16px, 3vw, 32px);
-    border-left: 1px solid var(--mk-hairline);
+  .tile {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
   }
-  .ledger-item:first-child { border-left: none; }
-  .ledger-num {
-    font-family: var(--mk-font-mono);
-    font-size: clamp(28px, 3.6vw, 40px);
-    font-weight: 500;
-    color: var(--mk-accent-ink);
-    letter-spacing: -0.01em;
+  /* candy top-rule keyed to each tile's tone */
+  .tile-num {
+    font-family: var(--rd-display);
+    font-size: clamp(34px, 5vw, 52px);
+    font-weight: 600;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
   }
-  .ledger-label {
-    font-size: 14px;
-    color: var(--mk-muted);
+  .tone-accent .tile-num { color: var(--rd-accent); }
+  .tone-grape .tile-num { color: var(--rd-grape); }
+  .tone-tangerine .tile-num { color: oklch(58% 0.16 55); }
+  .tile-label {
+    font-size: 14.5px;
+    font-weight: 600;
     line-height: 1.5;
-    max-width: 28ch;
+    color: var(--rd-ink-soft);
+    max-width: 30ch;
   }
+
   .citation {
-    margin-top: 16px;
-    font-family: var(--mk-font-mono);
-    font-size: 12px;
-    color: var(--mk-faint);
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    margin: clamp(24px, 3vw, 32px) 0 0;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--rd-ink-faint);
+    max-width: 62ch;
+  }
+  .cite-src {
+    font-family: var(--rd-body);
+    font-weight: 800;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--rd-grape);
+    border: 1.5px solid oklch(58% 0.19 300 / 0.3);
+    padding: 2px 8px;
+    border-radius: var(--rd-r-pill);
   }
   .citation em { font-style: italic; }
 
   @media (max-width: 720px) {
-    .ledger { grid-template-columns: 1fr; }
-    .ledger-item {
-      border-left: none;
-      border-top: 1px solid var(--mk-hairline);
-      padding: 20px 0;
-    }
-    .ledger-item:first-child { border-top: none; }
-    .ledger-label { max-width: 34ch; }
+    .tiles { grid-template-columns: 1fr; }
+    .tile-label { max-width: 42ch; }
   }
 </style>

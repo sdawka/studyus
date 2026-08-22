@@ -1,9 +1,10 @@
 ---
-// Landing page content.
-// PHASE 1 REDESIGN: the new premium-playful hero + the "planner assembles"
-// signature scroll section live inside the `.rd` pastel canvas at the top. The
-// sections below are the previous design, kept until Phase 2 — expect a visible
-// style seam between PlannerAssemble and ProblemBeat for now.
+// Landing page content — "premium playful" pastel redesign. The whole page
+// lives inside the `.rd` canvas (fixed pastel-mesh backdrop + Fraunces/Nunito
+// type from marketing-rd.css) and shares one Lenis + ScrollTrigger engine
+// (lib/marketing/motion.ts). Hero + PlannerAssemble carry bespoke motion; the
+// rest use the shared `data-reveal` scroll entrance. All motion is
+// prefers-reduced-motion safe.
 import '@fontsource-variable/fraunces';
 import '@fontsource-variable/nunito';
 import '../../../styles/marketing-rd.css';
@@ -23,16 +24,14 @@ import FinalCta from './FinalCta.astro';
 <div class="rd rd-grain">
   <HeroRD />
   <PlannerAssemble />
+  <ProblemBeat />
+  <FeatureNext />
+  <FeatureReplan />
+  <FeaturePractice />
+  <EvidenceStrip />
+  <CompareTeaser />
+  <FinalCta />
 </div>
-
-<!-- Phase 2 will restyle everything below into the same system. -->
-<ProblemBeat />
-<FeatureNext />
-<FeatureReplan />
-<FeaturePractice />
-<EvidenceStrip />
-<CompareTeaser />
-<FinalCta />
 
 <script>
   // Start the shared smooth-scroll / ScrollTrigger engine once for the page.

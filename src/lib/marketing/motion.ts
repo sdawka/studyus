@@ -49,6 +49,30 @@ export function initMarketingMotion(): void {
   lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add((time) => lenis?.raf(time * 1000));
   gsap.ticker.lagSmoothing(0);
+
+  initReveals();
+}
+
+/**
+ * Shared scroll entrance for the whole landing. Any element with `data-reveal`
+ * rises + fades in as it enters the viewport; children marked `data-reveal-item`
+ * stagger. Grouped by their nearest `data-reveal` container so each section
+ * animates independently. No-ops under reduced motion (elements stay visible).
+ */
+function initReveals(): void {
+  const groups = gsap.utils.toArray<HTMLElement>('[data-reveal]');
+  for (const group of groups) {
+    const items = group.querySelectorAll<HTMLElement>('[data-reveal-item]');
+    const targets = items.length ? items : [group];
+    gsap.from(targets, {
+      opacity: 0,
+      y: 34,
+      duration: 0.7,
+      ease: 'power3.out',
+      stagger: items.length ? 0.09 : 0,
+      scrollTrigger: { trigger: group, start: 'top 82%', once: true },
+    });
+  }
 }
 
 /** Escape hatch for anything that needs the Lenis instance (e.g. anchor jumps). */

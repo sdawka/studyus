@@ -46,9 +46,10 @@
           <!-- Open-next hero card -->
           <article class="card card--next chaos" data-card data-cx="-0.34" data-cy="-0.30" data-cr="-11">
             <span class="next-badge" data-next-badge>Open next</span>
-            <p class="card-course">CHEM 220</p>
+            <p class="card-course">CHEM 220 · Physical Chemistry</p>
             <p class="card-task">Resonance structures</p>
-            <p class="card-meta">Weakest topic · 25 min · quiz Fri</p>
+            <p class="card-why">Ranked <strong>#1 of 6</strong> — your weakest topic (<strong>24%</strong>), and the quiz is <strong>Friday</strong>.</p>
+            <p class="card-meta">~25 min · unlocks bonding &amp; MO theory next</p>
           </article>
 
           <!-- Mon–Fri week grid -->
@@ -58,34 +59,39 @@
               <article class="card card--day chaos" data-card data-cx="0.30" data-cy="-0.34" data-cr="9">
                 <p class="card-course">BIO 110</p>
                 <p class="card-task">Read ch. 7</p>
+                <p class="card-meta">Before Wed lecture</p>
               </article>
             </div>
             <div class="day">
               <p class="day-label">Tue</p>
               <article class="card card--day chaos" data-card data-cx="-0.40" data-cy="0.10" data-cr="-7">
                 <p class="card-course">CHEM 220</p>
-                <p class="card-task">Lab report</p>
+                <p class="card-task">Finish lab report</p>
+                <p class="card-meta">Due Thu 5pm</p>
               </article>
             </div>
             <div class="day">
               <p class="day-label">Wed</p>
               <article class="card card--day chaos" data-card data-cx="0.14" data-cy="0.34" data-cr="13">
                 <p class="card-course">MATH 141</p>
-                <p class="card-task">Vectors quiz</p>
+                <p class="card-task">Vectors — quiz prep</p>
+                <p class="card-meta">Quiz Thu · 40% mastery</p>
               </article>
             </div>
             <div class="day">
               <p class="day-label">Thu</p>
               <article class="card card--day chaos" data-card data-cx="0.42" data-cy="0.22" data-cr="-10">
                 <p class="card-course">ENG 205</p>
-                <p class="card-task">Essay draft</p>
+                <p class="card-task">Essay — draft intro</p>
+                <p class="card-meta">Due Fri noon</p>
               </article>
             </div>
             <div class="day">
               <p class="day-label">Fri</p>
               <article class="card card--day chaos" data-card data-cx="-0.18" data-cy="-0.12" data-cr="8">
                 <p class="card-course">PHYS 130</p>
-                <p class="card-task">Problem set</p>
+                <p class="card-task">Problem set 6</p>
+                <p class="card-meta">Due Mon</p>
               </article>
             </div>
           </div>
@@ -94,9 +100,9 @@
         <!-- Decorative chaos: sticky notes + app-source chips. aria-hidden,
              invisible by default (reduced-motion resolved state = clean). -->
         <div class="planner-scatter" aria-hidden="true">
-          <span class="note note--a scrap" data-scrap data-cx="-0.30" data-cy="-0.10" data-cr="-8">essay?? due soon</span>
-          <span class="note note--b scrap" data-scrap data-cx="0.33" data-cy="0.04" data-cr="7">CHEM lab today?</span>
-          <span class="note note--c scrap" data-scrap data-cx="0.06" data-cy="0.28" data-cr="-6">read ch.7 !!</span>
+          <span class="note note--a scrap" data-scrap data-cx="-0.30" data-cy="-0.10" data-cr="-8">CHEM quiz — FRI!! 😩</span>
+          <span class="note note--b scrap" data-scrap data-cx="0.33" data-cy="0.04" data-cr="7">lab report due Thu</span>
+          <span class="note note--c scrap" data-scrap data-cx="0.06" data-cy="0.28" data-cr="-6">read ch.7 before Wed</span>
           <span class="chip scrap" data-scrap data-cx="-0.42" data-cy="-0.26" data-cr="-5"><span class="chip-i">📅</span> Calendar</span>
           <span class="chip scrap" data-scrap data-cx="0.40" data-cy="-0.18" data-cr="6"><span class="chip-i">💬</span> Group chat</span>
           <span class="chip scrap" data-scrap data-cx="0.24" data-cy="-0.32" data-cr="-4"><span class="chip-i">🎓</span> LMS</span>
@@ -200,6 +206,20 @@
     font-size: 12.5px;
     font-weight: 700;
     color: var(--rd-ink-soft);
+  }
+  .card-why {
+    margin: 10px 0 0;
+    font-size: 13.5px;
+    line-height: 1.42;
+    font-weight: 600;
+    color: var(--rd-ink-soft);
+  }
+  .card-why strong { color: var(--rd-accent-deep); font-weight: 800; }
+  .card--day .card-meta {
+    margin-top: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--rd-ink-faint);
   }
 
   /* Open-next hero card — candy highlight, centered above the week. */
@@ -309,6 +329,17 @@
   /* Reduced motion: no pin, no scatter — the DOM already renders the resolved
      planner + "One place. The next best move." headline. Belt-and-braces: make
      sure the panel/cards read cleanly with no transforms. */
+  /* Mobile: the JS disables the pin here, so collapse the runway (no empty
+     gap) and let the stage flow at natural height. */
+  @media (max-width: 768px) {
+    .planner-wrap { min-height: 0; }
+    .planner-stage {
+      min-height: auto;
+      overflow: visible;
+      padding-block: clamp(48px, 10vh, 96px);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .planner-wrap { min-height: 0; }
     .planner-stage { min-height: 0; overflow: visible; }
@@ -338,6 +369,40 @@
       const lateBeat = document.querySelector<HTMLElement>('[data-beat-late]');
       const nextBadge = document.querySelector<HTMLElement>('[data-next-badge]');
 
+      // A pinned 300vh scrub is janky on touch, so mobile gets a lighter
+      // treatment: no pin. The board is already rendered resolved in the DOM
+      // (scraps hidden at opacity:0), so we just reveal it as it scrolls into
+      // view. The runway CSS collapses at this same breakpoint (no empty gap).
+      const isMobile = matchMedia('(max-width: 768px)').matches;
+
+      if (isMobile) {
+        gsap.set(earlyBeat, { opacity: 0 });
+        gsap.set(lateBeat, { opacity: 1, y: 0 });
+        gsap.set(nextBadge, { scale: 0, rotation: -12 });
+        gsap.from(panel, {
+          opacity: 0,
+          y: 24,
+          duration: 0.5,
+          ease: 'power2.out',
+          scrollTrigger: { trigger: board, start: 'top 82%' },
+        });
+        gsap.from(cards, {
+          opacity: 0,
+          y: 30,
+          scale: 0.96,
+          duration: 0.5,
+          ease: 'back.out(1.4)',
+          stagger: 0.06,
+          scrollTrigger: { trigger: board, start: 'top 80%' },
+        });
+        gsap.to(nextBadge, {
+          scale: 1,
+          rotation: 0,
+          duration: 0.4,
+          ease: 'back.out(2)',
+          scrollTrigger: { trigger: board, start: 'top 66%' },
+        });
+      } else {
       // Scatter one element to its art-directed chaos position (offsets are
       // fractions of the viewport, so the mess spreads across the pinned frame).
       const scatter = (el: HTMLElement, extra: gsap.TweenVars = {}) => {
@@ -420,6 +485,7 @@
 
       // Keep chaos offsets correct across resizes/orientation changes.
       ScrollTrigger.addEventListener('refreshInit', applyChaos);
+      }
     }
   }
 </script>
