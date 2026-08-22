@@ -1,11 +1,7 @@
 ---
-import FlipBook from './FlipBook.astro';
-// Landing REDESIGN Phase 2 — the closing call-to-action. The emotional peak:
-// a giant Fraunces headline reusing the hero's candy-italic "next." treatment,
-// a primary CTA → /login and a secondary → /compare, plus a short reassurance
-// line. Floating candy sparkle motifs (inline SVG, aria-hidden, CSS-only gentle
-// float) echo the hero. Sits transparent over the .rd mesh, uses --rd-* tokens,
-// and the shared `data-reveal` / `data-reveal-item` entrance. No bespoke <script>.
+// Closing handoff: the same ranked concept produced by the study loop arrives
+// here as a concrete action. Scroll peels away lower-priority cards and leaves
+// one tappable next move; reduced motion renders the resolved stack.
 ---
 <section class="final rd-section">
   <!-- Decorative floating sparkle cluster. Entirely aria-hidden, CSS-only. -->
@@ -33,17 +29,41 @@ import FlipBook from './FlipBook.astro';
   </div>
 
   <div class="rd-container final-inner" data-reveal="scale">
-    <div class="final-book" data-reveal-item><FlipBook /></div>
+    <div class="final-handoff" data-final-handoff data-reveal-item aria-hidden="true">
+      <div class="handoff-card handoff-card--back" data-handoff-card="back">
+        <span>ECON 210</span><strong>Price elasticity</strong><small>on track</small>
+      </div>
+      <div class="handoff-card handoff-card--mid" data-handoff-card="mid">
+        <span>CS 301</span><strong>B-tree balancing</strong><small>stale · 9d</small>
+      </div>
+      <div class="handoff-card handoff-card--next rd-interactive" data-handoff-card="next" data-tilt-card>
+        <span class="handoff-rank">Open next</span>
+        <div><small>CHEM 220</small><strong>Resonance structures</strong></div>
+        <span class="handoff-go">Begin <b>→</b></span>
+      </div>
+    </div>
+    <div class="final-flourish" aria-hidden="true">
+      <svg viewBox="0 0 180 26" width="180" height="26" role="presentation">
+        <defs>
+          <linearGradient id="final-flourish-grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="var(--rd-accent)" />
+            <stop offset=".5" stop-color="var(--rd-grape)" />
+            <stop offset="1" stop-color="var(--rd-spring)" />
+          </linearGradient>
+        </defs>
+        <path data-final-flourish d="M4 20C28 4 46 4 66 16C86 28 106 6 128 10C146 13 160 8 176 14" />
+      </svg>
+    </div>
     <h2 class="final-title rd-h2" data-reveal-item>
       Open the right thing <span class="rd-em">next.</span><br />Every study day.
     </h2>
     <p class="final-reassure" data-reveal-item>
-      Free to start. No credit card. No streaks to babysit.
+      Free to start. No credit card. No guilt mechanics.
     </p>
     <div class="final-ctas" data-reveal-item>
-      <a class="rd-btn rd-btn-primary" href="/login">Start studying smarter</a>
+      <a class="rd-btn rd-btn-primary" href="/login">Get started free</a>
       <a class="rd-btn rd-btn-ghost" href="/compare">
-        See how it compares
+        See what you're missing
         <span class="arrow" aria-hidden="true">→</span>
       </a>
     </div>
@@ -64,7 +84,53 @@ import FlipBook from './FlipBook.astro';
     flex-direction: column;
     align-items: center;
   }
-  .final-book { margin-bottom: clamp(22px, 3.4vw, 38px); }
+  .final-handoff {
+    position: relative;
+    width: min(92vw, 560px);
+    height: clamp(168px, 24vw, 214px);
+    margin-bottom: clamp(30px, 5vw, 56px);
+    perspective: 1200px;
+  }
+  .final-flourish {
+    width: 180px;
+    height: 26px;
+    margin: 0 auto clamp(10px, 1.6vw, 18px);
+  }
+  .final-flourish svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .final-flourish path { fill: none; stroke: url(#final-flourish-grad); stroke-width: 5; stroke-linecap: round; }
+  .handoff-card {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: min(88%, 440px);
+    min-height: 96px;
+    padding: 18px 20px;
+    border-radius: var(--rd-r-md);
+    background: oklch(99.5% 0.006 90);
+    border: 1.5px solid oklch(52% 0.06 305 / 0.16);
+    box-shadow: var(--rd-shadow-card);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    transform-origin: 50% 100%;
+  }
+  .handoff-card--back { transform: translateX(-50%) translateY(-58px) rotate(-7deg) scale(.88); opacity: .5; }
+  .handoff-card--mid { transform: translateX(-50%) translateY(-30px) rotate(5deg) scale(.94); opacity: .72; }
+  .handoff-card--next {
+    transform: translateX(-50%);
+    border: 2px solid var(--rd-accent);
+    box-shadow: var(--rd-shadow-pop), 0 22px 54px -24px oklch(52% .2 2 / .65);
+  }
+  .handoff-card > span:first-child:not(.handoff-rank),
+  .handoff-card > small { font-size: 10px; font-weight: 900; color: var(--rd-ink-faint); text-transform: uppercase; }
+  .handoff-card > strong { font-family: var(--rd-display); font-size: 18px; }
+  .handoff-rank { padding: 6px 10px; border-radius: 999px; color: var(--rd-on-accent); background: var(--rd-accent); font-size: 10px; font-weight: 900; text-transform: uppercase; }
+  .handoff-card--next div { display: flex; flex-direction: column; text-align: left; min-width: 0; }
+  .handoff-card--next div small { color: var(--rd-ink-faint); font-size: 10px; font-weight: 900; letter-spacing: .08em; }
+  .handoff-card--next div strong { font-family: var(--rd-display); font-size: clamp(18px, 2.4vw, 23px); line-height: 1.05; }
+  .handoff-go { color: var(--rd-accent-deep); font-size: 12px; font-weight: 900; white-space: nowrap; }
+  .handoff-go b { display: inline-block; font-size: 18px; margin-left: 3px; }
   .final-title {
     /* the biggest, most confident headline on the page */
     font-size: clamp(38px, 6.6vw, 76px);
@@ -90,6 +156,18 @@ import FlipBook from './FlipBook.astro';
   }
   .final-ctas .rd-btn-ghost:hover .arrow {
     transform: translateX(4px);
+  }
+  .final-ctas .rd-btn-primary {
+    transition: transform .28s var(--rd-ease-bounce), box-shadow .28s ease;
+  }
+  .final-ctas .rd-btn-primary:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 18px 34px -14px oklch(52% .2 2 / .55);
+  }
+  .final-ctas .rd-btn-primary:active {
+    transform: translateY(-1px) scale(.98);
+    box-shadow: 0 8px 18px -10px oklch(52% .2 2 / .5);
+    transition-duration: .12s;
   }
 
   /* ============ floating candy sparkles ============ */
@@ -147,6 +225,12 @@ import FlipBook from './FlipBook.astro';
   @media (max-width: 560px) {
     .final-ctas { width: 100%; gap: 10px; }
     .final-ctas .rd-btn { width: 100%; justify-content: center; }
+    .final-handoff { width: 92%; height: 190px; }
+    .handoff-card { width: 96%; padding: 16px; gap: 9px; }
+    .handoff-card--back { transform: translateX(-50%) translateY(-50px) rotate(-5deg) scale(.9); }
+    .handoff-card--mid { transform: translateX(-50%) translateY(-25px) rotate(4deg) scale(.95); }
+    .handoff-rank { display: none; }
+    .handoff-go { font-size: 11px; }
     /* pull the sparkles to the corners so they never crowd the copy */
     .fs-star-big { top: 4%; left: 2%; }
     .fs-star-sm { top: 6%; right: 4%; }
@@ -158,5 +242,45 @@ import FlipBook from './FlipBook.astro';
     .fs { animation: none; }
     .final-ctas .arrow { transition: none; }
     .final-ctas .rd-btn-ghost:hover .arrow { transform: none; }
+    .final-ctas .rd-btn-primary { transition: none; }
+    .final-ctas .rd-btn-primary:hover,
+    .final-ctas .rd-btn-primary:active { transform: none; }
   }
 </style>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { initMarketingMotion, reducedMotion, svgDraw, pointerTilt } from '../../../lib/marketing/motion';
+
+  initMarketingMotion();
+
+  // Both helpers already branch on reducedMotion internally.
+  svgDraw('[data-final-flourish]', { start: 'top 82%', duration: .8, ease: 'power2.out' });
+  pointerTilt('[data-tilt-card]', { max: 7, scale: 1 });
+
+  if (!reducedMotion) {
+    gsap.registerPlugin(ScrollTrigger);
+    const handoff = document.querySelector<HTMLElement>('[data-final-handoff]');
+    const back = document.querySelector<HTMLElement>('[data-handoff-card="back"]');
+    const mid = document.querySelector<HTMLElement>('[data-handoff-card="mid"]');
+    const next = document.querySelector<HTMLElement>('[data-handoff-card="next"]');
+    if (handoff && back && mid && next) {
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: handoff,
+          start: 'top 88%',
+          end: 'center 48%',
+          scrub: 0.55,
+        },
+      });
+      tl.from(back, { xPercent: -90, y: 80, rotation: -24, opacity: 0, duration: .8 }, 0)
+        .from(mid, { xPercent: 90, y: 90, rotation: 22, opacity: 0, duration: .8 }, .08)
+        .from(next, { y: 150, scale: .68, rotation: -7, opacity: 0, duration: .9, ease: 'back.out(1.6)' }, .16)
+        .to(back, { x: -190, y: -80, rotation: -16, opacity: .18, duration: .55 }, .88)
+        .to(mid, { x: 190, y: -58, rotation: 14, opacity: .22, duration: .55 }, .9)
+        .to(next, { y: -12, scale: 1.06, duration: .48, ease: 'power2.out' }, .94)
+        .to('.handoff-go b', { x: 7, repeat: 1, yoyo: true, duration: .16 }, 1.2);
+    }
+  }
+</script>
