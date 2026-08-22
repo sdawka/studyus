@@ -417,18 +417,32 @@
           '-=0.55'
         );
 
-      // --- ambient: gentle continuous float on each sticker (y + rotate) ---
+      // --- ambient: lively continuous float on each sticker (y + rotate),
+      // plus a twinkle (scale pulse) on the candy sparkles. Bigger amplitude
+      // than a typical "calm" float — the hero should feel alive. ---
       function startAmbient() {
         stickers.forEach((el, i) => {
           const rest = Number((el as HTMLElement).dataset.rot) || 0;
           gsap.to(el, {
-            y: gsap.utils.random(-13, -5),
-            rotate: rest + gsap.utils.random(-3.5, 3.5),
-            duration: gsap.utils.random(2.6, 4),
+            y: `+=${gsap.utils.random(-26, -12)}`,
+            rotate: rest + gsap.utils.random(-7, 7),
+            duration: gsap.utils.random(1.9, 3),
             ease: 'sine.inOut',
             yoyo: true,
             repeat: -1,
-            delay: i * 0.12,
+            delay: i * 0.09,
+          });
+        });
+        // Twinkle the sparkle shapes on their own cadence.
+        gsap.utils.toArray<HTMLElement>('.st-shape').forEach((el, i) => {
+          gsap.to(el, {
+            scale: gsap.utils.random(1.14, 1.26),
+            duration: gsap.utils.random(1, 1.6),
+            ease: 'sine.inOut',
+            yoyo: true,
+            repeat: -1,
+            delay: i * 0.2,
+            transformOrigin: '50% 50%',
           });
         });
       }

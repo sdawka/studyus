@@ -12,6 +12,7 @@
 // the page must be fully readable and usable with zero motion.
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { SplitText } from 'gsap/SplitText';
 import Lenis from 'lenis';
 
 export const reducedMotion =
@@ -28,7 +29,7 @@ export function initMarketingMotion(): void {
   if (started || typeof window === 'undefined') return;
   started = true;
 
-  gsap.registerPlugin(ScrollTrigger);
+  gsap.registerPlugin(ScrollTrigger, SplitText);
 
   if (reducedMotion) {
     // No smooth-scroll engine — native scrolling only. Sections skip their
@@ -50,7 +51,33 @@ export function initMarketingMotion(): void {
   gsap.ticker.add((time) => lenis?.raf(time * 1000));
   gsap.ticker.lagSmoothing(0);
 
+  initHeadingReveals();
   initReveals();
+}
+
+/**
+ * Every section heading (.rd-h2) reveals letter-by-letter with a snappy
+ * overshoot as it scrolls in — the biggest, cheapest way to make the whole
+ * page feel alive. Headings are excluded from the generic reveal below so they
+ * don't double-animate. Skipped under reduced motion (this whole module is).
+ */
+function initHeadingReveals(): void {
+  const heads = gsap.utils.toArray<HTMLElement>('.rd-h2');
+  for (const h of heads) {
+    // Keep the plain sentence for assistive tech; the split spans are decorative.
+    h.setAttribute('aria-label', h.textContent ?? '');
+    const split = new SplitText(h, { type: 'words,chars' });
+    gsap.from(split.chars, {
+      opacity: 0,
+      yPercent: 100,
+      rotate: 6,
+      transformOrigin: '50% 100%',
+      stagger: 0.013,
+      duration: 0.5,
+      ease: 'back.out(2.2)',
+      scrollTrigger: { trigger: h, start: 'top 86%', once: true },
+    });
+  }
 }
 
 /**
@@ -65,7 +92,9 @@ function initReveals(): void {
   const groups = gsap.utils.toArray<HTMLElement>('[data-reveal]');
   for (const group of groups) {
     const variant = group.getAttribute('data-reveal') || 'up';
-    const items = group.querySelectorAll<HTMLElement>('[data-reveal-item]');
+    const items = [...group.querySelectorAll<HTMLElement>('[data-reveal-item]')].filter(
+      (el) => !el.classList.contains('rd-h2'), // headings get the char reveal instead
+    );
     const targets = items.length ? items : [group];
 
     const from: gsap.TweenVars = {

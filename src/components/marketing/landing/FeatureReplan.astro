@@ -193,3 +193,46 @@ const missed = 2; // Wednesday — the sick day
     .feat-vignette:hover .week-card { transform: rotate(1.5deg); }
   }
 </style>
+
+<script>
+  // "The plan moves": the live task-chip glides from the sick-day slot to
+  // Friday's opening with an arced hop and a bounce landing, as the card scrolls
+  // in. Reduced motion skips it — the chip is server-rendered in its final slot.
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { initMarketingMotion, reducedMotion } from '../../../lib/marketing/motion';
+
+  initMarketingMotion();
+
+  if (!reducedMotion) {
+    gsap.registerPlugin(ScrollTrigger);
+    const track = document.querySelector<HTMLElement>('.chip-track');
+    const live = document.querySelector<HTMLElement>('.task-chip.live');
+    const arc = document.querySelector<SVGElement>('.move-arc');
+    if (track && live) {
+      // 2.5 columns of travel: ghost slot (2) -> live slot (4.5).
+      const delta = () => (track.offsetWidth / 7) * 2.5;
+      ScrollTrigger.create({
+        trigger: track,
+        start: 'top 84%',
+        once: true,
+        onEnter: () => {
+          if (arc) gsap.from(arc, { opacity: 0, duration: 0.45, ease: 'power1.out' });
+          gsap
+            .timeline()
+            .from(live, { x: -delta(), opacity: 0, scale: 0.85, duration: 0.9, ease: 'power2.inOut' })
+            .to(
+              live,
+              {
+                keyframes: [
+                  { y: -30, duration: 0.45, ease: 'power2.out' },
+                  { y: 0, duration: 0.45, ease: 'bounce.out' },
+                ],
+              },
+              0,
+            );
+        },
+      });
+    }
+  }
+</script>
