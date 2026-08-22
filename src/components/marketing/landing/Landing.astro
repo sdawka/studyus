@@ -1,6 +1,16 @@
 ---
-// Landing page content — owned by the landing track.
-import Hero from './Hero.astro';
+// Landing page content.
+// PHASE 1 REDESIGN: the new premium-playful hero + the "planner assembles"
+// signature scroll section live inside the `.rd` pastel canvas at the top. The
+// sections below are the previous design, kept until Phase 2 — expect a visible
+// style seam between PlannerAssemble and ProblemBeat for now.
+import '@fontsource-variable/fraunces';
+import '@fontsource-variable/nunito';
+import '../../../styles/marketing-rd.css';
+
+import HeroRD from './HeroRD.astro';
+import PlannerAssemble from './PlannerAssemble.astro';
+
 import ProblemBeat from './ProblemBeat.astro';
 import FeatureNext from './FeatureNext.astro';
 import FeatureReplan from './FeatureReplan.astro';
@@ -9,7 +19,13 @@ import EvidenceStrip from './EvidenceStrip.astro';
 import CompareTeaser from './CompareTeaser.astro';
 import FinalCta from './FinalCta.astro';
 ---
-<Hero />
+
+<div class="rd rd-grain">
+  <HeroRD />
+  <PlannerAssemble />
+</div>
+
+<!-- Phase 2 will restyle everything below into the same system. -->
 <ProblemBeat />
 <FeatureNext />
 <FeatureReplan />
@@ -17,3 +33,11 @@ import FinalCta from './FinalCta.astro';
 <EvidenceStrip />
 <CompareTeaser />
 <FinalCta />
+
+<script>
+  // Start the shared smooth-scroll / ScrollTrigger engine once for the page.
+  // Section scripts also call this (idempotent); calling here guarantees Lenis
+  // is running even before a section's own trigger registers.
+  import { initMarketingMotion } from '../../../lib/marketing/motion';
+  initMarketingMotion();
+</script>
