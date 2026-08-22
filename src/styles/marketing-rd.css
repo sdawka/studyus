@@ -209,6 +209,18 @@
   border-radius: var(--rd-r-sm);
 }
 
+@media (max-width: 560px) {
+  :root {
+    /* Mobile needs a visible frame around the large frosted surfaces. The old
+       20px floor made cards technically fit but visually hug the glass edge. */
+    --rd-pad-x: clamp(22px, 6.5vw, 28px);
+  }
+
+  .rd-card {
+    padding: 22px;
+  }
+}
+
 /* Motion safety: when the user asks for less motion, kill decorative transforms.
    JS also branches on this (see src/lib/marketing/motion.ts) — the sections must
    render a clean, complete static layout with no pin/scrub. */
@@ -216,4 +228,26 @@
   .rd-btn { transition: none; }
   .rd-btn-primary:hover,
   .rd-btn-ghost:hover { transform: none; }
+}
+
+/* ---- shared motion utilities (src/lib/marketing/motion.ts helpers) ---- */
+
+/* Mark an element as pointer/scroll driven so the browser can promote it to
+   its own layer ahead of time instead of on first transform. Put on elements
+   passed to `pointerParallax`/`pointerTilt`, or any custom scrubbed target. */
+.rd-interactive {
+  will-change: transform;
+}
+
+/* Container for `pointerTilt` targets — gives the tilted children a 3D
+   vanishing point. Put on the grid/wrapper around the cards, not the cards
+   themselves (they get `transform-style: preserve-3d` set by the helper). */
+.rd-tilt {
+  perspective: 900px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rd-interactive {
+    will-change: auto;
+  }
 }
