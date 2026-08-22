@@ -563,7 +563,9 @@
   .timer-card { align-items: center; text-align: center; }
   .context { color: var(--muted); font-size: 0.9rem; margin: 0; }
   .timer { font-size: 3rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .branch-group h3 { font-size: 0.85rem; color: var(--muted); margin: 0.6rem 0 0.4rem 0; }
+  /* Dense, repeated (one per branch in the wrap-up checklist) — sans
+     escape hatch. */
+  .branch-group h3 { font-size: 0.85rem; color: var(--muted); margin: 0.6rem 0 0.4rem 0; font-family: var(--font-title, var(--font-display)); }
   .kc-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.25rem 0; }
   .kc-check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
   .kc-row select { padding: 0.3rem 0.5rem; border-radius: 6px; border: 1px solid var(--border); font-size: 0.8rem; }

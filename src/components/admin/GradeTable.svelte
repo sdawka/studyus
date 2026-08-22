@@ -137,7 +137,9 @@
     align-items: baseline;
     margin-bottom: 0.25rem;
   }
-  .course-header h2 { margin: 0; font-size: 1.05rem; }
+  /* Dense, repeated (one table per enrolled course on /grades) — sans
+     escape hatch. */
+  .course-header h2 { margin: 0; font-size: 1.05rem; font-family: var(--font-title, var(--font-display)); }
   .standing { font-weight: 700; }
   .reminder { color: var(--muted); font-size: 0.82rem; margin: 0 0 1rem 0; }
   .muted { color: var(--muted); font-size: 0.9rem; }

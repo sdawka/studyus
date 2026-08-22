@@ -120,6 +120,10 @@ function statusSummary(courseId: string): string {
     letter-spacing: 0.04em;
     color: var(--muted);
     margin: 0 0 0.9rem 0;
+    /* Uppercase tracked divider label, repeated once per term — same
+       shape as the app's .kicker convention, so it takes the same sans
+       escape hatch instead of the page's serif --font-display. */
+    font-family: var(--font-title, var(--font-display));
   }
   .grid {
     display: grid;
@@ -157,7 +161,10 @@ function statusSummary(courseId: string): string {
     color: var(--muted);
   }
   .code { font-weight: 600; color: var(--text); }
-  .title { margin: 0.25rem 0 0.15rem 0; font-size: 1.05rem; }
+  /* Dense, repeated (one per course in the grid) — sans escape hatch,
+     same as .card-title elsewhere; raw --font-display would go serif
+     here since this h3 has no .card-title class. */
+  .title { margin: 0.25rem 0 0.15rem 0; font-size: 1.05rem; font-family: var(--font-title, var(--font-display)); }
   .instructor { margin: 0 0 0.75rem 0; font-size: 0.85rem; color: var(--muted); }
   .kc-summary { margin: 0.5rem 0 0 0; font-size: 0.78rem; color: var(--muted); }
 

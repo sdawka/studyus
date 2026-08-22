@@ -188,6 +188,9 @@
     font-size: 1rem;
     font-weight: 600;
     line-height: 1.35;
+    /* Dense, repeated (one per resource in the feed/course grid) — explicit
+       sans so it can never inherit the page's serif --font-display. */
+    font-family: var(--font-title, var(--font-body));
   }
 
   .resource-card:hover .resource-link {

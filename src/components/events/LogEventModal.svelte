@@ -339,6 +339,9 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--muted);
+    /* Uppercase tracked kicker-style label, repeated per event-type
+       group — sans escape hatch. */
+    font-family: var(--font-title, var(--font-display));
   }
   .type-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .type-btn {
