@@ -212,6 +212,7 @@ function monogram(code: string): string {
     font-weight: 510;
     width: 100%;
     text-align: left;
+    transition: background var(--motion-fast) var(--ease);
   }
   .nav-item:hover { background: var(--sidebar-active-bg); }
   .nav-item.active {
@@ -234,6 +235,7 @@ function monogram(code: string): string {
     border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--sidebar-text);
+    transition: background var(--motion-fast) var(--ease);
   }
   .course-item:hover { background: var(--sidebar-active-bg); }
   .course-item .rail {
@@ -255,7 +257,12 @@ function monogram(code: string): string {
     border-radius: 7px;
     background: var(--course-soft);
     color: var(--course-ink);
-    font: 700 10.5px/1 var(--font-display);
+    /* Dense, repeated, tiny (one per course in the list) — use the sans
+       escape hatch (.card-title's --font-title) instead of raw
+       --font-display so 2-letter initials stay crisp at 10.5px rather than
+       going serif-mushy; single-instance display marks nearby (.brand,
+       .brand-mark) intentionally keep --font-display. */
+    font: 700 10.5px/1 var(--font-title, var(--font-display));
     align-items: center;
     justify-content: center;
   }
