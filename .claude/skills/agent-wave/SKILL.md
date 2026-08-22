@@ -75,5 +75,15 @@ How this repo runs multi-agent implementation waves (used for v1 M0–M5 and v1.
 - **Content validation is a different gate than structural validation** — Zod caught slugs/shapes; only the Haiku recompute-the-answers pass caught the answer-position bias, and only a human-eye spot-check of a live page caught mid-walk event residue. Sample-validate content with agents that actually recompute, and screenshot with your own eyes after any live walk.
 - **Seed-time Zod as the merge gate works**: strict schema + validate-or-abort seed caught tolerance_pct edge cases and non-kebab slugs across 9 independently-authored files with zero silent corruption.
 
+## Lessons from the landing polish wave (2026-08-22)
+
+- **Phantom task_assignment pings hit every agent this wave (6/6)** — treat as a standing board defect: agents flag-not-redo (all did), orchestrator sends a one-line "known glitch, work accepted (commit sha)" ack so they stand down instead of waiting.
+- **"Your FINAL action MUST be SendMessage to main" is now 3 waves clean** — 8/8 agents (Sonnet and Haiku) delivered final reports unprompted. Keep it as the literal last sentence of every prompt.
+- **The auto-mode classifier blocks `wrangler d1 migrations apply` even for the orchestrator** (both local and via npm script), while `wrangler deploy` is allowed. Don't launder it through an agent or a raw-sqlite workaround — surface a `! npm run db:migrate:local` one-liner to the user and verify around the blocked routes (pages that don't hit the failing query still validate a theme).
+- **Session-start gitStatus "(clean)" can be stale**: two uncommitted files (Landing.astro composition + index.astro meta) surfaced only in `git status` at commit time, and HEAD would not even have built after the dead-component sweep without them. Run `git status` yourself before the first wave commit, and attribute any unexpected diff before sweeping "dead" files it may reference.
+- **Serializing builds through the orchestrator works**: parallel agents run only `npx tsc --noEmit` (cache-free); the orchestrator builds once per accepted track. But the orchestrator must also honor the no-build-while-dev-lives rule — one slip here required a daemon stop + full cache clear.
+- **Landing/marketing capture recipe**: pinned/scrubbed scenes need scroll-stepped viewport shots (scrollBy ~0.85·viewport, settle ~700ms), not fullPage; pair with reduced-motion fullPage shots as the completeness check, plus a `scrollWidth - innerWidth` overflow probe per width.
+- **A blanket `h1..h6 { font-family: var(--font-display) }` (base.css:29) makes any theme-level display-font change page-wide** — the audit signature for "which headings must opt back out to sans" is h-tags rendered inside a loop (`#each` / `.map()`), not visual guessing.
+
 ## TODO
 - Consider worktree isolation per agent if track ownership ever must overlap.
