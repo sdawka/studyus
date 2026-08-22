@@ -55,23 +55,34 @@ export function initMarketingMotion(): void {
 
 /**
  * Shared scroll entrance for the whole landing. Any element with `data-reveal`
- * rises + fades in as it enters the viewport; children marked `data-reveal-item`
- * stagger. Grouped by their nearest `data-reveal` container so each section
- * animates independently. No-ops under reduced motion (elements stay visible).
+ * animates in as it enters the viewport; children marked `data-reveal-item`
+ * stagger. The attribute value picks a SNAPPY variant for per-section variety:
+ *   ""/"up" → rise, "left"/"right" → slide in, "scale" → pop, "rotate" → tilt-in.
+ * Grouped by nearest `data-reveal` container so each section fires
+ * independently. No-ops under reduced motion (elements stay visible).
  */
 function initReveals(): void {
   const groups = gsap.utils.toArray<HTMLElement>('[data-reveal]');
   for (const group of groups) {
+    const variant = group.getAttribute('data-reveal') || 'up';
     const items = group.querySelectorAll<HTMLElement>('[data-reveal-item]');
     const targets = items.length ? items : [group];
-    gsap.from(targets, {
+
+    const from: gsap.TweenVars = {
       opacity: 0,
-      y: 34,
-      duration: 0.7,
-      ease: 'power3.out',
-      stagger: items.length ? 0.09 : 0,
-      scrollTrigger: { trigger: group, start: 'top 82%', once: true },
-    });
+      duration: 0.62,
+      // Snappy overshoot — punchier than a plain ease-out.
+      ease: 'back.out(1.5)',
+      stagger: items.length ? 0.085 : 0,
+      scrollTrigger: { trigger: group, start: 'top 84%', once: true },
+    };
+    if (variant === 'left') from.x = -56;
+    else if (variant === 'right') from.x = 56;
+    else if (variant === 'scale') Object.assign(from, { scale: 0.88, y: 18 });
+    else if (variant === 'rotate') Object.assign(from, { y: 40, rotate: -4, transformOrigin: '50% 100%' });
+    else from.y = 46;
+
+    gsap.from(targets, from);
   }
 }
 

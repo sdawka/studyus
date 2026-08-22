@@ -1,0 +1,170 @@
+---
+// Landing REDESIGN — a little flip-book motif for the closing CTA. An open
+// pastel book whose right-hand pages turn continuously (CSS 3D), each leaf
+// glimpsing a word of "open the right thing next", settling on a done page.
+// Pure CSS + SVG, aria-hidden, prefers-reduced-motion safe (pages rest open).
+const leaves = ['open', 'the', 'right', 'thing'];
+---
+<div class="flipbook" aria-hidden="true">
+  <div class="fb-book">
+    <!-- left page: a tiny ranked to-do, the product in miniature -->
+    <div class="fb-page fb-left">
+      <span class="fb-line fb-line-title"></span>
+      <span class="fb-row"><span class="fb-dot"></span><span class="fb-line"></span></span>
+      <span class="fb-row"><span class="fb-dot fb-dot-2"></span><span class="fb-line fb-short"></span></span>
+      <span class="fb-row"><span class="fb-dot fb-dot-3"></span><span class="fb-line"></span></span>
+    </div>
+
+    <!-- right page revealed under the turning leaves: the "done / next" state -->
+    <div class="fb-page fb-right fb-rest">
+      <span class="fb-check">
+        <svg viewBox="0 0 24 24" width="26" height="26"><path d="M4 12.5l5 5L20 6" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="fb-next">next.</span>
+    </div>
+
+    <!-- turning leaves (stacked on the right half, hinged at the spine) -->
+    <div class="fb-leaves">
+      {leaves.map((w, i) => (
+        <div class="fb-leaf" style={`--i: ${i}; --n: ${leaves.length}`}>
+          <span class="fb-leaf-word">{w}</span>
+        </div>
+      ))}
+    </div>
+
+    <span class="fb-spine"></span>
+  </div>
+</div>
+
+<style>
+  .flipbook { display: grid; place-items: center; }
+  .fb-book {
+    position: relative;
+    width: clamp(200px, 26vw, 268px);
+    aspect-ratio: 8 / 5.4;
+    perspective: 1700px;
+    filter: drop-shadow(0 22px 34px oklch(40% 0.1 305 / 0.28));
+  }
+
+  /* the two open pages */
+  .fb-page {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 50%;
+    background: oklch(99.4% 0.006 90);
+    box-sizing: border-box;
+    padding: 14px 15px;
+    overflow: hidden;
+  }
+  .fb-left {
+    left: 0;
+    border-radius: 12px 3px 3px 12px;
+    box-shadow: inset -12px 0 18px -14px oklch(40% 0.06 305 / 0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .fb-right {
+    right: 0;
+    border-radius: 3px 12px 12px 3px;
+    box-shadow: inset 12px 0 18px -14px oklch(40% 0.06 305 / 0.4);
+  }
+
+  /* left-page mini to-do */
+  .fb-line {
+    display: block;
+    height: 7px;
+    width: 100%;
+    border-radius: 999px;
+    background: oklch(52% 0.06 305 / 0.16);
+  }
+  .fb-line-title { width: 58%; height: 9px; background: oklch(52% 0.08 305 / 0.32); }
+  .fb-row { display: flex; align-items: center; gap: 8px; }
+  .fb-row .fb-line { flex: 1; width: auto; }
+  .fb-short { flex: 0 0 52%; }
+  .fb-dot { width: 12px; height: 12px; border-radius: 999px; background: var(--rd-accent); flex: none; }
+  .fb-dot-2 { background: var(--rd-grape); }
+  .fb-dot-3 { background: var(--rd-tangerine); }
+
+  /* right rest page — the resolved "next ✓" */
+  .fb-rest {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .fb-check {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: var(--rd-spring);
+    color: oklch(30% 0.09 155);
+  }
+  .fb-next {
+    font-family: var(--rd-display);
+    font-style: italic;
+    font-weight: 600;
+    font-size: 22px;
+    color: var(--rd-accent);
+  }
+
+  /* the turning leaves */
+  .fb-leaves {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 50%;
+    height: 100%;
+    transform-style: preserve-3d;
+  }
+  .fb-leaf {
+    position: absolute;
+    inset: 0;
+    transform-origin: left center;
+    backface-visibility: hidden;
+    background: oklch(99.4% 0.006 90);
+    border-radius: 3px 12px 12px 3px;
+    box-shadow: -1px 0 10px -3px oklch(40% 0.06 305 / 0.35);
+    display: grid;
+    place-items: center;
+    /* 4 leaves, each takes the full cycle; staggered by delay so one is always
+       mid-turn -> continuous forward page-flipping. */
+    animation: fb-turn calc(var(--n) * 1.15s) cubic-bezier(0.62, 0.02, 0.4, 1) infinite;
+    animation-delay: calc(var(--i) * -1.15s);
+  }
+  .fb-leaf-word {
+    font-family: var(--rd-display);
+    font-style: italic;
+    font-weight: 600;
+    font-size: clamp(16px, 2vw, 21px);
+    color: var(--rd-ink-soft);
+  }
+
+  @keyframes fb-turn {
+    0% { transform: rotateY(0deg); opacity: 1; }
+    22% { transform: rotateY(-172deg); opacity: 1; }
+    23% { opacity: 0; }
+    100% { transform: rotateY(-172deg); opacity: 0; }
+  }
+
+  .fb-spine {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    transform: translateX(-50%);
+    background: linear-gradient(var(--rd-accent), var(--rd-grape));
+    border-radius: 2px;
+    z-index: 5;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* rest open: hide the turning leaves, show the resolved right page */
+    .fb-leaves { display: none; }
+  }
+</style>

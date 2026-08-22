@@ -455,7 +455,10 @@
           trigger: root,
           start: 'top top',
           end: 'bottom top',
-          scrub: true,
+          // Smoothed scrub (not `true`): with Lenis, an unsmoothed scrub
+          // micro-corrects every frame and reads as a faint vibration. A small
+          // catch-up value eases toward the scroll position and kills it.
+          scrub: 0.5,
         },
       });
     }
