@@ -1,5 +1,7 @@
 ---
 import '../styles/tokens.css';
+import '../styles/fonts/compass.css';
+import '../styles/fonts/campus.css';
 import '../styles/themes/compass.css';
 import '../styles/themes/focus.css';
 import '../styles/themes/campus.css';
@@ -24,38 +26,108 @@ if (Astro.locals.user) {
     <meta name="theme-color" content="#f6f9fb" media="(prefers-color-scheme: light)" id="theme-color-light" />
     <meta name="theme-color" content="#0b0e10" media="(prefers-color-scheme: dark)" id="theme-color-dark" />
     <style>
+      /* Fixed, viewport-anchored wash — same "soft mesh over calm ground"
+         idea as the marketing redesign's pastel canvas (marketing-rd.css),
+         hand-rolled here (not imported) so it resolves through light-dark()
+         and stays cheap: three radial blooms, no grain, no blur layer. */
+      .wash {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background:
+          radial-gradient(46% 42% at 12% 8%, light-dark(oklch(93% 0.05 350 / 0.6), oklch(38% 0.07 350 / 0.32)) 0%, transparent 62%),
+          radial-gradient(42% 38% at 90% 14%, light-dark(oklch(94% 0.045 235 / 0.55), oklch(32% 0.05 235 / 0.26)) 0%, transparent 60%),
+          radial-gradient(50% 44% at 50% 100%, light-dark(oklch(95% 0.05 165 / 0.45), oklch(28% 0.045 165 / 0.2)) 0%, transparent 62%),
+          var(--bg);
+      }
+
       body {
         margin: 0;
         min-height: 100vh;
-        min-height: 100dvh; /* two-line fallback: dvh wins where supported */
+        min-height: 100dvh;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 1.5rem;
-        padding: 0 1rem;
+        gap: clamp(20px, 5vh, 36px);
+        padding: 2.5rem 1rem;
       }
-      .wordmark {
+
+      .brand {
         display: flex;
-        align-items: baseline;
-        gap: 0.5rem;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        text-align: center;
       }
-      .wordmark .mark { font-weight: 600; font-size: 1.5rem; }
-      .wordmark .tag { font-size: 0.85rem; color: var(--muted); font-style: italic; }
+      .brand-mark {
+        font-family: var(--font-title, var(--font-display));
+        font-weight: var(--weight-bold);
+        font-size: 1.3rem;
+        letter-spacing: -0.01em;
+        color: var(--text);
+      }
+      .brand-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-family: var(--font-display);
+        font-style: italic;
+        font-size: 0.92rem;
+        color: var(--muted);
+      }
+      .brand-tag::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+        flex-shrink: 0;
+      }
+
       .card {
         background: var(--surface);
         border: 1px solid var(--hairline);
-        border-radius: 3px;
-        padding: clamp(1.25rem, 6vw, 2.5rem);
-        min-width: min(320px, calc(100vw - 2rem));
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-card);
+        padding: clamp(26px, 6vw, 40px) clamp(24px, 6vw, 38px) clamp(30px, 6vw, 38px);
+        width: min(388px, calc(100vw - 2rem));
+        /* Same once-per-navigation entrance as AppShell's <main>, so the
+           handoff from the landing (which uses gsap page-load timelines)
+           doesn't feel like it fell into a static page. */
+        animation: card-enter 420ms var(--ease) both;
       }
-      h1 { margin-top: 0; font-size: 1.2rem; }
+      h1 {
+        margin: 0 0 6px;
+        font-size: 1.7rem;
+        letter-spacing: -0.015em;
+      }
+      .sub {
+        margin: 0 0 1.6rem;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      @keyframes card-enter {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .card { animation: none; }
+      }
     </style>
   </head>
   <body>
-    <div class="wordmark"><span class="mark">studyus</span><span class="tag">a notebook for the semester</span></div>
+    <div class="wash" aria-hidden="true"></div>
+    <div class="brand">
+      <span class="brand-mark">studyus</span>
+      <span class="brand-tag">know what to study next</span>
+    </div>
     <div class="card">
-      <h1>Sign in</h1>
+      <h1>Welcome back</h1>
+      <p class="sub">Sign in to pick up where you left off.</p>
       <LoginForm client:load />
     </div>
   </body>

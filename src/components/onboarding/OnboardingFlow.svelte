@@ -62,8 +62,9 @@
     </div>
     <button type="button" class="skip" disabled={saving} onclick={() => finish()}>Skip setup</button>
   </div>
+  <div class="bar" aria-hidden="true"><span style={`width:${(step / STEPS.length) * 100}%`}></span></div>
 
-  {#if saveError}<p class="error">{saveError}</p>{/if}
+  {#if saveError}<p class="error" role="alert">{saveError}</p>{/if}
 
   {#if step === 1}
     <div class="card panel">
@@ -155,7 +156,7 @@
 
 <style>
   .onboarding { max-width: 680px; }
-  .top-row { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+  .top-row { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 0.7rem; }
   .steps { display: flex; gap: 0; flex: 1; }
   .step {
     flex: 1;
@@ -163,12 +164,13 @@
     font-size: 0.72rem;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--muted);
+    color: var(--faint);
     padding-bottom: 0.5rem;
-    border-bottom: 2px solid var(--hairline);
+    transition: color var(--motion-base) var(--ease);
   }
-  .step.active { color: var(--accent); border-color: var(--accent); font-weight: 600; }
-  .step.done { color: var(--good); border-color: var(--good); }
+  .step.active { color: var(--accent-ink); font-weight: var(--weight-semi); }
+  .step.done { color: var(--muted); }
+  .bar { margin-bottom: 1.5rem; }
   .skip {
     background: none;
     border: none;
@@ -180,7 +182,9 @@
     text-decoration: underline;
     padding: 0;
     white-space: nowrap;
+    transition: color var(--motion-base) var(--ease);
   }
+  .skip:hover:not(:disabled) { color: var(--accent-ink); }
   .skip:disabled { opacity: 0.5; cursor: default; }
 
   /* main content-box ≤ 720px (STACK): the 4-label step strip has no room
@@ -191,8 +195,15 @@
     .step { min-width: 0; }
   }
 
-  .panel { min-height: 300px; }
-  h2 { font-size: 1.15rem; margin: 0 0 0.3rem; }
+  .panel {
+    min-height: 300px;
+    animation: panel-enter 320ms var(--ease) both;
+  }
+  @keyframes panel-enter {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  h2 { font-size: 1.2rem; letter-spacing: -0.01em; margin: 0 0 0.3rem; }
   .num { color: var(--muted); font-weight: 400; font-size: 0.8rem; margin-left: 0.4rem; }
   .stepdesc { color: var(--muted); font-size: 0.9rem; margin: 0 0 1.25rem; }
 
@@ -213,7 +224,7 @@
     padding: 0.75rem 0.9rem;
     background: var(--bg);
     border: 1px dashed var(--hairline);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     opacity: 0.85;
   }
   .cs-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--hairline); margin-top: 0.4rem; flex-shrink: 0; }
@@ -244,34 +255,56 @@
   .term { font-size: 0.78rem; color: var(--muted); }
   .placeholder { color: var(--muted); font-size: 0.9rem; }
 
-  .field { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.88rem; margin-bottom: 1rem; max-width: 360px; }
+  .field { display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.85rem; font-weight: var(--weight-semi); color: var(--muted); margin-bottom: 1.1rem; max-width: 360px; }
   .field input {
-    font-family: var(--font-display);
+    font-family: var(--font-body);
     font-size: 0.95rem;
-    padding: 0.55rem 0.7rem;
-    border: 1px solid var(--hairline);
-    border-radius: 3px;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
     background: var(--bg);
     color: var(--text);
+    transition: border-color var(--motion-base) var(--ease), box-shadow var(--motion-base) var(--ease);
   }
-  .field input:focus { outline: 1px solid var(--accent); }
+  .field input::placeholder { color: var(--faint); }
+  .field input:hover { border-color: var(--muted); }
+  .field input:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
   /* Rendered above the step panel (not inside it) so it shows regardless of
      which step Skip/Finish was pressed from, not just step 4. */
-  .error { color: var(--danger); font-size: 0.85rem; margin: 0 0 0.9rem; }
+  .error {
+    color: var(--danger-ink);
+    background: var(--danger-soft);
+    border-radius: var(--radius-sm);
+    padding: 0.55rem 0.75rem;
+    font-size: 0.85rem;
+    margin: 0 0 0.9rem;
+  }
 
   .nav-row { display: flex; justify-content: space-between; margin-top: 1.5rem; }
   .ink-btn {
-    font-family: var(--font-display);
+    font-family: var(--font-title, var(--font-display));
     font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--surface);
+    font-weight: var(--weight-semi);
+    color: var(--accent-contrast, var(--surface));
     background: var(--accent);
     border: none;
-    border-radius: 3px;
-    padding: 0.6rem 1.3rem;
+    border-radius: var(--radius-sm);
+    padding: 0.65rem 1.4rem;
     cursor: pointer;
+    box-shadow: var(--accent-glow, none);
+    transition: transform var(--motion-fast) var(--ease-bounce, var(--ease)), filter var(--motion-base) var(--ease);
   }
-  .ink-btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
-  .ink-btn:disabled { opacity: 0.5; cursor: default; }
-  .ink-btn:hover:not(:disabled) { opacity: 0.88; }
+  .ink-btn.ghost { background: transparent; color: var(--accent-ink); border: 1px solid var(--border); box-shadow: none; }
+  .ink-btn.ghost:hover:not(:disabled) { border-color: var(--accent); transform: none; }
+  .ink-btn:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
+  .ink-btn:hover:not(:disabled) { filter: brightness(0.96); transform: translateY(-1px); }
+  .ink-btn:active:not(:disabled) { transform: translateY(1px); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .panel { animation: none; }
+  }
 </style>
