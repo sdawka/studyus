@@ -1,7 +1,8 @@
 ---
-import '@fontsource-variable/space-grotesk';
-import '@fontsource-variable/inter';
+import '@fontsource-variable/fraunces';
+import '@fontsource-variable/nunito';
 import '../styles/marketing.css';
+import '../styles/marketing-rd.css';
 
 interface Props {
   title: string;
@@ -76,9 +77,9 @@ const isCompare = Astro.url.pathname.startsWith('/compare');
         position: sticky;
         top: 0;
         z-index: 50;
-        background: color-mix(in oklch, var(--mk-bg) 82%, transparent);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        background: color-mix(in oklch, var(--mk-bg) 88%, transparent);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
         border-bottom: 1px solid var(--mk-hairline);
       }
       .mk-nav-inner {
@@ -90,7 +91,7 @@ const isCompare = Astro.url.pathname.startsWith('/compare');
       .mk-wordmark {
         font-family: var(--mk-font-display);
         font-weight: 640;
-        font-size: 19px;
+        font-size: 21px;
         letter-spacing: -0.02em;
         text-decoration: none;
       }
@@ -105,6 +106,7 @@ const isCompare = Astro.url.pathname.startsWith('/compare');
       }
       .mk-nav-links a:not(.mk-btn) {
         font-size: 15px;
+        font-weight: 700;
         color: var(--mk-muted);
         text-decoration: none;
         transition: color 150ms;
@@ -116,6 +118,9 @@ const isCompare = Astro.url.pathname.startsWith('/compare');
       .mk-nav-cta { padding: 9px 18px; font-size: 14px; }
 
       .mk-footer {
+        position: relative;
+        z-index: 2;
+        background: var(--mk-surface);
         border-top: 1px solid var(--mk-hairline);
         padding-block: 40px;
         margin-top: 96px;
@@ -133,6 +138,7 @@ const isCompare = Astro.url.pathname.startsWith('/compare');
       .mk-footer-links a {
         color: var(--mk-muted);
         font-size: 14px;
+        font-weight: 700;
         text-decoration: none;
       }
       .mk-footer-links a:hover { color: var(--mk-ink); }
