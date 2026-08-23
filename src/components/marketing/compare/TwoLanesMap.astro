@@ -1,96 +1,110 @@
 ---
 // Signature element: two families of study app converge on the one
-// question neither answers. This is the argument of the whole page,
-// drawn once so the field-guide entries below have somewhere to land.
+// question neither answers. This is the argument of the whole page, drawn
+// once as a scroll-drawn scene so the field-guide entries below have
+// somewhere to land. The two lane paths draw in first, then the bridge
+// flourish draws under the studyus node a beat later — sequenced by
+// scroll position rather than a manual timeline.
 const whenApps = ['MyStudyLife', 'Shovel', 'Todoist', 'Motion', 'Notion'];
 const howApps = ['Anki', 'Quizlet'];
 ---
-<section id="map" class="map mk-container">
-  <p class="map-eyebrow reveal">The map</p>
-  <h2 class="map-title reveal">Two families of app. One question neither one answers.</h2>
+<section id="map" class="map rd-section">
+  <div class="rd-container">
+    <p class="rd-kicker" data-reveal><span class="kdot"></span>The map</p>
+    <h2 class="map-title rd-h2">Two families of app. One question neither one answers.</h2>
 
-  <div class="map-diagram">
-    <div class="map-lane map-lane-when reveal reveal-left">
-      <p class="map-lane-label">Answers <strong>when</strong></p>
-      <ul class="map-lane-list">
-        {whenApps.map((name) => <li>{name}</li>)}
-      </ul>
-    </div>
+    <div class="map-diagram">
+      <div class="map-lane map-lane-when rd-card" data-reveal="left">
+        <p class="map-lane-label">Answers <strong>when</strong></p>
+        <ul class="map-lane-list">
+          {whenApps.map((name) => <li>{name}</li>)}
+        </ul>
+      </div>
 
-    <div class="map-lane map-lane-how reveal reveal-left" style="--reveal-delay: 100ms;">
-      <p class="map-lane-label">Answers <strong>how</strong></p>
-      <ul class="map-lane-list">
-        {howApps.map((name) => <li>{name}</li>)}
-      </ul>
-    </div>
+      <div class="map-lane map-lane-how rd-card" data-reveal="right">
+        <p class="map-lane-label">Answers <strong>how</strong></p>
+        <ul class="map-lane-list">
+          {howApps.map((name) => <li>{name}</li>)}
+        </ul>
+      </div>
 
-    <div class="map-connector" aria-hidden="true">
-      <div class="map-connector-line map-connector-line-top"></div>
-      <div class="map-connector-line map-connector-line-bottom"></div>
-    </div>
+      <div class="map-connector" aria-hidden="true" data-map-connector>
+        <svg class="map-connector-svg" viewBox="0 0 1000 120" preserveAspectRatio="none" role="presentation">
+          <defs>
+            <linearGradient id="map-when-grad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="var(--rd-grape)" />
+              <stop offset="1" stop-color="var(--rd-accent)" />
+            </linearGradient>
+            <linearGradient id="map-how-grad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="var(--rd-spring)" />
+              <stop offset="1" stop-color="var(--rd-accent)" />
+            </linearGradient>
+          </defs>
+          <path class="map-connector-path" data-connector-path d="M130,4 C130,56 380,78 496,112" stroke="url(#map-when-grad)" />
+          <path class="map-connector-path" data-connector-path d="M870,4 C870,56 620,78 504,112" stroke="url(#map-how-grad)" />
+        </svg>
+      </div>
 
-    <div class="map-node reveal reveal-scale" style="--reveal-delay: 180ms;">
-      <p class="map-node-label">Answers <strong>what's next</strong></p>
-      <p class="map-node-name">studyus</p>
-      <p class="map-node-copy">
-        Course-scoped planning, weighted deadlines, and spaced-retrieval
-        practice, reading each other instead of living in separate apps.
-      </p>
+      <div class="map-node-wrap rd-tilt" data-reveal="scale">
+        <div class="map-node rd-card rd-interactive" data-tilt-card>
+          <p class="map-node-label">Answers <strong>what's next</strong></p>
+          <p class="map-node-name">
+            studyus
+            <svg class="map-node-underline" viewBox="0 0 220 18" width="220" height="18" aria-hidden="true">
+              <path data-node-underline d="M3 12C34 3 66 3 98 10C130 17 162 4 217 8" />
+            </svg>
+          </p>
+          <p class="map-node-copy">
+            One system where your deadlines, your weak spots, and your flashcards
+            actually talk to each other — instead of three tabs pretending to be a plan.
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
 <style>
   .map {
-    padding-block: clamp(56px, 9vw, 96px);
+    padding-block: clamp(56px, 9vw, 100px);
   }
 
-  .map-eyebrow {
-    font-family: var(--mk-font-mono);
-    font-size: 12.5px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--mk-faint);
-    margin-bottom: 14px;
+  .kdot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--rd-accent);
+    box-shadow: 0 0 0 4px oklch(65% 0.2 2 / 0.16);
   }
 
   .map-title {
-    font-size: clamp(24px, 3.4vw, 36px);
-    max-width: 22ch;
+    margin-top: 16px;
     margin-bottom: 48px;
+    max-width: 22ch;
   }
 
   .map-diagram {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    column-gap: 0;
+    column-gap: clamp(16px, 3vw, 32px);
   }
 
   .map-lane {
-    padding: 22px 28px;
-    border: 1px solid var(--mk-border);
-    background: var(--mk-surface);
-  }
-
-  .map-lane-when {
-    border-radius: var(--mk-radius-lg) 0 0 0;
-    border-right: none;
-  }
-
-  .map-lane-how {
-    border-radius: 0 var(--mk-radius-lg) 0 0;
+    padding: 24px 26px;
   }
 
   .map-lane-label {
-    font-family: var(--mk-font-mono);
-    font-size: 13px;
-    color: var(--mk-muted);
-    margin-bottom: 14px;
+    font-family: var(--rd-body);
+    font-weight: 800;
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
+    color: var(--rd-ink-soft);
+    margin-bottom: 16px;
   }
 
   .map-lane-label strong {
-    color: var(--mk-ink);
-    font-weight: 600;
+    color: var(--rd-ink);
+    font-weight: 900;
   }
 
   .map-lane-list {
@@ -101,89 +115,99 @@ const howApps = ['Anki', 'Quizlet'];
   }
 
   .map-lane-list li {
-    font-size: 14.5px;
-    padding: 6px 13px;
-    border: 1px solid var(--mk-border);
-    border-radius: 999px;
-    background: var(--mk-bg);
-    color: var(--mk-muted);
+    font-family: var(--rd-body);
+    font-weight: 700;
+    font-size: 14px;
+    padding: 7px 14px;
+    border-radius: var(--rd-r-pill);
+    background: oklch(100% 0 0 / 0.55);
+    border: 1.5px solid oklch(52% 0.06 305 / 0.16);
+    color: var(--rd-ink-soft);
   }
 
   .map-connector {
     grid-column: 1 / -1;
-    display: flex;
-    height: 56px;
+    height: clamp(56px, 8vw, 90px);
   }
 
-  .map-connector-line {
-    flex: 1;
-    position: relative;
+  .map-connector-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
   }
 
-  .map-connector-line-top::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      to bottom right,
-      transparent calc(50% - 1px),
-      var(--mk-border) 50%,
-      transparent calc(50% + 1px)
-    );
+  .map-connector-path {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
   }
 
-  .map-connector-line-bottom::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      to bottom left,
-      transparent calc(50% - 1px),
-      var(--mk-border) 50%,
-      transparent calc(50% + 1px)
-    );
+  .map-node-wrap {
+    grid-column: 1 / -1;
+    justify-self: center;
+    max-width: 46ch;
+    width: 100%;
   }
 
   .map-node {
-    grid-column: 1 / -1;
-    justify-self: center;
     text-align: center;
-    max-width: 46ch;
-    padding: 26px 32px 30px;
-    border-radius: var(--mk-radius-lg);
-    background: var(--mk-accent-soft);
-    border: 1px solid color-mix(in oklch, var(--mk-accent) 40%, transparent);
-    box-shadow: var(--mk-shadow-pop);
+    padding: clamp(26px, 4vw, 34px) clamp(24px, 5vw, 40px) clamp(30px, 4vw, 38px);
+    background: var(--rd-accent);
+    border-color: color-mix(in oklch, var(--rd-accent) 60%, transparent);
   }
 
   .map-node-label {
-    font-family: var(--mk-font-mono);
-    font-size: 13px;
-    color: var(--mk-accent-ink);
+    font-family: var(--rd-body);
+    font-weight: 800;
+    font-size: 12.5px;
+    color: var(--rd-on-accent);
+    opacity: 0.85;
   }
 
   .map-node-label strong {
-    font-weight: 600;
+    font-weight: 900;
   }
 
   .map-node-name {
-    font-family: var(--mk-font-display);
-    font-size: clamp(22px, 2.6vw, 28px);
+    position: relative;
+    display: inline-block;
+    font-family: var(--rd-display);
+    font-size: clamp(24px, 2.8vw, 30px);
     font-weight: 640;
     letter-spacing: -0.02em;
-    margin-top: 6px;
+    color: var(--rd-on-accent);
+    margin-top: 8px;
   }
 
   .map-node-name::after {
     content: '.';
-    color: var(--mk-accent);
+  }
+
+  .map-node-underline {
+    position: absolute;
+    left: -6%;
+    bottom: -0.5em;
+    width: 112%;
+    height: 0.5em;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .map-node-underline path {
+    fill: none;
+    stroke: var(--rd-on-accent);
+    stroke-width: 3;
+    stroke-linecap: round;
+    opacity: 0.85;
   }
 
   .map-node-copy {
-    margin-top: 12px;
-    font-size: 14.5px;
+    margin-top: 14px;
+    font-size: 15px;
+    font-weight: 600;
     line-height: 1.55;
-    color: var(--mk-muted);
+    color: var(--rd-on-accent);
+    opacity: 0.92;
   }
 
   @media (max-width: 720px) {
@@ -191,36 +215,31 @@ const howApps = ['Anki', 'Quizlet'];
       grid-template-columns: 1fr;
     }
 
-    .map-lane-when,
-    .map-lane-how {
-      border-radius: var(--mk-radius-lg);
-      border-right: 1px solid var(--mk-border);
-    }
-
-    .map-lane-how {
+    .map-lane + .map-lane {
       margin-top: 12px;
     }
 
     .map-connector {
-      height: 40px;
-    }
-
-    .map-connector-line-top,
-    .map-connector-line-bottom {
-      flex: none;
-      width: 1px;
-      margin-inline: auto;
-      background: var(--mk-border);
-    }
-
-    .map-connector-line-top::after,
-    .map-connector-line-bottom::after {
       display: none;
-    }
-
-    .map-connector {
-      justify-content: center;
-      gap: 0;
     }
   }
 </style>
+
+<script>
+  import { svgDraw, pointerTilt, initMarketingMotion } from '../../../lib/marketing/motion';
+
+  initMarketingMotion();
+
+  // The two lanes converge first...
+  svgDraw('[data-connector-path]', {
+    trigger: '[data-map-connector]',
+    start: 'top 85%',
+    stagger: 0.15,
+    duration: 0.9,
+  });
+  // ...then studyus's underline draws a beat later, once the node has
+  // scrolled further into view — the "bridge" landing between them.
+  svgDraw('[data-node-underline]', { start: 'top 80%', duration: 0.7, ease: 'power2.out' });
+
+  pointerTilt('[data-tilt-card]', { max: 6, scale: 1.02 });
+</script>

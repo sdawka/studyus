@@ -44,63 +44,65 @@ const columns: Array<[keyof Row, string]> = [
 
 const glyph: Record<Cell, string> = { yes: '✓', some: 'some', no: '–' };
 ---
-<section id="glance" class="glance mk-container">
-  <p class="glance-eyebrow reveal">At a glance</p>
-  <h2 class="glance-title reveal">The spec sheet, if you just want the grid.</h2>
+<section id="glance" class="glance rd-section">
+  <div class="rd-container">
+    <p class="rd-kicker" data-reveal><span class="kdot"></span>At a glance</p>
+    <h2 class="glance-title rd-h2">The spec sheet, if you just want the grid.</h2>
 
-  <div class="glance-table-wrap reveal" style="--reveal-delay: 80ms;">
-    <table class="glance-table">
-      <thead>
-        <tr>
-          <th scope="col">App</th>
-          {columns.map(([, label]) => <th scope="col">{label}</th>)}
-          <th scope="col">Price</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row) => (
-          <tr class={row.lead ? 'glance-row-lead' : undefined}>
-            <th scope="row">{row.name}</th>
-            {columns.map(([key]) => (
-              <td class={`glance-cell glance-cell-${row[key] as Cell}`}>
-                <span aria-hidden="true">{glyph[row[key] as Cell]}</span>
-                <span class="glance-sr">
-                  {row[key] === 'yes' ? 'Yes' : row[key] === 'some' ? 'Partially' : 'No'}
-                </span>
-              </td>
-            ))}
-            <td class="glance-price">{row.price}</td>
+    <div class="glance-table-wrap rd-card" data-reveal="scale">
+      <table class="glance-table">
+        <thead>
+          <tr>
+            <th scope="col">App</th>
+            {columns.map(([, label]) => <th scope="col">{label}</th>)}
+            <th scope="col">Price</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr class={row.lead ? 'glance-row-lead' : undefined}>
+              <th scope="row">{row.name}</th>
+              {columns.map(([key]) => (
+                <td class={`glance-cell glance-cell-${row[key] as Cell}`}>
+                  <span aria-hidden="true">{glyph[row[key] as Cell]}</span>
+                  <span class="glance-sr">
+                    {row[key] === 'yes' ? 'Yes' : row[key] === 'some' ? 'Partially' : 'No'}
+                  </span>
+                </td>
+              ))}
+              <td class="glance-price">{row.price}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   </div>
 </section>
 
 <style>
   .glance {
-    padding-block: clamp(56px, 9vw, 96px);
+    padding-block: clamp(56px, 9vw, 100px);
   }
 
-  .glance-eyebrow {
-    font-family: var(--mk-font-mono);
-    font-size: 12.5px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--mk-faint);
-    margin-bottom: 14px;
+  .kdot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--rd-accent);
+    box-shadow: 0 0 0 4px oklch(65% 0.2 2 / 0.16);
   }
 
   .glance-title {
-    font-size: clamp(24px, 3.4vw, 36px);
+    margin-top: 16px;
     max-width: 22ch;
     margin-bottom: 36px;
   }
 
   .glance-table-wrap {
+    padding: 0;
     overflow-x: auto;
-    border: 1px solid var(--mk-border);
-    border-radius: var(--mk-radius-md);
+    /* Table legibility keeps its own scroll container — the page itself must
+       never scroll horizontally, even at 360px. */
   }
 
   .glance-table {
@@ -112,34 +114,34 @@ const glyph: Record<Cell, string> = { yes: '✓', some: 'some', no: '–' };
 
   .glance-table th,
   .glance-table td {
-    padding: 14px 16px;
+    padding: 15px 18px;
     text-align: left;
-    border-bottom: 1px solid var(--mk-hairline);
+    border-bottom: 1.5px solid oklch(52% 0.06 305 / 0.12);
     white-space: nowrap;
   }
 
   .glance-table thead th {
-    font-family: var(--mk-font-mono);
+    font-family: var(--rd-body);
     font-size: 11.5px;
+    font-weight: 800;
     letter-spacing: 0.03em;
     text-transform: uppercase;
-    color: var(--mk-faint);
-    font-weight: 500;
+    color: var(--rd-ink-faint);
     white-space: normal;
   }
 
   .glance-table tbody th {
-    font-family: var(--mk-font-display);
-    font-weight: 600;
-    color: var(--mk-ink);
+    font-family: var(--rd-display);
+    font-weight: 640;
+    color: var(--rd-ink);
   }
 
   .glance-row-lead {
-    background: var(--mk-accent-soft);
+    background: oklch(65% 0.2 2 / 0.1);
   }
 
   .glance-row-lead th {
-    color: var(--mk-accent-ink);
+    color: var(--rd-accent-deep);
   }
 
   .glance-table tbody tr:last-child td,
@@ -152,12 +154,12 @@ const glyph: Record<Cell, string> = { yes: '✓', some: 'some', no: '–' };
     font-size: 13px;
   }
 
-  .glance-cell-yes { color: var(--mk-accent-ink); }
-  .glance-cell-some { color: var(--mk-muted); }
-  .glance-cell-no { color: var(--mk-faint); }
+  .glance-cell-yes { color: var(--rd-accent-deep); font-weight: 700; }
+  .glance-cell-some { color: var(--rd-ink-soft); }
+  .glance-cell-no { color: var(--rd-ink-faint); }
 
   .glance-price {
-    color: var(--mk-muted);
+    color: var(--rd-ink-soft);
     font-family: var(--mk-font-mono);
     font-size: 13px;
   }
@@ -169,5 +171,11 @@ const glyph: Record<Cell, string> = { yes: '✓', some: 'some', no: '–' };
     overflow: hidden;
     clip: rect(0 0 0 0);
     white-space: nowrap;
+  }
+
+  @media (max-width: 560px) {
+    .glance-table-wrap {
+      border-radius: var(--rd-r-md);
+    }
   }
 </style>

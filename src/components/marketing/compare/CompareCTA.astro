@@ -1,74 +1,116 @@
 ---
 // Closes the page. Direct, no urgency tricks, and a real way back to /.
 ---
-<section class="cta mk-container">
-  <div class="cta-box reveal reveal-scale">
-    <p class="cta-eyebrow">Ready when you are</p>
-    <h2 class="cta-title">Stop guessing what's next.</h2>
-    <p class="cta-sub">Free to start. No streak to break.</p>
-    <div class="cta-actions">
-      <a class="mk-btn mk-btn-primary" href="/login">Get started</a>
-      <a class="mk-btn mk-btn-ghost" href="/">Back to the overview</a>
+<section class="cta rd-section">
+  <div class="rd-container cta-inner" data-reveal="scale">
+    <div class="cta-flourish" aria-hidden="true">
+      <svg viewBox="0 0 180 26" width="180" height="26" role="presentation">
+        <defs>
+          <linearGradient id="compare-cta-grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="var(--rd-accent)" />
+            <stop offset=".5" stop-color="var(--rd-grape)" />
+            <stop offset="1" stop-color="var(--rd-spring)" />
+          </linearGradient>
+        </defs>
+        <path data-cta-flourish d="M4 20C28 4 46 4 66 16C86 28 106 6 128 10C146 13 160 8 176 14" />
+      </svg>
+    </div>
+
+    <h2 class="cta-title rd-h2" data-reveal-item>Stop guessing what's <span class="rd-em">next.</span></h2>
+    <p class="cta-sub" data-reveal-item>Free to start. No credit card. No streak to break.</p>
+
+    <div class="cta-actions" data-reveal-item>
+      <a class="rd-btn rd-btn-primary" href="/login">Get started free</a>
+      <a class="rd-btn rd-btn-ghost" href="/">
+        Back to the overview
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
     </div>
   </div>
 </section>
 
 <style>
   .cta {
-    padding-block: clamp(56px, 9vw, 96px) clamp(72px, 11vw, 120px);
-  }
-
-  .cta-box {
     text-align: center;
-    padding: clamp(40px, 6vw, 64px) clamp(24px, 6vw, 48px);
-    border-radius: var(--mk-radius-lg);
-    background: var(--mk-ink);
-    color: var(--mk-bg);
+    padding-block: clamp(56px, 9vw, 100px) clamp(80px, 12vw, 140px);
   }
 
-  .cta-eyebrow {
-    font-family: var(--mk-font-mono);
-    font-size: 12.5px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    opacity: 0.6;
-    margin-bottom: 16px;
+  .cta-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
+
+  .cta-flourish {
+    width: 180px;
+    height: 26px;
+    margin-bottom: clamp(10px, 1.6vw, 18px);
+  }
+
+  .cta-flourish svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .cta-flourish path { fill: none; stroke: url(#compare-cta-grad); stroke-width: 5; stroke-linecap: round; }
 
   .cta-title {
-    font-size: clamp(28px, 4.4vw, 46px);
+    font-size: clamp(30px, 5vw, 50px);
+    max-width: 16ch;
   }
 
   .cta-sub {
-    margin-top: 14px;
-    font-size: 16px;
-    opacity: 0.75;
+    margin-top: 18px;
+    font-family: var(--rd-body);
+    font-weight: 700;
+    font-size: clamp(15px, 1.6vw, 17px);
+    color: var(--rd-ink-soft);
   }
 
   .cta-actions {
     margin-top: 32px;
     display: flex;
-    justify-content: center;
     flex-wrap: wrap;
-    gap: 12px;
+    justify-content: center;
+    gap: 14px;
   }
 
-  .cta-box .mk-btn-primary {
-    background: var(--mk-bg);
-    color: var(--mk-ink);
+  .cta-actions .arrow {
+    transition: transform 0.24s var(--rd-ease-bounce);
   }
 
-  .cta-box .mk-btn-primary:hover {
-    background: var(--mk-accent-soft);
-    color: var(--mk-accent-ink);
+  .cta-actions .rd-btn-ghost:hover .arrow {
+    transform: translateX(4px);
   }
 
-  .cta-box .mk-btn-ghost {
-    border-color: color-mix(in oklch, var(--mk-bg) 30%, transparent);
-    color: var(--mk-bg);
+  .cta-actions .rd-btn-primary {
+    transition: transform 0.28s var(--rd-ease-bounce), box-shadow 0.28s ease;
   }
 
-  .cta-box .mk-btn-ghost:hover {
-    border-color: var(--mk-bg);
+  .cta-actions .rd-btn-primary:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 18px 34px -14px oklch(52% 0.2 2 / 0.55);
+  }
+
+  .cta-actions .rd-btn-primary:active {
+    transform: translateY(-1px) scale(0.98);
+    box-shadow: 0 8px 18px -10px oklch(52% 0.2 2 / 0.5);
+    transition-duration: 0.12s;
+  }
+
+  @media (max-width: 560px) {
+    .cta-actions { width: 100%; gap: 10px; }
+    .cta-actions .rd-btn { width: 100%; justify-content: center; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cta-actions .arrow { transition: none; }
+    .cta-actions .rd-btn-ghost:hover .arrow { transform: none; }
+    .cta-actions .rd-btn-primary { transition: none; }
+    .cta-actions .rd-btn-primary:hover,
+    .cta-actions .rd-btn-primary:active { transform: none; }
   }
 </style>
+
+<script>
+  import { svgDraw, initMarketingMotion } from '../../../lib/marketing/motion';
+
+  initMarketingMotion();
+  svgDraw('[data-cta-flourish]', { start: 'top 82%', duration: 0.8, ease: 'power2.out' });
+</script>
