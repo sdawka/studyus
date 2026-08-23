@@ -221,7 +221,7 @@
 <style>
   .tutor-chat { display: flex; flex-direction: column; gap: 1rem; max-width: 640px; }
   .messages { display: flex; flex-direction: column; gap: 0.75rem; min-height: 200px; }
-  .bubble { padding: 0.65rem 0.9rem; border-radius: 10px; max-width: 85%; white-space: pre-wrap; }
+  .bubble { padding: 0.65rem 0.9rem; border-radius: var(--radius-md); max-width: 85%; white-space: pre-wrap; }
   .bubble p { margin: 0; }
   .bubble.user { align-self: flex-end; background: var(--accent); color: var(--surface); }
   .bubble.assistant { align-self: flex-start; background: var(--hover); color: var(--text); }
@@ -231,10 +231,10 @@
     flex: 1;
     padding: 0.6rem 0.75rem;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-size: 1rem;
   }
-  button { padding: 0.6rem 0.9rem; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9rem; }
+  button { padding: 0.6rem 0.9rem; border-radius: var(--radius-sm); border: none; cursor: pointer; font-size: 0.9rem; }
   button[type='submit'] { background: var(--accent); color: var(--surface); }
   button:disabled { opacity: 0.6; cursor: default; }
   .end-btn { background: var(--border); color: var(--text); }
@@ -248,7 +248,7 @@
     flex-direction: column;
     gap: 0.4rem;
     padding: 0.75rem 0.9rem;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     border: 1px solid var(--warn);
     background: var(--warn-soft);
   }

@@ -71,16 +71,16 @@
     gap: 0.9rem;
     padding: 0.55rem 0.8rem;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text);
   }
   .kc-row:hover { border-color: var(--accent); }
   .kc-name { flex: 1; font-size: 0.92rem; }
-  .kc-type { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 0.1rem 0.4rem; }
+  .kc-type { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.1rem 0.4rem; }
   .mastery-bar { display: flex; align-items: center; gap: 0.5rem; width: 140px; }
-  .track { flex: 1; height: 6px; border-radius: 4px; background: var(--border); overflow: hidden; }
-  .fill { height: 100%; border-radius: 4px; background: var(--accent); }
+  .track { flex: 1; height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; }
+  .fill { height: 100%; border-radius: 999px; background: var(--accent); }
   .pct { font-size: 0.75rem; color: var(--muted); min-width: 2.5em; text-align: right; }
 
   /* PHONE — main content-box ≤ 480px: same two-line treatment as

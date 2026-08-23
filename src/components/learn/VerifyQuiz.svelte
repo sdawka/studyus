@@ -137,10 +137,10 @@
   .progress { color: var(--muted); font-size: 0.85rem; margin: 0; }
   h3 { margin: 0; }
   .options { display: flex; flex-direction: column; gap: 0.5rem; }
-  .option { text-align: left; background: var(--hover); color: var(--text); border: none; padding: 0.65rem 0.9rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; }
+  .option { text-align: left; background: var(--hover); color: var(--text); border: none; padding: 0.65rem 0.9rem; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.9rem; }
   .option.selected { background: var(--accent); color: var(--surface); }
   .row-actions { display: flex; gap: 0.6rem; }
-  button { padding: 0.6rem 1rem; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 550; }
+  button { padding: 0.6rem 1rem; border-radius: var(--radius-sm); border: none; cursor: pointer; font-size: 0.9rem; font-weight: 550; }
   .btn-primary { background: var(--accent); color: var(--surface); }
   .btn-primary:disabled { opacity: 0.6; cursor: default; }
   .btn-secondary { background: var(--hover); color: var(--text); }

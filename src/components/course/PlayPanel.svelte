@@ -83,7 +83,7 @@
     gap: 0.5rem;
     padding: 0.9rem 1rem;
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     background: var(--surface);
   }
   .model-card:hover { border-color: var(--accent); }
@@ -101,12 +101,12 @@
     gap: 0.9rem;
     padding: 0.55rem 0.8rem;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     text-decoration: none;
     color: var(--text);
   }
   .convo-row:hover { border-color: var(--accent); }
   .convo-row .kc-name { flex: 1; font-weight: 450; }
-  .mode-badge { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 0.1rem 0.4rem; }
+  .mode-badge { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.1rem 0.4rem; }
   .date { font-size: 0.78rem; color: var(--muted); }
 </style>

@@ -106,7 +106,7 @@
     <div class="modal" role="dialog" aria-modal="true" onclick={(e) => e.stopPropagation()} use:focusTrap>
       <div class="modal-header">
         <h2>Add course</h2>
-        <button type="button" class="icon-btn" onclick={closeModal} aria-label="Close">×</button>
+        <button type="button" class="icon-btn modal-close" onclick={closeModal} aria-label="Close">×</button>
       </div>
 
       <form onsubmit={(e) => { e.preventDefault(); submit(); }}>
@@ -171,7 +171,7 @@
           <p class="error">{submitError}</p>
         {/if}
 
-        <button type="submit" class="primary" disabled={submitting || !code.trim() || !title.trim()}>
+        <button type="submit" class="btn btn-primary" disabled={submitting || !code.trim() || !title.trim()}>
           {submitting ? 'Adding…' : 'Add course'}
         </button>
       </form>
@@ -188,6 +188,7 @@
     align-items: center;
     justify-content: center;
     z-index: 100;
+    animation: overlay-scrim-in var(--motion-base) var(--ease);
   }
   .modal {
     background: var(--surface);
@@ -199,10 +200,10 @@
     max-height: 85vh;
     overflow-y: auto;
     box-shadow: var(--shadow-pop);
+    animation: overlay-panel-in var(--motion-base) var(--ease);
   }
   .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-  .modal-header h2 { margin: 0; font-size: 1.1rem; }
-  .icon-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--muted); line-height: 1; }
+  .modal-header h2 { margin: 0; font-size: 1.1rem; font-family: var(--font-display); }
   form { display: flex; flex-direction: column; gap: 0.85rem; }
   .row { display: flex; gap: 0.85rem; }
   .row label { flex: 1; }
@@ -215,7 +216,15 @@
     font-family: inherit;
     background: var(--surface);
     color: var(--text);
+    transition: border-color var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease);
   }
+  input:hover { border-color: var(--muted); }
+  input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 16%, transparent);
+  }
+  .modal-close { font-size: 1.15rem; }
   fieldset.color-field {
     border: none;
     padding: 0;
@@ -239,11 +248,15 @@
     cursor: pointer;
     padding: 0;
   }
+  .swatch {
+    transition: border-color var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease);
+  }
+  .swatch:hover { transform: scale(1.08); }
   .swatch.selected { border-color: var(--text); }
   .swatch.auto {
     width: auto;
     height: 28px;
-    border-radius: 14px;
+    border-radius: 999px;
     padding: 0 10px;
     background: var(--surface-2, var(--hover));
     color: var(--muted);
@@ -251,17 +264,7 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
-  .primary {
-    background: var(--accent);
-    color: var(--surface);
-    border: none;
-    border-radius: var(--radius-sm, 8px);
-    padding: 0.6rem;
-    font-size: 0.92rem;
-    cursor: pointer;
-  }
-  .primary:disabled { opacity: 0.6; cursor: default; }
-  .error { color: var(--danger); font-size: 0.85rem; margin: 0; }
+  .error { color: var(--danger-ink); font-size: 0.85rem; margin: 0; }
 
   /* Mobile restyle (CSS only): bottom-anchored full-width sheet-like modal
      instead of a centered card — matches Sheet.svelte's visual language

@@ -441,17 +441,19 @@
     border: 1px solid var(--border);
     background: var(--hover);
     color: var(--text);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 0.4rem 0.8rem;
     font-size: 0.84rem;
     font-weight: 550;
     cursor: pointer;
+    transition: border-color var(--motion-fast) var(--ease);
   }
+  .add-btn:hover { border-color: var(--muted); }
 
   .ritual-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.8rem; }
   .ritual-row {
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     padding: 0.9rem 1rem;
     display: flex;
     flex-direction: column;
@@ -468,7 +470,7 @@
     letter-spacing: 0.03em;
     color: var(--muted);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     padding: 0.1rem 0.4rem;
   }
   .inactive-tag { font-size: 0.72rem; color: var(--muted); font-style: italic; }
@@ -477,9 +479,9 @@
 
   .dot-row { display: flex; gap: 3px; flex-wrap: wrap; }
   .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-  .dot-done { background: var(--good-ink, #2f9e58); }
+  .dot-done { background: var(--good-ink); }
   .dot-skipped { background: var(--border); }
-  .dot-upcoming { background: var(--accent-soft, #cfe0ff); border: 1px solid var(--accent); }
+  .dot-upcoming { background: var(--accent-soft); border: 1px solid var(--accent); }
 
   .adherence-line { margin: 0; font-size: 0.82rem; color: var(--muted); }
 
@@ -496,25 +498,27 @@
   .active-toggle { display: flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; color: var(--muted); }
   .active-toggle input { accent-color: var(--accent); cursor: pointer; }
 
-  button { border: none; cursor: pointer; font-size: 0.84rem; font-weight: 550; border-radius: 8px; padding: 0.4rem 0.75rem; }
+  button { border: none; cursor: pointer; font-size: 0.84rem; font-weight: 550; border-radius: var(--radius-sm); padding: 0.4rem 0.75rem; transition: filter var(--motion-fast) var(--ease); }
   button:disabled { opacity: 0.6; cursor: default; }
   .delete-btn { background: none; color: var(--muted); margin-left: auto; }
+  .delete-btn:hover:not(:disabled) { color: var(--danger-ink); }
   .confirm-row { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; }
   .confirm-prompt { font-size: 0.82rem; color: var(--muted); }
-  .confirm-yes { background: var(--danger, #c0392b); color: #fff; }
+  .confirm-yes { background: var(--danger); color: var(--surface); }
+  .confirm-yes:hover:not(:disabled) { filter: brightness(0.94); }
   .confirm-no { background: none; color: var(--muted); }
 
   .form-card {
     margin-top: 1rem;
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     padding: 1rem;
     display: flex;
     flex-direction: column;
     gap: 0.7rem;
     max-width: 520px;
   }
-  .form-card h3 { margin: 0; font-size: 0.95rem; }
+  .form-card h3 { margin: 0; font-size: 0.95rem; font-family: var(--font-display); }
   .field { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.86rem; color: var(--text); }
   .field input[type='text'],
   .field input[type='number'],
@@ -522,11 +526,26 @@
   .field textarea {
     padding: 0.45rem 0.6rem;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-family: inherit;
     font-size: 0.86rem;
     background: var(--surface);
     color: var(--text);
+    transition: border-color var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease);
+  }
+  .field input[type='text']:hover,
+  .field input[type='number']:hover,
+  .field select:hover,
+  .field textarea:hover {
+    border-color: var(--muted);
+  }
+  .field input[type='text']:focus,
+  .field input[type='number']:focus,
+  .field select:focus,
+  .field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 16%, transparent);
   }
 
   .weekday-picker { display: flex; gap: 0.35rem; flex-wrap: wrap; }

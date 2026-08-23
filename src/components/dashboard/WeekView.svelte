@@ -442,7 +442,7 @@
     align-items: center;
     gap: 4px;
     padding: 5px 7px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-size: 11px;
     line-height: 1.3;
     background: var(--course-soft);

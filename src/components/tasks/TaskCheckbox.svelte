@@ -119,7 +119,7 @@
     width: 100%;
     height: 100%;
     border: 1.5px solid var(--border);
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     background: var(--surface);
     cursor: pointer;
     position: relative;

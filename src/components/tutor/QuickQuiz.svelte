@@ -151,8 +151,8 @@
   .quick-quiz { max-width: 560px; display: flex; flex-direction: column; gap: 1rem; }
   .setup { display: flex; flex-direction: column; gap: 1rem; max-width: 320px; }
   .setup label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; }
-  select { padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border); }
-  button { padding: 0.6rem 1rem; border-radius: 8px; border: none; cursor: pointer; background: var(--accent); color: var(--surface); font-size: 0.95rem; }
+  select { padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+  button { padding: 0.6rem 1rem; border-radius: var(--radius-sm); border: none; cursor: pointer; background: var(--accent); color: var(--surface); font-size: 0.95rem; }
   button:disabled { opacity: 0.6; cursor: default; }
   .question { display: flex; flex-direction: column; gap: 1rem; }
   .progress { color: var(--muted); font-size: 0.85rem; margin: 0; }

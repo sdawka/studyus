@@ -115,7 +115,7 @@
     top: 8px;
     right: 8px;
     bottom: 20px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
   }
   .preview-accent {
     position: absolute;
@@ -123,7 +123,7 @@
     bottom: 8px;
     width: 22px;
     height: 8px;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
   }
   .preview-glyph {
     position: absolute;

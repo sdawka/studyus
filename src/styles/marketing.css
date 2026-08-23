@@ -9,37 +9,42 @@
 :root {
   color-scheme: light dark;
 
-  --mk-bg: light-dark(oklch(97.5% 0.006 95), oklch(15% 0.012 260));
-  --mk-surface: light-dark(oklch(99.2% 0.003 95), oklch(19% 0.014 260));
-  --mk-ink: light-dark(oklch(18% 0.015 260), oklch(94% 0.008 95));
-  --mk-muted: light-dark(oklch(45% 0.015 260), oklch(70% 0.012 260));
-  --mk-faint: light-dark(oklch(62% 0.012 260), oklch(55% 0.012 260));
-  --mk-border: light-dark(oklch(88% 0.008 95), oklch(30% 0.015 260));
-  --mk-hairline: light-dark(oklch(93% 0.006 95), oklch(24% 0.013 260));
+  /* Re-based onto the landing redesign's palette (see marketing-rd.css) so
+     nav/footer/compare read as one system with the pastel-mesh hero.
+     Light values are lifted 1:1 from --rd-* where a direct analog exists;
+     dark values keep the same plum/rose family since the rd landing itself
+     is light-only (no dark variant — see .rd::before in marketing-rd.css). */
+  --mk-bg: light-dark(oklch(97.5% 0.02 80), oklch(16% 0.03 305));
+  --mk-surface: light-dark(oklch(99% 0.012 80), oklch(20% 0.035 305));
+  --mk-ink: light-dark(oklch(26% 0.07 305), oklch(94% 0.02 305));
+  --mk-muted: light-dark(oklch(44% 0.06 305), oklch(72% 0.03 305));
+  --mk-faint: light-dark(oklch(60% 0.04 305), oklch(58% 0.03 305));
+  --mk-border: light-dark(oklch(87% 0.03 90), oklch(32% 0.04 305));
+  --mk-hairline: light-dark(oklch(92% 0.025 85), oklch(26% 0.035 305));
 
-  /* Same accent hue as the product (compass --accent, hue 170) so the
-     marketing site and the app read as one thing. */
-  --mk-accent: light-dark(oklch(56% 0.13 170), oklch(70% 0.13 170));
-  --mk-accent-ink: light-dark(oklch(38% 0.1 170), oklch(80% 0.11 170));
-  --mk-accent-soft: light-dark(oklch(94% 0.035 170), oklch(26% 0.045 170));
-  --mk-accent-contrast: light-dark(oklch(99% 0.005 170), oklch(15% 0.02 170));
+  /* Candy magenta-pink accent, matching --rd-accent exactly in light mode
+     so the wordmark dot and CTAs read identically to the hero. */
+  --mk-accent: light-dark(oklch(65% 0.2 2), oklch(72% 0.18 2));
+  --mk-accent-ink: light-dark(oklch(52% 0.2 2), oklch(80% 0.16 2));
+  --mk-accent-soft: light-dark(oklch(94% 0.045 2), oklch(28% 0.06 2));
+  --mk-accent-contrast: light-dark(oklch(98% 0.01 350), oklch(16% 0.02 350));
 
-  --mk-warn: oklch(64% 0.14 70);
-  --mk-danger: oklch(53% 0.18 27);
+  --mk-warn: oklch(75% 0.15 55);
+  --mk-danger: oklch(58% 0.19 27);
 
-  --mk-font-display: 'Space Grotesk Variable', 'Space Grotesk', system-ui, sans-serif;
-  --mk-font-body: 'Inter Variable', 'Inter', -apple-system, system-ui, sans-serif;
+  --mk-font-display: 'Fraunces Variable', 'Fraunces', Georgia, serif;
+  --mk-font-body: 'Nunito Variable', 'Nunito', -apple-system, system-ui, sans-serif;
   --mk-font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
 
-  --mk-radius-lg: 16px;
-  --mk-radius-md: 10px;
-  --mk-radius-sm: 6px;
-  --mk-shadow-pop: 0 12px 40px light-dark(oklch(20% 0.02 260 / 0.12), oklch(0% 0 0 / 0.45));
+  --mk-radius-lg: 20px;
+  --mk-radius-md: 14px;
+  --mk-radius-sm: 10px;
+  --mk-shadow-pop: 0 16px 40px -16px light-dark(oklch(40% 0.1 305 / 0.3), oklch(0% 0 0 / 0.5));
 
   --mk-content-max: 1120px;
   --mk-pad-x: clamp(16px, 5vw, 48px);
 
-  --mk-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --mk-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --mk-reveal-duration: 700ms;
 }
 
@@ -52,7 +57,8 @@ html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 body {
   background: var(--mk-bg);
   color: var(--mk-ink);
-  font: 400 16px / 1.6 var(--mk-font-body);
+  font: 500 16px / 1.6 var(--mk-font-body);
+  letter-spacing: -0.005em;
   -webkit-font-smoothing: antialiased;
   min-height: 100dvh;
 }
@@ -63,7 +69,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 h1, h2, h3, h4 {
   font-family: var(--mk-font-display);
-  line-height: 1.08;
+  line-height: 1.02;
   letter-spacing: -0.02em;
   font-weight: 600;
 }
@@ -109,7 +115,7 @@ img, svg { max-width: 100%; display: block; }
   font-size: 15px;
   border-radius: 999px;
   padding: 12px 22px;
-  transition: transform 180ms var(--mk-ease-out), background-color 180ms, color 180ms, border-color 180ms;
+  transition: transform 180ms var(--mk-ease-out), background-color 180ms, color 180ms, border-color 180ms, box-shadow 180ms var(--mk-ease-out);
   text-decoration: none;
 }
 
@@ -118,9 +124,15 @@ img, svg { max-width: 100%; display: block; }
 .mk-btn-primary {
   background: var(--mk-ink);
   color: var(--mk-bg);
+  box-shadow: 0 1px 0 transparent;
 }
 
-.mk-btn-primary:hover { background: var(--mk-accent-ink); color: var(--mk-accent-contrast); }
+.mk-btn-primary:hover {
+  background: var(--mk-accent-ink);
+  color: var(--mk-accent-contrast);
+  transform: translateY(-2px) rotate(-1deg);
+  box-shadow: var(--mk-shadow-pop);
+}
 
 .mk-btn-ghost {
   border: 1px solid var(--mk-border);

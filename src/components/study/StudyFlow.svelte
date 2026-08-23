@@ -520,7 +520,7 @@
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
@@ -529,7 +529,7 @@
   .card h2 { margin: 0; font-size: 1.15rem; }
   .actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
   .option, .primary, .ghost {
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 0.55rem 1rem;
     font-size: 0.92rem;
     cursor: pointer;
@@ -544,7 +544,7 @@
   .course-card {
     text-align: left;
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     padding: 0.8rem;
     background: var(--bg);
     cursor: pointer;
@@ -559,7 +559,7 @@
   .mastery-fill { height: 100%; background: var(--accent); }
   .mastery-label { font-size: 0.75rem; color: var(--muted); }
   .custom-duration { display: flex; gap: 0.5rem; align-items: center; }
-  .custom-duration input { padding: 0.5rem; border: 1px solid var(--border); border-radius: 8px; width: 140px; }
+  .custom-duration input { padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius-sm); width: 140px; }
   .timer-card { align-items: center; text-align: center; }
   .context { color: var(--muted); font-size: 0.9rem; margin: 0; }
   .timer { font-size: 3rem; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -568,9 +568,9 @@
   .branch-group h3 { font-size: 0.85rem; color: var(--muted); margin: 0.6rem 0 0.4rem 0; font-family: var(--font-title, var(--font-display)); }
   .kc-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.25rem 0; }
   .kc-check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
-  .kc-row select { padding: 0.3rem 0.5rem; border-radius: 6px; border: 1px solid var(--border); font-size: 0.8rem; }
+  .kc-row select { padding: 0.3rem 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 0.8rem; }
   .reflection { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.88rem; color: var(--text); }
-  .reflection textarea { padding: 0.5rem; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.9rem; }
+  .reflection textarea { padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.9rem; }
   .deltas { margin: 0; padding-left: 1.1rem; font-size: 0.88rem; color: var(--text); }
   .muted { color: var(--muted); font-size: 0.9rem; }
   .error { color: var(--danger); font-size: 0.9rem; }
@@ -588,7 +588,7 @@
     gap: 0.5rem;
     padding: 0.5rem 0.7rem;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-size: 0.85rem;
   }
   .rail-step.current { border-color: var(--accent); background: var(--accent-soft); }

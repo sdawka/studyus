@@ -90,7 +90,7 @@
     text-align: left;
     padding: 0.6rem 0.8rem;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background: var(--surface);
     color: var(--text);
     cursor: pointer;
@@ -115,7 +115,7 @@
 
   .actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
   button { border: none; cursor: pointer; font-size: 0.9rem; font-weight: 550; }
-  .actions button { padding: 0.6rem 1rem; border-radius: 8px; }
+  .actions button { padding: 0.6rem 1rem; border-radius: var(--radius-sm); }
   .btn-primary { background: var(--accent); color: var(--surface); }
   .btn-secondary { background: var(--hover); color: var(--text); }
   .btn-tertiary { background: none; color: var(--muted); }

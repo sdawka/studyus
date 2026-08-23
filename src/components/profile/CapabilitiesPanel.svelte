@@ -127,15 +127,15 @@
     text-transform: uppercase;
     letter-spacing: 0.03em;
     border: 1px solid;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     padding: 0.1rem 0.4rem;
     white-space: nowrap;
     flex-shrink: 0;
   }
 
   .mastery-bar { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
-  .track { flex: 1; min-width: 0; height: 6px; border-radius: 4px; background: var(--hairline); overflow: hidden; }
-  .fill { height: 100%; border-radius: 4px; transition: width 0.2s ease; }
+  .track { flex: 1; min-width: 0; height: 6px; border-radius: 999px; background: var(--hairline); overflow: hidden; }
+  .fill { height: 100%; border-radius: 999px; transition: width var(--motion-base) var(--ease); }
   .pct { font-size: 0.75rem; color: var(--muted); min-width: 2.5em; text-align: right; flex-shrink: 0; }
 
   .coverage-line { margin: 0.3rem 0 0; font-size: 0.78rem; color: var(--muted); }

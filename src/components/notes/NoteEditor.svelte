@@ -282,7 +282,7 @@
     gap: 1rem;
     height: 500px;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
   }
 
@@ -341,7 +341,7 @@
   .preview-content code {
     background: var(--surface-2);
     padding: 0.2rem 0.4rem;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     font-family: 'Courier New', monospace;
   }
 
@@ -361,7 +361,7 @@
     background: var(--accent);
     color: var(--surface);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 0.65rem 1rem;
     font-size: 0.9rem;
     cursor: pointer;
@@ -404,7 +404,7 @@
   .links-section {
     background: var(--bg);
     padding: 1rem;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
   }
 
   .links-section h3 {
@@ -425,13 +425,13 @@
     align-items: center;
     padding: 0.5rem;
     background: var(--surface);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 0.85rem;
   }
 
   .link-badge {
     padding: 0.3rem 0.6rem;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     font-weight: 500;
     flex: 1;
   }

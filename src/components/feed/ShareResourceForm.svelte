@@ -104,7 +104,7 @@
       <p class="success">Resource shared! Reloading...</p>
     {/if}
 
-    <button type="submit" disabled={submitting || !url || !label}>
+    <button type="submit" class="btn btn-primary" disabled={submitting || !url || !label}>
       {submitting ? 'Sharing…' : 'Share resource'}
     </button>
   </form>
@@ -150,11 +150,17 @@
   select {
     padding: 0.55rem 0.75rem;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     font-size: 0.95rem;
     background: var(--surface);
     color: var(--text);
     font-family: inherit;
+    transition: border-color var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease);
+  }
+
+  input:hover,
+  select:hover {
+    border-color: var(--muted);
   }
 
   input:disabled,
@@ -168,45 +174,24 @@
   select:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 10%, transparent);
-  }
-
-  button {
-    background: var(--accent);
-    color: var(--surface);
-    border: none;
-    border-radius: 6px;
-    padding: 0.65rem 1rem;
-    font-size: 0.95rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
-  button:hover:not(:disabled) {
-    filter: brightness(0.94);
-  }
-
-  button:disabled {
-    opacity: 0.6;
-    cursor: default;
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 16%, transparent);
   }
 
   .error {
-    color: var(--danger);
+    color: var(--danger-ink);
     font-size: 0.85rem;
     margin: 0;
     padding: 0.5rem 0.75rem;
     background: var(--danger-soft);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
   }
 
   .success {
-    color: var(--good);
+    color: var(--good-ink);
     font-size: 0.85rem;
     margin: 0;
     padding: 0.5rem 0.75rem;
     background: var(--good-soft);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
   }
 </style>

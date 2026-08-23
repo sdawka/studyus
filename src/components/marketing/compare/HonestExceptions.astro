@@ -17,68 +17,72 @@ const exceptions = [
   },
 ];
 ---
-<section id="honest" class="honest mk-container">
-  <p class="honest-eyebrow reveal">When not to pick us</p>
-  <h2 class="honest-title reveal">Sometimes the other app is the right call.</h2>
+<section id="honest" class="honest rd-section">
+  <div class="rd-container">
+    <p class="rd-kicker" data-reveal><span class="kdot"></span>When not to pick us</p>
+    <h2 class="honest-title rd-h2">Sometimes the other app is the right call.</h2>
 
-  <div class="honest-list">
-    {exceptions.map((e, i) => (
-      <div class="honest-row reveal" style={`--reveal-delay: ${i * 70}ms;`}>
-        <p class="honest-who">{e.who}</p>
-        <p class="honest-why">{e.why}</p>
-      </div>
-    ))}
+    <div class="honest-list" data-reveal>
+      {exceptions.map((e) => (
+        <div class="honest-row rd-card" data-reveal-item>
+          <p class="honest-who">{e.who}</p>
+          <p class="honest-why">{e.why}</p>
+        </div>
+      ))}
+    </div>
   </div>
 </section>
 
 <style>
   .honest {
-    padding-block: clamp(56px, 9vw, 96px);
+    padding-block: clamp(56px, 9vw, 100px);
   }
 
-  .honest-eyebrow {
-    font-family: var(--mk-font-mono);
-    font-size: 12.5px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--mk-faint);
-    margin-bottom: 14px;
+  .kdot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--rd-accent);
+    box-shadow: 0 0 0 4px oklch(65% 0.2 2 / 0.16);
   }
 
   .honest-title {
-    font-size: clamp(24px, 3.4vw, 36px);
+    margin-top: 16px;
     max-width: 22ch;
     margin-bottom: 36px;
   }
 
   .honest-list {
-    border-top: 1px solid var(--mk-hairline);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
   }
 
   .honest-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
     gap: 8px 40px;
-    padding-block: 22px;
-    border-bottom: 1px solid var(--mk-hairline);
+    align-items: center;
   }
 
   .honest-who {
-    font-family: var(--mk-font-display);
-    font-weight: 560;
-    font-size: 17px;
+    font-family: var(--rd-display);
+    font-weight: 640;
+    font-size: 18px;
+    color: var(--rd-ink);
   }
 
   .honest-why {
-    color: var(--mk-muted);
+    color: var(--rd-ink-soft);
     font-size: 15px;
+    font-weight: 500;
     line-height: 1.55;
   }
 
   @media (max-width: 640px) {
     .honest-row {
       grid-template-columns: 1fr;
-      gap: 6px;
+      gap: 8px;
     }
   }
 </style>

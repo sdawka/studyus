@@ -88,7 +88,7 @@
   select {
     padding: 0.5rem 0.6rem;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-size: 0.9rem;
     min-width: 0;
     width: 100%;
@@ -97,7 +97,7 @@
     background: var(--accent);
     color: var(--surface);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 0.55rem 1rem;
     font-size: 0.9rem;
     cursor: pointer;

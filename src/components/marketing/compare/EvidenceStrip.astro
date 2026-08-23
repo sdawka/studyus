@@ -2,18 +2,24 @@
 // Secondary stance (no streaks) + the one evidence beat, kept to a single
 // stat rather than a wall of citations — it only needs to be credible once.
 ---
-<section class="evidence">
-  <div class="evidence-inner mk-container">
-    <div class="evidence-copy reveal reveal-left">
-      <p class="evidence-eyebrow">No streaks</p>
+<section class="evidence rd-section">
+  <div class="rd-container evidence-inner" data-reveal>
+    <div class="evidence-copy" data-reveal-item>
+      <p class="rd-kicker"><span class="kdot"></span>No streaks</p>
       <p class="evidence-lead">
         Miss a week and studyus doesn't reset you to zero or guilt you back in.
-        It re-reads what's now most at risk and puts that first. The plan
-        recovers so you don't have to perform having never fallen behind.
+        It re-reads what's now most at risk and puts that first — the plan
+        recovers, so you don't have to perform having never fallen behind.
       </p>
     </div>
 
-    <div class="evidence-stat reveal reveal-scale" style="--reveal-delay: 100ms;">
+    <div class="evidence-stat rd-card" data-reveal-item>
+      <span class="evidence-check" aria-hidden="true">
+        <svg viewBox="0 0 40 40" width="28" height="28">
+          <circle class="evidence-check-ring" cx="20" cy="20" r="17" fill="none" stroke-width="2.5" />
+          <path class="evidence-check-mark" data-evidence-check d="M12 20.5L17.5 26L28.5 14" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
       <p class="evidence-stat-number">~25%</p>
       <p class="evidence-stat-label">better recall from spaced retrieval vs. cramming</p>
       <p class="evidence-stat-cite">Pan &amp; Rickard, 2018 · meta-analysis effect size d = 0.78</p>
@@ -23,56 +29,70 @@
 
 <style>
   .evidence {
-    border-top: 1px solid var(--mk-hairline);
-    border-bottom: 1px solid var(--mk-hairline);
-    background: var(--mk-surface);
+    padding-block: clamp(48px, 8vw, 88px);
+  }
+
+  .kdot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--rd-accent);
+    box-shadow: 0 0 0 4px oklch(65% 0.2 2 / 0.16);
   }
 
   .evidence-inner {
-    padding-block: clamp(48px, 8vw, 80px);
     display: grid;
     grid-template-columns: 1.4fr 1fr;
     gap: 40px;
     align-items: center;
   }
 
-  .evidence-eyebrow {
-    font-family: var(--mk-font-mono);
-    font-size: 12.5px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--mk-accent-ink);
-    margin-bottom: 14px;
-  }
-
   .evidence-lead {
+    margin-top: 18px;
     font-size: clamp(18px, 2.2vw, 23px);
     line-height: 1.5;
     max-width: 44ch;
-    font-family: var(--mk-font-display);
-    font-weight: 500;
+    font-family: var(--rd-display);
+    font-weight: 560;
     letter-spacing: -0.01em;
+    color: var(--rd-ink);
   }
 
   .evidence-stat {
-    padding: 28px 30px;
-    border-radius: var(--mk-radius-lg);
-    border: 1px solid var(--mk-border);
-    background: var(--mk-bg);
+    position: relative;
+    text-align: left;
+  }
+
+  .evidence-check {
+    position: absolute;
+    top: clamp(18px, 3vw, 26px);
+    right: clamp(18px, 3vw, 26px);
+    display: grid;
+    place-items: center;
+  }
+
+  .evidence-check-ring {
+    stroke: oklch(52% 0.06 305 / 0.18);
+  }
+
+  .evidence-check-mark {
+    stroke: var(--rd-spring);
+    filter: drop-shadow(0 2px 4px oklch(80% 0.14 155 / 0.5));
   }
 
   .evidence-stat-number {
-    font-family: var(--mk-font-display);
+    font-family: var(--rd-display);
     font-size: clamp(40px, 5vw, 56px);
     font-weight: 640;
-    color: var(--mk-accent-ink);
+    color: var(--rd-accent-deep);
     letter-spacing: -0.02em;
   }
 
   .evidence-stat-label {
     margin-top: 6px;
     font-size: 14.5px;
-    color: var(--mk-muted);
+    font-weight: 600;
+    color: var(--rd-ink-soft);
     max-width: 28ch;
   }
 
@@ -80,7 +100,7 @@
     margin-top: 14px;
     font-family: var(--mk-font-mono);
     font-size: 11.5px;
-    color: var(--mk-faint);
+    color: var(--rd-ink-faint);
   }
 
   @media (max-width: 720px) {
@@ -89,3 +109,10 @@
     }
   }
 </style>
+
+<script>
+  import { svgDraw, initMarketingMotion } from '../../../lib/marketing/motion';
+
+  initMarketingMotion();
+  svgDraw('[data-evidence-check]', { start: 'top 82%', duration: 0.5, ease: 'back.out(1.8)' });
+</script>

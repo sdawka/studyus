@@ -672,7 +672,7 @@
     font-size: 11.5px;
     font-weight: 550;
     padding: 3px 7px;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     background: var(--course-soft);
     color: var(--course-ink);
     border-left: 2px solid var(--course);
@@ -760,7 +760,7 @@
     justify-content: center;
     background: color-mix(in oklch, var(--accent) 16%, var(--surface));
     border: 1.5px dashed var(--accent);
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     pointer-events: none;
   }
   .ghost-label {
@@ -801,7 +801,7 @@
     background: var(--course-soft);
     color: var(--course-ink);
     border-left: 2px solid var(--course);
-    border-radius: 5px;
+    border-radius: var(--radius-sm);
     padding: 3px 6px;
     overflow: hidden;
     display: flex;

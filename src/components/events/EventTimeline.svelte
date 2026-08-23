@@ -218,7 +218,7 @@
   ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
   li {
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 0.6rem 0.8rem;
     background: var(--surface);
   }
@@ -251,7 +251,7 @@
   .edit-form input, .edit-form select {
     padding: 0.35rem 0.5rem;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     font-size: 0.85rem;
   }
   .edit-actions { display: flex; gap: 0.4rem; }
@@ -259,7 +259,7 @@
     background: var(--accent);
     color: var(--surface);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     padding: 0.35rem 0.6rem;
     font-size: 0.82rem;
     cursor: pointer;

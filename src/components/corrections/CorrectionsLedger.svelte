@@ -134,7 +134,7 @@
 <style>
   .ledger { display: flex; flex-direction: column; gap: 1.1rem; max-width: 680px; }
 
-  .empty-state { padding: 1.5rem; border: 1px dashed var(--border); border-radius: 10px; }
+  .empty-state { padding: 1.5rem; border: 1px dashed var(--border); border-radius: var(--radius-md); }
   .empty-title { margin: 0 0 0.4rem 0; font-weight: 600; }
   .empty-body { margin: 0; color: var(--muted); font-size: 0.9rem; max-width: 480px; }
 
@@ -148,7 +148,9 @@
     font-size: 0.82rem;
     font-weight: 550;
     cursor: pointer;
+    transition: background var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease);
   }
+  .filter-chip:hover { border-color: var(--muted); color: var(--text); }
   .filter-chip.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); }
 
   .empty-filtered { color: var(--muted); font-size: 0.9rem; }
@@ -160,7 +162,7 @@
     gap: 0.4rem;
     padding: 0.8rem 1rem;
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     background: var(--surface);
   }
 
@@ -177,12 +179,14 @@
   .row-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.2rem; }
   .reminded { font-size: 0.76rem; color: var(--faint); }
 
-  button { border: none; cursor: pointer; font-size: 0.84rem; font-weight: 550; border-radius: 8px; padding: 0.4rem 0.75rem; }
+  button { border: none; cursor: pointer; font-size: 0.84rem; font-weight: 550; border-radius: var(--radius-sm); padding: 0.4rem 0.75rem; transition: filter var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease); }
   button:disabled { opacity: 0.6; cursor: default; }
   .mark-btn { background: var(--hover); color: var(--text); margin-left: auto; }
+  .mark-btn:hover:not(:disabled) { background: var(--border); }
   .confirm-row { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; }
   .confirm-prompt { font-size: 0.82rem; color: var(--muted); }
   .confirm-yes { background: var(--accent); color: var(--surface); }
+  .confirm-yes:hover:not(:disabled) { filter: brightness(0.94); }
   .confirm-no { background: none; color: var(--muted); }
   .internalized-tag { margin-left: auto; font-size: 0.78rem; color: var(--good-ink); font-weight: 600; }
 

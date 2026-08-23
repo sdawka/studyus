@@ -29,14 +29,14 @@ const color = statusColors[status ?? ''] ?? 'var(--faint)';
   .track {
     flex: 1;
     height: 6px;
-    border-radius: 4px;
+    border-radius: 999px;
     background: var(--hairline);
     overflow: hidden;
   }
   .fill {
     height: 100%;
-    border-radius: 4px;
-    transition: width 0.2s ease;
+    border-radius: 999px;
+    transition: width var(--motion-base) var(--ease);
   }
   .pct {
     font-size: 0.75rem;

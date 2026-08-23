@@ -3,97 +3,131 @@
 // beat immediately — a Gen Z audience clocks a fake "we win everything"
 // sweep on sight, so we say so before the first competitor shows up.
 ---
-<section class="hero mk-container">
-  <p class="hero-eyebrow reveal">The comparison page, not the sweep</p>
+<section class="hero rd-section">
+  <div class="rd-container hero-inner" data-reveal>
+    <p class="rd-kicker" data-reveal-item><span class="kdot"></span>The comparison page, not the sweep</p>
 
-  <h1 class="hero-title">
-    <span class="reveal">Planners tell you</span>
-    <span class="reveal" style="--reveal-delay: 60ms;"><em>when.</em></span>
-    <span class="reveal" style="--reveal-delay: 120ms;">Flashcard apps tell you</span>
-    <span class="reveal" style="--reveal-delay: 180ms;"><em>how.</em></span>
-    <span class="hero-title-line reveal" style="--reveal-delay: 260ms;">Nobody tells you what's next.</span>
-  </h1>
+    <h1 class="hero-title" data-reveal-item>
+      Planners tell you <em class="rd-em">when.</em>
+      Flashcard apps tell you <em class="rd-em">how.</em>
+      <span class="hero-title-line">
+        Nobody tells you <span class="hero-flourish-wrap">what's next<svg class="hero-flourish" viewBox="0 0 300 26" width="300" height="26" aria-hidden="true"><path data-hero-flourish d="M4 18C48 4 96 4 140 15C184 26 232 6 296 12" /></svg></span>.
+      </span>
+    </h1>
 
-  <p class="hero-sub reveal" style="--reveal-delay: 340ms;">
-    We looked at seven other apps students actually use. Below is what each one
-    is genuinely good at, where it stops, and why we built the thing that sits
-    in the gap.
-  </p>
+    <p class="hero-sub" data-reveal-item>
+      We looked at seven other apps students actually use. Below is what each one
+      is genuinely good at, where it stops, and why we built the thing that sits
+      in the gap.
+    </p>
 
-  <nav class="hero-index reveal" style="--reveal-delay: 400ms;" aria-label="On this page">
-    <a href="#map">The map</a>
-    <a href="#field">The field</a>
-    <a href="#glance">At a glance</a>
-    <a href="#honest">When not to pick us</a>
-  </nav>
+    <nav class="hero-index" data-reveal-item aria-label="On this page">
+      <a href="#map">The map</a>
+      <a href="#field">The field</a>
+      <a href="#glance">At a glance</a>
+      <a href="#honest">When not to pick us</a>
+    </nav>
+  </div>
 </section>
 
 <style>
   .hero {
-    padding-block: clamp(56px, 10vw, 108px) clamp(48px, 8vw, 80px);
+    padding-block: clamp(56px, 10vw, 112px) clamp(48px, 8vw, 80px);
   }
 
-  .hero-eyebrow {
-    font-family: var(--mk-font-mono);
-    font-size: 12.5px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--mk-accent-ink);
-    margin-bottom: 20px;
+  .kdot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--rd-accent);
+    box-shadow: 0 0 0 4px oklch(65% 0.2 2 / 0.16);
   }
 
   .hero-title {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0 0.28ch;
-    font-size: clamp(32px, 5.4vw, 58px);
-    max-width: 18ch;
-    font-weight: 560;
-  }
-
-  .hero-title em {
-    font-style: normal;
-    color: var(--mk-accent-ink);
+    margin-top: 20px;
+    font-size: clamp(32px, 5.4vw, 60px);
+    max-width: 19ch;
+    line-height: 1.06;
   }
 
   .hero-title-line {
     display: block;
-    width: 100%;
-    margin-top: 6px;
-    color: var(--mk-muted);
+    margin-top: 4px;
+    color: var(--rd-ink-soft);
+  }
+
+  .hero-flourish-wrap {
+    position: relative;
+    display: inline-block;
+    color: var(--rd-ink);
+  }
+
+  .hero-flourish {
+    position: absolute;
+    left: -2%;
+    bottom: -0.32em;
+    width: 104%;
+    height: 0.42em;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .hero-flourish path {
+    fill: none;
+    stroke: var(--rd-accent);
+    stroke-width: 5;
+    stroke-linecap: round;
   }
 
   .hero-sub {
     margin-top: 28px;
     max-width: 54ch;
     font-size: clamp(16px, 1.6vw, 18.5px);
-    color: var(--mk-muted);
+    font-weight: 600;
+    line-height: 1.6;
+    color: var(--rd-ink-soft);
   }
 
   .hero-index {
     margin-top: 40px;
-    padding-top: 20px;
-    border-top: 1px solid var(--mk-hairline);
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 24px;
+    gap: 10px;
   }
 
   .hero-index a {
-    font-family: var(--mk-font-mono);
-    font-size: 12.5px;
-    letter-spacing: 0.03em;
+    font-family: var(--rd-body);
+    font-weight: 800;
+    font-size: 13.5px;
+    letter-spacing: 0.01em;
     text-decoration: none;
-    color: var(--mk-faint);
-    transition: color 150ms;
+    color: var(--rd-ink-soft);
+    background: oklch(100% 0 0 / 0.5);
+    border: 1.5px solid oklch(52% 0.06 305 / 0.18);
+    border-radius: var(--rd-r-pill);
+    padding: 8px 16px;
+    transition: color 150ms, border-color 150ms, transform 0.2s var(--rd-ease-bounce);
   }
 
   .hero-index a:hover {
-    color: var(--mk-ink);
+    color: var(--rd-ink);
+    border-color: var(--rd-grape);
+    transform: translateY(-2px);
   }
 
   .hero-index a::before {
     content: '→ ';
+    color: var(--rd-accent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-index a:hover { transform: none; }
   }
 </style>
+
+<script>
+  import { svgDraw, initMarketingMotion } from '../../../lib/marketing/motion';
+
+  initMarketingMotion();
+  svgDraw('[data-hero-flourish]', { start: 'top 88%', duration: 0.9, ease: 'power2.out' });
+</script>

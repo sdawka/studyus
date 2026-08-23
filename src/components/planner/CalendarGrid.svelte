@@ -153,7 +153,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     padding: 2px 6px;
     background: var(--course-soft);
     color: var(--course-ink);
