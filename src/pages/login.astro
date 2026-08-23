@@ -6,6 +6,7 @@ import '../styles/themes/compass.css';
 import '../styles/themes/focus.css';
 import '../styles/themes/campus.css';
 import '../styles/base.css';
+import ThemeScript from '../components/shell/ThemeScript.astro';
 import LoginForm from '../components/LoginForm.svelte';
 
 if (Astro.locals.user) {
@@ -25,6 +26,7 @@ if (Astro.locals.user) {
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#f6f9fb" media="(prefers-color-scheme: light)" id="theme-color-light" />
     <meta name="theme-color" content="#0b0e10" media="(prefers-color-scheme: dark)" id="theme-color-dark" />
+    <ThemeScript />
     <style>
       /* Fixed, viewport-anchored wash — same "soft mesh over calm ground"
          idea as the marketing redesign's pastel canvas (marketing-rd.css),
