@@ -90,7 +90,7 @@
 
 <style>
   .prereq-map { display: flex; flex-direction: column; gap: 1.25rem; max-width: 640px; }
-  .warning { color: var(--warn-ink); background: var(--warn-soft); border-radius: 8px; padding: 0.6rem 0.8rem; font-size: 0.85rem; margin: 0; }
+  .warning { color: var(--warn-ink); background: var(--warn-soft); border-radius: var(--radius-sm); padding: 0.6rem 0.8rem; font-size: 0.85rem; margin: 0; }
   .no-prereqs { color: var(--muted); font-size: 0.9rem; }
 
   .groups { display: flex; flex-direction: column; gap: 1rem; }
@@ -104,7 +104,7 @@
     gap: 0.7rem;
     padding: 0.6rem 0.8rem;
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     background: var(--surface);
   }
   .node.ready { border-color: var(--good); }
@@ -136,12 +136,12 @@
     letter-spacing: 0.03em;
     color: var(--muted);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     padding: 0.1rem 0.4rem;
   }
   .node-meta-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-  .mastery-track { width: 90px; height: 5px; border-radius: 4px; background: var(--hairline); overflow: hidden; }
-  .mastery-fill { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+  .mastery-track { width: 90px; height: 5px; border-radius: 999px; background: var(--hairline); overflow: hidden; }
+  .mastery-fill { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
   .mastery-pct { font-size: 0.72rem; color: var(--muted); min-width: 2.2em; }
   .status-word { font-size: 0.72rem; color: var(--muted); }
 
@@ -150,7 +150,7 @@
     flex-direction: column;
     gap: 0.3rem;
     padding: 0.9rem 1rem;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     background: var(--accent-soft);
     color: var(--accent-ink);
   }
@@ -159,7 +159,7 @@
   .target-card .kc-type { align-self: flex-start; color: var(--accent-ink); border-color: currentColor; opacity: 0.8; }
 
   .actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
-  button { padding: 0.6rem 1rem; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 550; }
+  button { padding: 0.6rem 1rem; border-radius: var(--radius-sm); border: none; cursor: pointer; font-size: 0.9rem; font-weight: 550; }
   .btn-primary { background: var(--accent); color: var(--surface); }
   .btn-secondary { background: var(--hover); color: var(--text); }
 

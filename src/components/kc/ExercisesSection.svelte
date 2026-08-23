@@ -237,7 +237,7 @@
   .exercise-card {
     min-width: 0;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 0.9rem 1rem;
     display: flex;
     flex-direction: column;
@@ -255,24 +255,25 @@
     text-align: left;
     background: var(--surface-2, transparent);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     padding: 0.5rem 0.7rem;
     font-size: 0.87rem;
     color: var(--text);
     cursor: pointer;
+    transition: border-color var(--motion-fast) var(--ease), background var(--motion-fast) var(--ease);
   }
   .option:hover:not(:disabled) { border-color: var(--accent); }
   .option:disabled { cursor: default; }
   .option.selected { border-color: var(--accent); background: var(--hover); }
-  .option.correct { border-color: var(--success, #2e7d32); }
-  .option.incorrect { border-color: var(--danger, #c62828); }
+  .option.correct { border-color: var(--good); }
+  .option.incorrect { border-color: var(--danger); }
 
   .numeric-input-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
   .numeric-input-row input {
     width: 10ch;
     padding: 0.4rem 0.6rem;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     background: var(--surface);
     color: var(--text);
     font-size: 0.88rem;
@@ -284,7 +285,7 @@
     background: var(--accent);
     color: var(--surface);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     padding: 0.45rem 0.9rem;
     font-size: 0.85rem;
     font-weight: 600;
@@ -293,7 +294,7 @@
   .submit-btn:disabled { opacity: 0.5; cursor: default; }
 
   .feedback { margin: 0; font-size: 0.87rem; color: var(--text); }
-  .feedback.is-correct { color: var(--success, #2e7d32); }
+  .feedback.is-correct { color: var(--good-ink); }
   .solution { margin: 0; font-size: 0.85rem; color: var(--muted); white-space: pre-wrap; }
-  .error { margin: 0; font-size: 0.82rem; color: var(--danger, #c62828); }
+  .error { margin: 0; font-size: 0.82rem; color: var(--danger-ink); }
 </style>

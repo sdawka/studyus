@@ -546,7 +546,9 @@
     background: var(--danger-soft);
     color: var(--danger-ink);
     border: 1px solid transparent;
+    transition: border-color var(--motion-fast) var(--ease), filter var(--motion-fast) var(--ease);
   }
+  .pop-delete:hover { border-color: var(--danger); filter: brightness(0.97); }
   .confirm-row {
     display: flex;
     align-items: center;

@@ -128,7 +128,7 @@
     font-size: 14px;
     line-height: 1;
     margin-left: auto;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
   }
   .row-delete:hover { color: var(--danger); background: var(--hover); }
   .feedback { color: var(--good); font-size: 11.5px; margin-top: 2px; }

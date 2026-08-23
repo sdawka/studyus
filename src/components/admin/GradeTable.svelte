@@ -106,7 +106,7 @@
                 <input type="number" min="0" bind:value={drafts[a.id].max} class="grade-input" />
               </td>
               <td>
-                <button type="button" onclick={() => saveGrade(a.id)} disabled={savingId === a.id}>
+                <button type="button" class="btn btn-primary save-btn" onclick={() => saveGrade(a.id)} disabled={savingId === a.id}>
                   {savingId === a.id ? 'Saving…' : 'Save'}
                 </button>
               </td>
@@ -127,9 +127,10 @@
   .course-panel {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     padding: 1.25rem 1.5rem;
     margin-bottom: 1.25rem;
+    box-shadow: var(--shadow-card);
   }
   .course-header {
     display: flex;
@@ -147,17 +148,23 @@
   table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
   th { text-align: left; padding: 0.4rem 0.5rem; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid var(--border); }
   td { padding: 0.5rem; border-bottom: 1px solid var(--hover); }
+  tbody tr:hover td { background: var(--hover); }
   .capitalize { text-transform: capitalize; }
-  .grade-input { width: 4.5rem; padding: 0.3rem 0.4rem; border: 1px solid var(--border); border-radius: 6px; }
-  button {
-    background: var(--accent);
-    color: var(--surface);
-    border: none;
-    border-radius: 6px;
-    padding: 0.35rem 0.7rem;
-    font-size: 0.82rem;
-    cursor: pointer;
+  .grade-input {
+    width: 4.5rem;
+    padding: 0.3rem 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease);
   }
-  button:disabled { opacity: 0.6; cursor: default; }
-  .feedback-row td { color: var(--good); font-size: 0.8rem; padding-top: 0; border-bottom: 1px solid var(--hover); }
+  .grade-input:hover { border-color: var(--muted); }
+  .grade-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 16%, transparent);
+  }
+  .save-btn { padding: 0.35rem 0.7rem; font-size: 0.82rem; }
+  .feedback-row td { color: var(--good-ink); font-size: 0.8rem; padding-top: 0; border-bottom: 1px solid var(--hover); }
 </style>

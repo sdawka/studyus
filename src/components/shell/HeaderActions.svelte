@@ -133,7 +133,7 @@
   .record-event-pill kbd {
     font: 650 10px/1 var(--font-body);
     padding: 1px 5px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     background: color-mix(in oklch, var(--accent-contrast) 20%, transparent);
     opacity: 0.85;
   }

@@ -168,7 +168,29 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
   color: var(--text);
 }
 
+.btn-secondary:hover { background: var(--hover); border-color: var(--muted); }
+
+/* Chromeless — sits in toolbars/rows next to primary actions without
+   competing for weight until touched. */
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.btn-ghost:hover { background: var(--hover); color: var(--text); border-color: transparent; }
+
+.btn-danger {
+  background: var(--danger-soft);
+  border-color: transparent;
+  color: var(--danger-ink);
+}
+
+.btn-danger:hover { background: var(--danger-soft); border-color: var(--danger); filter: brightness(0.97); }
+
 .btn[disabled], .btn[aria-disabled="true"] { opacity: 0.45; pointer-events: none; }
+
+.icon-btn.icon-btn-danger:hover { background: var(--danger-soft); color: var(--danger-ink); }
 
 /* ---------- Pills, chips ---------- */
 
@@ -207,6 +229,74 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
   background: var(--text);
   border-color: var(--text);
   color: var(--surface);
+}
+
+/* ---------- Form controls ---------- */
+/* Baseline for bare input/select/textarea — most forms already opt into
+   this shape locally (radius-sm + border + rose focus ring); this raises
+   the floor for the rest and gives them one recipe to converge on. Local
+   component styles win on specificity (Svelte scopes their selectors), so
+   this only ever narrows the gap, never fights an intentional override. */
+
+input, select, textarea {
+  font-family: inherit;
+}
+
+input[type="text"], input[type="url"], input[type="email"], input[type="number"],
+input[type="password"], input[type="search"], input[type="tel"], input[type="date"],
+input[type="datetime-local"], select, textarea {
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13.5px;
+  transition: border-color var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease);
+}
+
+input[type="text"]:hover, input[type="url"]:hover, input[type="email"]:hover, input[type="number"]:hover,
+input[type="password"]:hover, input[type="search"]:hover, input[type="tel"]:hover, input[type="date"]:hover,
+input[type="datetime-local"]:hover, select:hover, textarea:hover {
+  border-color: var(--muted);
+}
+
+input[type="text"]:focus, input[type="url"]:focus, input[type="email"]:focus, input[type="number"]:focus,
+input[type="password"]:focus, input[type="search"]:focus, input[type="tel"]:focus, input[type="date"]:focus,
+input[type="datetime-local"]:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 16%, transparent);
+}
+
+input:disabled, select:disabled, textarea:disabled {
+  background: var(--surface-2);
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+input::placeholder, textarea::placeholder { color: var(--faint); }
+
+input[type="checkbox"], input[type="radio"] {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- Overlays (modals) ---------- */
+/* Shared scrim + entrance-motion recipe for full-viewport modal overlays
+   (AddCourseModal, LogEventModal, …). Each modal keeps its own panel
+   layout locally; this just standardizes the two moves everyone should
+   share — the dim-in scrim and the pop-in panel. */
+
+@keyframes overlay-scrim-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes overlay-panel-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* ---------- Progress bars ---------- */

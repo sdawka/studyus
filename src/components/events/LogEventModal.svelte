@@ -227,12 +227,12 @@
     <div class="modal" role="dialog" aria-modal="true" onclick={(e) => e.stopPropagation()} use:focusTrap>
       <div class="modal-header">
         <h2>Record event</h2>
-        <button type="button" class="icon-btn" onclick={closeModal} aria-label="Close">×</button>
+        <button type="button" class="icon-btn modal-close" onclick={closeModal} aria-label="Close">×</button>
       </div>
 
       {#if confirmation}
         <p class="confirmation">{confirmation}</p>
-        <button type="button" class="primary" onclick={() => (confirmation = null)}>Log another</button>
+        <button type="button" class="btn btn-primary" onclick={() => (confirmation = null)}>Log another</button>
       {:else if !selectedType}
         <div class="groups">
           {#each GROUPS as group (group.label)}
@@ -301,7 +301,7 @@
             <p class="error">{submitError}</p>
           {/if}
 
-          <button type="submit" class="primary" disabled={submitting}>
+          <button type="submit" class="btn btn-primary" disabled={submitting}>
             {submitting ? 'Logging…' : 'Log event'}
           </button>
         </form>
@@ -319,19 +319,22 @@
     align-items: center;
     justify-content: center;
     z-index: 100;
+    animation: overlay-scrim-in var(--motion-base) var(--ease);
   }
   .modal {
     background: var(--surface);
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     padding: 1.5rem;
     width: 420px;
     max-width: 90vw;
     max-height: 85vh;
     overflow-y: auto;
+    box-shadow: var(--shadow-pop);
+    animation: overlay-panel-in var(--motion-base) var(--ease);
   }
   .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-  .modal-header h2 { margin: 0; font-size: 1.1rem; }
-  .icon-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--muted); line-height: 1; }
+  .modal-header h2 { margin: 0; font-size: 1.1rem; font-family: var(--font-display); }
+  .modal-close { font-size: 1.15rem; }
   .groups { display: flex; flex-direction: column; gap: 1.1rem; }
   .group h3 {
     margin: 0 0 0.5rem 0;
@@ -347,41 +350,41 @@
   .type-btn {
     background: var(--hover);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 0.45rem 0.7rem;
     font-size: 0.85rem;
     cursor: pointer;
+    transition: background var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease-bounce, var(--ease));
   }
-  .type-btn:hover { background: var(--hover); border-color: var(--accent); }
+  .type-btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); transform: translateY(-1px); }
   form { display: flex; flex-direction: column; gap: 0.85rem; }
   .selected-type { display: flex; align-items: center; gap: 0.7rem; margin: 0; font-size: 0.95rem; }
   label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.88rem; color: var(--text); }
   input, select, textarea {
     padding: 0.5rem 0.65rem;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-size: 0.9rem;
     font-family: inherit;
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease);
+  }
+  input:hover, select:hover, textarea:hover { border-color: var(--muted); }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 16%, transparent);
   }
   .link { background: none; border: none; color: var(--accent); cursor: pointer; padding: 0; font-size: 0.85rem; }
-  .primary {
-    background: var(--accent);
-    color: var(--surface);
-    border: none;
-    border-radius: 8px;
-    padding: 0.6rem;
-    font-size: 0.92rem;
-    cursor: pointer;
-  }
-  .primary:disabled { opacity: 0.6; cursor: default; }
   .confirmation {
     background: var(--accent-soft);
     color: var(--accent-ink);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 0.75rem 0.9rem;
     font-size: 0.9rem;
   }
-  .error { color: var(--danger); font-size: 0.85rem; margin: 0; }
+  .error { color: var(--danger-ink); font-size: 0.85rem; margin: 0; }
 
   /* Mobile restyle (CSS only): bottom-anchored full-width sheet-like modal
      instead of a centered card — matches Sheet.svelte's visual language
@@ -393,7 +396,7 @@
       max-width: 100%;
       max-height: 90vh;
       max-height: 90dvh;
-      border-radius: 12px 12px 0 0;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
       padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
     }
   }

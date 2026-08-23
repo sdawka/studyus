@@ -85,11 +85,11 @@
 
   .course-item:first-child {
     border-top: 1px solid var(--border);
-    border-radius: 4px 4px 0 0;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   }
 
   .course-item:last-child {
-    border-radius: 0 0 4px 4px;
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
   }
 
   .course-header {

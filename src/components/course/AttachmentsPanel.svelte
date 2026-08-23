@@ -149,7 +149,7 @@
     gap: 0.6rem;
     padding: 0.5rem 0.7rem;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
   }
   .list li.empty {
     color: var(--muted);
@@ -160,7 +160,7 @@
   .delete {
     background: none;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     padding: 0.2rem 0.55rem;
     font-size: 0.78rem;
     cursor: pointer;
@@ -168,7 +168,7 @@
   }
   .dropzone {
     border: 1.5px dashed var(--border);
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     padding: 1.5rem;
     text-align: center;
     color: var(--muted);

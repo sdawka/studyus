@@ -41,7 +41,7 @@
   .study-session-stub {
     background: linear-gradient(135deg, color-mix(in oklch, var(--accent-soft) 80%, var(--surface)), color-mix(in oklch, var(--accent-soft) 50%, var(--surface)));
     border: 2px dashed var(--accent);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
@@ -65,7 +65,7 @@
     background: var(--accent);
     color: var(--surface);
     padding: 0.25rem 0.75rem;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -103,7 +103,7 @@
   .form-group select {
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     font-size: 0.9rem;
     background: var(--surface);
     color: var(--text);
@@ -114,7 +114,7 @@
     background: var(--accent);
     color: var(--surface);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     padding: 0.6rem;
     font-size: 0.95rem;
     font-weight: 500;

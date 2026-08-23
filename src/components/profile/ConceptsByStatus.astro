@@ -47,8 +47,8 @@ const STATUS_LABELS: Record<string, string> = {
   @container (max-width: 720px) {
     .status-label { width: auto; flex: 0 1 90px; min-width: 0; }
   }
-  .status-bar { display: block; height: 6px; border-radius: 4px; background: var(--hairline); overflow: hidden; }
-  .fill { display: block; height: 100%; }
+  .status-bar { display: block; height: 6px; border-radius: 999px; background: var(--hairline); overflow: hidden; }
+  .fill { display: block; height: 100%; border-radius: 999px; transition: width var(--motion-base) var(--ease); }
   .fill-not-started { background: var(--hairline); }
   .fill-learning { background: var(--warn); }
   .fill-review { background: var(--muted); }

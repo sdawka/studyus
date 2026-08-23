@@ -79,7 +79,7 @@
   .node {
     min-width: 0;
     border: 1px solid var(--border, var(--hairline));
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     background: var(--surface);
   }
   .node.ready { border-color: var(--good); }
@@ -119,8 +119,8 @@
   }
   .node-link:hover .node-name { color: var(--accent-ink, var(--accent)); }
   .node-meta-row { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; min-width: 0; }
-  .mastery-track { flex: 1 1 60px; min-width: 40px; height: 5px; border-radius: 4px; background: var(--hairline); overflow: hidden; }
-  .mastery-fill { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+  .mastery-track { flex: 1 1 60px; min-width: 40px; height: 5px; border-radius: 999px; background: var(--hairline); overflow: hidden; }
+  .mastery-fill { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
   .mastery-pct { font-size: 0.68rem; color: var(--muted); flex-shrink: 0; }
   .status-word { font-size: 0.68rem; color: var(--muted); flex-shrink: 0; }
 </style>

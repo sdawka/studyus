@@ -41,7 +41,7 @@
 <style>
   .model {
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     padding: 1rem;
     background: var(--bg);
     display: flex;
