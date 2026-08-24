@@ -4,12 +4,12 @@
 // stale relative to the log it's derived from.
 import { and, desc, eq, gte, inArray, lte, ne } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { events, kcs } from '../../db/schema';
+import { events, kcs, runtimeTutorSessionEvents } from '../../db/schema';
 import type { CreateEventInput, EventSource, ListEventsQuery, UpdateEventInput } from '../schemas/events';
 import { EVENT_ROLE_FLAGS } from '../schemas/events';
 import { toEpochMs } from '../schemas/common';
 import { foldMastery } from './mastery';
-import { NotFoundError, requireOwnedCourse, requireOwnedKc } from './util';
+import { ConflictError, NotFoundError, requireOwnedCourse, requireOwnedKc } from './util';
 import { withSpan } from '../tracing';
 
 type EventRow = typeof events.$inferSelect;
@@ -36,14 +36,30 @@ async function foldedKcUpdate(db: Db, kcId: string, eventsForFold: Array<Pick<Ev
 // creates — that route's caller never passes it); tutor/quiz flows pass
 // 'tutor'/'seed' explicitly. PATCH /events/:id keeps gating on
 // `source === 'manual'` regardless of what this created the row with.
-export async function createEvent(db: Db, userId: string, input: CreateEventInput, source: EventSource = 'manual') {
+type CreateEventWithOptionalId = CreateEventInput & { event_id?: string };
+
+export async function createEvent(db: Db, userId: string, input: CreateEventWithOptionalId, source: EventSource = 'manual') {
   if (input.course_id) await requireOwnedCourse(db, userId, input.course_id);
   if (input.kc_id) await requireOwnedKc(db, userId, input.kc_id);
+
+  // Engine calls can be delivered at-least-once. A supplied event id is an
+  // idempotency key: the exact same learner fact is returned without
+  // refolding mastery; an id owned by somebody else is never disclosed.
+  if (input.event_id) {
+    const existing = await db.select().from(events).where(eq(events.id, input.event_id)).limit(1);
+    if (existing[0]) {
+      if (existing[0].userId !== userId) throw new NotFoundError('Event');
+      if (existing[0].type !== input.type || existing[0].kcId !== (input.kc_id ?? null)) {
+        throw new ConflictError('Event id is already bound to different evidence');
+      }
+      return { event: existing[0], masteryDeltas: [], wasCreated: false };
+    }
+  }
 
   const { isInstructional, isAssessment } = EVENT_ROLE_FLAGS[input.type];
   const now = Date.now();
   const newEvent = {
-    id: crypto.randomUUID(),
+    id: input.event_id ?? crypto.randomUUID(),
     userId,
     ts: toEpochMs(input.ts, now),
     type: input.type,
@@ -72,7 +88,82 @@ export async function createEvent(db: Db, userId: string, input: CreateEventInpu
     await withSpan('events.append', { event_type: newEvent.type }, () => insertStmt);
   }
 
-  return { event: newEvent, masteryDeltas };
+  return { event: newEvent, masteryDeltas, wasCreated: true };
+}
+
+/**
+ * Persist the one context event associated with a Durable Object tutor
+ * conversation. The unique conversation ledger and D1 batch make the event,
+ * mastery cache update, and idempotency record one atomic D1 operation.
+ *
+ * The Durable Object owns the transcript and its ended state; this function
+ * owns only the D1 learner-model consequence of that finalized state.
+ */
+export async function createRuntimeTutorSessionEvent(
+  db: Db,
+  userId: string,
+  input: { conversationId: string; kcId: string; courseId: string; mode: string; finalRating?: number },
+) {
+  const existing = await db
+    .select({ event: events })
+    .from(runtimeTutorSessionEvents)
+    .innerJoin(events, eq(runtimeTutorSessionEvents.eventId, events.id))
+    .where(and(eq(runtimeTutorSessionEvents.conversationId, input.conversationId), eq(runtimeTutorSessionEvents.userId, userId)))
+    .limit(1);
+  if (existing[0]) return { event: existing[0].event, masteryDeltas: [] as MasteryDelta[] };
+
+  await requireOwnedKc(db, userId, input.kcId);
+  await requireOwnedCourse(db, userId, input.courseId);
+
+  const now = Date.now();
+  const payload: Record<string, unknown> = { conversation_id: input.conversationId, mode: input.mode };
+  if (input.finalRating !== undefined) payload.final_rating = input.finalRating;
+  const newEvent = {
+    id: crypto.randomUUID(),
+    userId,
+    ts: now,
+    type: 'tutor_session' as const,
+    isInstructional: true,
+    isAssessment: true,
+    kcId: input.kcId,
+    courseId: input.courseId,
+    sessionId: null,
+    payload,
+    source: 'tutor' as const,
+    createdAt: now,
+  };
+  const existingEvents = await db
+    .select({ ts: events.ts, isInstructional: events.isInstructional, isAssessment: events.isAssessment, payload: events.payload })
+    .from(events)
+    .where(eq(events.kcId, input.kcId));
+  const { updateStmt, delta } = await foldedKcUpdate(db, input.kcId, [...existingEvents, newEvent]);
+
+  try {
+    await withSpan('events.append_runtime_tutor_session', { kc_id: input.kcId }, () =>
+      db.batch([
+        db.insert(events).values(newEvent),
+        updateStmt,
+        db.insert(runtimeTutorSessionEvents).values({
+          conversationId: input.conversationId,
+          userId,
+          eventId: newEvent.id,
+          createdAt: now,
+        }),
+      ]),
+    );
+    return { event: newEvent, masteryDeltas: [delta] };
+  } catch (error) {
+    // A concurrent stream completion / explicit-end retry lost the unique
+    // ledger race. Its D1 batch rolled back, so returning the winner is safe.
+    const settled = await db
+      .select({ event: events })
+      .from(runtimeTutorSessionEvents)
+      .innerJoin(events, eq(runtimeTutorSessionEvents.eventId, events.id))
+      .where(and(eq(runtimeTutorSessionEvents.conversationId, input.conversationId), eq(runtimeTutorSessionEvents.userId, userId)))
+      .limit(1);
+    if (settled[0]) return { event: settled[0].event, masteryDeltas: [] as MasteryDelta[] };
+    throw error;
+  }
 }
 
 export async function listEvents(db: Db, userId: string, query: ListEventsQuery) {

@@ -294,26 +294,26 @@ footer.colophon {
 <header class="masthead">
   <span class="eyebrow">studyus · AI tutor architecture · canonical chart · docs/index.html</span>
   <h1>Deterministic learner model,<br>one agent per learner</h1>
-  <p class="standfirst">Four planes, read top-down in invocation order. The two lower planes are <strong>libraries and services — never agents</strong>: folds and frontiers stay reproducible and cheap. Every pedagogy engine is a headless service today and a tool mounted on the per-learner Flue agent later; the seam between "now" and "target" is drawn explicitly (dashed = target). Spec: <code>docs/superpowers/specs/2026-08-23-tutor-subsystems-design.md</code>.</p>
+  <p class="standfirst">Four planes, read top-down in invocation order. The two lower planes are <strong>libraries and services — never agents</strong>: folds and frontiers stay reproducible and cheap. The headless pedagogy engines now run behind one native Durable Object per learner in the Astro Worker; Flue can become an adapter later. Spec: <code>docs/superpowers/specs/2026-08-23-tutor-subsystems-design.md</code>.</p>
   <div class="legend">
     <span class="legend-title">Status</span>
     <span class="chip built">Built</span>
     <span class="chip partial">Partial — exists in cruder form</span>
     <span class="chip new">New — this design adds it</span>
-    <span class="chip target">Dashed border — target topology, post-Flue-stabilization</span>
+    <span class="chip target">Dashed border — future channel adapter topology</span>
   </div>
 </header>
 
 <!-- ============ PLANE 4: channels + learner agent (target) ============ -->
 <section class="tier is-target" aria-label="Agent and channel plane">
   <div class="tier-head">
-    <span class="tier-kicker">Plane 4 · target</span>
-    <h3 class="tier-name">Agents &amp; channels — Flue Worker</h3>
+    <span class="tier-kicker">Plane 4 · implemented runtime</span>
+    <h3 class="tier-name">Learner runtime &amp; channels — Astro Worker</h3>
   </div>
-  <p class="tier-sub"><strong>One Durable Object per learner</strong>, keyed by user id (per <code>docs/architecture/agentic-channels.md</code>). The learner agent holds session state, runs the orchestrator as its brain, and mounts every pedagogy engine as a tool. All channels route by identity to the same agent — a session started on the web continues on Telegram. Until Flue stabilizes, the web app keeps calling the services below directly over HTTP.</p>
+  <p class="tier-sub"><strong>One Durable Object per learner</strong>, keyed by immutable local user id (per <code>docs/architecture/agentic-channels.md</code>). The learner runtime holds conversation/session state and mounts the orchestrator's tools; deterministic folds remain services. Web routes now enter this runtime, while future channels route the same identity to it.</p>
   <div class="cards">
     <div class="card s-new is-hub"><div class="card-head"><h4>Learner agent</h4><span class="chip new">New</span></div><p>One Durable Object per learner: conversation + session state, orchestrator as its brain, pedagogy engines mounted as Zod-validated tools. State lives in the DO, never in D1.</p></div>
-    <div class="card s-built"><div class="card-head"><h4>Web app</h4><span class="chip built">Built</span></div><p>Astro routes call services directly today; later they may route through the learner agent for multi-turn arcs.</p></div>
+    <div class="card s-built"><div class="card-head"><h4>Web app</h4><span class="chip built">Built</span></div><p>Astro routes resolve Clerk to the local learner, use RPC for runtime commands, and use DO fetch only for tutor SSE.</p></div>
     <div class="card s-new"><div class="card-head"><h4>Telegram / SMS / Discord</h4><span class="chip new">New</span></div><p>Thin channel routers mapping channel identity → learner agent. "/quiz on the bus" hits the same session.</p></div>
     <div class="card s-new"><div class="card-head"><h4>Email digest</h4><span class="chip new">New</span></div><p>Scheduled channel driven by the admin engine's digest output.</p></div>
   </div>
@@ -479,7 +479,7 @@ footer.colophon {
         <tr>
           <td class="who">Instruction</td>
           <td>facade · <code>kcs</code> · <code>kc_edges</code> · <code>scaffolds</code> · <code>misconceptions</code> · <code>notes</code></td>
-          <td class="w"><code>tutor_conversations</code> · <code>tutor_messages</code></td>
+          <td class="w">learner DO SQLite (legacy <code>tutor_conversations</code> imported once)</td>
           <td><code>tutor_session</code> · IE types per mode</td>
         </tr>
         <tr>

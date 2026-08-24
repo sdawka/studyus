@@ -1,0 +1,15 @@
+---
+import { SignUp } from '@clerk/astro/components';
+
+const fromDemo = Astro.url.searchParams.get('from') === 'demo';
+const destination = fromDemo ? '/onboarding?import=demo' : '/onboarding';
+if (Astro.locals.user) return Astro.redirect(destination);
+---
+
+<SignUp
+  routing="path"
+  path="/sign-up"
+  signInUrl="/sign-in"
+  fallbackRedirectUrl={destination}
+  forceRedirectUrl={destination}
+/>

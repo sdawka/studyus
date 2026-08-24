@@ -4,12 +4,25 @@
 // via POST /corrections.
 import { and, desc, eq, type SQL } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { courses, kcs, misconceptions, tutorConversations, userCorrections } from '../../db/schema';
+import { courses, kcs, userCorrections } from '../../db/schema';
 import type { CreateCorrectionInput, ListCorrectionsQuery, UpdateCorrectionInput } from '../schemas/corrections';
-import { NotFoundError, requireOwnedKc } from './util';
+import { createEvent } from './events';
+import { advanceUserMisconception, requireOwnedMisconception } from './misconceptionLifecycle';
+import { ForbiddenError, NotFoundError, requireOwnedKc } from './util';
 
 type CorrectionRow = typeof userCorrections.$inferSelect;
 export type ShapedCorrection = CorrectionRow & { kcName: string | null; courseSlug: string | null };
+
+/**
+ * A source conversation is stored as an opaque ID because tutor transcripts
+ * are owned by the learner Durable Object, not D1.  The HTTP/runtime ingress
+ * must therefore verify the ID in that learner's object before handing this
+ * capability to the ledger service. Keeping the proof separate from client
+ * input prevents a caller from attaching another learner's conversation ID.
+ */
+export type VerifiedCorrectionProvenance = {
+  sourceConversationId: string;
+};
 
 // Joins in kc_name/course_slug (both null when kc_id is null — a freeform
 // correction with no specific KC) — the shape docs/api.md's Correction type
@@ -41,23 +54,26 @@ async function requireShapedCorrection(db: Db, userId: string, id: string): Prom
   return row;
 }
 
-export async function createCorrection(db: Db, userId: string, input: CreateCorrectionInput): Promise<ShapedCorrection> {
+export async function createCorrection(
+  db: Db,
+  userId: string,
+  input: CreateCorrectionInput,
+  provenance?: VerifiedCorrectionProvenance,
+): Promise<ShapedCorrection> {
   if (input.kc_id) await requireOwnedKc(db, userId, input.kc_id);
 
   if (input.misconception_id) {
-    // Misconceptions are seed content with no user-scoped owner — existence
-    // is all that's checked, not ownership.
-    const rows = await db.select({ id: misconceptions.id }).from(misconceptions).where(eq(misconceptions.id, input.misconception_id)).limit(1);
-    if (!rows[0]) throw new NotFoundError('Misconception');
+    // The misconception is knowledge-plane content, but its KC must still be
+    // reachable through this learner's course graph before it can affect the
+    // learner plane.
+    await requireOwnedMisconception(db, userId, input.misconception_id);
   }
 
-  if (input.source_conversation_id) {
-    const rows = await db
-      .select({ id: tutorConversations.id })
-      .from(tutorConversations)
-      .where(and(eq(tutorConversations.id, input.source_conversation_id), eq(tutorConversations.userId, userId)))
-      .limit(1);
-    if (!rows[0]) throw new NotFoundError('Tutor conversation');
+  // DO-owned conversation ids have no D1 foreign key. A client-supplied ID
+  // is accepted only when the authenticated runtime has verified that exact
+  // ID in this learner's Durable Object.
+  if (input.source_conversation_id && provenance?.sourceConversationId !== input.source_conversation_id) {
+    throw new ForbiddenError('Conversation provenance was not verified for this learner');
   }
 
   const id = crypto.randomUUID();
@@ -73,14 +89,42 @@ export async function createCorrection(db: Db, userId: string, input: CreateCorr
     sourceConversationId: input.source_conversation_id ?? null,
   });
 
+  // Accepting a correction is an activity-stream fact, not learning evidence:
+  // role flags are false so it cannot reset KC freshness or alter mastery.
+  // Link known misconceptions to the same durable event that records the
+  // acceptance, then advance them through confirmation into correction.
+  const { event } = await createEvent(
+    db,
+    userId,
+    {
+      type: 'correction_accepted',
+      kc_id: input.kc_id,
+      payload: { correction_id: id, misconception_id: input.misconception_id ?? null },
+    },
+    'tutor',
+  );
+  if (input.misconception_id) {
+    await advanceUserMisconception(db, userId, {
+      misconception_id: input.misconception_id,
+      status: 'correcting',
+      evidence_event_id: event.id,
+    });
+  }
+
   return requireShapedCorrection(db, userId, id);
 }
 
 export async function updateCorrection(db: Db, userId: string, id: string, patch: UpdateCorrectionInput): Promise<ShapedCorrection> {
-  await requireShapedCorrection(db, userId, id); // 404s on a cross-user id before attempting the write
+  const current = await requireShapedCorrection(db, userId, id); // 404s on a cross-user id before attempting the write
 
   if (patch.status !== undefined) {
     await db.update(userCorrections).set({ status: patch.status }).where(eq(userCorrections.id, id));
+    if (patch.status === 'internalized' && current.misconceptionId) {
+      await advanceUserMisconception(db, userId, {
+        misconception_id: current.misconceptionId,
+        status: 'internalized',
+      });
+    }
   }
 
   return requireShapedCorrection(db, userId, id);

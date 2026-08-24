@@ -18,12 +18,19 @@
 
   bindPopoverDismiss({ isOpen: () => open, close: () => onClose(), anchorEl: () => anchorEl });
 
-  async function logout() {
-    await fetch('/api/v1/auth/logout', {
-      method: 'POST',
-      headers: { Origin: window.location.origin },
-    });
-    window.location.href = '/login';
+  type ClerkWindow = Window & {
+    Clerk?: { signOut: (options?: { redirectUrl?: string }) => Promise<void> | void };
+  };
+
+  function logout() {
+    const clerk = (window as ClerkWindow).Clerk;
+    if (clerk) {
+      clerk.signOut({ redirectUrl: '/sign-in' });
+      return;
+    }
+    // Clerk's client script should always be present after the integration
+    // initializes. This fallback is useful if the page is offline mid-load.
+    window.location.href = '/sign-in';
   }
 </script>
 
@@ -33,10 +40,10 @@
   </button>
 
   {#snippet menuRows()}
-    <a class="row" href="/profile" onclick={onClose}>Profile</a>
+    <a class="row" href="/account" onclick={onClose}>Account</a>
     <a class="row" href="/settings" onclick={onClose}>Settings</a>
     <div class="divider"></div>
-    <button type="button" class="row danger" onclick={logout}>Logout</button>
+    <button type="button" class="row danger" onclick={logout}>Log out</button>
   {/snippet}
 
   {#if open}

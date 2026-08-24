@@ -39,6 +39,12 @@ function capFor(mode: TutorMode): number {
   return mode === 'absorb' ? MAX_MESSAGES_PER_CONVERSATION_ABSORB : MAX_MESSAGES_PER_CONVERSATION;
 }
 
+/** Runtime-facing cap lookup. The Durable Object owns transcript state while
+ * this service remains the single source for the tutor policy. */
+export function messageCapForMode(mode: TutorMode): number {
+  return capFor(mode);
+}
+
 export class ConversationCapReachedError extends Error {
   constructor(cap: number = MAX_MESSAGES_PER_CONVERSATION) {
     super(`This conversation has reached its ${cap}-message cap — please end it and start a fresh one.`);
@@ -218,6 +224,22 @@ async function assembleTutorContext(
       scaffolds: (scaffoldRows as Array<Record<string, unknown>>).map(toAbsorbScaffold),
     },
   };
+}
+
+/**
+ * Builds fresh, deterministic learner context for the runtime's streamed LLM
+ * turn. Keeping this outside the Durable Object preserves the invariant that
+ * learner-model reads remain ordinary services, not agent state.
+ */
+export async function buildTutorSystemPrompt(
+  db: Db,
+  userId: string,
+  kcId: string,
+  mode: TutorMode,
+  details: ConversationDetailsInput | Record<string, unknown> | null | undefined = {},
+) {
+  const kc = await requireOwnedKc(db, userId, kcId);
+  return buildSystemPrompt(await assembleTutorContext(db, userId, kc, mode, details));
 }
 
 export async function appendMessageAndStream(

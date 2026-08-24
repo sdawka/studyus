@@ -6,32 +6,32 @@
 - **Hosting & Database**: Cloudflare Workers (via `@astrojs/cloudflare` 14.2) + D1 SQLite + Drizzle ORM 0.45.2.
 - **Storage**: Cloudflare R2 (file uploads).
 - **AI**: OpenRouter API (LLM proxy for tutor, via SSE).
-- **Auth**: Hand-rolled sessions (SHA-256 token hash, HttpOnly cookie, 30-day sliding expiry, PBKDF2 password hashing now, argon2-WASM post-v1).
+- **Auth**: Clerk via `@clerk/astro`, resolved on every request to an immutable local D1 learner id (`users.id`). The legacy session/password code remains only for account migration compatibility; see `authentication.md`.
 - **Validation**: Zod 4 (top-level `z.email()`, `z.strictObject()`).
 - **Testing**: Vitest 4.1 + `@cloudflare/vitest-pool-workers` 0.21 (real bindings, per-file isolation).
 
 ## Key Principles
 
 ### Headless, Tool-Shaped Services
-Every service function is a **pure function** over `(db, userId, input)` with Zod-validated input, implemented in `src/lib/services/` — one file per domain: `courses.ts`, `kcs.ts`, `events.ts`, `mastery.ts` (pure fold, no db writes), `assessments.ts`, `grades.ts`, `calendar.ts`, `notes.ts`, `tasks.ts`, `resources.ts`, `sessions.ts`, `attachments.ts`, `profile.ts`, `user.ts`, plus shared ownership/error helpers in `util.ts`.
-- Callable from HTTP routes today; from Flue tools or MCP later, with no route-handler logic to duplicate.
+Business logic is transport-free and user-scoped: services accept `(db, userId, input)` with Zod-validated input, while the newer pedagogy modules accept a `DomainContext`. Deterministic CRUD/folds live in `src/lib/services/`; the learner-profile facade and four pedagogy engines live in `src/lib/domain/`.
+- Callable from HTTP routes and server-rendered pages today. The tutor's per-learner Durable Object is the ordered runtime shell; future Flue/MCP/channel adapters must call the same services/domain modules rather than acquire business logic.
 - Route handlers under `src/pages/api/v1/**` only: parse the request (Zod), call one service function, wrap the result in `apiOk(toApi(result))` (or `apiError`/`withServiceErrors` on failure). See `docs/api.md` for the full endpoint list and the "Notes for M2+ agents" section for the calling convention from `.astro` pages vs. islands.
 - Ownership is enforced *inside* services (`requireOwnedCourse`/`requireOwnedKc` in `util.ts`) — a route never queries a table directly.
 - This shapes the code for the **agentic future**: Flue agents will wrap these same services as tools, unchanged.
 
 ### Event-Sourced Mastery
-Mastery is **never stored directly** — it's computed on-demand from an append-only (but editable) event log:
+Mastery truth comes from the event log. `kcs.mastery`, `kcs.status`, and `kcs.last_event_at` are recomputable read caches updated only by the event service after a write:
 - Events carry dual-role flags (`is_instructional`, `is_assessment`) not a category enum.
 - Editable manual events, delete-only system-generated events (with confirmation).
 - Every event write triggers a mastery re-fold for affected KCs.
-- **The fold is pure**: given a list of events, compute the score deterministically (recency-weighted first-attempt AE success + exposure prior from IE).
-- `assessment_kcs.qmatrix_version` allows KC-to-assessment mappings to evolve without rewriting history.
+- **The fold is pure**: given a list of role-flagged evidence events, compute score/status deterministically; context-only activity events never affect score or freshness. `events-and-mastery.md` and `mastery.ts::MASTERY_CONSTANTS` are authoritative.
+- `assessment_kcs.qmatrix_version` is currently a write-only audit/version field; the fold does not consume it.
 
 ### Webapp + Frozen API
 - **HTTP API** (`/api/v1`) is the single source of truth for client contracts.
 - Astro pages call services directly server-side (no self-calls).
 - The same API surfaces for native clients (iPad app later).
-- API contract is frozen at end of M1; iPad and web apps build against the same specification.
+- Original M1 data shapes remain compatibility-oriented and post-M1 additions are additive where practical. Authentication is the explicit exception: Clerk superseded the retired `/auth/login` and `/auth/logout` endpoints. A native client needs a documented Clerk token/session strategy before the API can honestly be called frozen for iPad.
 
 ### Client State (nanostores)
 Cross-island state that used to be prop-threaded or duplicated per-component now lives in `nanostores` atoms under `src/lib/stores/`. Svelte 5 subscribes directly via the `$storeName` auto-subscription (nanostores atoms implement `.subscribe`) — no `@nanostores/svelte` adapter needed. `ui.ts`'s `activePopover` (which of the header's popovers — scratchpad/todo/bell/avatar — is open; previously local `$state` in `HeaderActions.svelte`) and `courseContext.ts`'s `courseContext` (the course the user is currently viewing, `{id, slug, code, title} | null`, SSR-safe default `null`) were the first two. `CourseLayout.astro` mounts a tiny invisible `CourseContextSetter.svelte` island (`client:load`) on every course subpage to publish it; `ScratchpadPopup`, `TodoDropdown`, and `LogEventModal` read it to default a course selection — always just a default, never enforced.
@@ -43,7 +43,7 @@ The whole app shares one token vocabulary, split across files under `src/styles/
 - **`tokens.css`** — theme-agnostic derivations only: `--course`/`--course-ink`/`--course-soft` computed from a per-element `--course-h` (0-360, set inline from `courses.color`) plus theme-owned `--course-l/-c` knobs, so the same hue reads correctly in every theme × scheme combination. Derived on the universal selector `*` (not `:root`) so a per-element `--course-h` override actually re-evaluates — a `:root`-level derivation would pin every element to one hue.
 - **`base.css`** — reset + primitives that read tokens only, never define colors: `.card`, `.btn`/`.btn-primary`/`.btn-secondary`, `.pill`/`.pill-ok`/`.pill-warn`/`.pill-danger`, `.chip`, `.bar`, `.kicker`, `.empty`, `.aside-muted`, plus a **popover primitive set** shared by every header popup (notifications, todo, scratchpad, avatar menu, planner's EventPopover/CreateSessionPopover): `.popover` (surface + `--shadow-pop`, width via `--pop-w` set inline from a theme's `--pop-w-sm/-md/-lg`), `.panel-head`, `.footer-link`, `.icon-btn`.
 - **`themes/{compass,focus,campus}.css`** — the actual OKLCH color/radius/font/spacing/motion *values*, one file per theme. Each defines a light block, an `@media (prefers-color-scheme: dark) [data-theme=X]:not([data-scheme=light])` block, and an explicit `[data-scheme=dark]` block — the same token names resolve differently per theme × scheme, never duplicated as separate class names.
-- **`fonts/{compass,focus,campus}.css`** — self-hosted `@fontsource` variable-font `@font-face` declarations, one file per theme, imported alongside its `themes/*.css` counterpart wherever `AppShell.astro` is used. Compass loads Figtree (display) over the system body/mono stack; focus loads Space Grotesk (display) + Inter (body); campus loads Fraunces (display) + Nunito (body). **`login.astro` does not import `AppShell` and does not import any `fonts/*.css`** — the login page renders in system fonts regardless of theme (see `docs/todo.md`).
+- **`fonts/{compass,focus,campus}.css`** — self-hosted `@fontsource` variable-font `@font-face` declarations, one file per theme, imported by `AppShell.astro`. The standalone `/login` page currently imports Compass and Campus font files but omits `fonts/focus.css`; `/sign-in`, `/sign-up`, and `/account` are bare Clerk routes and do not use `AppShell`. Unifying the unauthenticated shell remains a tracked polish item.
 
 Token contract (present in every theme file): `--bg --surface --surface-2 --text --muted --faint --border --hairline --hover`; `--accent --accent-ink --accent-soft --accent-contrast` (a readable-on-accent text color, for solid-accent buttons/badges); status triples `--good/-ink/-soft --warn/-ink/-soft --danger/-ink/-soft`; sidebar group `--sidebar-bg/-text/-muted/-border/-active-bg/-active-text` (lets focus keep its pinned-dark rail regardless of scheme); structure `--radius-lg/md/sm --font-display/body/mono --font-size-base --shadow-card --shadow-pop`; density/motion `--space-1..6 --motion-fast/-base --weight-med/-semi/-bold --tracking-caps --pop-w-sm/-md/-lg`.
 
@@ -73,10 +73,7 @@ prototype/                                # Old static-HTML design prototype (fr
                                            #   dashboard.html, planner.html, course.html + per-variation CSS/JS
 public/                                   # Static assets served as-is: manifest.webmanifest, icons/ (PWA)
 
-migrations/                               # D1 migration SQL — single regenerated baseline, pre-v0.1 (ADR-003).
-                                           #   ACKNOWLEDGED TEMPORARY DEVIATION (v1.7): two files currently exist
-                                           #   (0001 was appended incrementally rather than the baseline being
-                                           #   regenerated fresh) — pending user authorization to squash back to one.
+migrations/                               # D1 baseline + additive migrations; see ADR-003 current workflow
   0000_chemical_ink.sql
   0001_sticky_white_tiger.sql
   meta/
@@ -87,7 +84,7 @@ scripts/
   gen-icons.mjs                           # PWA icon generation
 
 src/
-  middleware.ts                           # Session → locals.user, gates pages + /api/v1
+  middleware.ts                           # Clerk → immutable local learner, gates pages + /api/v1
   env.d.ts                                # Augments Cloudflare.Env/Env with OPENROUTER_API_KEY
   db/
     schema.ts                             # Drizzle schema (all tables — see data-model.md)
@@ -98,7 +95,9 @@ src/
     themes/{compass,focus,campus}.css     # Per-theme OKLCH color/radius/spacing/motion values
     fonts/{compass,focus,campus}.css      # Per-theme @fontsource @font-face declarations
   lib/
-    auth/                                 # password.ts (PBKDF2), session.ts (token/hash/cookie mgmt)
+    auth/                                 # Clerk local-user bridge/import; legacy password/session migration helpers
+    domain/                               # learner-profile facade + instruction/exercise/admin/orchestrator engines
+    runtime/                              # per-learner Durable Object and tutor runtime ingress
     actions/                              # focusTrap.ts, portal.ts, scrollLock.ts, masonry.ts — Svelte actions
                                            #   for overlays + the /tasks card-grid masonry action
     completionMotion.ts                   # Completion choreography vocabulary: COMPLETION_HOLD_MS (linger),
@@ -143,7 +142,7 @@ src/
     AppShell.astro                        # Sidebar + Header shell; imports tokens/fonts/themes/base.css
     CourseLayout.astro                    # Wraps AppShell; course head + 6-tab bar for /courses/[slug]/*
   components/                             # By feature — Svelte islands + .astro partials side by side
-    LoginForm.svelte                      # Top-level, not feature-namespaced (used only by login.astro)
+    LoginForm.svelte                      # Obsolete pre-Clerk form; retained temporarily, no live page uses it
     admin/                                # GradeTable.svelte, QuickEventForm.svelte
     corrections/                          # v1.7: CorrectionsLedger.svelte (Active/Internalized/All filters,
                                            #   inline "mark internalized" two-step confirm)
@@ -182,7 +181,8 @@ src/
                                            #   correction_proposal), InteractiveModel, QuickQuiz
   pages/
     404.astro
-    login.astro, index.astro, onboarding.astro, dashboard.astro
+    login.astro, sign-in/[...path].astro, sign-up/[...path].astro, account/[...path].astro
+    index.astro, onboarding.astro, dashboard.astro
     calendar.astro                        # 302 redirect → /planner (kept alive for old links/bookmarks)
     grades.astro, feed.astro, planner.astro, profile.astro, settings.astro, tasks.astro
     study.astro, study/quiz.astro
@@ -195,7 +195,7 @@ src/
       [slug]/index.astro, [slug]/concepts.astro, [slug]/notes.astro, [slug]/resources.astro,
       [slug]/practice.astro, [slug]/play.astro, [slug]/kc/[kcId].astro
     api/v1/
-      auth/login.ts, auth/logout.ts
+      auth/login.ts, auth/logout.ts       # explicit 410 auth_retired responses
       user/index.ts
       courses/index.ts, courses/[id]/assessments.ts, courses/[id]/attachments.ts,
         courses/[id]/class-sessions.ts, courses/[id]/practice-summary.ts, courses/[slug].ts
@@ -274,13 +274,13 @@ npm run check                           # wrangler types + astro check
 npm run check:layout                    # scripts/layout-check.cjs
 ```
 
-Deploys are intentionally out of scope for now (local wrangler only — see `docs/todo.md`).
+`npm run deploy` performs a local production build followed by `wrangler deploy`. CI/CD, environment promotion, and rollback automation are still tracked in `docs/todo.md`.
 
 ### Type checking
 
 `npm run check` regenerates the Cloudflare `Env` types (`wrangler types` → `worker-configuration.d.ts`, gitignored, regenerate whenever `wrangler.jsonc` bindings change) and then runs `astro check` (which also covers `.ts`/`.svelte` files, not just `.astro`). `src/env.d.ts` augments the generated global `Cloudflare.Env`/`Env` with `OPENROUTER_API_KEY` (a secret set via `.dev.vars`/`wrangler secret put`, not a `wrangler.jsonc` var, so wrangler's generator doesn't know about it). There are no git hooks wired up — run `npm run check` yourself before committing; CI wiring is tracked in `docs/todo.md`.
 
-As of this writing `npm run check` is clean except: `scripts/seed.ts` and `vitest.config.ts` (blocked on installing `@types/node` — deferred to avoid a lockfile race with concurrent agent work, see `docs/todo.md`), and pre-existing errors inside files under active rework by other agents at the time (`src/components/shell/Header.astro`, `src/pages/feed.astro`) — check with `npm run check` for the current count before assuming either is still true.
+As of 2026-08-24, `npm run check:types` reports zero errors. Treat command output as authoritative rather than preserving old transient diagnostics here.
 
 ### Layout regression guard
 

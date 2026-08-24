@@ -6,6 +6,7 @@ import { withServiceErrors } from '../../../../lib/apiErrors';
 import { toApi } from '../../../../lib/serialize';
 import { createCorrectionSchema, listCorrectionsQuerySchema } from '../../../../lib/schemas/corrections';
 import { createCorrection, listCorrections } from '../../../../lib/services/corrections';
+import { verifyRuntimeConversationProvenance } from '../../../../lib/runtime/tutorRuntime';
 
 export const GET: APIRoute = async ({ url, locals }) =>
   withServiceErrors(async () => {
@@ -20,6 +21,9 @@ export const POST: APIRoute = async ({ request, locals }) =>
     const body = await request.json().catch(() => ({}));
     const input = createCorrectionSchema.parse(body);
     const db = getDb(env.DB);
-    const created = await createCorrection(db, locals.user!.id, input);
+    const provenance = input.source_conversation_id
+      ? await verifyRuntimeConversationProvenance(db, env, locals.user!.id, input.source_conversation_id)
+      : undefined;
+    const created = await createCorrection(db, locals.user!.id, input, provenance);
     return apiOk(toApi(created), { status: 201 });
   });

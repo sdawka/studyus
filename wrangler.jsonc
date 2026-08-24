@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "studyus",
+  "main": "./src/worker.ts",
   "compatibility_date": "2026-08-01",
   "compatibility_flags": ["nodejs_compat"],
   "d1_databases": [
@@ -17,6 +18,20 @@
       "bucket_name": "studyus-uploads"
     }
   ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "LEARNER_AGENT",
+        "class_name": "LearnerAgent"
+      }
+    ]
+  },
+  "exports": {
+    "LearnerAgent": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
+  },
   "vars": {
     "OPENROUTER_MODEL": "openrouter/auto"
   },

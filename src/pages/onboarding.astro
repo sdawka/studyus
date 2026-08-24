@@ -1,27 +1,5 @@
 ---
-import AppShell from '../layouts/AppShell.astro';
-import { env } from 'cloudflare:workers';
-import { getDb } from '../db/client';
-import { listCourses } from '../lib/services/courses';
-import OnboardingFlow from '../components/onboarding/OnboardingFlow.svelte';
-
-const db = getDb(env.DB);
-const user = Astro.locals.user!;
-
-const courses = await listCourses(db, user.id);
-const courseSummaries = courses.map((c) => ({ id: c.id, code: c.code, title: c.title, term: c.term }));
+import TrialLayout from '../layouts/TrialLayout.astro';
+import OnboardingSetup from '../components/onboarding/OnboardingSetup.svelte';
 ---
-<AppShell title="Onboarding">
-  <h1>Welcome to studyus</h1>
-  <p class="lede">A few quick steps to get oriented — skip anytime, everything's editable later from your profile.</p>
-  <OnboardingFlow client:load courses={courseSummaries} initialName={user.name} initialTerm={user.currentTerm} />
-</AppShell>
-
-<style>
-  h1 {
-    font-size: 28px;
-    letter-spacing: -0.015em;
-    margin: 0 0 8px;
-  }
-  .lede { color: var(--muted); margin: 0 0 1.75rem; max-width: 620px; }
-</style>
+<TrialLayout title="Set up studyus"><OnboardingSetup client:load /></TrialLayout>

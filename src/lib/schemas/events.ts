@@ -17,10 +17,32 @@ export const EVENT_TYPES = [
   'assignment_graded',
   'exam_graded',
   'self_assessment',
+  // Assessment evidence used to initialize or diagnose a learner model.
+  'placement_probe',
+  'diagnostic_probe',
   // Dual-role events (both IE and AE) — payload may carry correctness/self-rating
   'practice_done',
   'retrieval_practice',
   'tutor_session',
+  // Context-only triage events. These are activity-stream facts, not learning
+  // evidence, and therefore must never affect mastery or KC freshness.
+  'task_completed',
+  'task_dismissed',
+  'correction_accepted',
+  'correction_dismissed',
+  'recommendation_followed',
+  'recommendation_ignored',
+  // Context-only administrative events.
+  'course_added',
+  'course_archived',
+  'plan_committed',
+  'session_scheduled',
+  'session_rescheduled',
+  'settings_changed',
+  // Context-only coach events.
+  'coach_session',
+  'reflection_captured',
+  'digest_sent',
 ] as const;
 
 export type EventType = (typeof EVENT_TYPES)[number];
@@ -37,9 +59,26 @@ export const EVENT_ROLE_FLAGS: Record<EventType, EventRoleFlags> = {
   assignment_graded: { isInstructional: false, isAssessment: true },
   exam_graded: { isInstructional: false, isAssessment: true },
   self_assessment: { isInstructional: false, isAssessment: true },
+  placement_probe: { isInstructional: false, isAssessment: true },
+  diagnostic_probe: { isInstructional: false, isAssessment: true },
   practice_done: { isInstructional: true, isAssessment: true },
   retrieval_practice: { isInstructional: true, isAssessment: true },
   tutor_session: { isInstructional: true, isAssessment: true },
+  task_completed: { isInstructional: false, isAssessment: false },
+  task_dismissed: { isInstructional: false, isAssessment: false },
+  correction_accepted: { isInstructional: false, isAssessment: false },
+  correction_dismissed: { isInstructional: false, isAssessment: false },
+  recommendation_followed: { isInstructional: false, isAssessment: false },
+  recommendation_ignored: { isInstructional: false, isAssessment: false },
+  course_added: { isInstructional: false, isAssessment: false },
+  course_archived: { isInstructional: false, isAssessment: false },
+  plan_committed: { isInstructional: false, isAssessment: false },
+  session_scheduled: { isInstructional: false, isAssessment: false },
+  session_rescheduled: { isInstructional: false, isAssessment: false },
+  settings_changed: { isInstructional: false, isAssessment: false },
+  coach_session: { isInstructional: false, isAssessment: false },
+  reflection_captured: { isInstructional: false, isAssessment: false },
+  digest_sent: { isInstructional: false, isAssessment: false },
 };
 
 export const EVENT_SOURCES = ['manual', 'session', 'tutor', 'seed'] as const;

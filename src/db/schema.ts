@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { sqliteTable, text, integer, index, uniqueIndex, type AnySQLiteColumn } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, index, primaryKey, uniqueIndex, type AnySQLiteColumn } from 'drizzle-orm/sqlite-core';
 import { TASK_TYPES } from '../lib/schemas/tasks';
 
 // Convention: text ids via crypto.randomUUID(); integer timestamps in epoch ms.
@@ -19,10 +19,18 @@ const createdAt = () =>
 
 export const users = sqliteTable('users', {
   id: id(),
+  // Clerk is the authentication authority. `id` remains the immutable
+  // application/tenant identifier so every existing D1 foreign key stays
+  // valid through the auth migration.
+  clerkUserId: text('clerk_user_id').unique(),
   email: text('email').notNull().unique(),
+  // Retained solely for migration compatibility. New Clerk-provisioned rows
+  // receive a non-verifying sentinel while legacy rows retain their hash.
   passwordHash: text('password_hash').notNull(),
   name: text('name'),
   currentTerm: text('current_term'),
+  institutionName: text('institution_name'),
+  programName: text('program_name'),
   settings: text('settings', { mode: 'json' })
     .notNull()
     .default(sql`'{}'`),
@@ -40,6 +48,23 @@ export const sessions = sqliteTable('sessions', {
   createdAt: createdAt(),
 });
 
+export const academicTerms = sqliteTable(
+  'academic_terms',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    label: text('label').notNull(),
+    startsOn: integer('starts_on').notNull(),
+    endsOn: integer('ends_on').notNull(),
+    timezone: text('timezone').notNull(),
+    isCurrent: integer('is_current', { mode: 'boolean' }).notNull().default(true),
+    createdAt: createdAt(),
+  },
+  (table) => [index('academic_terms_user_current_idx').on(table.userId, table.isCurrent)],
+);
+
 // ---------------------------------------------------------------------------
 // Courses / branches / KCs
 // ---------------------------------------------------------------------------
@@ -54,6 +79,7 @@ export const courses = sqliteTable('courses', {
   title: text('title').notNull(),
   credits: integer('credits'),
   term: text('term'),
+  termId: text('term_id').references(() => academicTerms.id, { onDelete: 'set null' }),
   instructor: text('instructor'),
   prereqs: text('prereqs'),
   overview: text('overview'),
@@ -64,6 +90,7 @@ export const courses = sqliteTable('courses', {
   // sessions generation sweep — see classSessions below.
   meetingDays: text('meeting_days'),
   archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
+  setupState: text('setup_state', { enum: ['draft', 'active'] }).notNull().default('active'),
   createdAt: createdAt(),
 });
 
@@ -268,7 +295,10 @@ export const exercises = sqliteTable(
       .notNull()
       .default(sql`'{}'`),
     source: text('source').notNull(),
-    origin: text('origin', { enum: ['seed', 'user'] }).notNull().default('seed'),
+    // Generated items are durable bank content, not transient model output.
+    // They remain distinguishable from authored seed content and learner-made
+    // items so a future authoring review can filter or replace them safely.
+    origin: text('origin', { enum: ['seed', 'user', 'generated'] }).notNull().default('seed'),
     sortOrder: integer('sort_order').notNull().default(0),
     createdAt: createdAt(),
   },
@@ -308,6 +338,57 @@ export const events = sqliteTable(
     index('events_kc_id_idx').on(table.kcId),
     index('events_user_ts_idx').on(table.userId, table.ts),
   ],
+);
+
+// Durable Object transcripts are intentionally not mirrored into D1. This
+// compact ledger makes their single D1-side session event idempotent across
+// stream retries and explicit end requests.
+export const runtimeTutorSessionEvents = sqliteTable(
+  'runtime_tutor_session_events',
+  {
+    conversationId: text('conversation_id').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    eventId: text('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'cascade' }),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.conversationId, table.userId] }),
+    index('runtime_tutor_session_events_user_id_idx').on(table.userId),
+  ],
+);
+
+// One row makes browser-draft imports idempotent across auth redirects and
+// retries. Simulated demo evidence is excluded at the API schema boundary.
+export const onboardingImports = sqliteTable(
+  'onboarding_imports',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    sourceDraftId: text('source_draft_id').notNull(),
+    courseId: text('course_id').references(() => courses.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (table) => [uniqueIndex('onboarding_imports_user_draft_unique').on(table.userId, table.sourceDraftId)],
+);
+
+export const demoFunnelEvents = sqliteTable(
+  'demo_funnel_events',
+  {
+    id: text('id').primaryKey(),
+    sessionId: text('session_id').notNull(),
+    name: text('name').notNull(),
+    step: text('step'),
+    scenarioId: text('scenario_id'),
+    occurredAt: integer('occurred_at').notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [index('demo_funnel_events_session_idx').on(table.sessionId, table.createdAt)],
 );
 
 // ---------------------------------------------------------------------------
@@ -615,11 +696,46 @@ export const userCorrections = sqliteTable(
     correction: text('correction').notNull(),
     status: text('status', { enum: ['active', 'internalized'] }).notNull().default('active'),
     acceptedAt: integer('accepted_at').notNull(),
-    sourceConversationId: text('source_conversation_id').references(() => tutorConversations.id, { onDelete: 'set null' }),
+    // Conversation state is now owned by the per-learner Durable Object. This
+    // remains an opaque provenance id so legacy D1 transcripts and new DO
+    // transcripts can both be referenced without coupling learner state back
+    // into D1.
+    sourceConversationId: text('source_conversation_id'),
     lastRemindedAt: integer('last_reminded_at'),
     createdAt: createdAt(),
   },
   (table) => [index('user_corrections_user_status_idx').on(table.userId, table.status)],
+);
+
+// Per-learner state for a seeded misconception. The correction ledger remains
+// the learner-facing record of what was corrected; this table is the
+// deterministic lifecycle state that exercise diagnostics and corrections
+// advance. Evidence ids are retained as JSON because one lifecycle row may be
+// supported by several diagnostic probes while the design intentionally adds
+// only this one persistence table.
+export const userMisconceptions = sqliteTable(
+  'user_misconceptions',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    misconceptionId: text('misconception_id')
+      .notNull()
+      .references(() => misconceptions.id, { onDelete: 'cascade' }),
+    status: text('status', { enum: ['suspected', 'confirmed', 'correcting', 'internalized'] }).notNull(),
+    evidenceEventIds: text('evidence_event_ids', { mode: 'json' }).$type<string[]>().notNull().default(sql`'[]'`),
+    suspectedAt: integer('suspected_at'),
+    confirmedAt: integer('confirmed_at'),
+    correctingAt: integer('correcting_at'),
+    internalizedAt: integer('internalized_at'),
+    createdAt: createdAt(),
+    updatedAt: integer('updated_at').notNull(),
+  },
+  (table) => [
+    uniqueIndex('user_misconceptions_user_misconception_unique').on(table.userId, table.misconceptionId),
+    index('user_misconceptions_user_status_idx').on(table.userId, table.status),
+  ],
 );
 
 // ---------------------------------------------------------------------------

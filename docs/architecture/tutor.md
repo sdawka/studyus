@@ -102,7 +102,14 @@ The existing KLI-derived rule (close every turn with a retrieval question, purel
 
 ## Direction: Subsystem Consolidation (2026-08-23)
 
-The tutor is being reorganized into **four pedagogy engines over a deterministic learner model**: an instruction engine (`socratic` / `analogy_example` / `spoonfeed` / `prereq_gap_filler` modes), an exercise engine (`placement` / `assessment` / `practice` / `diagnostic` purposes), an assistant-coach admin engine (review scheduling, curriculum planning, calendar, notifications, digests), and a session orchestrator carrying the coaching stance above. All ship as headless services first, later mounted as tools on **one Flue Durable Object per learner** (revising `docs/architecture/agentic-channels.md`'s per-function agent sketch). Rule of thumb: a new capability joins an existing engine as a mode when it shares that engine's reads/writes; it becomes a new engine only when its I/O contract differs. Full design + build order: `docs/superpowers/specs/2026-08-23-tutor-subsystems-design.md`.
+The tutor is organized into **four pedagogy engines over a deterministic learner model**: an instruction engine (`socratic` / `analogy_example` / `spoonfeed` / `prereq_gap_filler` modes), an exercise engine (`placement` / `assessment` / `practice` / `diagnostic` purposes), an assistant-coach admin engine (review scheduling, curriculum planning, calendar, notifications, digests), and a session orchestrator carrying the coaching stance above. They live as transport-free modules under `src/lib/domain/`; the orchestrator is their sole composition point. A native SQLite **per-learner Durable Object** now mounts the runtime/session shell in the Astro Worker. Rule of thumb: a new capability joins an existing engine as a mode when it shares that engine's reads/writes; it becomes a new engine only when its I/O contract differs. Full design + build order: `docs/superpowers/specs/2026-08-23-tutor-subsystems-design.md`.
+
+The Durable Object is named from immutable local `users.id` after Clerk has
+resolved an authenticated identity to that record. It owns conversation,
+tool-call, session, and alarm state; D1 remains the event/learner-model store.
+The web API uses RPC for commands and DO `fetch()` only for SSE. Existing D1
+tutor transcripts are imported once when a learner runtime first opens, and
+new runtime transcripts are not written back to D1.
 
 ## TODO
 

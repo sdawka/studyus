@@ -1,6 +1,9 @@
 # AI Tutor Subsystems — Design (Approach A)
 
-**Date**: 2026-08-23 · **Status**: approved in discussion; spec under review
+**Date**: 2026-08-23 · **Status**: implemented foundation — learner lifecycle,
+four headless domain engines, Clerk local-ID bridge, and native per-learner
+Durable Object runtime landed in the single Astro Worker. Web is the only
+public channel in this pass; Flue remains a future adapter.
 **Chart**: `docs/index.html` — the canonical, self-contained architecture chart (open in any browser; embedded fonts, no network needed)
 **Sources**: `docs/architecture/tutor.md`, `docs/architecture/events-and-mastery.md`, `docs/architecture/agentic-channels.md`, `docs/architecture/data-model.md`, `docs/todo.md`
 
@@ -25,6 +28,26 @@ Rejected: B (everything-an-agent — agentifying deterministic folds adds latenc
 | Instruction engine | partial | One teaching machine, four modes: `socratic` (the built 6-mode chat tutor incl. absorb), `analogy_example` (analogies/worked examples anchored in the learner's own strong KCs), `spoonfeed` (direct worked instruction when scaffolding should be maximal — an explicit, temporary choice, not a drift), `prereq_gap_filler` (teaches the weak prerequisite that's really behind a struggle at KC X — the open mastery-adjustment TODO as a mode). |
 | Exercise engine | partial | One item machine, four purposes: `placement` (calibration walk over the prereq graph on course-add/onboarding, seeds mastery priors **via placement events** — never direct writes), `assessment` (measure chosen KCs, dual-role events), `practice` (difficulty-ramped adaptive items using `exercises.difficulty`, stored but unused today), `diagnostic` (misconception probes from the seeded catalog — the `diagnostic_probe`s are items whose distractors map to misconceptions; writes lifecycle rows). Selects from the bank; generates items where thin (`origin: 'generated'`). Today: quick_quiz + exercise attempts + absorb-mode probing. |
 | Assistant-coach admin engine | partial | The logistics half of the coach: freshness-aware review queue (upgrades the 7-day `stale_kc` sweep toward SM-2), multi-day curriculum planning to goal/exam dates, calendar bridging, notifications and reminders, progress digests for every channel. |
+
+## Explicit deferrals and test contract
+
+- **Tool and channel adapters — TODO:** Flue/OpenRouter adapters may select and
+  invoke the headless modules, but may not acquire domain business logic. The
+  current web-only runtime remains the tenancy/session shell; verified external
+  channel identity linking and Telegram/SMS/Discord/email ingress are deferred.
+- **Richer instruction and admin behaviours — TODO:** strong-KC analogy
+  selection, adaptive scaffold fading, SM-2 review scheduling, curriculum
+  planning, calendar bridging, notifications, and cross-channel digest delivery
+  remain extensions of their existing engines rather than new agent logic.
+- **Global knowledge-map gating — TODO:** cross-course prerequisite gates remain
+  partial until the global catalog and one-hop frontier gate are completed.
+- **Activity-event contract — required for every implemented learner action:** a
+  specialised action must append its canonical evidence or context event before
+  reporting success. Tests must cover happy paths, boundary/retry/cancellation
+  behaviour, invalid and cross-tenant input, and event ordering/idempotency;
+  any AI generation or streaming is mocked. Persisting a generated bank item is
+  the named content-state exception in invariant 1, so it creates no synthetic
+  learner activity event.
 
 ## New persisted state: misconception lifecycle
 

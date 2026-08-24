@@ -1,0 +1,7 @@
+---
+import { UserProfile } from '@clerk/astro/components';
+
+if (!Astro.locals.user) return Astro.redirect('/sign-in');
+---
+
+<UserProfile routing="path" path="/account" />

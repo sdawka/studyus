@@ -1,10 +1,11 @@
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
 import { getDb } from '../../../../db/client';
-import { apiOk } from '../../../../lib/api';
+import { apiError, apiOk } from '../../../../lib/api';
 import { withServiceErrors } from '../../../../lib/apiErrors';
 import { updateUserSchema } from '../../../../lib/schemas/user';
 import { resolveSettings, updateUser } from '../../../../lib/services/user';
+import { getOnboardingState } from '../../../../lib/services/onboarding';
 
 export const GET: APIRoute = async ({ locals }) => {
   const user = locals.user!;
@@ -23,6 +24,12 @@ export const PATCH: APIRoute = async ({ request, locals }) =>
     const body = await request.json().catch(() => ({}));
     const input = updateUserSchema.parse(body);
     const db = getDb(env.DB);
+    if (input.onboarded) {
+      const state = await getOnboardingState(db, locals.user!.id);
+      if (!state.has_usable_course) {
+        return apiError('onboarding_incomplete', 'Add a course with at least one knowledge component first', 409);
+      }
+    }
     const updated = await updateUser(db, locals.user!.id, input);
     return apiOk({
       id: updated.id,

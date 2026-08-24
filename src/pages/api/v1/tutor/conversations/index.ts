@@ -5,13 +5,13 @@ import { apiOk } from '../../../../../lib/api';
 import { withServiceErrors } from '../../../../../lib/apiErrors';
 import { toApi } from '../../../../../lib/serialize';
 import { createConversationSchema, listConversationsQuerySchema } from '../../../../../lib/schemas/tutor';
-import { createConversation, listConversations } from '../../../../../lib/services/tutor/conversations';
+import { createRuntimeConversation, listRuntimeConversations } from '../../../../../lib/runtime/tutorRuntime';
 
 export const GET: APIRoute = async ({ url, locals }) =>
   withServiceErrors(async () => {
     const query = listConversationsQuerySchema.parse(Object.fromEntries(url.searchParams));
     const db = getDb(env.DB);
-    const conversations = await listConversations(db, locals.user!.id, query);
+    const conversations = await listRuntimeConversations(db, env, locals.user!.id, query);
     return apiOk({ conversations: toApi(conversations) });
   });
 
@@ -20,6 +20,6 @@ export const POST: APIRoute = async ({ request, locals }) =>
     const body = await request.json().catch(() => ({}));
     const input = createConversationSchema.parse(body);
     const db = getDb(env.DB);
-    const conversation = await createConversation(db, locals.user!.id, input);
+    const conversation = await createRuntimeConversation(db, env, locals.user!.id, input);
     return apiOk(toApi(conversation), { status: 201 });
   });

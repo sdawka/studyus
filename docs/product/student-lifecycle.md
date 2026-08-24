@@ -25,18 +25,25 @@ A ninth situation — **absorbing a new KC** (§9, v1.7) — runs orthogonally t
 
 ## 1. Onboarding
 
-A first-time sign-in walks the student from an empty account to a personalized, populated workspace. The goal is confidence in what a "knowledge component" is and a workspace pre-loaded with their real courses, not a blank slate. Surfaces: `OnboardingFlow` (Svelte stepper), the seeded `courses/courses.json` catalog, and the background sweep that turns a confirmed course list into a working calendar.
+**Target contract; not fully implemented yet.** Clerk authentication and local learner provisioning are built, but a new Clerk learner currently lands on the dashboard with no course content unless they separately visit `/onboarding`. The replacement flow is specified in `docs/product/onboarding.md`: collect institution/semester context, create or import one real course, review its proposed knowledge map, and only then mark onboarding complete. The hard postcondition is at least one active course with at least one KC; repository seed courses remain demo/template sources rather than automatic per-user enrollment.
 
 ```mermaid
 flowchart TD
-    A["Sign in<br/>POST /auth/login"] --> B{"onboarded_at set?"}
-    B -->|"no, first time"| C["Step 1: what studyus is"]
-    B -->|"yes, returning"| H["Dashboard"]
-    C --> D["Step 2: how mastery is modeled"]
-    D --> E["Step 3: confirm imported courses<br/>(courses/courses.json, grouped by term)"]
-    E --> F["Step 4: display name + current term<br/>PATCH /user, stamps onboarded_at"]
-    F --> I["Background sweep populates<br/>class_sessions + system tasks"]
-    I --> H["Dashboard<br/>empty calendar, quick tips"]
+    A["Clerk sign-in / sign-up"] --> B["Resolve immutable local learner id"]
+    B --> C{"onboarded_at set<br/>and active course has a KC?"}
+    C -->|"yes"| H["Dashboard"]
+    C -->|"no"| D["University + semester"]
+    D --> E["Add/select a course"]
+    E --> F{"Course source"}
+    F -->|"known template"| G["Clone reviewed course map"]
+    F -->|"upload"| I["Store syllabus/lesson plan<br/>extract suggestions"]
+    F -->|"manual"| J["Enter module + at least one topic"]
+    I --> K["Review/edit proposed branches, KCs,<br/>assessments and schedule"]
+    G --> L["Atomic commit: course + >=1 KC<br/>then stamp onboarded_at"]
+    J --> L
+    K --> L
+    L --> M["Run class/task sweeps"]
+    M --> H
 ```
 
 ## 2. Before Class

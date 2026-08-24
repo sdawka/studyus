@@ -9,17 +9,15 @@ import { getDb } from '../../../../../../db/client';
 import { apiError } from '../../../../../../lib/api';
 import { serviceErrorResponse } from '../../../../../../lib/apiErrors';
 import { postMessageSchema } from '../../../../../../lib/schemas/tutor';
-import { appendMessageAndStream, ConversationCapReachedError } from '../../../../../../lib/services/tutor/conversations';
+import { ConversationCapReachedError } from '../../../../../../lib/services/tutor/conversations';
+import { streamRuntimeTutorReply } from '../../../../../../lib/runtime/tutorRuntime';
 
 export const POST: APIRoute = async ({ params, request, locals }) => {
   try {
     const body = await request.json().catch(() => ({}));
     const input = postMessageSchema.parse(body);
     const db = getDb(env.DB);
-    const stream = await appendMessageAndStream(db, locals.user!.id, params.id!, input.content, {
-      OPENROUTER_API_KEY: env.OPENROUTER_API_KEY,
-      OPENROUTER_MODEL: env.OPENROUTER_MODEL,
-    });
+    const stream = await streamRuntimeTutorReply(db, env, locals.user!.id, params.id!, input.content);
     return new Response(stream, {
       status: 200,
       headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' },

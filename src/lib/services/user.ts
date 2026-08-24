@@ -14,6 +14,11 @@ export const DEFAULT_SETTINGS: ResolvedSettings = {
   theme: 'compass',
   scheme: 'light',
   sidebar_collapsed: false,
+  learning_preferences: {
+    weekly_hours: 7,
+    guidance: 'balanced',
+    depth: 'understand',
+  },
   // Spam-prone families (stale_kc, prep_before_class) ship opt-in; the rest
   // default on.
   task_generators: {

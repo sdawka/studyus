@@ -1,9 +1,13 @@
 import { env } from 'cloudflare:test';
+import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
-import { branches, courses, kcs, misconceptions, tutorConversations, users } from '../src/db/schema';
+import { branches, courses, events, kcs, misconceptions, tutorConversations, userCorrections, userMisconceptions, users } from '../src/db/schema';
 import { createCorrection, listCorrections, updateCorrection } from '../src/lib/services/corrections';
-import { NotFoundError } from '../src/lib/services/util';
+import { getLearnerAgentForUser } from '../src/lib/runtime/learnerAgent';
+import { verifyRuntimeConversationProvenance } from '../src/lib/runtime/tutorRuntime';
+import { createCorrectionSchema } from '../src/lib/schemas/corrections';
+import { ForbiddenError, NotFoundError } from '../src/lib/services/util';
 
 const db = getDb(env.DB);
 
@@ -65,18 +69,78 @@ describe('createCorrection', () => {
       correction: 'Bernoulli only relates points on the same streamline in steady flow.',
     });
     expect(created.misconceptionId).toBe(misconceptionId);
+    const lifecycle = await db
+      .select()
+      .from(userMisconceptions)
+      .where(eq(userMisconceptions.userId, userId));
+    expect(lifecycle).toHaveLength(1);
+    expect(lifecycle[0].misconceptionId).toBe(misconceptionId);
+    expect(lifecycle[0].status).toBe('correcting');
+    expect(lifecycle[0].confirmedAt).not.toBeNull();
+    expect(lifecycle[0].correctingAt).not.toBeNull();
+    expect(lifecycle[0].evidenceEventIds).toHaveLength(1);
+
+    const accepted = await db.select().from(events).where(eq(events.id, lifecycle[0].evidenceEventIds[0])).limit(1);
+    expect(accepted[0].type).toBe('correction_accepted');
+    expect(accepted[0].isAssessment).toBe(false);
+    expect(accepted[0].isInstructional).toBe(false);
   });
 
-  it('resolves source_conversation_id, ownership-checked against the caller\'s own tutor_conversations', async () => {
-    const conversationId = crypto.randomUUID();
-    await db.insert(tutorConversations).values({ id: conversationId, userId, kcId, mode: 'absorb' });
+  it('records source_conversation_id only when the runtime supplies matching verified provenance', async () => {
+    const learner = await getLearnerAgentForUser(env, userId);
+    const conversation = await learner.createConversation({ kcId, mode: 'absorb' });
+    const provenance = await verifyRuntimeConversationProvenance(db, env, userId, conversation.id);
 
     const created = await createCorrection(db, userId, {
       kc_id: kcId,
-      source_conversation_id: conversationId,
+      source_conversation_id: conversation.id,
       correction: 'Corrected via tutor.',
+    }, provenance);
+    expect(created.sourceConversationId).toBe(conversation.id);
+
+    // The correction ledger write is followed by its canonical activity
+    // event, and the event remains entirely scoped to this learner/KC.
+    const accepted = await db.select().from(events).where(eq(events.userId, userId));
+    expect(accepted).toHaveLength(1);
+    expect(accepted[0]).toMatchObject({
+      type: 'correction_accepted',
+      source: 'tutor',
+      kcId,
+      isInstructional: false,
+      isAssessment: false,
     });
-    expect(created.sourceConversationId).toBe(conversationId);
+    expect(accepted[0].ts).toBeGreaterThanOrEqual(created.acceptedAt);
+    expect(accepted[0].payload).toMatchObject({ correction_id: created.id });
+  });
+
+  it('does not verify a conversation ID from another learner Durable Object', async () => {
+    const otherUserId = crypto.randomUUID();
+    const otherLearner = await getLearnerAgentForUser(env, otherUserId);
+    const otherConversation = await otherLearner.createConversation({ kcId, mode: 'absorb' });
+
+    const correctionsBefore = await db.select().from(userCorrections).where(eq(userCorrections.userId, userId));
+    const eventsBefore = await db.select().from(events).where(eq(events.userId, userId));
+    await expect(
+      verifyRuntimeConversationProvenance(db, env, userId, otherConversation.id),
+    ).rejects.toThrow(NotFoundError);
+    expect(await db.select().from(userCorrections).where(eq(userCorrections.userId, userId))).toEqual(correctionsBefore);
+    expect(await db.select().from(events).where(eq(events.userId, userId))).toEqual(eventsBefore);
+  });
+
+  it('verifies an owned legacy D1 conversation after its one-way import into the learner object', async () => {
+    const conversationId = crypto.randomUUID();
+    await db.insert(tutorConversations).values({ id: conversationId, userId, kcId, mode: 'absorb' });
+
+    // The import marker makes this safe to call again when an ingress retries.
+    await expect(verifyRuntimeConversationProvenance(db, env, userId, conversationId)).resolves.toEqual({ sourceConversationId: conversationId });
+    await expect(verifyRuntimeConversationProvenance(db, env, userId, conversationId)).resolves.toEqual({ sourceConversationId: conversationId });
+  });
+
+  it('rejects a random/nonexistent provenance ID without writing a correction or activity event', async () => {
+    const missingId = crypto.randomUUID();
+    await expect(verifyRuntimeConversationProvenance(db, env, userId, missingId)).rejects.toThrow(NotFoundError);
+    expect(await db.select().from(userCorrections).where(eq(userCorrections.userId, userId))).toEqual([]);
+    expect(await db.select().from(events).where(eq(events.userId, userId))).toEqual([]);
   });
 
   it('404s on a kc_id owned by another user', async () => {
@@ -98,15 +162,29 @@ describe('createCorrection', () => {
     ).rejects.toThrow(NotFoundError);
   });
 
-  it('404s on a source_conversation_id owned by another user', async () => {
-    const otherUserId = crypto.randomUUID();
-    await db.insert(users).values({ id: otherUserId, email: `${otherUserId}@test.local`, passwordHash: 'x' });
-    const otherConversationId = crypto.randomUUID();
-    await db.insert(tutorConversations).values({ id: otherConversationId, userId: otherUserId, kcId, mode: 'absorb' });
-
+  it('rejects unverified or mismatched opaque conversation provenance', async () => {
+    const conversationId = crypto.randomUUID();
     await expect(
-      createCorrection(db, userId, { source_conversation_id: otherConversationId, correction: 'x' }),
-    ).rejects.toThrow(NotFoundError);
+      createCorrection(db, userId, { source_conversation_id: conversationId, correction: 'x' }),
+    ).rejects.toThrow(ForbiddenError);
+    await expect(
+      createCorrection(
+        db,
+        userId,
+        { source_conversation_id: conversationId, correction: 'x' },
+        { sourceConversationId: crypto.randomUUID() },
+      ),
+    ).rejects.toThrow(ForbiddenError);
+  });
+
+  it('permits omitted provenance for a manual correction and rejects an invalid source ID before any write', async () => {
+    const manual = await createCorrection(db, userId, { correction: 'Check units first.' });
+    expect(manual.sourceConversationId).toBeNull();
+    expect(createCorrectionSchema.safeParse({ correction: 'x', source_conversation_id: 'not-a-uuid' }).success).toBe(false);
+    const correctionsBefore = await db.select().from(userCorrections).where(eq(userCorrections.userId, userId));
+    const eventsBefore = await db.select().from(events).where(eq(events.userId, userId));
+    expect(correctionsBefore).toHaveLength(1);
+    expect(eventsBefore).toHaveLength(1);
   });
 });
 
@@ -145,6 +223,29 @@ describe('updateCorrection', () => {
     const created = await createCorrection(db, userId, { correction: 'x' });
     const updated = await updateCorrection(db, userId, created.id, { status: 'internalized' });
     expect(updated.status).toBe('internalized');
+  });
+
+  it('internalizing a known correction advances its misconception lifecycle', async () => {
+    const misconceptionId = crypto.randomUUID();
+    await db.insert(misconceptions).values({
+      id: misconceptionId,
+      kcId,
+      slug: 'known-misconception',
+      name: 'Known misconception',
+      description: 'Wrong model.',
+      rootCause: 'Overgeneralization.',
+      diagnosticProbe: 'Does this always hold?',
+      correction: 'It only holds under stated conditions.',
+    });
+    const created = await createCorrection(db, userId, { kc_id: kcId, misconception_id: misconceptionId, correction: 'Correct model.' });
+    await updateCorrection(db, userId, created.id, { status: 'internalized' });
+
+    const rows = await db
+      .select()
+      .from(userMisconceptions)
+      .where(eq(userMisconceptions.misconceptionId, misconceptionId));
+    expect(rows[0].status).toBe('internalized');
+    expect(rows[0].internalizedAt).not.toBeNull();
   });
 
   it('404s on a correction owned by another user', async () => {

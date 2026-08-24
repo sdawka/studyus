@@ -1,0 +1,7 @@
+---
+import { SignIn } from '@clerk/astro/components';
+
+if (Astro.locals.user) return Astro.redirect(Astro.locals.user.onboardedAt ? '/dashboard' : '/onboarding');
+---
+
+<SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" fallbackRedirectUrl="/onboarding" />

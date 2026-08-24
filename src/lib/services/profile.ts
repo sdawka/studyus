@@ -5,6 +5,7 @@ import type { Db } from '../../db/client';
 import { courses, events, kcs, users } from '../../db/schema';
 import { NotFoundError } from './util';
 import { getGlobalFrontier } from './zpd';
+import { listUserMisconceptions } from './misconceptionLifecycle';
 
 function dayKey(ms: number): string {
   return new Date(ms).toISOString().slice(0, 10);
@@ -81,7 +82,10 @@ export async function getProfile(
     ? Math.round(overallMasteries.reduce((a, b) => a + b, 0) / overallMasteries.length)
     : 0;
 
-  const recentEvents = await db.select().from(events).where(eq(events.userId, userId)).orderBy(desc(events.ts)).limit(20);
+  const [recentEvents, misconceptionLifecycle] = await Promise.all([
+    db.select().from(events).where(eq(events.userId, userId)).orderBy(desc(events.ts)).limit(20),
+    listUserMisconceptions(db, userId),
+  ]);
   const allUserEvents = await db.select({ ts: events.ts }).from(events).where(eq(events.userId, userId));
   const { current, longest } = computeStreaks(allUserEvents.map((e) => dayKey(e.ts)));
 
@@ -101,5 +105,6 @@ export async function getProfile(
     current_streak: current,
     recent_events: recentEvents,
     knowledge_map: knowledgeMap,
+    misconception_lifecycle: misconceptionLifecycle,
   };
 }

@@ -1,6 +1,6 @@
 # studyus Data Model
 
-**Re-derived 2026-08-15, updated 2026-08-19 for v1.9, updated 2026-08-20 for v2.0, from `src/db/schema.ts` and `migrations/0000_lively_proteus.sql`** (the sole migration file — see ADR-003's "Schema Management" section for why this is a single regenerated baseline, not an incremental history; this filename is the v2.0 regen — adds `exercises` — superseding the v1.9-era `0000_dashing_cammi.sql`, which itself superseded the v1.6-era `0000_chemical_ink.sql` and the v1.5-era `0000_yielding_nocturne.sql`).
+**Re-derived from `src/db/schema.ts`; current through 2026-08-24.** The repository now contains the v2.0 baseline plus additive migrations for misconception lifecycle, Clerk identity bridging, correction provenance, and runtime tutor events. ADR-003's pre-v0.1 single-baseline preference is therefore historical policy, not the current filesystem shape.
 
 **Glossary note**: "capability" means two different things in this codebase, deliberately not unified. The `capabilities` table (below) is a **domain noun** — a competency a learner is building. Elsewhere (`docs/architecture/overview.md`, `agentic-channels.md`), "capability" was used loosely to mean *a pure service function* — those two docs were reworded to say "service function" instead once the domain table landed, to kill the collision at the source rather than footnote around it. Column names below are the actual snake_case DB names; `src/db/schema.ts` uses camelCase Drizzle field names that map onto them (e.g. `userId` → `user_id`). Every table's primary key is `id` (text, UUID from `crypto.randomUUID()`) unless noted otherwise; every table has `created_at` (integer epoch ms) unless noted.
 
@@ -11,21 +11,25 @@ Timestamps are epoch-ms integers in the DB; the API boundary (`src/lib/serialize
 ### users
 
 - `id` (text, pk)
-- `email` (text, **unique**) — login identity; there is no `username` column
-- `password_hash` (text)
+- `clerk_user_id` (text, nullable, unique) — Clerk's immutable provider id.
+  The local `id` remains the application/tenant key, so all existing foreign
+  keys and the per-learner Durable Object name remain stable through auth
+  migration.
+- `email` (text, **unique**) — local profile/contact identity; Clerk is the authentication authority and there is no `username` column
+- `password_hash` (text) — legacy import compatibility; new Clerk-provisioned users store the non-verifying `clerk-managed` sentinel
 - `name` (text, nullable)
 - `current_term` (text, nullable) — default term filter for calendar/courses (e.g., `"Winter 2025"`)
 - `settings` (text, JSON mode, default `'{}'`) — resolved via `resolveSettings`/`DEFAULT_SETTINGS` in `src/lib/services/user.ts`; holds `theme`, `scheme`, `sidebar_collapsed`, `task_generators` (see `docs/api.md`)
-- `onboarded_at` (integer, nullable) — stamped once by the onboarding stepper
+- `onboarded_at` (integer, nullable) — stamped by the current onboarding stepper, but not yet a global route/content invariant; target behavior is in `docs/product/onboarding.md`
 - `created_at`
 
 No `updated_at`. Not user-scoped by a `user_id` FK (it's the root of the ownership graph).
 
-### sessions
+### sessions (retired legacy auth)
 
-- `id` (text, pk) — **this is not a random session id: it's the lowercase-hex SHA-256 digest of the random session token itself.** The token is given to the client as the `studyus_session` cookie and never stored; a leaked DB row can't be replayed as a cookie. There is no separate `token_hash` column — `id` *is* the hash. See `src/lib/auth/session.ts`.
+- `id` (text, pk) — legacy lowercase-hex SHA-256 digest of the old random session token. No new request writes this table; Clerk owns current sessions.
 - `user_id` → `users.id`, **ON DELETE CASCADE**
-- `expires_at` (integer) — 30-day sliding expiry, renewed once the session is within 15 days of expiring (`RENEW_THRESHOLD_MS` in `session.ts`)
+- `expires_at` (integer) — expiry used by the retired hand-rolled flow
 - `created_at`
 
 ### courses
@@ -177,18 +181,35 @@ Entries created when a tutor's fenced `correction_proposal` (absorb flow) is acc
 - `correction` (text) — not nullable; the canonical corrected statement (often copied verbatim from `misconceptions.correction`)
 - `status` (text enum: `active | internalized`, default `'active'`)
 - `accepted_at` (integer) — not nullable; stamped server-side, never client-settable
-- `source_conversation_id` → `tutor_conversations.id`, nullable, **ON DELETE SET NULL**
+- `source_conversation_id` (text, nullable) — opaque provenance id. New tutor
+  conversations live in a learner Durable Object, so this intentionally is not
+  a D1 foreign key; legacy D1 ids remain valid historical values.
 - `last_reminded_at` (integer, nullable) — last time the `correction_review` notification fired for this entry
 - `created_at`
 
 Index: `user_corrections_user_status_idx` on (`user_id`, `status`).
+
+### user_misconceptions
+
+The learner-plane lifecycle for a seeded misconception. It is the single
+persisted diagnostic state; correction ledger rows remain the human-readable
+history.
+
+- `user_id` → `users.id`, `misconception_id` → `misconceptions.id`, unique as
+  a pair
+- `status` (`suspected | confirmed | correcting | internalized`) advances
+  monotonically; diagnostics and accepted corrections supply the evidence
+- `evidence_event_ids` (JSON), per-status timestamps, `created_at`, and
+  `updated_at`
 
 ### events — the source of truth for mastery
 
 - `id` (text, pk)
 - `user_id` → `users.id`, **ON DELETE CASCADE**
 - `ts` (integer) — when the event occurred (may differ from `created_at`)
-- `type` (text, free string — see `src/lib/schemas/events.ts::EVENT_ROLE_FLAGS` for the 12 recognized values and their role-flag mapping, reproduced in `docs/api.md`)
+- `type` (text, free string — see `src/lib/schemas/events.ts::EVENT_ROLE_FLAGS`
+  for evidence plus context-only activity families). Only role-flagged
+  evidence is folded; context events never change mastery or KC freshness.
 - `is_instructional` (integer/boolean, default `false`) — derived server-side from `type`, not client-settable
 - `is_assessment` (integer/boolean, default `false`) — same
 - `kc_id` → `kcs.id`, nullable, **ON DELETE SET NULL**
@@ -426,7 +447,7 @@ Every non-PK index currently in the schema:
 | `tasks_parent_idx` | tasks | parent_task_id | |
 | `users_email_unique` | users | email | ✓ |
 
-Every table's `id` primary key is implicitly indexed by SQLite on top of the above. This inventory was regenerated alongside the baseline migration (see ADR-003's erratum) — prior drafts of this document and ADR-003 claimed "no indexing strategy defined post-v1," which is no longer true.
+Every table's `id` primary key is implicitly indexed by SQLite on top of the above. Prior drafts claimed "no indexing strategy defined post-v1," which is no longer true; validate this inventory against `src/db/schema.ts` and the full current migration chain.
 
 ## Foreign Keys & ON DELETE Behavior (full inventory)
 
@@ -504,11 +525,12 @@ All FKs below are real SQL `FOREIGN KEY ... ON DELETE ...` constraints emitted i
   "longest_streak": 15,
   "current_streak": 3,
   "recent_events": [ /* last 20 events, newest first */ ],
-  "knowledge_map": null
+  "knowledge_map": { "frontier": 3, "blocked": 8, "mastered": 12, "total": 23 },
+  "misconception_lifecycle": []
 }
 ```
 
-There is **no branch-level mastery rollup** — `by_course` is the only breakdown, computed by averaging each course's KCs' `mastery` cache (courses with no KCs get `0`). `overall_mastery` averages only the courses with a non-zero mastery. `current_streak`/`longest_streak` are consecutive-UTC-calendar-day counts with ≥1 event; `current_streak` is `0` unless the most recent event day is today or yesterday. **`knowledge_map` (v1.9)**: no longer an explicit `null` stub — it's `getGlobalFrontier`'s `counts` object (`{frontier, blocked, mastered, total}`, `src/lib/zpd.ts`/`src/lib/services/zpd.ts`), reusing that same single pass over `kcs`/`kc_edges` rather than a second bespoke query. The `/profile` page itself calls `getGlobalFrontier` a second time, directly, to get the full `by_course` breakdown the `FrontierPanel` needs (this response object only carries the summary counts) — a known duplicate-call candidate for a future dedupe, see `docs/todo.md`.
+There is **no branch-level mastery rollup** — `by_course` is the only breakdown, computed by averaging each course's KCs' `mastery` cache (courses with no KCs get `0`). `overall_mastery` averages only the courses with a non-zero mastery. `current_streak`/`longest_streak` are consecutive-UTC-calendar-day counts with ≥1 event; `current_streak` is `0` unless the most recent event day is today or yesterday. `knowledge_map` is `getGlobalFrontier`'s counts object. `profile.astro` computes the full frontier once and passes those counts into `getProfile`, so the old duplicate traversal is resolved. `misconception_lifecycle` is the learner's current derived/persisted lifecycle readout.
 
 This is NOT stored — it's computed server-side on every request from `courses`, `kcs` (mastery column), and `events`.
 
