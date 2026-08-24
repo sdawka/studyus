@@ -1,5 +1,27 @@
 # studyus Roadmap: Deferred Features
 
+**Current-state rule (2026-08-24)**: historical “shipped summary” sections below
+explain how the product evolved; they are not the active backlog. The active
+priorities are listed here and detailed in their owning docs.
+
+1. **Deepen course ingestion and map maintenance** — the public trial, Clerk
+   handoff, route gate, term/preferences, and atomic first-course/KC import are
+   implemented. Next add durable R2 material ingestion, richer proposal review,
+   and reusable branch/KC maintenance. Full status: `docs/product/onboarding.md`.
+2. **Complete activity-stream instrumentation** — the widened event taxonomy is
+   present, but task/course/session/settings mutations do not all append their
+   canonical context events yet.
+3. **Expose the coach/orchestrator** — four domain engines and the per-learner
+   Durable Object foundation exist; learner-facing session orchestration and
+   external channel adapters remain pending.
+4. **Content maintenance** — branch/KC create/delete/reorder and reusable course
+   templates are required both for onboarding and for later correction of an
+   imported map.
+
+Clerk multi-user authentication, the ZPD frontier, rituals/capabilities, the
+exercise bank, and the native per-learner Durable Object runtime are implemented
+and must not be described as wholly deferred.
+
 **M0–M5 Status (2026-08-11)**: Core v1 complete. Frozen API contract (docs/api.md), mastery fold, core UI, AI tutor, quick_quiz flows shipped.
 
 **v1.1 Status (2026-08-12)**: Rename (studybuddy → studyus, incl. session cookie name) + full UI overhaul shipped. See "v1.1 Shipped Summary" below. Features under "Deferred Features (Post-v1)" remain deferred; a few new deferrals were added by v1.1's own scoping decisions (called out inline).
@@ -34,7 +56,7 @@ Called out separately because they were identified but explicitly not built duri
 - **PlannerRail click-to-schedule**: clicking a rail item jumps the grid to that item's week but doesn't schedule it; there's no click-to-schedule or drag-to-schedule from the rail onto the grid yet (v2).
 - **App-wide horizontal overflow at ~400px viewport width**: fixed in the v1.5 mobile-shell wave (2026-08-14, see the status line above) — below `@media (max-width: 767px)` is now a first-class bespoke layout (bottom nav, sheets, full-page planner/tasks), not just a narrower desktop squeeze. `scripts/layout-check.cjs`'s mobile pass (`CONFIG.mobileViewportWidths: [390, 430]`) guards the regression going forward.
 - **Term-position bar on course cards**: `CourseCards` shows grade/mastery/assessment progress but no "week N of M" term-position indicator — needs term start/end bounds, which aren't modeled yet (`courses.term` is a free-text string, not a date range).
-- **Fonts on unauthenticated pages**: `login.astro` renders standalone (doesn't use `AppShell.astro`) and imports `tokens.css`/`themes/*.css`/`base.css` directly but not any `fonts/*.css` — confirmed the login page falls back to system fonts regardless of the active theme, since the `@fontsource` `@font-face` declarations never load there.
+- **Unauthenticated shell/theme parity**: `/login` is standalone and imports Compass/Campus fonts but omits `fonts/focus.css`; `/sign-in`, `/sign-up`, and `/account` render bare Clerk components rather than the branded shell. Consolidate these routes and remove the obsolete `LoginForm.svelte` path.
 - **Notifications page + bell footer parity**: the todo/scratchpad popovers have `All tasks →`/`All notes →` footer links to real pages, but the notifications bell has no footer because no `/notifications` page exists (the popover is the whole surface). Visual-QA reviewers flag the asymmetry every round — deliberate deferral until a notifications history page is worth building.
 
 ## v1.1 Shipped Summary
@@ -80,9 +102,9 @@ Called out separately because they were explicitly scoped out during v1.1 planni
 
 - **System-generated tasks** — shipped in v1.4 (see the status line above): `services/taskSweep.ts` now generates six families of `system`-sourced tasks (`attend_class`, `prep_before_class`, `review_after_class`, `practice_kc`, `stale_kc`, `grade_entry`), each independently toggleable via `settings.task_generators`, run as an idempotent sweep at the top of `listTasks`/`getCalendar` — the "natural pairing with the notifications sweep" anticipated here turned out to be its own sweep of the same idempotent-generator idiom, not a literal extension of `sweepNotifications`.
 - **Branch/KC CRUD**: `POST /courses` auto-creates one "General" branch; there's still no way to add/edit/delete branches or KCs after course creation outside the seed script. Needed before "add a course" is a complete self-serve flow.
-- **Deploy pipeline**: v1.1 was explicitly local-only per its build plan (no deploys during P0-P3); there's still no CI/CD or `wrangler deploy` step wired to this rename/shell — see "CI/CD pipeline definition" under Operational TODOs below, now also blocking a production rollout of the new shell.
+- **Deploy pipeline**: `npm run deploy` exists, but there is still no CI/CD workflow, environment promotion, or rollback policy. See Operational TODOs below.
 
-Still-deferred from v1 (unchanged by v1.1, see full detail further down): Flue agents + channels, global knowledge map, iPad client, multi-user signup, argon2 password hashing.
+Still deferred: external Flue/channel adapters, native iPad, a genuine global catalog/transitive knowledge-map layer, real social learning, and AFM/BKT/spaced-repetition research work.
 
 ### v1.5-Specific Deferrals
 
@@ -104,27 +126,30 @@ Flagged during the ZPD/capabilities/rituals verify pass, not fixed there because
 - **FrontierGraph edge rendering**: `FrontierGraph.svelte` (`/profile`'s Frontier panel) renders frontier KCs as a flat chip list sharing `PrereqGraph.svelte`'s node styling, but draws no prerequisite edges between them — every node shown is, by definition, already `ready`, so there's nothing currently blocked to draw an edge *to*. Drawing the edges themselves (e.g. dimmed lines into the blocked KCs just past the frontier) would need `FrontierByCourse` to also carry the blocked set per course, not just frontier counts.
 - **Per-course blocked counts**: `GET /api/v1/profile/frontier`'s `FrontierResponse` only reports a single global `blocked` count (`counts.blocked`), not a per-course breakdown — `frontierByCourseSchema` (`src/lib/schemas/zpd.ts`) would need an additive `blocked_count` (or a full blocked-KC list, see the FrontierGraph item above) field per course to show "3 waiting on a prerequisite" scoped to one course rather than only the whole-profile summary.
 - **RitualsPanel create form has no after_class/before_class cadence**: `RitualsPanel.svelte`'s create form only offers `daily`/`weekly` cadences (`CADENCE_OPTIONS`) because it isn't given a `courses` prop, and `after_class`/`before_class` rituals require a `course_id`. A course-scoped ritual can still be created directly via `POST /api/v1/rituals`, just not from this form. Needs `profile.astro` to pass the user's course list down and the form to grow a course picker for those two cadences.
-- **`profile.astro` calls `getGlobalFrontier` twice**: once directly (for the `FrontierPanel`'s full `by_course` breakdown) and once inside `getProfile` (`services/profile.ts`, for `knowledge_map`'s summary counts) — two full passes over the user's `kcs`/`kc_edges` per profile page load. A dedupe candidate: either have `getProfile` accept a precomputed frontier result, or have the page call `getGlobalFrontier` once and derive both the summary counts and the by-course breakdown from that one call.
+- **Frontier query dedupe — resolved**: `profile.astro` computes the frontier once and passes its counts to `getProfile`.
 
 ### Core Features
 
-### Multi-User Signup & Email Verification
+### New Learner Onboarding & Course Ingestion
 
-**Scope**: Currently, v1 is single-user (seeded user for demo). Multi-user requires:
-- Signup form (username, email, password).
-- Email verification flow (token, TTL, retry).
-- Password reset (forgot-password link).
-- Role-based access (student / instructor, post-v1).
+**Core path shipped.** The two-minute public trial, browser-local draft,
+Clerk handoff, authenticated route gate, university/semester/preferences,
+template/manual/local-document paths, atomic first-course import, and the
+meaningful-KC completion invariant are implemented. Remaining work is durable
+R2 ingestion, richer editable proposals, full template-content cloning, and
+post-onboarding branch/KC maintenance; see `docs/product/onboarding.md`.
 
-**Rationale**: Single-user keeps auth minimal for M0. Multi-user is essential for real deployment but can follow the same hand-rolled session pattern.
+Clerk now owns passwords, verification, reset, and sessions. PBKDF2/legacy
+session code is retained only to import old accounts. Role-based authorization
+for future instructor/institutional surfaces remains deferred.
 
-### Argon2 Password Hashing
+### Complete Activity Stream
 
-**Current**: PBKDF2 (safe, simple, built-in via Web Crypto).
-
-**Post-v1**: Migrate to argon2-WASM (memory-hard, slower, better against GPU attacks).
-
-**Scope**: Data migration script (re-hash all existing passwords), library integration.
+The context-only event types are defined, but most originating actions are not
+wired. Add idempotent events for task complete/dismiss, course add/archive,
+session schedule/reschedule, settings changes, recommendations, coach sessions,
+reflections, and digests. `correction_accepted` is the reference implementation.
+Do this before relying on coach digests or recommendation-followed metrics.
 
 ## Mastery Inference
 
@@ -170,7 +195,7 @@ Flagged during the ZPD/capabilities/rituals verify pass, not fixed there because
 - Comments on resources.
 - Resource collections (study guides, playlists).
 
-**Scope**: Requires multi-user, moderation policy, feed algorithm.
+**Scope**: Clerk accounts already provide multi-user identity, but the feature still requires a sharing/visibility model, social graph or groups, moderation policy, privacy controls, and feed/search ranking.
 
 ### Exercise Bank
 
@@ -179,7 +204,19 @@ Flagged during the ZPD/capabilities/rituals verify pass, not fixed there because
 **Still open**:
 - **Coverage stats surface**: no UI shows which KCs have a thin or missing exercise bank (e.g. an instructor/content-admin view, or just a `practice-summary`-style aggregate) — the 748/172 count above is a one-off wave tally, not a queryable metric today.
 - **User-authored exercises UI**: `exercises.origin` is schema-ready for `'user'` (mirrors `misconceptions`/`scaffolds`' seed/user split), but there's no authoring route or form — a student can't add their own practice item to a KC yet.
-- **Difficulty-adaptive selection**: `exercises.difficulty` (1–3, mirrors scaffold fading) is stored but unused for selection — QuickQuiz and the KC-detail Exercises section both show the seeded set undifferentiated by mastery level, rather than picking harder items as mastery climbs.
+- **Difficulty-adaptive selection in shipped flows**: `src/lib/domain/pedagogy/exercise.ts` now selects bank items near a learner's mastery for the new exercise engine, but QuickQuiz and the KC-detail Exercises UI still use their older selection/display paths. Unify them behind the engine before calling adaptive difficulty learner-facing.
+
+### Learning to Learn Course
+
+**Future, opt-in first-party content.** Build a normal studyus course whose KCs
+teach retrieval practice, spacing/interleaving, self-explanation, error
+analysis, calibration, planning, and reflection. It should use ordinary
+branches, prerequisite edges, scaffolds, exercises, rituals, and events so the
+student learns the system by practicing the strategies in it.
+
+Offer it after a learner has established at least one real academic course. It
+must not be auto-enrolled, become a gamified compliance track, or satisfy the
+onboarding requirement in place of a real course.
 
 ### Global Knowledge Map
 
@@ -202,9 +239,9 @@ Flagged during the ZPD/capabilities/rituals verify pass, not fixed there because
 
 **Scope**: Separate codebase (Swift); reuse API contract from `docs/api.md`.
 
-### Flue Agents + Channels
+### External Agent Channels
 
-**Current**: Fully specced in `docs/architecture/agentic-channels.md`, but not implemented.
+**Current**: The single-Worker, per-learner SQLite Durable Object runtime is implemented for web tutor conversations, tool-call/session/alarm state, and one-time D1 transcript import. Four transport-free pedagogy engines also exist. Flue and external channel adapters are not implemented.
 
 **Post-v1**: Deploy Flue agents to multiple channels:
 
@@ -214,18 +251,18 @@ Flagged during the ZPD/capabilities/rituals verify pass, not fixed there because
 - **Email digest**: Daily study recommendation based on mastery.
 - **Slack bot**: For schools with institutional Slack.
 
-**Scope**: Flue API stabilization (currently experimental), channel-specific UX, rate limiting.
+**Scope**: Flue API stabilization, verified channel-identity linking to the same local learner id, channel-specific UX, consent, rate limiting, and delivery/retry semantics. External adapters must not duplicate domain logic or create per-channel learners.
 
 ## AI & Tutoring
 
 ### Advanced Tutor Modes
 
-**Current**: Static mode selection by KC type (recall, classify, worked_example, self_explain, interactive_model).
+**Current**: Static KLI mode selection and absorb chat are learner-facing. The new instruction/exercise/admin/orchestrator modules exist as a tested library foundation but are not mounted into a learner-facing coach flow.
 
 **Post-v1**:
-- Multi-turn lesson planning (agent plans a 5-turn arc, not one-shot).
-- Prerequisite probing ("Before SN2, let's check SN1...").
-- Adaptive difficulty (track performance mid-conversation, adjust).
+- Mount the existing session orchestrator as a learner-facing flow with durable session state.
+- Strong-KC analogy selection and explicit prereq-gap-filler/spoonfeed behavior.
+- Adaptive difficulty across QuickQuiz, KC exercises, and placement/diagnostic purposes.
 - Mode switching (if student isn't progressing in one mode, suggest another).
 - Knowledge map integration (tutor suggests related KCs to study).
 
@@ -273,13 +310,13 @@ Flagged during the ZPD/capabilities/rituals verify pass, not fixed there because
 
 ### CI/CD Pipeline
 
-**Current**: No CI at all — `npm test`, `npm run check`, and `npm run check:layout` are run locally, on the honor system, before committing. See "Deploy pipeline" note above (still local-only wrangler, no `wrangler deploy` step either).
+**Current**: No CI workflow. Tests/check/build run locally; `npm run deploy` exists but is a direct local build + Wrangler deploy with no promotion or rollback automation.
 
 **Post-v1**: A GitHub Actions workflow on PR/push that runs, in order: `npm test` (Vitest + pool-workers), `npm run check` (wrangler types + astro check), `npm run build` (astro build — catches anything the type checker doesn't). Layout checks (`npm run check:layout`) need a running dev server plus Playwright under Node 20 (see `scripts/layout-check.cjs` header) — either spin up `astro dev` in the background in CI and point the script at it, or defer this step to a separate, slower workflow if startup cost is a problem.
 
-**Also blocking `npm run check` from being fully clean today**: `scripts/seed.ts` and `vitest.config.ts` need `@types/node` (`nodejs_compat` flag requires it per wrangler's own guidance) — not installed yet to avoid a lockfile race with concurrent agent work at the time this was written. `npm i --save-dev @types/node` is a same-day fix once that's safe to do.
+`@types/node` is installed and the current type check reports zero errors. Keep CI wording tied to actual command results rather than preserving resolved setup notes.
 
-**Scope**: `.github/workflows/ci.yml`, secrets for any Cloudflare API tokens if a deploy step is added later, `@types/node` install.
+**Scope**: `.github/workflows/ci.yml` and secrets for any Cloudflare API tokens if a deploy step is added later.
 
 ### Monitoring & Observability
 
@@ -312,15 +349,9 @@ Flagged during the ZPD/capabilities/rituals verify pass, not fixed there because
 
 ### Onboarding Depth
 
-**Current**: Svelte stepper to explain KCs, set name, confirm courses. Minimal.
-
-**Post-v1**:
-- Video tutorials (how to use the app).
-- Guided walkthroughs (first login → first event → first tutor session).
-- Contextual help tooltips.
-- FAQ & troubleshooting.
-
-**Scope**: Content creation, UX testing.
+Functional course provisioning and its completion invariant are implemented.
+Next add short contextual guidance on the newly created course and keep longer
+videos, tours, or FAQ content optional and dismissible.
 
 ### Design Polish
 

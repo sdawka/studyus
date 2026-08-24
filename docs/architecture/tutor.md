@@ -90,6 +90,27 @@ Format, grammar, and the parser/evaluator live in `src/lib/services/tutor/modelS
 - `npm run build` and `npm run test` (vitest, `@cloudflare/vitest-pool-workers`) are clean — see `tests/tutor-modelSpec.test.ts`, `tests/tutor-openrouter.test.ts`, `tests/tutor-conversations.test.ts`, `tests/quick-quiz.test.ts`.
 - **No `OPENROUTER_API_KEY` is set in this repo's `.dev.vars`** (only `.dev.vars.example` exists, with the key blank) — so there has been no live call to OpenRouter. All tutor/flow tests mock `fetch` to verify the SSE relay, JSON-mode parsing, mode derivation, message persistence, cap/auto-end behavior, and quiz generation/grading end-to-end against the mocked responses. Live verification (real prompt quality, actual model-spec emission rate, real streaming latency) is a TODO once a key is available.
 
+## Coaching Stance (applies to every tutor surface)
+
+Adopted 2026-08-23 (design: `docs/superpowers/specs/2026-08-23-tutor-subsystems-design.md`). All tutor functions — and especially the session orchestrator — carry an assistant-coach personality:
+
+- **Metacognition-enhancing**: narrate *why* a step was chosen ("this is a retrieval check because X went stale"), prompt planning before and reflection after work, and surface the learner's own trajectory rather than hiding the model from them.
+- **Anti-learned-helplessness**: attribute struggle to strategy and practice, never ability; every dead end ends with one concrete next step; scaffolds fade rather than take over (spoonfeed instruction is an explicit, temporary choice, not a drift).
+- **No-guilt framing**: the same stance the rituals feature enforces through state design — informational tone, no streak-shaming, backfill lands pre-dismissed.
+
+The existing KLI-derived rule (close every turn with a retrieval question, purely informational tone calibrated to mastery) is the assessment-side half of this stance; the coach half extends it to planning, review, and messaging surfaces.
+
+## Direction: Subsystem Consolidation (2026-08-23)
+
+The tutor is organized into **four pedagogy engines over a deterministic learner model**: an instruction engine (`socratic` / `analogy_example` / `spoonfeed` / `prereq_gap_filler` modes), an exercise engine (`placement` / `assessment` / `practice` / `diagnostic` purposes), an assistant-coach admin engine (review scheduling, curriculum planning, calendar, notifications, digests), and a session orchestrator carrying the coaching stance above. They live as transport-free modules under `src/lib/domain/`; the orchestrator is their sole composition point. A native SQLite **per-learner Durable Object** now mounts the runtime/session shell in the Astro Worker. Rule of thumb: a new capability joins an existing engine as a mode when it shares that engine's reads/writes; it becomes a new engine only when its I/O contract differs. Full design + build order: `docs/superpowers/specs/2026-08-23-tutor-subsystems-design.md`.
+
+The Durable Object is named from immutable local `users.id` after Clerk has
+resolved an authenticated identity to that record. It owns conversation,
+tool-call, session, and alarm state; D1 remains the event/learner-model store.
+The web API uses RPC for commands and DO `fetch()` only for SSE. Existing D1
+tutor transcripts are imported once when a learner runtime first opens, and
+new runtime transcripts are not written back to D1.
+
 ## TODO
 
 - **Live OpenRouter verification** once `OPENROUTER_API_KEY` is set locally (see above).

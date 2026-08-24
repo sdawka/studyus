@@ -25,6 +25,13 @@ export const settingsSchema = z.strictObject({
   scheme: z.enum(['light', 'dark', 'system']).optional(),
   sidebar_collapsed: z.boolean().optional(),
   task_generators: taskGeneratorsSchema.optional(),
+  learning_preferences: z
+    .strictObject({
+      weekly_hours: z.number().int().min(2).max(15),
+      guidance: z.enum(['self_directed', 'balanced', 'tell_me_next']),
+      depth: z.enum(['keep_up', 'understand', 'master']),
+    })
+    .optional(),
 });
 export type SettingsInput = z.infer<typeof settingsSchema>;
 

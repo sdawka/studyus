@@ -1,6 +1,8 @@
 # ADR-005: Hand-Rolled Sessions (Lucia Deprecated)
 
-**Status**: Accepted
+**Status**: Superseded by Clerk (2026-08-23); retained as historical context and as the source format for legacy-account migration.
+
+> **Current decision**: Clerk owns sign-in, sign-up, session validation, and sign-out. `src/middleware.ts` resolves a verified Clerk identity to immutable local `users.id`; see `docs/architecture/authentication.md`. The legacy `sessions` table, PBKDF2 hash helpers, and this ADR describe the pre-Clerk system and must not be used for new sessions.
 
 > **2026-08-15 erratum**: the `sessions` table has no separate `token_hash` column — `id` **is** the SHA-256 hex digest of the random session token; the token itself is never stored (see `src/lib/auth/session.ts`). The cookie name is `studyus_session` (`SESSION_COOKIE_NAME` in `session.ts`), not `session_token` as the sketch below shows — this was renamed as part of the studybuddy→studyus rename (see `docs/api.md`:9's erratum). The code samples below (`token_hash` column, `session_token` cookie name) are the original design sketch, not what shipped; see `docs/architecture/data-model.md`'s `sessions` entry for the real column list.
 
@@ -63,7 +65,7 @@ On every request:
 
 ### Password Hashing
 
-**Now**: PBKDF2 via Web Crypto API (built-in, no dependency).
+**At acceptance**: PBKDF2 via Web Crypto API (built-in, no dependency).
 
 ```typescript
 const encoder = new TextEncoder();

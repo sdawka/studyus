@@ -21,7 +21,7 @@ The student faces **cognitive overload**: navigating multiple systems (learning 
 The admin half is **minimal and administrative**: not a classroom — just a mirror of external records (grades, deadlines) and a log of outside-app events (I attended this lecture, I got this grade).
 
 ### Learning (Building mastery)
-- **Resource feed**: Curated and user-added learning materials (textbooks, videos, problem sets, lecture notes) organized by course. Browseable, searchable, shareable.
+- **Resource feed**: Curated and user-added learning materials (textbooks, videos, problem sets, lecture notes) organized by course. The shipped surface is a private, course-filterable collection; text search and real peer sharing remain future work.
 - **Per-course view**: Overview of the course, all knowledge components (KCs) with mastery bars, grouped by branch (chapters, units, themes).
 - **KC detail**: Mastery history, event timeline (all ways you've encountered this topic), linked resources and notes, interactive "Tutor me" button.
 - **AI tutor**: Adaptive dialogue by KC type — spaced recall drills for facts, classification exercises for concepts, worked examples for procedures, interactive models for principles (e.g. sliders to adjust Bernoulli flow parameters).
@@ -32,6 +32,10 @@ The admin half is **minimal and administrative**: not a classroom — just a mir
 - **Rituals** (v1.9): a learner-authored study structure, either a recurring habit ("Sunday weekly review") or an in-session shape (warm-up → retrieval → new material → reflect) picked at the start of a study session, or both. Purely a scaffold the student opts into — the step rail is guidance, never an enforced gate, and adherence is shown as plain counts and a done/skipped/upcoming dot row, never a streak or badge to protect (see Design Vibe below).
 - **Capabilities** (v1.9): two layers beyond a single KC's mastery. Competencies aggregate KCs into a higher-order skill that can cross course boundaries (e.g. "quantitative modeling" spanning two engineering courses), with a derived mastery/coverage rollup. Meta-skills are a fixed, un-scored readout of *how* a student studies — retrieval practice, self-explanation, error analysis — reported as frequency and trend, never a score, since scoring how someone learns invites gaming the metric rather than the learning itself.
 
+### Future First-Party Course: Learning to Learn
+
+A later, opt-in **Learning to Learn** course will turn the existing meta-skill vocabulary into teachable KCs and ordinary study experiences: retrieval practice, spacing/interleaving, self-explanation, error analysis, calibration, planning, and reflection. It should use the same course/KC/exercise/ritual machinery as any academic course and model the coaching stance without becoming a compulsory onboarding tutorial. It is offered only after the learner has established at least one real course; it must never satisfy onboarding's real-course requirement by itself.
+
 ### The Identity Profile (v1.9)
 
 `/profile` is where a student sees the whole picture of who they are as a learner, not just a grade table: overall standing, capabilities (competencies + meta-skill signals), the **learning frontier** — unmastered concepts whose prerequisites are already in reach, the Vygotskian zone of proximal development made concrete — rituals and their adherence, then the existing per-course mastery and recent-activity breakdowns. It replaces the old "global knowledge map — coming later" placeholder with a real, always-computed-on-read view (no persisted knowledge-map table; see `docs/architecture/data-model.md`).
@@ -40,7 +44,7 @@ The learning half is **low-distraction and mastery-focused**: what should I stud
 
 ## Design Vibe
 
-**Simple and minimal.** No chrome, animations, or gamification. Avoid dark patterns. The vibe is **motivational-but-purely-informational**: show progress (mastery curves, attendance streaks), but don't coerce engagement.
+**Simple and minimal.** Chrome recedes and motion is brief, token-owned, and removable under reduced-motion preferences. Small completion celebrations may acknowledge an action, but the product does not use points, badges, guilt, loss aversion, or protected streaks to manufacture engagement. The vibe is **motivational-but-purely-informational**: show progress and activity history without coercion.
 
 **Student-friendly.** The student should feel like this is *their* tool, not another institutional system. Keyboard-navigable, fast, zero configuration.
 
@@ -48,6 +52,6 @@ The learning half is **low-distraction and mastery-focused**: what should I stud
 
 ## TODO
 
-- Onboarding flow: how do we explain KCs, events, and mastery to a first-time user? (Deferred to M5 design pass.)
-- Motivational messaging: streaks, celebration, reflection prompts. (Post-v1 polish.)
-- Social features: study groups, shared resources, peer feedback. (Post-v1; currently single-user seed.)
+- Implement the first-run course-ingestion contract in `docs/product/onboarding.md`.
+- Reflection and coaching copy should follow the no-guilt stance; richer prompts remain post-onboarding polish.
+- Social features: cross-user study groups, shared resources, peer feedback, moderation, and discovery. Clerk makes accounts multi-user, but resources remain owner-scoped today.

@@ -80,4 +80,32 @@ describe('foldMastery', () => {
     const result = foldMastery(events, NOW);
     expect(result.mastery).toBeGreaterThan(80);
   });
+
+  it('ignores context-only activity for mastery and freshness', () => {
+    const evidenceAt = NOW - 20 * DAY_MS;
+    const result = foldMastery(
+      [
+        { ts: evidenceAt, isInstructional: false, isAssessment: true, payload: { correct: true } },
+        // A later correction acceptance has neither role flag, so it cannot
+        // make an old KC appear fresh or change its evidence-derived result.
+        { ts: NOW - DAY_MS, isInstructional: false, isAssessment: false, payload: {} },
+      ],
+      NOW,
+    );
+    const evidenceOnly = foldMastery(
+      [{ ts: evidenceAt, isInstructional: false, isAssessment: true, payload: { correct: true } }],
+      NOW,
+    );
+
+    expect(result).toEqual(evidenceOnly);
+    expect(result.lastEventAt).toBe(evidenceAt);
+  });
+
+  it('keeps a context-only KC not-started', () => {
+    expect(foldMastery([{ ts: NOW, isInstructional: false, isAssessment: false, payload: {} }], NOW)).toEqual({
+      mastery: 0,
+      status: 'not-started',
+      lastEventAt: null,
+    });
+  });
 });

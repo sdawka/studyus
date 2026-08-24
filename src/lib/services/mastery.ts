@@ -84,7 +84,13 @@ function statusFor(mastery: number, hasEvents: boolean): KcStatus {
 }
 
 export function foldMastery(events: FoldEvent[], now: number = Date.now()): MasteryResult {
-  if (events.length === 0) {
+  // The activity stream also holds triage/admin/coach context. Only learning
+  // evidence may establish freshness or contribute to mastery; otherwise an
+  // unrelated action (for example accepting a correction) could defer a KC's
+  // review forever.
+  const evidenceEvents = events.filter((event) => event.isInstructional || event.isAssessment);
+
+  if (evidenceEvents.length === 0) {
     return { mastery: 0, status: 'not-started', lastEventAt: null };
   }
 
@@ -95,7 +101,7 @@ export function foldMastery(events: FoldEvent[], now: number = Date.now()): Mast
   let weightSum = 0;
   let ieBump = 0;
 
-  for (const e of events) {
+  for (const e of evidenceEvents) {
     if (e.isAssessment) {
       const w = recencyWeight(e.ts, now, RECENCY_HALF_LIFE_MS);
       weightedSuccessSum += w * eventSuccess(e.payload);
@@ -110,7 +116,7 @@ export function foldMastery(events: FoldEvent[], now: number = Date.now()): Mast
   const aeComponent = weightSum > 0 ? (weightedSuccessSum / weightSum) * 100 : 0;
   const raw = Math.min(100, aeComponent + ieBump);
 
-  const lastEventAt = Math.max(...events.map((e) => e.ts));
+  const lastEventAt = Math.max(...evidenceEvents.map((e) => e.ts));
   const idleMs = Math.max(0, now - lastEventAt);
   const decayFactor = Math.pow(0.5, idleMs / IDLE_DECAY_HALF_LIFE_MS);
   const decayed = raw * decayFactor + raw * IDLE_DECAY_FLOOR_RATIO * (1 - decayFactor);

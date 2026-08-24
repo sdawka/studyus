@@ -2,6 +2,8 @@
 
 **Status**: Accepted
 
+> **2026-08-23 auth erratum**: the hosting/SSR decision remains accepted, but Clerk now owns authentication and sessions. `/`, `/compare`, `/login`, `/sign-in`, and `/sign-up` are public page routes; middleware redirects other unauthenticated pages to `/sign-in`. See `docs/architecture/authentication.md`.
+
 **Decision**: Use Astro 7.2 with `output: 'server'` deployed to Cloudflare Workers (not Pages) via `@astrojs/cloudflare` 14.2.
 
 ## Context
@@ -28,7 +30,7 @@ Alternatives considered:
 ## Consequences
 
 **Positive:**
-- Full control over auth & session lifecycle (hand-rolled vs. library).
+- Middleware-level control over authorization and local learner resolution while Clerk owns credential/session security.
 - Direct access to Cloudflare primitives (D1 atomicity via `db.batch`, R2 streaming).
 - Frozen API contract (`/api/v1` endpoints) separates webapp from native clients.
 - Svelte islands strike a balance between static rendering and interactivity.
@@ -41,7 +43,7 @@ Alternatives considered:
 ## Notes
 
 - **wrangler.jsonc** is the source of truth for bindings; no Astro config pollution.
-- **Middleware gates** everything; `/login` is the only public route.
+- **Middleware gates** product pages and `/api/v1`; marketing and Clerk entry routes are public.
 - **Local dev** is reliable because we use real D1 (not mocks).
 
 See `docs/architecture/cloudflare.md` for adapter specifics.

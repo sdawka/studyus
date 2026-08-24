@@ -7,7 +7,7 @@ import '../styles/themes/focus.css';
 import '../styles/themes/campus.css';
 import '../styles/base.css';
 import ThemeScript from '../components/shell/ThemeScript.astro';
-import LoginForm from '../components/LoginForm.svelte';
+import { SignIn } from '@clerk/astro/components';
 
 if (Astro.locals.user) {
   return Astro.redirect('/dashboard');
@@ -130,7 +130,7 @@ if (Astro.locals.user) {
     <div class="card">
       <h1>Welcome back</h1>
       <p class="sub">Sign in to pick up where you left off.</p>
-      <LoginForm client:load />
+      <SignIn routing="path" path="/login" signUpUrl="/sign-up" fallbackRedirectUrl="/dashboard" />
     </div>
   </body>
 </html>

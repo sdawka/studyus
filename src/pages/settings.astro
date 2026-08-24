@@ -73,21 +73,15 @@ const settings = resolveSettings(user.settings);
     }
   });
 
-  document.getElementById('logout-btn')?.addEventListener('click', async () => {
-    const result = await apiFetch(
-      '/api/v1/auth/logout',
-      { method: 'POST', headers: { Origin: window.location.origin } },
-      'Could not log out — try again',
-      'Network error — could not log out',
-    );
-    if (!result.ok) {
-      // A non-ok response always shows this fixed message (ignoring
-      // whatever the server said); only a true network failure shows its
-      // own message — matches the pre-apiFetch behavior here.
-      pushToast(result.reason === 'network' ? result.error : 'Could not log out — try again', 'error');
+  document.getElementById('logout-btn')?.addEventListener('click', () => {
+    const clerk = (window as Window & {
+      Clerk?: { signOut: (options?: { redirectUrl?: string }) => Promise<void> | void };
+    }).Clerk;
+    if (clerk) {
+      clerk.signOut({ redirectUrl: '/sign-in' });
       return;
     }
-    window.location.href = '/login';
+    window.location.href = '/sign-in';
   });
 </script>
 

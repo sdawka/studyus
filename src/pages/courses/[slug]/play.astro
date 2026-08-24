@@ -3,7 +3,7 @@ import CourseLayout from '../../../layouts/CourseLayout.astro';
 import { env } from 'cloudflare:workers';
 import { getDb } from '../../../db/client';
 import { getCourseBySlug } from '../../../lib/services/courses';
-import { listConversations } from '../../../lib/services/tutor/conversations';
+import { listRuntimeConversations } from '../../../lib/runtime/tutorRuntime';
 import { NotFoundError, notFound } from '../../../lib/handleNotFound';
 import PlayPanel from '../../../components/course/PlayPanel.svelte';
 
@@ -23,7 +23,7 @@ const allKcs = course.branches.flatMap((b) => b.kcs);
 const principleKcs = allKcs.filter((kc) => kc.kcType === 'principle');
 const conceptKcs = allKcs.filter((kc) => kc.kcType === 'concept');
 
-const conversations = await listConversations(db, userId, { course: course.id, limit: 10 });
+const conversations = await listRuntimeConversations(db, env, userId, { course: course.id, limit: 10 });
 ---
 <CourseLayout course={course} active="play">
   <PlayPanel

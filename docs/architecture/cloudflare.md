@@ -148,7 +148,7 @@ wrangler d1 migrations apply studyus --remote
 
 Migrations are tracked in the `_cf_migrations` table and are idempotent (Drizzle generates safe migrations).
 
-**Pre-v0.1**: studyus hasn't shipped v0.1 yet, so `migrations/` isn't an append-only incremental history today — a schema change regenerates a single baseline file from scratch instead of adding a new numbered one, and local D1 state (`.wrangler/state/v3/d1/`) gets wiped and reseeded alongside it. Full procedure and rationale: `docs/decisions/ADR-003-d1-drizzle.md`'s "Schema Management" section. This flips to real incremental migrations once there's user data worth preserving continuity for.
+**Current migration workflow**: the repository now carries a `0000` baseline plus additive numbered migrations. Generate and review an incremental migration; do not delete the existing history. ADR-003 records the older single-baseline workflow as historical context.
 
 ### Environment Variables
 

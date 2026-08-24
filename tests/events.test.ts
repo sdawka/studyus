@@ -52,6 +52,28 @@ describe('events service', () => {
     expect(masteryDeltas).toHaveLength(0);
   });
 
+  it('records context-only events without changing a KC mastery cache or freshness', async () => {
+    const evidence = await createEvent(db, userId, {
+      type: 'quiz_taken',
+      kc_id: kcId,
+      payload: { correct: true },
+    });
+    const before = await db.select().from(kcs).where(eq(kcs.id, kcId)).limit(1);
+
+    const context = await createEvent(db, userId, {
+      type: 'correction_accepted',
+      kc_id: kcId,
+      payload: { correction_id: crypto.randomUUID() },
+    });
+    const after = await db.select().from(kcs).where(eq(kcs.id, kcId)).limit(1);
+
+    expect(context.event.isAssessment).toBe(false);
+    expect(context.event.isInstructional).toBe(false);
+    expect(context.masteryDeltas[0]?.new_mastery).toBe(evidence.masteryDeltas[0].new_mastery);
+    expect(after[0].mastery).toBe(before[0].mastery);
+    expect(after[0].lastEventAt).toBe(before[0].lastEventAt);
+  });
+
   it('deleting an event re-folds the KC from the remaining events', async () => {
     const first = await createEvent(db, userId, { type: 'quiz_taken', kc_id: kcId, payload: { correct: true } });
     const second = await createEvent(db, userId, { type: 'quiz_taken', kc_id: kcId, payload: { correct: true } });

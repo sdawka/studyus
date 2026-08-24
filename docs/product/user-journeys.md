@@ -1,16 +1,16 @@
 # studyus User Journeys
 
-**Re-derived 2026-08-15 against `docs/product/screens.md` and the current routes/components** — the sections below on sign-in, the sidebar's entry points, and `/calendar`/`/grades`/`/study` all describe a shape that predates several rewrites; corrected to match what's actually shipped.
+**Re-derived 2026-08-24 against the current Clerk middleware, routes, and components.** “Current” below means reachable behavior in the working app. The onboarding contract and its explicit follow-ups live in `docs/product/onboarding.md`.
 
 > For the full term-long lifecycle as diagrams — before/in/after class, weekly planning, pre-exam practice, post-grade reflection, and the mastery loop — see `docs/product/student-lifecycle.md`.
 
-## Onboarding (First-Time User)
+## Current First-Time User Path
 
-1. **Sign in** with email/password (`POST /auth/login`; there is no `username` field anywhere in the schema or auth flow — see `docs/architecture/data-model.md`'s `users` entry). Redirect to onboarding if new.
-2. **Explain KC concept**: what is a knowledge component? Why should you care? (Svelte stepper modal, `OnboardingFlow.svelte`.)
-3. **Review imported courses**: the 9 seeded courses from `courses/courses.json`, grouped by term. Confirm or archive. (Later: multi-user → email verification, manual signup — still deferred, see `docs/todo.md`.)
-4. **Set preferences**: your name, current term (`PATCH /user`, stamps `onboarded_at`).
-5. **Land on dashboard** with an empty calendar (no events yet) and quick tips ("Ready to log your first lecture?").
+1. **Try it publicly** at `/try`. Three skippable setup sections create a browser-local shadow workspace, followed by nine interactive university-life situations. No account is required and simulated evidence stays simulated.
+2. **Authenticate with Clerk** at `/sign-in` or `/sign-up`. A trial sign-up returns to `/onboarding?import=demo`; middleware resolves the verified Clerk identity to immutable local `users.id`.
+3. **Confirm import or start fresh.** The learner sees the exact context, preferences, and real course proposal eligible for import. Demo scores, scenarios, tasks, and grades are excluded.
+4. **Create the first useful course.** Choose a reviewed McGill template, manually enter topics, or locally extract suggestions from PDF/DOCX/text/Markdown. The learner reviews the proposed map before commit.
+5. **Enter the product only with usable content.** Middleware redirects unfinished or legacy-empty learners to `/onboarding`. Completion requires one active, non-archived course with a meaningful KC, and the learner lands on that course overview.
 
 ## Returning User: Sidebar Entry Points
 
@@ -23,7 +23,7 @@ The desktop sidebar (`Sidebar.astro`) offers three persistent entry points above
 
 ### Door 2: Feed (Unintentional Instruction)
 - **Route**: `/feed`
-- **Flow**: Browse curated and user-added resources (canonical/seed links + user shares) in a Pinterest-style masonry grid, filtered by course chip.
+- **Flow**: Browse the learner's private curated and user-added links in a Pinterest-style masonry grid, filtered by course chip. Search and cross-user/community sharing are not implemented.
 - **Use case**: "I have 20 minutes. What's a good thing to read or watch right now?"
 
 ### Door 3: Tasks (Everything Checkable)
@@ -77,14 +77,14 @@ Attendance is **not** an ad hoc event-log button anymore. `class_sessions` rows 
 
 ## Future: Bus-Quiz Channel
 
-Post-v1, Flue agents enable agentic flows on new channels:
+The native per-learner Durable Object runtime is implemented for web tutor state. External channel identity/linking and channel adapters remain future work:
 - **Bus quiz**: short MCQ on Telegram/SMS (via Durable Objects + channel router) given (course?, KC?, time budget). Generates N questions, grades, appends events.
 - Other channels: WhatsApp, Discord, email digest.
 
-*Fully specced in `docs/architecture/agentic-channels.md`, post-v1 experimental.*
+*Runtime foundation and historical channel design: `docs/architecture/agentic-channels.md`.*
 
 ## TODO
 
-- Onboarding detail: stepper content, KC explanation language, pacing.
+- Implement the gated onboarding and course-ingestion contract in `docs/product/onboarding.md`.
 - Study-session organizer (Feed view): allow batching multiple resources into a session plan.
 - Reflection prompts: after study, after an assessment, weekly check-in.

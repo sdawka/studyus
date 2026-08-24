@@ -3,7 +3,7 @@ import { env } from 'cloudflare:workers';
 import AppShell from '../../layouts/AppShell.astro';
 import { getDb } from '../../db/client';
 import { getKc } from '../../lib/services/kcs';
-import { createConversation, getConversation } from '../../lib/services/tutor/conversations';
+import { createRuntimeConversation, getRuntimeConversation } from '../../lib/runtime/tutorRuntime';
 import { NotFoundError, notFound } from '../../lib/handleNotFound';
 import ScaffoldChat from '../../components/tutor/ScaffoldChat.svelte';
 
@@ -21,13 +21,13 @@ try {
 
 const existingId = Astro.url.searchParams.get('c');
 if (!existingId) {
-  const created = await createConversation(db, userId, { kc_id: kcId });
+  const created = await createRuntimeConversation(db, env, userId, { kc_id: kcId });
   return Astro.redirect(`/tutor/${kcId}?c=${created.id}`);
 }
 
 let conversation;
 try {
-  conversation = await getConversation(db, userId, existingId);
+  conversation = await getRuntimeConversation(db, env, userId, existingId);
 } catch (err) {
   if (err instanceof NotFoundError) return notFound(Astro);
   throw err;

@@ -9,13 +9,13 @@ import { apiOk } from '../../../../../../lib/api';
 import { withServiceErrors } from '../../../../../../lib/apiErrors';
 import { toApi } from '../../../../../../lib/serialize';
 import { endConversationSchema } from '../../../../../../lib/schemas/tutor';
-import { endConversation } from '../../../../../../lib/services/tutor/conversations';
+import { endRuntimeConversation } from '../../../../../../lib/runtime/tutorRuntime';
 
 export const POST: APIRoute = async ({ params, request, locals }) =>
   withServiceErrors(async () => {
     const body = await request.json().catch(() => ({}));
     const input = endConversationSchema.parse(body);
     const db = getDb(env.DB);
-    const result = await endConversation(db, locals.user!.id, params.id!, input);
+    const result = await endRuntimeConversation(db, env, locals.user!.id, params.id!, input);
     return apiOk(toApi(result));
   });

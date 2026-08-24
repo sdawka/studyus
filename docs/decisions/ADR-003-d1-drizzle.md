@@ -41,7 +41,7 @@ Alternatives:
 
 ## Schema Management
 
-**Pre-v0.1 workflow (user-directed 2026-08-13, current)**: studyus has no shipped release yet, so there's no user data whose continuity a schema change needs to preserve — incremental `ALTER TABLE` migrations buy safety this project doesn't need yet, at the cost of a `migrations/` directory that grows one file per change. Until v0.1 ships, a schema change instead regenerates a **single baseline migration** from scratch:
+**Historical pre-v0.1 workflow (user-directed 2026-08-13)**: the project originally regenerated a single baseline migration from scratch while no user data needed continuity.
 
 1. Edit `src/db/schema.ts`.
 2. Delete everything under `migrations/` (including `migrations/meta/`).
@@ -49,9 +49,9 @@ Alternatives:
 4. Wipe local D1 state — delete `.wrangler/state/v3/d1/` (no local data is worth preserving either).
 5. `npm run db:migrate:local` re-applies the fresh baseline, then `npm run db:seed` reseeds demo data.
 
-One consequence: "Migration 000N adds X" phrasing elsewhere in the docs (`docs/api.md`'s versioned "Additions" sections) narrates *when* a feature landed in the project's history, not a literal file you'll find in `migrations/` today — the whole history is folded into the current single baseline.
+**Current filesystem (2026-08-24)**: the repository has a `0000` baseline plus additive `0001`–`0004` migrations for learner misconceptions, Clerk bridging, correction provenance, and tutor runtime events. Do not delete or regenerate this history casually. Until a separate schema-management decision changes it, follow the incremental workflow below.
 
-**Post-v0.1 workflow (once there's real user data to preserve)**: flip to incremental, additive-only migrations —
+**Current incremental workflow**:
 
 1. Update `src/db/schema.ts`.
 2. Run `drizzle-kit generate` → generates one new numbered SQL file in `migrations/`, on top of the existing history (never edits or deletes a past file).

@@ -1,6 +1,30 @@
 # Agentic Flows & Channels: Flue Architecture
 
-**Status**: Fully specced for v1 design-for; **implementation post-v1** (Flue API still experimental).
+**Status**: Implemented runtime foundation (2026-08-23). The historical
+multiple-agent/standalone-Flue-worker sketch below is retained for channel
+examples, but is superseded by the per-learner runtime contract immediately
+below. Flue remains an optional adapter once its API stabilizes.
+
+## Implemented learner runtime
+
+- The Astro Worker remains the one deployment and exports one SQLite-backed
+  `LearnerAgent` Durable Object. Its deterministic name is `learner:<local
+  users.id>`; a Clerk identity is resolved to that immutable local ID before a
+  stub is selected. A browser never receives a Durable Object namespace, ID,
+  or user-selectable tenant key.
+- Agent/session state, active conversation transcripts, tool-call records, and
+  scheduled alarms live in the learner's Durable Object. D1 remains the
+  deterministic application store (courses, KCs, events, lifecycle, ledger).
+  Existing D1 tutor transcripts are imported one time on first access and no
+  newly-created runtime transcript is written there.
+- The web tutor routes call typed DO RPC methods for create/read/list/end and
+  DO `fetch()` only for SSE, then use ordinary learner/pedagogy services for
+  context assembly and event recording. This keeps folds non-agentic.
+- A future Telegram/SMS/Discord/email adapter must authenticate/link its
+  channel identity to the same local learner ID and use this ingress. It must
+  not create a per-channel agent or access D1 directly.
+
+## Historical Flue design
 
 This document describes how studyus will integrate **Flue** (`@flue/server`, `@flue/client` 2.x — the Astro team's agent harness) to deliver learning across multiple channels (web, Telegram, SMS, Discord) without duplicating business logic.
 

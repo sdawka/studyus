@@ -1,12 +1,10 @@
-# studyus API — FROZEN v1 (M1, 2026-08-11)
+# studyus API — v1 contract (M1 baseline + additive revisions)
 
-**Status**: FROZEN v1. This is the contract the iPad client (and any other native/agentic caller) builds against. Changes after this point are additive-only (new optional fields, new endpoints) unless a new major version is introduced. `tutor/*` and `flows/*` were reserved for M4 and are now implemented — see those sections below (the streaming message endpoint and the `end`/quick_quiz-answers endpoints return a non-`{data}` or additive shape respectively, called out where relevant).
+**Status**: The M1 resource shapes are the v1 compatibility baseline and later product capabilities are documented additively below. Authentication is the one deliberate breaking migration: Clerk superseded the hand-rolled session endpoints. A native/iPad client must use a documented Clerk token strategy before treating this as a complete native-client contract. `tutor/*` and `flows/*` were reserved for M4 and are implemented.
 
 **Base URL**: `/api/v1`
 
-**Auth**: Session-based via HttpOnly cookie, name `studyus_session` (not `session_token` — corrected from the draft). Unauthenticated requests to any `/api/v1/*` route other than `/api/v1/auth/*` → `401 Unauthorized`.
-
-> **v1.1 erratum**: the session cookie was renamed from `studybuddy_session` to `studyus_session` as part of the StudyBuddy→studyus app rename. This is a documented API change — clients checking the cookie name directly must update it.
+**Auth**: Clerk is the authentication authority. Browser requests carry Clerk's session; `src/middleware.ts` verifies it, resolves the Clerk identity to immutable local `users.id`, and exposes that local learner row to every route. Unauthenticated `/api/v1/*` requests return `401 Unauthorized`. The legacy `studyus_session` cookie and D1 login/logout flow are retired.
 
 **Envelope** (unchanged from draft):
 ```json
@@ -28,21 +26,13 @@ Error `code`s in use: `invalid_input` (400, includes Zod validation failures), `
 
 ## Authentication
 
-### POST /auth/login
-**Request**:
-```json
-{ "email": "string", "password": "string" }
-```
-(Corrected from draft's `username` — the `users` table is keyed by `email`.)
+### Clerk routes
 
-**Response** (200):
-```json
-{ "data": { "user": { "id": "uuid", "email": "string", "name": "string|null" } } }
-```
-**Errors**: `401 unauthorized` (wrong credentials), `400 invalid_input` (missing/malformed fields). Sets the `studyus_session` HttpOnly cookie.
+- `/sign-in` — Clerk `SignIn` component.
+- `/sign-up` — Clerk `SignUp` component.
+- `/account` — Clerk `UserProfile` component.
 
-### POST /auth/logout
-**Response** (200): `{ "data": { "ok": true } }`
+These are page routes, not JSON authentication endpoints. `POST /auth/login` and `POST /auth/logout` are retained only as explicit retirement responses and return `410 auth_retired`; they must not mint or clear a D1 session. See `docs/architecture/authentication.md` for the identity bridge and legacy-account migration.
 
 ---
 
@@ -53,12 +43,39 @@ Error `code`s in use: `invalid_input` (400, includes Zod validation failures), `
 ```json
 { "data": { "id": "uuid", "email": "string", "name": "string|null", "current_term": "string|null", "onboarded_at": "iso|null" } }
 ```
-`onboarded_at` is additive (M5) — set once by the onboarding stepper, `null` until then.
+`onboarded_at` is set only when the learner has an active, non-archived course with at least one meaningful KC. Middleware enforces that invariant for authenticated product pages.
 
 ### PATCH /user
 **Request**: `{ "name": "string?", "current_term": "string?", "onboarded": true? }`
-`onboarded` is additive (M5), one-way — sending `true` stamps `onboarded_at` with the current time; there's no way to unset it (the onboarding page is skippable but not re-enterable).
+`onboarded` remains a compatibility input. Sending `true` first verifies the same usable-course invariant and returns `409` when it is not satisfied; it cannot bypass onboarding.
 **Response** (200): updated user object (same shape as GET).
+
+---
+
+## Onboarding
+
+### GET /onboarding
+
+Returns the server-evaluated completion state, usable-course flag, learner
+institution/program/preferences, and current dated academic term. `complete` is
+true only when `onboarded_at` and the meaningful-KC invariant both hold.
+
+### POST /onboarding/import-demo
+
+Accepts the strict version-1 browser draft subset: `draft_id`, optional learner
+context, learning preferences, and up to five `CourseSetupProposal` objects.
+Proposals marked `source.kind = simulated` are ignored. A single idempotent D1
+batch creates the real term/course/branch/KC content and returns
+`{ complete, course_id, course_slug, imported }`; repeated learner/draft pairs
+return the existing result with `imported: false`.
+
+### POST /api/public/demo-events
+
+Public, outside the `/api/v1` base. Accepts at most 20 strict allow-listed
+funnel events per request. It stores structural fields only, ignores timestamps
+outside seven days, deduplicates event UUIDs, and caps a browser session at 100
+accepted events. Arbitrary values such as institution, course title, filename,
+or document text are rejected by the strict schema.
 
 ---
 
@@ -142,10 +159,10 @@ Allowed for **any** source (system-generated events are delete-only, per the pla
 ### GET /calendar
 **Query**: `from`, `to` (both required ISO datetimes), `course=uuid?`.
 
-**Deviation from draft**: implemented item `type`s are `assessment_due` and `task_due` only. `study_session` and `lecture` calendar items (scheduled/planned sessions, timetabled lectures) are **not implemented in M1** — there's no "scheduled lecture" concept in the data model yet, and study sessions are logged retroactively rather than planned ahead. Left as a TODO for M2/M3 if a planning view needs it.
+The current unified calendar emits five item types: assessment deadlines, task deadlines, scheduled study sessions, logged events, and timed class sessions. `getCalendar` is the sole producer. A timed class session suppresses its linked `attend_class` task item so the meeting renders once.
 
 ```json
-{ "data": [{ "id": "uuid", "type": "assessment_due|task_due", "title": "string", "date": "iso", "course_id": "uuid|null", "details": {} }] }
+{ "data": [{ "id": "uuid", "type": "assessment_due|task_due|study_session|event_logged|class_session", "title": "string", "date": "iso", "end_date": "iso|null", "all_day": "boolean", "course_id": "uuid|null", "href": "string|null", "details": {} }] }
 ```
 
 ### GET /grades/summary
@@ -564,7 +581,7 @@ Every sweep-generated task also carries a non-null, human-readable `description`
 
 ### A note on "Migration NNNN" phrasing
 
-This build (v1.4) landed as a regenerated single-baseline migration, not an incrementally-numbered file appended to a growing history — see the "Schema Management" section's "Pre-v0.1 workflow" in `docs/decisions/ADR-003-d1-drizzle.md` for the workflow and why. The "Migration 000N adds..." phrasing used throughout this document (v1.1 onward, including "Migration `0005` adds to `tasks`..." above) narrates *when* a change landed in the project's history, not a literal file you'll find under `migrations/` today — that directory holds one regenerated baseline covering the full current schema.
+Early v1.x changes were repeatedly folded into a regenerated baseline, so older “Migration NNNN adds…” prose often narrates feature history rather than the current filename. The repository now has a `0000` baseline plus additive `0001`–`0004` migrations; ADR-003's current incremental workflow is authoritative.
 
 ---
 
@@ -572,7 +589,7 @@ This build (v1.4) landed as a regenerated single-baseline migration, not an incr
 
 **Status**: additive to the FROZEN v1 contract above. No existing field or endpoint shape changed, except `PATCH /class-sessions/:id`'s `status`, which goes from required to **optional** — every existing caller already sends it, and the two-way `attend_class` sync behaves identically whenever `status` is present, so this is backward compatible in practice, not just in principle.
 
-Landed as another regenerated single-baseline migration (`migrations/0000_chemical_ink.sql`, per ADR-003's pre-v0.1 workflow) adding `class_sessions.start_min`/`end_min` (nullable integers, minutes-from-midnight 0-1439) and `tasks.completion_note` (nullable text).
+This revision added `class_sessions.start_min`/`end_min` (nullable integers, minutes-from-midnight 0-1439) and `tasks.completion_note` (nullable text); consult the current schema/migration history rather than the historical baseline filename.
 
 ### Class sessions — meeting time + note
 
@@ -646,7 +663,7 @@ Two prop interfaces landed frozen, ahead of their real implementations — neith
 
 ## v1.7 Additions — Knowledge graph, scaffolds, misconceptions, corrections, absorb
 
-**Status**: FROZEN contract, ahead of implementation — parallel tracks build the services/routes/UI below against this section; no existing field or endpoint shape changed. Schema landed as another regenerated single-baseline migration (see ADR-003's pre-v0.1 workflow) adding `kc_edges`, `misconceptions`, `scaffolds`, `user_corrections`, plus `kcs.slug`, `tutor_conversations.details`, `tutor_conversations.mode`'s `absorb` value, and `notifications.type`'s `correction_review` value. Content (KCs, edges, scaffolds, misconceptions) originates from `courses/<slug>/content.json` — the frozen contract in `courses/content-schema.md` — seeded by `scripts/seed.ts`; courses without a `content.json` keep the legacy `courses.json`-derived KC set (no graph/scaffolds/misconceptions for those).
+**Status**: IMPLEMENTED. Services, routes, absorb UI, correction ledger, and content seeding are present. The revision added `kc_edges`, `misconceptions`, `scaffolds`, `user_corrections`, `kcs.slug`, absorb conversation details/mode, and `correction_review`. Content originates from `courses/<slug>/content.json`, validated against `courses/content-schema.md` and seeded by `scripts/seed.ts`.
 
 ### GET /kcs/:id/graph
 
@@ -731,7 +748,7 @@ Traverses `kc_edges` from the target KC to build its full prerequisite graph.
 
 ## v1.9 Additions — Rituals, Capabilities, ZPD (contract freeze)
 
-**Status**: FOUNDATION LANDED, endpoints not yet implemented (additive, post-freeze). Wire shapes below are frozen ahead of the parallel build tracks — schema and Zod schemas exist (`src/db/schema.ts`, `src/lib/schemas/{rituals,capabilities,zpd}.ts`), the routes and services themselves land with their respective tracks.
+**Status**: IMPLEMENTED. Schemas, services, routes, and profile UI are present for rituals, capabilities, and the ZPD frontier. The wire shapes below remain the contract.
 
 ### GET /profile/frontier
 

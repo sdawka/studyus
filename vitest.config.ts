@@ -10,6 +10,10 @@ export default defineConfig({
     cloudflareTest(async () => {
       const migrations = await readD1Migrations(path.join(import.meta.dirname, 'migrations'));
       return {
+        // Astro's production entrypoint depends on a virtual build module.
+        // Tests call services directly, while this entry keeps the configured
+        // LearnerAgent export available to Miniflare's DO bindings.
+        main: './tests/worker.ts',
         wrangler: { configPath: './wrangler.jsonc' },
         miniflare: { bindings: { TEST_MIGRATIONS: migrations } },
       };

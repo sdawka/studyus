@@ -160,7 +160,7 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
   // ========== AUTHENTICATION ==========
 
   describe('POST /auth/login', () => {
-    it('authenticates user and returns user data', async () => {
+    it('reports the legacy password endpoint as retired', async () => {
       const email = `login-${crypto.randomUUID()}@test.local`;
       const password = 'password123';
       const hash = await (async () => {
@@ -180,29 +180,28 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
       });
 
       const res = await authLoginRoutes.POST(astroContext({ request: req }) as any);
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(410);
       const body = (await res.json()) as any;
-      expect(body.data.user.id).toBe(userId);
-      expect(body.data.user.email).toBe(email);
+      expect(body.error.code).toBe('auth_retired');
     });
 
-    it('rejects invalid credentials with 401', async () => {
+    it('does not re-enable legacy password validation', async () => {
       const req = new Request('http://local.test/api/v1/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email: 'nonexistent@test.local', password: 'wrong' }),
       });
       const res = await authLoginRoutes.POST(astroContext({ request: req }) as any);
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(410);
     });
   });
 
   describe('POST /auth/logout', () => {
-    it('returns ok: true', async () => {
+    it('reports the legacy cookie endpoint as retired', async () => {
       const req = new Request('http://local.test/api/v1/auth/logout', { method: 'POST' });
       const res = await authLogoutRoutes.POST(astroContext({ request: req }) as any);
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(410);
       const body = (await res.json()) as any;
-      expect(body.data.ok).toBe(true);
+      expect(body.error.code).toBe('auth_retired');
     });
   });
 
