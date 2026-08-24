@@ -1,7 +1,21 @@
 ---
 import { UserProfile } from '@clerk/astro/components';
+import MarketingLayout from '../../layouts/MarketingLayout.astro';
 
 if (!Astro.locals.user) return Astro.redirect('/sign-in');
 ---
 
-<UserProfile routing="path" path="/account" />
+<MarketingLayout title="Your account · studyus" description="Manage your studyus account and security settings.">
+  <section class="account-shell">
+    <UserProfile routing="path" path="/account" />
+  </section>
+</MarketingLayout>
+
+<style>
+  .account-shell {
+    min-height: calc(100dvh - 260px);
+    display: grid;
+    place-items: center;
+    padding: 48px 16px;
+  }
+</style>

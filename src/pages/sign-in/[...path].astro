@@ -1,7 +1,21 @@
 ---
 import { SignIn } from '@clerk/astro/components';
+import MarketingLayout from '../../layouts/MarketingLayout.astro';
 
 if (Astro.locals.user) return Astro.redirect(Astro.locals.user.onboardedAt ? '/dashboard' : '/onboarding');
 ---
 
-<SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" fallbackRedirectUrl="/onboarding" />
+<MarketingLayout title="Sign in · studyus" description="Sign in to continue learning with studyus.">
+  <section class="auth-shell">
+    <SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" fallbackRedirectUrl="/onboarding" />
+  </section>
+</MarketingLayout>
+
+<style>
+  .auth-shell {
+    min-height: calc(100dvh - 260px);
+    display: grid;
+    place-items: center;
+    padding: 48px 16px;
+  }
+</style>

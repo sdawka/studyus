@@ -1,15 +1,29 @@
 ---
 import { SignUp } from '@clerk/astro/components';
+import MarketingLayout from '../../layouts/MarketingLayout.astro';
 
 const fromDemo = Astro.url.searchParams.get('from') === 'demo';
 const destination = fromDemo ? '/onboarding?import=demo' : '/onboarding';
 if (Astro.locals.user) return Astro.redirect(destination);
 ---
 
-<SignUp
-  routing="path"
-  path="/sign-up"
-  signInUrl="/sign-in"
-  fallbackRedirectUrl={destination}
-  forceRedirectUrl={destination}
-/>
+<MarketingLayout title="Create your account · studyus" description="Create an account and turn your trial into a real study plan.">
+  <section class="auth-shell">
+    <SignUp
+      routing="path"
+      path="/sign-up"
+      signInUrl="/sign-in"
+      fallbackRedirectUrl={destination}
+      forceRedirectUrl={destination}
+    />
+  </section>
+</MarketingLayout>
+
+<style>
+  .auth-shell {
+    min-height: calc(100dvh - 260px);
+    display: grid;
+    place-items: center;
+    padding: 48px 16px;
+  }
+</style>
