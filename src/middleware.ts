@@ -23,7 +23,7 @@ function isApiPath(pathname: string): boolean {
 }
 
 function isPublicApiPath(pathname: string): boolean {
-  return pathname === '/api/public/demo-events';
+  return pathname === '/api/public/demo-events' || pathname.startsWith('/api/calendar/feed/');
 }
 
 function isAuthIndependentPath(pathname: string): boolean {

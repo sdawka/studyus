@@ -4,16 +4,50 @@
 // session always registers as at least some evidence of study.
 import { and, eq, sql } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { sessionKcs, studySessions } from '../../db/schema';
+import { calendarConnections, sessionKcs, studySessions } from '../../db/schema';
 import type { CompleteStudySessionInput, CreateStudySessionInput, ListSessionsQuery, UpdateSessionInput } from '../schemas/sessions';
 import { EVENT_TYPES, type EventType } from '../schemas/events';
 import { toEpochMs } from '../schemas/common';
 import { createEvent } from './events';
+import { enqueueCalendarOperation } from './calendarSync';
 import { requireOwnedRitual } from './rituals';
 import { ConflictError, NotFoundError, requireOwnedCourse } from './util';
 
 function resolveEventType(intended: string): EventType {
   return (EVENT_TYPES as readonly string[]).includes(intended) ? (intended as EventType) : 'practice_done';
+}
+
+async function enqueueSessionChange(
+  db: Db,
+  userId: string,
+  sessionId: string,
+  action: 'upsert' | 'delete',
+  revision: string,
+) {
+  const connections = await db
+    .select({ id: calendarConnections.id })
+    .from(calendarConnections)
+    .where(
+      and(
+        eq(calendarConnections.userId, userId),
+        eq(calendarConnections.status, 'active'),
+        eq(calendarConnections.syncMode, 'controlled'),
+      ),
+    );
+  await Promise.all(
+    connections.map((connection) =>
+      enqueueCalendarOperation(db, userId, connection.id, {
+        action,
+        entity_type: 'study_session',
+        entity_id: sessionId,
+        revision,
+      }),
+    ),
+  );
+}
+
+function sessionRevision(session: typeof studySessions.$inferSelect): string {
+  return `${session.scheduledAt ?? 'unscheduled'}:${session.plannedMinutes ?? 'default'}`;
 }
 
 export async function createSession(db: Db, userId: string, input: CreateStudySessionInput) {
@@ -45,6 +79,9 @@ export async function createSession(db: Db, userId: string, input: CreateStudySe
   }
 
   const rows = await db.select().from(studySessions).where(eq(studySessions.id, id)).limit(1);
+  if (rows[0]?.scheduledAt != null) {
+    await enqueueSessionChange(db, userId, id, 'upsert', sessionRevision(rows[0]));
+  }
   return rows[0];
 }
 
@@ -116,12 +153,16 @@ export async function updateSession(db: Db, userId: string, sessionId: string, i
   }
 
   const rows = await db.select().from(studySessions).where(eq(studySessions.id, sessionId)).limit(1);
+  if (rows[0]?.scheduledAt != null) {
+    await enqueueSessionChange(db, userId, sessionId, 'upsert', sessionRevision(rows[0]));
+  }
   return rows[0];
 }
 
 // v1.6: hard delete, ownership-checked — closes the sessions-DELETE
 // deferral (docs/todo.md).
 export async function deleteSession(db: Db, userId: string, sessionId: string): Promise<void> {
-  await requireOwnedSession(db, userId, sessionId);
+  const session = await requireOwnedSession(db, userId, sessionId);
+  await enqueueSessionChange(db, userId, sessionId, 'delete', `deleted:${sessionRevision(session)}`);
   await db.delete(studySessions).where(eq(studySessions.id, sessionId));
 }

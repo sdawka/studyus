@@ -1,0 +1,146 @@
+---
+// A compact, factual proof beat. It explains what feeds the recommendation
+// without borrowing authority from invented outcomes, numbers, or quotes.
+const signals = [
+  {
+    label: 'Deadlines',
+    detail: 'What is due soon',
+    mark: '01',
+  },
+  {
+    label: 'Mastery',
+    detail: 'What is still shaky',
+    mark: '02',
+  },
+  {
+    label: 'Prerequisites',
+    detail: 'What unlocks the rest',
+    mark: '03',
+  },
+  {
+    label: 'Memory decay',
+    detail: 'What you are starting to forget',
+    mark: '04',
+  },
+];
+---
+
+<section class="why rd-section" aria-labelledby="why-title">
+  <div class="rd-container why-inner" data-reveal>
+    <div class="why-copy" data-reveal-item>
+      <p class="rd-kicker"><span class="why-dot"></span>Why this comes next</p>
+      <h2 class="rd-h2" id="why-title">
+        Not a guess. <span class="rd-em">A decision.</span>
+      </h2>
+      <p class="why-lead">
+        Studyus weighs four signals, then gives you one place to start.
+      </p>
+    </div>
+
+    <ol class="signal-list" aria-label="Signals Studyus uses" data-reveal-item>
+      {signals.map((signal) => (
+        <li>
+          <span class="signal-mark" aria-hidden="true">{signal.mark}</span>
+          <span>
+            <strong>{signal.label}</strong>
+            <small>{signal.detail}</small>
+          </span>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .why {
+    padding-block: clamp(68px, 11vw, 132px);
+  }
+  .why-inner {
+    display: grid;
+    grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
+    align-items: center;
+    gap: clamp(36px, 7vw, 92px);
+  }
+  .why-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--rd-grape);
+    box-shadow: 0 0 0 4px oklch(58% 0.19 300 / 0.14);
+  }
+  .why h2 { margin-top: 16px; }
+  .why-lead {
+    max-width: 34ch;
+    margin: 22px 0 0;
+    color: var(--rd-ink-soft);
+    font-size: clamp(16px, 1.7vw, 19px);
+    font-weight: 650;
+    line-height: 1.55;
+  }
+  .signal-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .signal-list li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 13px;
+    min-height: 112px;
+    padding: 18px;
+    border: 1.5px solid oklch(52% 0.06 305 / 0.15);
+    border-radius: var(--rd-r-md);
+    background: oklch(100% 0 0 / 0.56);
+    box-shadow: var(--rd-shadow-sticker);
+    backdrop-filter: blur(8px);
+  }
+  .signal-list li:nth-child(2),
+  .signal-list li:nth-child(3) { transform: translateY(12px); }
+  .signal-mark {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    color: var(--rd-on-accent);
+    background: var(--rd-grape);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .05em;
+  }
+  .signal-list li:nth-child(2) .signal-mark { background: var(--rd-accent); }
+  .signal-list li:nth-child(3) .signal-mark { background: oklch(65% 0.14 150); }
+  .signal-list li:nth-child(4) .signal-mark { background: oklch(68% 0.15 58); }
+  .signal-list strong,
+  .signal-list small { display: block; }
+  .signal-list strong {
+    color: var(--rd-ink);
+    font-family: var(--rd-display);
+    font-size: clamp(17px, 1.8vw, 21px);
+    line-height: 1.1;
+  }
+  .signal-list small {
+    margin-top: 6px;
+    color: var(--rd-ink-soft);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+  @media (max-width: 760px) {
+    .why-inner { grid-template-columns: 1fr; }
+    .why-lead { max-width: 30ch; }
+  }
+  @media (max-width: 480px) {
+    .signal-list { grid-template-columns: 1fr; }
+    .signal-list li { min-height: 0; }
+    .signal-list li:nth-child(2),
+    .signal-list li:nth-child(3) { transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .signal-list li { transform: none; }
+  }
+</style>

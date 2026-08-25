@@ -21,6 +21,7 @@ This directory holds product and architecture documentation for studyus, a KLI-g
 - **cloudflare.md** — Adapter v14 specifics (Workers not Pages, wrangler.jsonc, workerd dev, D1 batch atomicity, local .wrangler/state).
 - **observability.md** — Local-only Cloudflare native tracing (`wrangler.jsonc`'s `observability.traces` flag, the `cdn-cgi/explorer` UI, the `withSpan` helper) — dev-loop diagnostic only, no persistence or export path.
 - **agentic-channels.md** — Current per-learner Durable Object runtime plus the historical Flue/channel design retained as future-adapter context.
+- **calendar-integrations.md** — Canonical calendar model, controlled bidirectional sync policy, provider/ICS boundaries, outbox guarantees, timezones, and OAuth scope setup.
 
 ### Design (`/design/`)
 - **charter.md** — Binding theme-design contract from the compass/campus/focus design debate: shared structure is mandatory and theme-neutral, per-theme work is token-values only (fonts/colors/spacing/motion/radius/shadow).
@@ -50,6 +51,7 @@ This directory holds product and architecture documentation for studyus, a KLI-g
 - Building the tutor? Read tutor.
 - Deploying or adding a new binding? Read cloudflare.
 - Planning agentic features? Read agentic-channels.
+- Changing calendar sync? Read calendar-integrations.
 
 **For design**: Start with charter (the binding cross-theme contract), then the specific theme doc (compass/focus/campus) you're touching. Building planner UI? Read planner-ux. Touching anything below the mobile breakpoint? Read mobile-shell.
 

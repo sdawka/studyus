@@ -50,6 +50,7 @@ export async function updateUser(db: Db, userId: string, input: UpdateUserInput)
   const patch: Partial<typeof users.$inferInsert> = {};
   if (input.name !== undefined) patch.name = input.name;
   if (input.current_term !== undefined) patch.currentTerm = input.current_term;
+  if (input.timezone !== undefined) patch.timezone = input.timezone;
   if (input.onboarded) patch.onboardedAt = Date.now();
 
   if (input.settings !== undefined) {

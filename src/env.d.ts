@@ -17,5 +17,6 @@ declare namespace App {
 declare namespace Cloudflare {
   interface Env {
     OPENROUTER_API_KEY: string;
+    CLERK_SECRET_KEY: string;
   }
 }

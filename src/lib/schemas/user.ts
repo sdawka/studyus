@@ -38,6 +38,14 @@ export type SettingsInput = z.infer<typeof settingsSchema>;
 export const updateUserSchema = z.strictObject({
   name: z.string().min(1).optional(),
   current_term: z.string().nullable().optional(),
+  timezone: z.string().min(1).refine((value) => {
+    try {
+      new Intl.DateTimeFormat('en', { timeZone: value }).format(0);
+      return value === 'UTC' || value.includes('/');
+    } catch {
+      return false;
+    }
+  }, 'timezone must be an IANA time zone').optional(),
   // Additive (post-freeze): marks the onboarding stepper complete. One-way —
   // there's no unset; the onboarding page is skippable but not re-enterable.
   onboarded: z.literal(true).optional(),

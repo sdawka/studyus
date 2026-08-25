@@ -219,6 +219,19 @@
   .rd-card {
     padding: 22px;
   }
+
+  .rd-section {
+    padding-block: 56px;
+  }
+
+  .rd .rd-kicker {
+    font-size: 11.5px;
+    line-height: 1.45;
+  }
+
+  .rd-btn {
+    min-height: 50px;
+  }
 }
 
 /* Motion safety: when the user asks for less motion, kill decorative transforms.

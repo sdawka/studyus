@@ -29,7 +29,7 @@ const offset = c * (1 - pct / 100);
     </div>
 
     <div class="feat-vignette rd-tilt" data-reveal-item aria-hidden="true">
-      <div class="rd-card ring-card rd-interactive" data-tilt-card>
+      <div class="rd-card ring-card rd-interactive" data-tilt-card data-topic-cycle data-topic-offset="2">
         <p class="card-label">What's next</p>
         <div class="card-body">
           <div class="ring-wrap">
@@ -58,10 +58,10 @@ const offset = c * (1 - pct / 100);
             <span class="ring-spark" aria-hidden="true">✦</span>
           </div>
           <div class="card-detail">
-            <span class="card-course">CHEM 220</span>
-            <span class="card-topic">Resonance structures</span>
+            <span class="card-course" data-topic-field="courseShort">ECON 230</span>
+            <span class="card-topic" data-topic-field="topic">Consumer surplus</span>
             <span class="chip-wrap">
-              <span class="chip chip-weak">Weakest in course</span>
+              <span class="chip chip-weak" data-topic-field="status">Weak · 38%</span>
               <svg class="chip-ring" viewBox="0 0 148 40" preserveAspectRatio="none" aria-hidden="true">
                 <path
                   class="chip-ring-path"

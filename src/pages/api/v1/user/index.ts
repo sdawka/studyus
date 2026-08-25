@@ -14,6 +14,7 @@ export const GET: APIRoute = async ({ locals }) => {
     email: user.email,
     name: user.name,
     current_term: user.currentTerm,
+    timezone: user.timezone,
     onboarded_at: user.onboardedAt ? new Date(user.onboardedAt).toISOString() : null,
     settings: resolveSettings(user.settings),
   });
@@ -36,6 +37,7 @@ export const PATCH: APIRoute = async ({ request, locals }) =>
       email: updated.email,
       name: updated.name,
       current_term: updated.currentTerm,
+      timezone: updated.timezone,
       onboarded_at: updated.onboardedAt ? new Date(updated.onboardedAt).toISOString() : null,
       settings: resolveSettings(updated.settings),
     });

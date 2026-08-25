@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tick } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import WeekGrid from './WeekGrid.svelte';
   import CalendarGrid from './CalendarGrid.svelte';
   import AgendaList from './AgendaList.svelte';
@@ -10,6 +10,7 @@
   import { apiFetch } from '../../lib/apiClient';
   import { addDays, addMonths, firstOfMonth, localDateKey, mondayOf, startOfDay, weekRangeLabel } from '../../lib/plannerDates';
   import { isMobile } from '../../lib/stores/viewport';
+  import { listenForCalendarSync } from '../../lib/plannerCalendarRefresh';
 
   interface CourseOption {
     id: string;
@@ -161,6 +162,14 @@
     if (!result.ok) return;
     railItems = result.data.filter((i) => i.type === 'assessment_due' || i.type === 'task_due');
   }
+
+  // The app shell imports external-calendar changes after this client island
+  // has hydrated. Refresh the active range when that import completes so a
+  // returning student sees the new availability without another navigation.
+  onMount(() => listenForCalendarSync(window, () => {
+    if (view === 'week') void loadWeek();
+    else void loadMonth();
+  }));
 
   const visibleRailItems = $derived(
     filter === 'current_term' ? railItems.filter((i) => i.course_id === null || currentTermCourseIds.has(i.course_id)) : railItems,

@@ -1,9 +1,7 @@
 ---
-// Signature lower-page scroll story. One pinned scene turns the product's
-// learning model into a visible sequence: memory fades, recall restores it,
-// spacing stretches retention, and the system concentrates attention on one
-// next concept. Desktop scrubs the story; mobile/reduced-motion render every
-// beat in readable document flow with the final lab state visible.
+// Lower-page learning story. Every beat stays in document flow; the visual is
+// sticky on desktop and reveals once when it enters view. This preserves the
+// narrative without adding a second multi-screen pinned scrub to the page.
 ---
 <section class="study-loop rd-section" data-study-loop aria-labelledby="study-loop-title">
   <div class="loop-runway" data-loop-runway>
@@ -96,13 +94,13 @@
             <span><strong>1</strong> next concept</span>
           </div>
 
-          <div class="focus-card" data-focus-card>
+          <div class="focus-card" data-focus-card data-topic-cycle data-topic-offset="3">
             <span class="focus-badge">Open next</span>
             <div>
-              <small>CHEM 220</small>
-              <strong>Resonance structures</strong>
+              <small data-topic-field="courseShort">HIST 215</small>
+              <strong data-topic-field="topic">Treaty of Versailles</strong>
             </div>
-            <span class="focus-reason">weak · due Fri</span>
+            <span class="focus-reason" data-topic-field="reasonShort">stale · essay soon</span>
           </div>
         </div>
       </div>
@@ -208,29 +206,40 @@
   .focus-reason { color: var(--rd-accent-deep); font-size: 11px; font-weight: 900; white-space: nowrap; }
 
   .loop-progress { display: none; }
-  .study-loop.is-motion .loop-runway { min-height: 420vh; }
-  .study-loop.is-motion .loop-stage { min-height: 100svh; display: grid; align-items: center; overflow: hidden; }
-  .study-loop.is-motion .loop-beats { position: relative; min-height: clamp(330px, 42vh, 430px); }
-  .study-loop.is-motion .loop-beat { position: absolute; inset: 0; margin: 0; }
-  .study-loop.is-motion .loop-progress { display: block; position: absolute; left: 50%; bottom: 28px; width: min(280px, 36vw); height: 4px; transform: translateX(-50%); border-radius: 999px; background: oklch(52% .06 305 / .12); overflow: hidden; }
-  .study-loop.is-motion .loop-progress span { display: block; width: 100%; height: 100%; transform-origin: left; background: linear-gradient(90deg, var(--rd-accent), var(--rd-grape), var(--rd-spring)); }
+
+  @media (min-width: 861px) {
+    .memory-lab {
+      position: sticky;
+      top: clamp(96px, 14vh, 150px);
+      align-self: start;
+    }
+    .loop-beat + .loop-beat { margin-top: clamp(36px, 6vw, 64px); }
+  }
 
   @media (max-width: 860px) {
     .loop-grid { grid-template-columns: 1fr; }
     .memory-lab { width: 100%; max-width: 620px; }
     .loop-beat h2 { max-width: 15ch; }
+    .loop-beat + .loop-beat { margin-top: 34px; }
   }
   @media (max-width: 520px) {
-    .memory-lab { padding: 22px; transform: none; }
-    .curve-wrap { height: 170px; }
-    .recall-card { position: relative; inset: auto; width: 100%; margin-top: -22px; transform: none; }
-    .focus-card { position: relative; inset: auto; margin-top: 22px; flex-wrap: wrap; }
-    .proof-row { align-items: flex-start; }
+    .loop-stage { padding-block: 56px; }
+    .loop-beat + .loop-beat { margin-top: 30px; }
+    .loop-beat p { margin-top: 14px; }
+    .loop-compare { width: 100%; justify-content: center; margin-top: 20px; }
+    .memory-lab { padding: 18px; transform: none; }
+    .lab-topline { align-items: flex-start; }
+    .lab-status { flex: 0 0 auto; }
+    .memory-meter { margin-top: 18px; }
+    .curve-wrap { height: 142px; margin-top: 10px; }
+    .recall-card { position: relative; inset: auto; width: 100%; margin-top: -12px; padding: 14px; transform: none; }
+    .spacing { margin-top: 18px; }
+    .proof-row { align-items: flex-start; margin-top: 20px; padding-top: 16px; gap: 8px; }
     .proof-row strong { font-size: 17px; }
+    .focus-card { position: relative; inset: auto; margin-top: 18px; padding: 14px; flex-wrap: wrap; }
     .focus-reason { white-space: normal; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .study-loop .loop-runway { min-height: 0; }
     .meter-track { animation: none; }
     .checkpoint.is-now i { animation: none; }
   }
@@ -255,102 +264,68 @@
     const proof = document.querySelector<HTMLElement>('[data-proof-row]');
     const focus = document.querySelector<HTMLElement>('[data-focus-card]');
 
+    const revealLab = (start: string) => {
+      if (!lab) return;
+      const status = document.querySelector<HTMLElement>('[data-lab-status]');
+      const meter = document.querySelector<HTMLElement>('[data-meter-fill]');
+      const strength = document.querySelector<HTMLElement>('[data-strength]');
+      const counter = { value: 38 };
+      const renderStrength = () => {
+        if (strength) strength.textContent = Math.round(counter.value) + '%';
+      };
+
+      gsap.set(checkpoints, { scale: 0, y: 10 });
+      gsap.set([recall, proof, focus], { autoAlpha: 0, y: 18 });
+      gsap.set(meter, { width: '38%' });
+
+      const tl = gsap.timeline({
+        scrollTrigger: { trigger: lab, start, once: true },
+      });
+      if (decay) svgDraw(decay, { timeline: tl, position: 0, duration: .6, from: .1 });
+      if (recovery) svgDraw(recovery, { timeline: tl, position: .28, duration: .5, ease: 'power2.out' });
+      tl.to(recall, { autoAlpha: 1, y: 0, duration: .35 }, .28)
+        .to(counter, { value: 86, duration: .45, onUpdate: renderStrength }, .35)
+        .to(meter, { width: '86%', duration: .45 }, .35)
+        .to(checkpoints, { scale: 1, y: 0, ease: 'back.out(2)', stagger: .07, duration: .26 }, .4)
+        .to(proof, { autoAlpha: 1, y: 0, duration: .28 }, .58)
+        .to(focus, { autoAlpha: 1, y: 0, duration: .34, ease: 'back.out(1.7)' }, .64)
+        .call(() => { if (status) status.textContent = 'next move ready'; });
+
+      return tl;
+    };
+
     matchMotion({
-      // Flagship pinned scene: memory fades, a recall restores it, spacing
-      // stretches the cadence, and everything compresses into one focus card.
+      // Desktop keeps the lab beside the story with CSS sticky positioning,
+      // but does not manufacture a multi-screen runway or pin the whole scene.
       desktop: () => {
-        const runway = document.querySelector<HTMLElement>('[data-loop-runway]');
-        const stage = document.querySelector<HTMLElement>('[data-loop-stage]');
-        const progress = document.querySelector<HTMLElement>('[data-loop-progress]');
-        const beam = document.querySelector<SVGLineElement>('[data-recall-beam]');
-        const hit = document.querySelector<SVGCircleElement>('[data-recall-hit]');
-        const answer = document.querySelector<HTMLElement>('[data-recall-answer]');
-        const spacing = document.querySelector<HTMLElement>('[data-spacing]');
-        const meter = document.querySelector<HTMLElement>('[data-meter-fill]');
-        const strength = document.querySelector<HTMLElement>('[data-strength]');
-        const status = document.querySelector<HTMLElement>('[data-lab-status]');
+        if (!root || !lab) return;
         const beats = gsap.utils.toArray<HTMLElement>('[data-loop-beat]');
-        if (!root || !runway || !stage || !lab) return;
-        root.classList.add('is-motion');
-
-        gsap.set(beats.slice(1), { autoAlpha: 0, y: 36 });
-        gsap.set([beam, hit, recall, spacing, proof, focus], { autoAlpha: 0 });
-        gsap.set(answer, { scaleY: 0, transformOrigin: 'top' });
-        gsap.set(checkpoints, { scale: 0, y: 12 });
-        gsap.set(meter, { width: '38%' });
-        if (progress) gsap.set(progress, { scaleX: 0 });
-
-        const counter = { value: 38 };
-        const renderStrength = () => { if (strength) strength.textContent = Math.round(counter.value) + '%'; };
-
-        const tl = gsap.timeline({
-          defaults: { ease: 'none' },
-          scrollTrigger: {
-            trigger: runway,
-            start: 'top top',
-            end: 'bottom bottom',
-            pin: stage,
-            scrub: 0.65,
-            invalidateOnRefresh: true,
-          },
-        });
-        if (progress) tl.to(progress, { scaleX: 1, duration: 4 }, 0);
-        if (decay) svgDraw(decay, { timeline: tl, position: 0, duration: .72, from: .1 });
-        tl.to(lab, { rotate: -1.2, y: -8, duration: .3 }, .18);
-
-        // Beat 1 -> 2: the recall intervention lands exactly at the low point.
-        tl.to(beats[0], { autoAlpha: 0, y: -34, duration: .2 }, .75)
-          .to(beats[1], { autoAlpha: 1, y: 0, duration: .24 }, .9)
-          .to([beam, hit], { autoAlpha: 1, duration: .12 }, .82)
-          .fromTo(recall, { autoAlpha: 0, x: 70, rotate: 7, scale: .82 }, { autoAlpha: 1, x: 0, rotate: -2, scale: 1, ease: 'back.out(1.8)', duration: .34 }, .92)
-          .to(answer, { scaleY: 1, ease: 'back.out(1.6)', duration: .28 }, 1.2);
-        if (recovery) svgDraw(recovery, { timeline: tl, position: 1.18, duration: .56, ease: 'power2.out' });
-        tl.to(counter, { value: 86, duration: .5, onUpdate: renderStrength }, 1.18)
-          .to(meter, { width: '86%', duration: .5 }, 1.18);
-        tl.call(() => { if (status) status.textContent = 'recalled'; }, [], 1.3);
-
-        // Beat 2 -> 3: recall card folds away and the spacing cadence takes over.
-        tl.to(beats[1], { autoAlpha: 0, y: -34, duration: .2 }, 1.72)
-          .to(beats[2], { autoAlpha: 1, y: 0, duration: .24 }, 1.88)
-          .to(recall, { autoAlpha: 0, y: -34, scale: .88, duration: .24 }, 1.78)
-          .to([beam, hit], { autoAlpha: 0, duration: .15 }, 1.8)
-          .to(spacing, { autoAlpha: 1, duration: .2 }, 1.9)
-          .to(checkpoints, { scale: 1, y: 0, ease: 'back.out(2)', stagger: .12, duration: .3 }, 1.98)
-          .to(proof, { autoAlpha: 1, y: 0, duration: .24 }, 2.36);
-
-        // Beat 3 -> 4: all evidence compresses into one ranked next action.
-        tl.to(beats[2], { autoAlpha: 0, y: -34, duration: .2 }, 2.82)
-          .to(beats[3], { autoAlpha: 1, y: 0, duration: .24 }, 2.98)
-          .to([decay, recovery, spacing, proof], { autoAlpha: .18, duration: .35 }, 2.86)
-          .fromTo(focus, { autoAlpha: 0, y: 90, scale: .7, rotate: -6 }, { autoAlpha: 1, y: 0, scale: 1, rotate: 0, ease: 'back.out(1.9)', duration: .48 }, 3.02)
-          .to(lab, { rotate: 0, y: 0, scale: 1.035, ease: 'power2.out', duration: .35 }, 3.1);
-        tl.call(() => { if (status) status.textContent = 'next move ready'; }, [], 3.2);
+        const beatTweens = beats.map((beat) => gsap.from(beat, {
+          autoAlpha: 0,
+          y: 24,
+          duration: .45,
+          ease: 'power2.out',
+          scrollTrigger: { trigger: beat, start: 'top 84%', once: true },
+        }));
+        const labTimeline = revealLab('top 72%');
 
         return () => {
-          tl.scrollTrigger?.kill();
-          tl.kill();
-          root.classList.remove('is-motion');
+          beatTweens.forEach((tween) => {
+            tween.scrollTrigger?.kill();
+            tween.kill();
+          });
+          labTimeline?.scrollTrigger?.kill();
+          labTimeline?.kill();
         };
       },
-      // Mobile: beats stay in normal document flow (no pin, no scrub runway —
-      // the pinned scene is the highest overflow/jank risk on touch). The lab
-      // card gets one lightweight, non-pinned wake-up instead of the full
-      // scrubbed narrative, so it still feels alive without cramming the
-      // desktop scene into a phone viewport.
+      // Touch devices get the same short, triggered lab reveal in normal
+      // document flow. No pin, no scrub, and no synthetic viewport runway.
       mobile: () => {
-        if (!lab) return;
-        gsap.set(checkpoints, { scale: 0, y: 10 });
-        gsap.set([recall, proof, focus], { autoAlpha: 0, y: 18 });
-
-        const tl = gsap.timeline({
-          scrollTrigger: { trigger: lab, start: 'top 78%', once: true },
-        });
-        if (decay) svgDraw(decay, { timeline: tl, position: 0, duration: .6, from: .1 });
-        if (recovery) svgDraw(recovery, { timeline: tl, position: .3, duration: .5, ease: 'power2.out' });
-        tl.to(recall, { autoAlpha: 1, y: 0, duration: .35 }, .3)
-          .to(checkpoints, { scale: 1, y: 0, ease: 'back.out(2)', stagger: .08, duration: .28 }, .4)
-          .to(proof, { autoAlpha: 1, y: 0, duration: .3 }, .6)
-          .to(focus, { autoAlpha: 1, y: 0, duration: .35, ease: 'back.out(1.7)' }, .65);
+        const labTimeline = revealLab('top 78%');
+        return () => {
+          labTimeline?.scrollTrigger?.kill();
+          labTimeline?.kill();
+        };
       },
     });
   }

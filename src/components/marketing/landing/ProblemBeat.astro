@@ -1,57 +1,92 @@
 ---
-// Landing REDESIGN Phase 2 — the problem beat. Reference pattern for the other
-// restyled sections: sits transparent over the .rd mesh, uses --rd-* tokens,
-// Fraunces headings (.rd-h2 + .rd-em candy italic accent), a .rd-kicker eyebrow,
-// gummy pastel surfaces, and `data-reveal` / `data-reveal-item` for the shared
-// scroll entrance (see src/lib/marketing/motion.ts). The convergence glyph
-// above the fix line is the one bespoke <script> beat — five rays draw on
-// with svgDraw() as the fix line scrolls in, visualizing scatter -> one move.
-const scattered = [
-  { label: 'Google Calendar', tone: 'blush', rot: -6 },
-  { label: 'Notion doc, p.14', tone: 'sky', rot: 4 },
-  { label: 'Class group chat', tone: 'mint', rot: -2 },
-  { label: 'Moved syllabus PDF', tone: 'lilac', rot: 7 },
-  { label: 'Sticky on the monitor', tone: 'tangerine', rot: -8 },
-];
+// One metaphor carries the whole section: competing signals gradually settle
+// into a shared rhythm. The copy uses the same noise -> sync language.
 ---
 <section class="problem rd-section">
   <div class="rd-container problem-inner" data-reveal>
-    <div class="scatter" aria-hidden="true" data-reveal-item>
-      {scattered.map((tag) => (
-        <span class={`tag tone-${tag.tone}`} style={`--rot: ${tag.rot}deg`}>{tag.label}</span>
-      ))}
-    </div>
+    <figure
+      class="wave-story"
+      aria-label="Five chaotic signals gradually settling into one shared rhythm"
+      data-reveal-item
+    >
+      <div class="wave-label wave-label--chaos">Everything at once</div>
+      <div class="wave-label wave-label--sync">In sync</div>
+      <svg viewBox="0 0 460 300" role="img" aria-hidden="true">
+        <defs>
+          <linearGradient id="signal-1" x1="0" x2="1">
+            <stop offset="0" stop-color="var(--rd-accent)" />
+            <stop offset="0.54" stop-color="var(--rd-accent)" />
+            <stop offset="0.68" stop-color="var(--rd-grape)" />
+          </linearGradient>
+          <linearGradient id="signal-2" x1="0" x2="1">
+            <stop offset="0" stop-color="oklch(70% 0.14 225)" />
+            <stop offset="0.54" stop-color="oklch(70% 0.14 225)" />
+            <stop offset="0.68" stop-color="var(--rd-grape)" />
+          </linearGradient>
+          <linearGradient id="signal-3" x1="0" x2="1">
+            <stop offset="0" stop-color="oklch(72% 0.16 150)" />
+            <stop offset="0.54" stop-color="oklch(72% 0.16 150)" />
+            <stop offset="0.68" stop-color="var(--rd-grape)" />
+          </linearGradient>
+          <linearGradient id="signal-4" x1="0" x2="1">
+            <stop offset="0" stop-color="oklch(72% 0.15 58)" />
+            <stop offset="0.54" stop-color="oklch(72% 0.15 58)" />
+            <stop offset="0.68" stop-color="var(--rd-grape)" />
+          </linearGradient>
+          <linearGradient id="signal-5" x1="0" x2="1">
+            <stop offset="0" stop-color="oklch(68% 0.14 310)" />
+            <stop offset="0.54" stop-color="oklch(68% 0.14 310)" />
+            <stop offset="0.68" stop-color="var(--rd-grape)" />
+          </linearGradient>
+          <clipPath id="signal-reveal-clip">
+            <rect class="signal-reveal-rect" x="0" y="0" width="460" height="300" />
+          </clipPath>
+        </defs>
+        <g class="wave-grid">
+          <path d="M230 30V270" />
+          <path d="M28 70H432M28 110H432M28 150H432M28 190H432M28 230H432" />
+        </g>
+        <rect class="sync-wash" x="214" y="34" width="0" height="232" rx="24" />
+        <g class="signal-lines" clip-path="url(#signal-reveal-clip)">
+          <path style="--signal: url(#signal-1)" d="M18 36C48 34 50 118 82 112S116 20 150 46S182 142 220 68C246 47 263 48 286 68S330 88 352 68S398 48 442 68" />
+          <path style="--signal: url(#signal-2)" d="M18 82C44 142 62 18 94 58S140 148 170 108S198 34 220 108C246 87 263 88 286 108S330 128 352 108S398 88 442 108" />
+          <path style="--signal: url(#signal-3)" d="M18 140C50 40 74 210 106 128S154 54 184 142S204 184 220 148C246 127 263 128 286 148S330 168 352 148S398 128 442 148" />
+          <path style="--signal: url(#signal-4)" d="M18 198C50 252 72 102 104 178S142 254 174 202S202 130 220 188C246 167 263 168 286 188S330 208 352 188S398 168 442 188" />
+          <path style="--signal: url(#signal-5)" d="M18 256C46 164 76 292 108 240S150 162 182 232S208 278 220 228C246 207 263 208 286 228S330 248 352 228S398 208 442 228" />
+        </g>
+        <circle class="sync-ring" cx="230" cy="150" r="18" />
+        <circle class="sync-core" cx="230" cy="150" r="6" />
+      </svg>
+      <span class="sync-pill" aria-hidden="true">Studyus</span>
+    </figure>
     <div class="problem-copy" data-reveal-item>
       <p class="rd-kicker"><span class="kdot"></span>The problem</p>
-      <h2 class="rd-h2">Five apps, one group chat, and <span class="rd-em">zero</span> real plan.</h2>
+      <h2 class="rd-h2">Too many things, <span class="rd-em">too little time.</span></h2>
       <p class="lead">
-        The assignment's in one app. The reminder's in a muted chat. The syllabus
-        changed again. Nothing connects — so your study plan quietly falls apart.
+        At different times, almost every time.
       </p>
-      <svg class="converge" viewBox="0 0 200 40" aria-hidden="true">
-        <g class="converge-lines">
-          <path d="M6 4 C 30 4, 60 20, 100 36" />
-          <path d="M52 4 C 65 12, 82 22, 100 36" />
-          <path d="M100 2 L100 36" />
-          <path d="M148 4 C 135 12, 118 22, 100 36" />
-          <path d="M194 4 C 170 4, 140 20, 100 36" />
-        </g>
-        <circle class="converge-dot" cx="100" cy="36" r="4" />
-      </svg>
-      <p class="fix">
+      <div class="fix">
         <span class="fix-tag">The fix</span>
-        everything lands here — your next move, ranked.
-      </p>
+        <p>Studyus brings it into sync and shows you what matters now.</p>
+      </div>
     </div>
   </div>
 </section>
 
 <style>
+  .problem {
+    min-height: 155svh;
+    padding-block: 0;
+  }
   .problem-inner {
+    position: sticky;
+    top: 59px;
     display: grid;
     grid-template-columns: minmax(0, 400px) minmax(0, 1fr);
     gap: clamp(32px, 6vw, 72px);
     align-items: center;
+    align-content: center;
+    min-height: calc(100svh - 59px);
   }
   .kdot {
     width: 8px;
@@ -70,39 +105,23 @@ const scattered = [
     max-width: 46ch;
   }
   .fix {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 8px 0 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 0;
+    padding: 14px 16px;
     font-size: clamp(16px, 1.6vw, 18.5px);
     font-weight: 700;
     color: var(--rd-ink);
     max-width: 44ch;
+    border: 1.5px solid oklch(52% 0.06 305 / 0.16);
+    border-radius: var(--rd-r-md);
+    background: oklch(100% 0 0 / 0.55);
+    box-shadow: var(--rd-shadow-sticker);
+    backdrop-filter: blur(8px);
   }
-
-  /* Scatter -> one move: five rays draw on and converge into a single dot
-     that sits right above the fix line. See <script> for the draw-on. */
-  .converge {
-    display: block;
-    width: min(190px, 60%);
-    height: auto;
-    margin: 26px 0 0;
-    overflow: visible;
-  }
-  .converge-lines path {
-    fill: none;
-    stroke: var(--rd-accent);
-    stroke-width: 2;
-    stroke-linecap: round;
-    opacity: 0.6;
-  }
-  .converge-lines path:nth-child(3) { opacity: 0.9; stroke-width: 2.4; }
-  .converge-dot {
-    fill: var(--rd-accent);
-    transform-box: fill-box;
-    transform-origin: center;
-  }
+  .fix p { margin: 0; line-height: 1.35; }
   .fix-tag {
     font-family: var(--rd-body);
     font-weight: 800;
@@ -114,69 +133,203 @@ const scattered = [
     padding: 5px 11px;
     border-radius: var(--rd-r-pill);
     box-shadow: var(--rd-shadow-sticker);
+    white-space: nowrap;
   }
 
-  /* the five-apps scatter — gummy pastel chips that straighten on hover */
-  .scatter {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px 12px;
-    padding: 8px;
+  /* Five competing signals settle into the same frequency after passing the
+     Studyus marker. The gradients also resolve from five colors to one. */
+  .wave-story {
+    position: relative;
+    margin: 0;
+    min-height: 310px;
+    padding: 24px 16px 8px;
+    border: 1.5px solid oklch(52% 0.06 305 / 0.15);
+    border-radius: var(--rd-r-lg);
+    background:
+      radial-gradient(circle at 18% 20%, oklch(84% 0.13 5 / 0.4), transparent 34%),
+      radial-gradient(circle at 84% 78%, oklch(88% 0.11 150 / 0.36), transparent 36%),
+      oklch(100% 0 0 / 0.52);
+    box-shadow: var(--rd-shadow-card);
+    overflow: hidden;
+    isolation: isolate;
   }
-  .tag {
-    display: inline-flex;
-    align-items: center;
+  .wave-story::after {
+    content: '';
+    position: absolute;
+    inset: 0 50% 0 auto;
+    width: 1px;
+    background: linear-gradient(transparent, oklch(52% 0.06 305 / 0.18), transparent);
+    z-index: -1;
+  }
+  .wave-story svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .wave-label {
+    position: absolute;
+    z-index: 2;
+    top: 18px;
     font-family: var(--rd-body);
-    font-weight: 700;
-    font-size: 13.5px;
-    color: var(--rd-ink);
-    border-radius: 6px 13px 11px 13px;
-    padding: 10px 14px;
-    transform: rotate(var(--rot));
-    box-shadow: var(--rd-shadow-sticker);
-    transition: transform 0.24s var(--rd-ease-bounce);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
-  .scatter:hover .tag { transform: rotate(0deg); }
-  .tone-blush { background: var(--rd-blush); }
-  .tone-sky { background: var(--rd-sky); }
-  .tone-mint { background: var(--rd-mint); }
-  .tone-lilac { background: var(--rd-lilac); }
-  .tone-tangerine { background: oklch(88% 0.09 60); }
+  .wave-label--chaos { left: 22px; color: var(--rd-accent-deep); }
+  .wave-label--sync { right: 22px; color: var(--rd-grape); }
+  .wave-grid path {
+    fill: none;
+    stroke: oklch(52% 0.06 305 / 0.09);
+    stroke-width: 1;
+    stroke-dasharray: 3 7;
+  }
+  .signal-lines path {
+    fill: none;
+    stroke: var(--signal);
+    stroke-width: 4.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 4px 7px oklch(33% 0.07 305 / 0.12));
+    will-change: opacity;
+  }
+  .sync-wash {
+    fill: oklch(88% 0.11 150 / 0.24);
+    opacity: 0;
+  }
+  .sync-ring {
+    fill: oklch(100% 0 0 / 0.72);
+    stroke: var(--rd-grape);
+    stroke-width: 2;
+    stroke-dasharray: 4 4;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .sync-core {
+    fill: var(--rd-grape);
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .sync-pill {
+    position: absolute;
+    z-index: 3;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    padding: 5px 10px;
+    border-radius: var(--rd-r-pill);
+    color: white;
+    background: var(--rd-grape);
+    font-family: var(--rd-body);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    box-shadow: var(--rd-shadow-sticker);
+  }
 
   @media (max-width: 780px) {
     .problem-inner { grid-template-columns: 1fr; gap: 26px; }
-    .scatter { order: 2; }
+    .wave-story { order: 2; min-height: 0; }
+    .fix { grid-template-columns: 1fr; justify-items: start; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .tag { transition: none; }
-    .scatter:hover .tag { transform: rotate(var(--rot)); }
+    .problem {
+      min-height: 0;
+      padding-block: clamp(64px, 12vh, 140px);
+    }
+    .problem-inner { position: static; min-height: 0; }
+    .sync-ring { transform: none !important; }
+    .sync-core { transform: none !important; }
   }
 </style>
 
 <script>
-  // Scatter -> one move: the five rays draw on as the fix line scrolls into
-  // view, then the dot pops — the literal "everything lands here" beat.
-  // svgDraw() already renders fully-drawn under reduced motion, so the pop
-  // below only runs when it actually has something to animate into.
+  // Scroll sequence: five uninterrupted paths normalize and reveal from left
+  // to right. The sticky runway holds the full section through the final beat.
   import gsap from 'gsap';
-  import { svgDraw, initMarketingMotion } from '../../../lib/marketing/motion';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { initMarketingMotion, reducedMotion } from '../../../lib/marketing/motion';
 
   initMarketingMotion();
 
-  const draw = svgDraw('.converge-lines path', {
-    trigger: '.fix',
-    start: 'top 85%',
-    stagger: 0.09,
-  });
+  if (!reducedMotion) {
+    gsap.registerPlugin(ScrollTrigger);
 
-  if (draw) {
-    draw.tween.then(() => {
-      gsap.fromTo(
-        '.converge-dot',
-        { scale: 0 },
-        { scale: 1, duration: 0.32, ease: 'back.out(2.4)' },
-      );
-    });
+    const section = document.querySelector<HTMLElement>('.problem');
+    const fix = document.querySelector<HTMLElement>('.problem .fix');
+    const wash = document.querySelector<SVGRectElement>('.problem .sync-wash');
+    const ring = document.querySelector<SVGCircleElement>('.problem .sync-ring');
+    const core = document.querySelector<SVGCircleElement>('.problem .sync-core');
+    const pill = document.querySelector<HTMLElement>('.problem .sync-pill');
+    const syncLabel = document.querySelector<HTMLElement>('.problem .wave-label--sync');
+    const reveal = document.querySelector<SVGRectElement>('.problem .signal-reveal-rect');
+    const signals = gsap.utils.toArray<SVGPathElement>('.problem .signal-lines path');
+
+    if (section && fix && wash && ring && core && pill && syncLabel && reveal && signals.length) {
+      gsap.set(signals, {
+        strokeWidth: (i) => [5.6, 3.6, 5, 3.8, 5.2][i] ?? 4.5,
+        opacity: (i) => [1, 0.72, 0.9, 0.7, 0.82][i] ?? 1,
+      });
+      gsap.set(reveal, { attr: { width: 220 } });
+      gsap.set(wash, { attr: { width: 0 }, opacity: 0 });
+      gsap.set([ring, core, pill], { scale: 0, opacity: 0 });
+      gsap.set(ring, { rotation: -45 });
+      gsap.set(syncLabel, { opacity: 0.2, y: 5 });
+      gsap.set(fix, {
+        autoAlpha: 0,
+        y: 26,
+        scale: 0.96,
+        clipPath: 'inset(0 100% 0 0 round 18px)',
+      });
+
+      gsap.timeline({
+        defaults: { ease: 'none' },
+        scrollTrigger: {
+          trigger: section,
+          start: 'top 59px',
+          end: 'bottom bottom',
+          scrub: 0.65,
+        },
+      })
+        .to(signals, {
+          strokeWidth: 4.5,
+          opacity: 1,
+          duration: 0.5,
+          stagger: 0.025,
+        }, 0)
+        .to(wash, { attr: { width: 228 }, opacity: 1, duration: 0.42 }, 0.22)
+        .to(reveal, {
+          attr: { width: 460 },
+          duration: 0.46,
+          ease: 'power2.out',
+        }, 0.24)
+        .to(ring, {
+          scale: 1,
+          rotation: 0,
+          opacity: 1,
+          duration: 0.24,
+          ease: 'back.out(2)',
+        }, 0.38)
+        .to(core, {
+          scale: 1,
+          opacity: 1,
+          duration: 0.18,
+          ease: 'back.out(2.6)',
+        }, 0.42)
+        .to(pill, {
+          scale: 1,
+          opacity: 1,
+          duration: 0.22,
+          ease: 'back.out(2.2)',
+        }, 0.44)
+        .to(syncLabel, { opacity: 1, y: 0, duration: 0.24, ease: 'power2.out' }, 0.48)
+        .to(fix, {
+          autoAlpha: 1,
+          y: 0,
+          scale: 1,
+          clipPath: 'inset(0 0% 0 0 round 18px)',
+          duration: 0.22,
+          ease: 'power3.out',
+        }, 0.56)
+        // Deliberate hold: the section stays fully resolved before releasing.
+        .to(fix, { autoAlpha: 1, duration: 0.22 }, 0.78);
+    }
   }
 </script>

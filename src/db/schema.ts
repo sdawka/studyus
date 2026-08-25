@@ -31,6 +31,10 @@ export const users = sqliteTable('users', {
   currentTerm: text('current_term'),
   institutionName: text('institution_name'),
   programName: text('program_name'),
+  // IANA timezone used for calendar wall-time and date-only interpretation.
+  // UTC is a safe migration default; onboarding/settings should replace it
+  // with the browser-resolved zone for active users.
+  timezone: text('timezone').notNull().default('UTC'),
   settings: text('settings', { mode: 'json' })
     .notNull()
     .default(sql`'{}'`),
@@ -801,4 +805,188 @@ export const classSessions = sqliteTable(
     createdAt: createdAt(),
   },
   (table) => [uniqueIndex('class_sessions_course_date_unique').on(table.courseId, table.date)],
+);
+
+// ---------------------------------------------------------------------------
+// Calendar integrations
+// ---------------------------------------------------------------------------
+
+export const calendarConnections = sqliteTable(
+  'calendar_connections',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    provider: text('provider', { enum: ['google', 'microsoft'] }).notNull(),
+    externalAccountId: text('external_account_id').notNull(),
+    syncMode: text('sync_mode', { enum: ['read', 'controlled'] }).notNull().default('controlled'),
+    status: text('status', { enum: ['active', 'reconnect_required', 'disconnected'] }).notNull().default('active'),
+    lastError: text('last_error'),
+    updatedAt: integer('updated_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex('calendar_connections_user_provider_account_unique').on(table.userId, table.provider, table.externalAccountId),
+    index('calendar_connections_user_status_idx').on(table.userId, table.status),
+  ],
+);
+
+export const calendarProviderCalendars = sqliteTable(
+  'calendar_provider_calendars',
+  {
+    id: id(),
+    connectionId: text('connection_id')
+      .notNull()
+      .references(() => calendarConnections.id, { onDelete: 'cascade' }),
+    providerCalendarId: text('provider_calendar_id').notNull(),
+    name: text('name').notNull(),
+    timezone: text('timezone'),
+    selected: integer('selected', { mode: 'boolean' }).notNull().default(false),
+    studyusOwned: integer('studyus_owned', { mode: 'boolean' }).notNull().default(false),
+    accessRole: text('access_role'),
+    updatedAt: integer('updated_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex('calendar_provider_calendars_connection_remote_unique').on(table.connectionId, table.providerCalendarId),
+    index('calendar_provider_calendars_connection_selected_idx').on(table.connectionId, table.selected),
+  ],
+);
+
+export const calendarSyncStates = sqliteTable(
+  'calendar_sync_states',
+  {
+    id: id(),
+    providerCalendarId: text('provider_calendar_id')
+      .notNull()
+      .references(() => calendarProviderCalendars.id, { onDelete: 'cascade' }),
+    cursor: text('cursor'),
+    webhookChannelId: text('webhook_channel_id'),
+    webhookResourceId: text('webhook_resource_id'),
+    webhookExpiresAt: integer('webhook_expires_at'),
+    lastSyncedAt: integer('last_synced_at'),
+    lastError: text('last_error'),
+    updatedAt: integer('updated_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
+    createdAt: createdAt(),
+  },
+  (table) => [uniqueIndex('calendar_sync_states_calendar_unique').on(table.providerCalendarId)],
+);
+
+export const calendarExternalEvents = sqliteTable(
+  'calendar_external_events',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    providerCalendarId: text('provider_calendar_id')
+      .notNull()
+      .references(() => calendarProviderCalendars.id, { onDelete: 'cascade' }),
+    providerEventId: text('provider_event_id').notNull(),
+    providerVersion: text('provider_version'),
+    iCalUid: text('ical_uid'),
+    recurringEventId: text('recurring_event_id'),
+    title: text('title').notNull().default('Busy'),
+    // Null is allowed only for a provider deletion tombstone that arrives
+    // before the corresponding event was ever materialized locally.
+    startKind: text('start_kind', { enum: ['timed', 'date'] }),
+    startAt: integer('start_at'),
+    startDate: text('start_date'),
+    endAt: integer('end_at'),
+    endDate: text('end_date'),
+    timezone: text('timezone'),
+    busyStatus: text('busy_status', { enum: ['free', 'tentative', 'busy', 'out_of_office'] }).notNull().default('busy'),
+    status: text('status', { enum: ['confirmed', 'tentative', 'cancelled'] }).notNull().default('confirmed'),
+    recurrence: text('recurrence', { mode: 'json' }),
+    updatedAt: integer('updated_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex('calendar_external_events_calendar_remote_unique').on(table.providerCalendarId, table.providerEventId),
+    index('calendar_external_events_user_start_idx').on(table.userId, table.startAt),
+    index('calendar_external_events_user_start_date_idx').on(table.userId, table.startDate),
+  ],
+);
+
+export const calendarEventLinks = sqliteTable(
+  'calendar_event_links',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    providerCalendarId: text('provider_calendar_id')
+      .notNull()
+      .references(() => calendarProviderCalendars.id, { onDelete: 'cascade' }),
+    providerEventId: text('provider_event_id').notNull(),
+    localEntityType: text('local_entity_type', { enum: ['study_session', 'task', 'assessment', 'class_session'] }).notNull(),
+    localEntityId: text('local_entity_id').notNull(),
+    providerVersion: text('provider_version'),
+    lastSyncedAt: integer('last_synced_at'),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex('calendar_event_links_calendar_remote_unique').on(table.providerCalendarId, table.providerEventId),
+    uniqueIndex('calendar_event_links_calendar_local_unique').on(table.providerCalendarId, table.localEntityType, table.localEntityId),
+    index('calendar_event_links_user_local_idx').on(table.userId, table.localEntityType, table.localEntityId),
+  ],
+);
+
+export const calendarOutbox = sqliteTable(
+  'calendar_outbox',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    connectionId: text('connection_id')
+      .notNull()
+      .references(() => calendarConnections.id, { onDelete: 'cascade' }),
+    action: text('action', { enum: ['upsert', 'delete'] }).notNull(),
+    entityType: text('entity_type', { enum: ['study_session', 'task', 'assessment', 'class_session'] }).notNull(),
+    entityId: text('entity_id').notNull(),
+    revision: text('revision').notNull(),
+    dedupeKey: text('dedupe_key').notNull(),
+    status: text('status', { enum: ['pending', 'processing', 'done', 'failed'] }).notNull().default('pending'),
+    attemptCount: integer('attempt_count').notNull().default(0),
+    availableAt: integer('available_at').notNull().$defaultFn(() => Date.now()),
+    lastError: text('last_error'),
+    updatedAt: integer('updated_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex('calendar_outbox_dedupe_key_unique').on(table.dedupeKey),
+    index('calendar_outbox_status_available_idx').on(table.status, table.availableAt),
+  ],
+);
+
+export const calendarFeedCredentials = sqliteTable(
+  'calendar_feed_credentials',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull(),
+    revokedAt: integer('revoked_at'),
+    updatedAt: integer('updated_at')
+      .notNull()
+      .$defaultFn(() => Date.now()),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex('calendar_feed_credentials_user_unique').on(table.userId),
+    uniqueIndex('calendar_feed_credentials_hash_unique').on(table.tokenHash),
+  ],
 );

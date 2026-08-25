@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
-import { courses, studySessions, users } from '../src/db/schema';
+import { calendarConnections, calendarOutbox, courses, studySessions, users } from '../src/db/schema';
 import { completeSession, createSession, deleteSession, listSessions, updateSession } from '../src/lib/services/sessions';
 import { ConflictError, NotFoundError } from '../src/lib/services/util';
 
@@ -34,6 +34,33 @@ describe('sessions.createSession', () => {
     expect(session.scheduledAt).toBe(Date.parse(scheduledAtIso));
     expect(session.startedAt).toBe(session.scheduledAt);
     expect(session.endedAt).toBeNull();
+  });
+
+  it('enqueues scheduled sessions for every active controlled calendar connection', async () => {
+    await db.insert(calendarConnections).values({
+      id: crypto.randomUUID(),
+      userId,
+      provider: 'google',
+      externalAccountId: `google-${userId}`,
+      syncMode: 'controlled',
+    });
+    await db.insert(calendarConnections).values({
+      id: crypto.randomUUID(),
+      userId,
+      provider: 'microsoft',
+      externalAccountId: `microsoft-${userId}`,
+      syncMode: 'read',
+    });
+
+    const session = await createSession(db, userId, {
+      intended_event_type: 'practice_done',
+      scheduled_at: new Date(Date.now() + DAY_MS).toISOString(),
+      planned_minutes: 45,
+    });
+
+    const operations = (await db.select().from(calendarOutbox)).filter((row) => row.entityId === session.id);
+    expect(operations).toHaveLength(1);
+    expect(operations[0]).toMatchObject({ action: 'upsert', entityType: 'study_session', status: 'pending' });
   });
 });
 
@@ -75,6 +102,13 @@ describe('sessions.completeSession', () => {
 
 describe('sessions.updateSession (v1.6 — PATCH /sessions/:id)', () => {
   it('reschedules scheduled_at and planned_minutes on a still-planned session', async () => {
+    await db.insert(calendarConnections).values({
+      id: crypto.randomUUID(),
+      userId,
+      provider: 'google',
+      externalAccountId: `google-${userId}`,
+      syncMode: 'controlled',
+    });
     const session = await createSession(db, userId, {
       intended_event_type: 'practice_done',
       scheduled_at: new Date(Date.now() + DAY_MS).toISOString(),
@@ -85,6 +119,8 @@ describe('sessions.updateSession (v1.6 — PATCH /sessions/:id)', () => {
     const updated = await updateSession(db, userId, session.id, { scheduled_at: rescheduledIso, planned_minutes: 90 });
     expect(updated.scheduledAt).toBe(Date.parse(rescheduledIso));
     expect(updated.plannedMinutes).toBe(90);
+    const operations = (await db.select().from(calendarOutbox)).filter((row) => row.entityId === session.id);
+    expect(operations.at(-1)).toMatchObject({ action: 'upsert', entityType: 'study_session' });
   });
 
   it('rejects rescheduling a completed session with ConflictError', async () => {
@@ -107,12 +143,21 @@ describe('sessions.updateSession (v1.6 — PATCH /sessions/:id)', () => {
 
 describe('sessions.deleteSession (v1.6 — DELETE /sessions/:id)', () => {
   it('hard-deletes an owned session', async () => {
+    await db.insert(calendarConnections).values({
+      id: crypto.randomUUID(),
+      userId,
+      provider: 'google',
+      externalAccountId: `google-${userId}`,
+      syncMode: 'controlled',
+    });
     const session = await createSession(db, userId, { intended_event_type: 'practice_done' });
 
     await deleteSession(db, userId, session.id);
 
     const rows = await db.select().from(studySessions).where(eq(studySessions.id, session.id));
     expect(rows).toHaveLength(0);
+    const operations = (await db.select().from(calendarOutbox)).filter((row) => row.entityId === session.id);
+    expect(operations.at(-1)).toMatchObject({ action: 'delete', entityType: 'study_session' });
   });
 
   it('404s for a cross-user session id, leaving the row untouched', async () => {

@@ -29,16 +29,20 @@
     payoff: string;
     mastery: number;
     standing?: number;
+    nextTitle: string;
+    nextReason: string;
+    duration: string;
+    sessionSteps: [string, string, string];
   }> = [
-    { id: 'overloaded', eyebrow: 'Too much at once', title: 'Five deadlines. Forty-five minutes.', description: 'studyus weighs urgency, course standing, and weak concepts instead of handing you a longer list.', action: 'Choose the one next move', payoff: 'CHEE 314 · Bernoulli equation moved to the top: 25 focused minutes before Friday’s quiz.', mastery: 3 },
-    { id: 'missed_lecture', eyebrow: 'Life happened', title: 'I missed a lecture.', description: 'The missed class becomes a quiet catch-up path, not an accumulating red badge.', action: 'Build a catch-up path', payoff: 'Three steps: skim the recap, verify dimensional analysis, then continue with Bernoulli.', mastery: 2 },
-    { id: 'after_class', eyebrow: 'Before it fades', title: 'Class just ended.', description: 'Capture the useful part now and schedule retrieval after some forgetting has begun.', action: 'Capture and schedule', payoff: 'Recap saved. A 12-minute retrieval review is waiting tomorrow afternoon.', mastery: 4 },
-    { id: 'false_fluency', eyebrow: 'Recognition is not recall', title: 'I reread it, but cannot solve it.', description: 'A tiny retrieval check replaces the comforting feeling of familiar notes with evidence.', action: 'Run a quick check', payoff: 'One hidden step surfaced. The plan now teaches the missing setup before another problem.', mastery: 6 },
-    { id: 'prerequisite_gap', eyebrow: 'Find the blocker', title: 'This topic makes no sense.', description: 'The knowledge map looks backward before asking you to push harder on the target.', action: 'Trace the prerequisite', payoff: 'The blocker is the control-volume energy balance. studyus opens a worked example there first.', mastery: 5 },
-    { id: 'recurring_mistake', eyebrow: 'Fix the model', title: 'I keep making the same mistake.', description: 'Repeated errors become a specific misconception to correct and revisit.', action: 'Correct the misconception', payoff: 'Correction saved: pressure is not automatically constant along a streamline.', mastery: 5 },
-    { id: 'exam_close', eyebrow: 'Exam mode', title: 'My exam is close.', description: 'Practice narrows to assessed KCs with weak or stale evidence, then spreads them across the time left.', action: 'Assemble exam practice', payoff: 'Four short sessions replace one vague “study fluids” block. Lowest-confidence KCs come first.', mastery: 7 },
-    { id: 'grade_landed', eyebrow: 'Use the signal', title: 'A grade just landed.', description: 'The grade updates standing and the KCs that assessment actually measured.', action: 'Record and replan', payoff: 'Standing is now 76%. Momentum balance needs attention; dimensional analysis does not.', mastery: 4, standing: 4 },
-    { id: 'week_disrupted', eyebrow: 'Plans should bend', title: 'My week blew up.', description: 'Reduce capacity and preserve the highest-value work without guilt mechanics.', action: 'Replan this week', payoff: 'Two sessions moved, one low-value task dropped, and the exam-critical review stayed protected.', mastery: 1 },
+    { id: 'overloaded', eyebrow: 'Too much at once', title: 'Five deadlines. Forty-five minutes.', description: 'studyus weighs urgency, course standing, and weak concepts instead of handing you a longer list.', action: 'Choose my one priority', payoff: 'Bernoulli equation moved to the top: 25 focused minutes before Friday’s quiz.', mastery: 3, nextTitle: 'Bernoulli equation', nextReason: 'It is weak, the quiz is Friday, and this unlocks two later fluid-mechanics topics.', duration: '25 min', sessionSteps: ['Recall the assumptions', 'Work one guided example', 'Finish with a no-notes check'] },
+    { id: 'missed_lecture', eyebrow: 'Life happened', title: 'I missed a lecture.', description: 'The missed class becomes a quiet catch-up path, not an accumulating red badge.', action: 'Build my catch-up path', payoff: 'A short catch-up path now comes before the current lecture material.', mastery: 2, nextTitle: 'Dimensional analysis recap', nextReason: 'This is the smallest prerequisite that reconnects you to the lecture you missed.', duration: '18 min', sessionSteps: ['Skim the missed-lecture recap', 'Check the core units', 'Solve one bridge question'] },
+    { id: 'after_class', eyebrow: 'Before it fades', title: 'Class just ended.', description: 'Capture the useful part now and schedule retrieval after some forgetting has begun.', action: 'Capture and schedule it', payoff: 'Recap saved. A retrieval review is now waiting tomorrow afternoon.', mastery: 4, nextTitle: 'Momentum balance recall', nextReason: 'A brief retrieval tomorrow will preserve today’s lecture better than rereading it now.', duration: '12 min tomorrow', sessionSteps: ['Recall the governing equation', 'Name each term from memory', 'Schedule the next check'] },
+    { id: 'false_fluency', eyebrow: 'Recognition is not recall', title: 'I reread it, but cannot solve it.', description: 'A tiny retrieval check replaces the comforting feeling of familiar notes with evidence.', action: 'Find the missing step', payoff: 'One hidden step surfaced. The plan now teaches the setup before another full problem.', mastery: 6, nextTitle: 'Choose a control volume', nextReason: 'Your algebra is fine; selecting and labeling the system is the step blocking the solution.', duration: '15 min', sessionSteps: ['Draw the system boundary', 'Label every flow', 'Set up one problem without notes'] },
+    { id: 'prerequisite_gap', eyebrow: 'Find the blocker', title: 'This topic makes no sense.', description: 'The knowledge map looks backward before asking you to push harder on the target.', action: 'Trace the prerequisite', payoff: 'The blocker is the control-volume energy balance, so studyus moved there first.', mastery: 5, nextTitle: 'Control-volume energy balance', nextReason: 'This prerequisite is blocking Bernoulli applications; fixing it makes the target learnable.', duration: '20 min', sessionSteps: ['Review energy terms', 'Map terms to a diagram', 'Return to one Bernoulli case'] },
+    { id: 'recurring_mistake', eyebrow: 'Fix the model', title: 'I keep making the same mistake.', description: 'Repeated errors become a specific misconception to correct and revisit.', action: 'Correct the misconception', payoff: 'Correction saved: pressure is not automatically constant along a streamline.', mastery: 5, nextTitle: 'Pressure along a streamline', nextReason: 'The same assumption caused two errors, so correcting the mental model has the highest payoff.', duration: '14 min', sessionSteps: ['Predict before calculating', 'Contrast two streamlines', 'Write the corrected rule'] },
+    { id: 'exam_close', eyebrow: 'Exam mode', title: 'My exam is close.', description: 'Practice narrows to assessed KCs with weak or stale evidence, then spreads them across the time left.', action: 'Build my exam plan', payoff: 'Four short sessions replace one vague “study fluids” block. Lowest-confidence KCs come first.', mastery: 7, nextTitle: 'Mixed fluid-mechanics retrieval', nextReason: 'The exam is close, so mixed recall now reveals more than another chapter reread.', duration: '30 min', sessionSteps: ['Answer five mixed prompts', 'Review only missed steps', 'Queue the weakest concept again'] },
+    { id: 'grade_landed', eyebrow: 'Use the signal', title: 'A grade just landed.', description: 'The grade updates standing and the KCs that assessment actually measured.', action: 'Use the grade to replan', payoff: 'Standing is now 76%. Momentum balance needs attention; dimensional analysis does not.', mastery: 4, standing: 4, nextTitle: 'Momentum balance correction', nextReason: 'The new grade points to this assessed skill—not the parts of the course you already know.', duration: '22 min', sessionSteps: ['Inspect the marked attempt', 'Correct the first wrong step', 'Retry a parallel problem'] },
+    { id: 'week_disrupted', eyebrow: 'Plans should bend', title: 'My week blew up.', description: 'Reduce capacity and preserve the highest-value work without guilt mechanics.', action: 'Replan around my week', payoff: 'Two sessions moved, one low-value task dropped, and the exam-critical review stayed protected.', mastery: 1, nextTitle: 'Bernoulli quick check', nextReason: 'It preserves the exam-critical thread and fits the first real opening left this week.', duration: '15 min Friday', sessionSteps: ['Run a three-question check', 'Review only one weak step', 'Confirm the next available block'] },
   ];
 
   let mode = $state<'setup' | 'demo'>(initialMode);
@@ -59,6 +63,7 @@
   let manualTitle = $state('');
   let manualTopics = $state('');
   let selectedScenario = $state<DemoScenarioId>('overloaded');
+  let previewedScenario = $state<DemoScenarioId | null>(null);
   let storageError = $state<string | null>(null);
   let parsing = $state(false);
   let parseMessage = $state<string | null>(null);
@@ -207,12 +212,24 @@
     void track('setup_step_skipped', { step: 'context' });
     void track('setup_step_skipped', { step: 'preferences' });
     enterDemo(true);
+    // The public trial should lead with the payoff, not another empty state.
+    // Seed the first decision so students immediately see what Studyus chose
+    // and why; the remaining situations stay interactive.
+    completeScenario('overloaded', 3, 0);
+    void track('scenario_started', { scenario_id: 'overloaded' });
+    void track('scenario_completed', { scenario_id: 'overloaded' });
   }
 
   function runScenario() {
     void track('scenario_started', { scenario_id: activeScenario.id });
     completeScenario(activeScenario.id, activeScenario.mastery, activeScenario.standing ?? 0);
+    previewedScenario = null;
     void track('scenario_completed', { scenario_id: activeScenario.id });
+  }
+
+  function chooseScenario(id: DemoScenarioId) {
+    selectedScenario = id;
+    previewedScenario = null;
   }
 
   function resetTrial() {
@@ -229,7 +246,7 @@
   <main class="trial-canvas">
     <header class="trial-header">
       <a href="/" class="wordmark">studyus<span>.</span></a>
-      <button class="text-button" type="button" onclick={simulateAll}>Skip setup and explore</button>
+      <button class="text-button" type="button" onclick={simulateAll}>See a sample decision</button>
     </header>
 
     <section class="setup-wrap" aria-labelledby="setup-title">
@@ -243,12 +260,12 @@
 
       {#if step === 0}
         <div class="setup-card hero-card">
-          <p class="eyebrow">No account · about two minutes</p>
-          <h1 id="setup-title">Try your semester before you sign up.</h1>
-          <p>Answer three quick sections, or skip any of them. Then explore how studyus reacts when university life gets messy.</p>
+          <p class="eyebrow">No account · instant preview</p>
+          <h1 id="setup-title">See Studyus make one decision.</h1>
+          <p>Start with a sample student week and see exactly what Studyus puts first—and why. Personalize it afterward if it feels useful.</p>
           <div class="actions">
-            <button class="primary" type="button" onclick={() => step = 1}>Make it mine</button>
-            <button class="secondary" type="button" onclick={simulateAll}>Skip and show me</button>
+            <button class="primary" type="button" onclick={simulateAll}>Show my next move</button>
+            <button class="secondary" type="button" onclick={() => step = 1}>Use my courses</button>
           </div>
           <p class="privacy">Your setup stays in this browser. Nothing becomes account data without a later import confirmation.</p>
         </div>
@@ -319,13 +336,13 @@
     <header class="demo-header">
       <a href="/" class="wordmark">studyus<span>.</span></a>
       <span class="demo-pill">Public preview · local data</span>
-      <a class="primary compact" href="/sign-up?from=demo" onclick={() => void track('signup_clicked')}>Save my setup</a>
+      <a class="primary compact" href="/sign-up?from=demo" onclick={() => void track('signup_clicked')}>Create free account</a>
     </header>
     <aside class="demo-sidebar">
-      <div><p class="eyebrow">Shadow workspace</p><strong>{draft.context?.term_label ?? 'Demo semester'}</strong><small>{activeCourse?.course.code ?? 'CHEE 314'} · {draft.preferences.weekly_hours} h/week</small></div>
+      <div><p class="eyebrow">Try a situation</p><strong>{draft.context?.term_label ?? 'Demo semester'}</strong><small>{activeCourse?.course.code ?? 'CHEE 314'} · {draft.preferences.weekly_hours} h/week</small></div>
       <nav aria-label="Demo situations">
         {#each SCENARIOS as scenario, index}
-          <button type="button" class:active={selectedScenario === scenario.id} onclick={() => selectedScenario = scenario.id}>
+          <button type="button" class:active={selectedScenario === scenario.id} onclick={() => chooseScenario(scenario.id)} aria-pressed={selectedScenario === scenario.id}>
             <span>{draft.completed_scenarios.includes(scenario.id) ? '✓' : index + 1}</span>{scenario.title}
           </button>
         {/each}
@@ -333,25 +350,47 @@
       <button type="button" class="reset" onclick={resetTrial}>Clear trial data</button>
     </aside>
     <main class="demo-main">
-      <div class="demo-intro"><div><p class="eyebrow">Today · {draft.context?.institution_name ?? 'McGill University'}</p><h1>One clear next move.</h1></div><div class="metrics"><span><strong>{draft.demo_mastery}%</strong> concept mastery</span><span><strong>{draft.demo_standing}%</strong> course standing</span></div></div>
+      <div class="demo-intro"><div><p class="eyebrow">Interactive preview · {draft.context?.institution_name ?? 'McGill University'}</p><h1>Watch the plan make a decision.</h1><p class="intro-copy">Pick what happened. Studyus will explain what changed, then give you one study session you can actually start.</p></div><div class="metrics"><span><strong>{draft.demo_mastery}%</strong> concept mastery</span><span><strong>{draft.demo_standing}%</strong> course standing</span></div></div>
+      <ol class="demo-steps" aria-label="How to use this preview">
+        <li class="active"><b>1</b><span><strong>Pick a situation</strong><small>Tell us what changed</small></span></li>
+        <li class:active={draft.completed_scenarios.includes(activeScenario.id)}><b>2</b><span><strong>Update the plan</strong><small>See the decision</small></span></li>
+        <li class:active={previewedScenario === activeScenario.id}><b>3</b><span><strong>Open the session</strong><small>Know exactly what to do</small></span></li>
+      </ol>
       <div class="demo-grid">
         <section class="situation-card">
-          <p class="eyebrow">{activeScenario.eyebrow}</p>
+          <p class="eyebrow">Step 1 · {activeScenario.eyebrow}</p>
           <h2>{activeScenario.title}</h2>
           <p>{activeScenario.description}</p>
           {#if draft.completed_scenarios.includes(activeScenario.id)}
-            <div class="payoff" role="status"><span>Plan updated</span><strong>{activeScenario.payoff}</strong></div>
+            <div class="payoff" role="status"><span>✓ Plan updated</span><strong>{activeScenario.payoff}</strong><small>Your recommended session is ready →</small></div>
           {:else}
-            <button class="primary" type="button" onclick={runScenario}>{activeScenario.action}</button>
+            <div class="scenario-action"><span>See what studyus would change</span><button class="primary" type="button" onclick={runScenario}>{activeScenario.action} <b aria-hidden="true">→</b></button></div>
           {/if}
         </section>
-        <section class="next-card">
-          <p class="eyebrow">Recommended next</p>
-          <div class="rank">1</div>
-          <small>{activeCourse?.course.code ?? 'CHEE 314'}</small>
-          <h2>{draft.completed_scenarios.includes('prerequisite_gap') ? 'Control-volume energy balance' : 'Bernoulli equation'}</h2>
-          <p>{draft.completed_scenarios.length ? `${draft.completed_scenarios.length} situation${draft.completed_scenarios.length === 1 ? '' : 's'} changed this plan.` : 'Weak evidence · quiz approaching · 25 minutes'}</p>
-          <div class="mastery-bar"><span style={`width:${draft.demo_mastery}%`}></span></div>
+        <section class:ready={draft.completed_scenarios.includes(activeScenario.id)} class="next-card" aria-live="polite">
+          {#if draft.completed_scenarios.includes(activeScenario.id)}
+            <p class="eyebrow">Step 2 · Your next study session</p>
+            <span class="duration">{activeScenario.duration}</span>
+            <small class="course-code">{activeCourse?.course.code ?? 'CHEE 314'}</small>
+            <h2>{activeScenario.nextTitle}</h2>
+            <div class="why-next"><span>Why this is next</span><p>{activeScenario.nextReason}</p></div>
+            {#if previewedScenario === activeScenario.id}
+              <div class="session-preview">
+                <strong>Here’s the session</strong>
+                <ol>{#each activeScenario.sessionSteps as item}<li>{item}</li>{/each}</ol>
+                <a class="primary" href="/sign-up?from=demo" onclick={() => void track('signup_clicked')}>Use this with my courses →</a>
+              </div>
+            {:else}
+              <button class="primary next-action" type="button" onclick={() => previewedScenario = activeScenario.id}>Open this {activeScenario.duration} session <b aria-hidden="true">→</b></button>
+            {/if}
+          {:else}
+            <div class="next-placeholder">
+              <span class="placeholder-number">2</span>
+              <p class="eyebrow">Then · Your next study session</p>
+              <h2>Your recommendation appears here.</h2>
+              <p>Update the plan first. You’ll see the exact topic, why it outranks everything else, and what to do during the session.</p>
+            </div>
+          {/if}
         </section>
         <section class="week-card"><p class="eyebrow">This week</p><div class="week-days">{#each ['Mon','Tue','Wed','Thu','Fri'] as day, index}<span class:busy={index === 1 || index === 3}><small>{day}</small><i></i></span>{/each}</div><p>{draft.preferences.guidance === 'tell_me_next' ? 'Three focused sessions placed for you.' : 'A flexible plan with room to choose.'}</p></section>
         <section class="proof-card"><p class="eyebrow">What this preview keeps</p><h2>{realCourseCount ? `${realCourseCount} real course draft ready` : 'Sample evidence stays sample'}</h2><p>Signup can import your context, preferences, and reviewed course map. These demo scores and actions are discarded.</p><a href="/sign-up?from=demo" onclick={() => void track('signup_clicked')}>Create account and review import →</a></section>
@@ -377,8 +416,89 @@
   fieldset{border:0;padding:0;margin:22px 0}legend{font-weight:900;color:#645b6c;margin-bottom:8px}.segments{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.segments button{border:1px solid #d8cfdf;background:white;border-radius:13px;padding:12px;color:#5d5267;cursor:pointer}.segments button.chosen{background:#f0e5ff;border-color:#8b3fd0;color:#63309a;font-weight:900}
   .course-columns{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:26px}.course-columns h2{font-size:19px;margin-bottom:12px}.course-results{display:flex;flex-direction:column;gap:7px;margin-top:10px;max-height:290px;overflow:auto}.course-results button{display:grid;grid-template-columns:auto 1fr auto;gap:9px;text-align:left;align-items:baseline;padding:11px;border:1px solid #e0d9e5;background:white;border-radius:12px;cursor:pointer}.course-results button.selected{border-color:#8b3fd0;background:#f7f0ff}.course-results small{color:#81778d}.course-columns textarea{margin:9px 0}.upload{position:relative;margin-top:12px;border:1px dashed #a78bbd;border-radius:13px;padding:12px;text-align:center;cursor:pointer}.upload input{position:absolute;inset:0;opacity:0;cursor:pointer}.proposal-summary{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:24px;padding:16px;border-radius:16px;background:#f5effa}.proposal-summary span,.proposal-summary small{color:#6f6478}
   .notice{padding:12px;border-radius:12px}.error{background:#ffe8ed;color:#9d2643}
-  .demo-shell{min-height:100dvh;display:grid;grid-template-columns:260px 1fr;grid-template-rows:68px 1fr;background:#f7f7fb;color:#292433}.demo-header{grid-column:1/-1;max-width:none;width:100%;padding:0 24px;background:white;border-bottom:1px solid #e8e3eb}.demo-pill{font-size:12px;color:#776d7e;background:#f1edf3;border-radius:999px;padding:7px 11px;margin-left:auto}.demo-sidebar{padding:28px 16px;border-right:1px solid #e4dee8;background:#fff;display:flex;flex-direction:column;gap:24px}.demo-sidebar>div{display:flex;flex-direction:column;gap:4px}.demo-sidebar small{color:#81778d}.demo-sidebar nav{display:flex;flex-direction:column;gap:4px}.demo-sidebar nav button{display:flex;align-items:center;gap:9px;text-align:left;border:0;background:none;border-radius:10px;padding:9px;color:#665d6e;cursor:pointer;font-size:12px}.demo-sidebar nav button span{display:grid;place-items:center;width:22px;height:22px;border-radius:7px;background:#eee9f1;font-weight:900}.demo-sidebar nav button.active{background:#f3e9ff;color:#69349b;font-weight:900}.demo-sidebar .reset{margin-top:auto;text-align:left}.demo-main{padding:clamp(24px,5vw,60px);max-width:1200px;width:100%}.demo-intro{display:flex;justify-content:space-between;gap:24px;align-items:end;margin-bottom:26px}.demo-intro h1{font-size:clamp(38px,5vw,62px)}.metrics{display:flex;gap:10px}.metrics span{display:flex;flex-direction:column;background:white;border:1px solid #e4dee8;border-radius:15px;padding:12px 16px;font-size:11px;color:#807687}.metrics strong{font-size:21px;color:#322a39}.demo-grid{display:grid;grid-template-columns:1.3fr .7fr;gap:16px}.demo-grid>section{background:white;border:1px solid #e4dee8;border-radius:22px;padding:24px;box-shadow:0 12px 38px rgba(54,39,65,.06)}.situation-card{min-height:310px;display:flex;flex-direction:column}.situation-card h2{font-size:clamp(28px,4vw,44px);max-width:14ch}.situation-card>p:not(.eyebrow){color:#6c6372;line-height:1.6;max-width:55ch}.situation-card>.primary{margin-top:auto;align-self:flex-start}.payoff{margin-top:auto;padding:18px;border-radius:16px;background:#e9f8f1;display:flex;flex-direction:column;gap:6px}.payoff span{font-size:11px;text-transform:uppercase;font-weight:900;color:#27805e}.next-card{position:relative}.rank{position:absolute;right:20px;top:20px;width:38px;height:38px;border-radius:12px;background:#ee456d;color:white;display:grid;place-items:center;font-weight:900}.next-card small{color:#8b3fd0;font-weight:900}.next-card h2{margin-top:10px}.next-card p,.week-card p,.proof-card p{color:#746a7b}.mastery-bar{height:8px;background:#eee9f1;border-radius:999px;margin-top:28px;overflow:hidden}.mastery-bar span{display:block;height:100%;background:linear-gradient(90deg,#8b3fd0,#ee456d);border-radius:inherit}.week-days{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.week-days span{display:flex;flex-direction:column;align-items:center;gap:8px}.week-days i{height:54px;width:100%;border-radius:10px;background:#f0edf2}.week-days .busy i{background:linear-gradient(#dceee7 0 45%,#f5dfe7 45% 70%,#eee9f1 70%)}.proof-card a{font-weight:900;color:#8b3fd0}
-  @media(max-width:800px){.setup-progress small{display:none}.field-grid,.course-columns,.demo-grid{grid-template-columns:1fr}.demo-shell{display:block}.demo-sidebar{border:0;border-bottom:1px solid #e4dee8;padding:12px;overflow:auto}.demo-sidebar>div,.demo-sidebar .reset{display:none}.demo-sidebar nav{flex-direction:row;width:max-content}.demo-sidebar nav button{max-width:180px}.demo-main{padding:24px 16px}.demo-intro{align-items:start;flex-direction:column}.metrics{width:100%}.metrics span{flex:1}.demo-header{height:64px;position:sticky;top:0;z-index:5}.demo-pill{display:none}}
-  @media(max-width:560px){.field-grid,.mini-grid{grid-template-columns:1fr}.segments{grid-template-columns:1fr}.actions.split{flex-direction:column-reverse}.actions.split button{width:100%}.course-results button{grid-template-columns:auto 1fr}.course-results small{grid-column:2}.setup-card{border-radius:20px;padding:24px 18px}.demo-header .compact{font-size:0}.demo-header .compact::after{content:'Save';font-size:13px}}
+  .demo-shell { min-height:100dvh;display:grid;grid-template-columns:244px minmax(0,1fr);grid-template-rows:68px 1fr;background:#f7f7fb;color:#292433; }
+  .demo-header { grid-column:1/-1;max-width:none;width:100%;padding:0 24px;background:white;border-bottom:1px solid #e8e3eb; }
+  .demo-pill { font-size:12px;color:#776d7e;background:#f1edf3;border-radius:999px;padding:7px 11px;margin-left:auto; }
+  .demo-sidebar { padding:28px 14px;border-right:1px solid #e4dee8;background:#fff;display:flex;flex-direction:column;gap:24px;min-width:0; }
+  .demo-sidebar>div { display:flex;flex-direction:column;gap:4px;padding-inline:6px; }
+  .demo-sidebar small { color:#81778d; }
+  .demo-sidebar nav { display:flex;flex-direction:column;gap:4px; }
+  .demo-sidebar nav button { display:flex;align-items:center;gap:9px;text-align:left;border:0;background:none;border-radius:10px;padding:9px;color:#665d6e;cursor:pointer;font-size:12px; }
+  .demo-sidebar nav button span { display:grid;place-items:center;flex:0 0 22px;width:22px;height:22px;border-radius:7px;background:#eee9f1;font-weight:900; }
+  .demo-sidebar nav button.active { background:#f3e9ff;color:#69349b;font-weight:900;box-shadow:inset 3px 0 #8b3fd0; }
+  .demo-sidebar .reset { margin-top:auto;text-align:left;padding-inline:6px; }
+  .demo-main { padding:clamp(28px,4vw,52px);max-width:1240px;width:100%;margin:0 auto; }
+  .demo-intro { display:flex;justify-content:space-between;gap:28px;align-items:end;margin-bottom:22px; }
+  .demo-intro>div:first-child { min-width:0; }
+  .demo-intro h1 { font-size:clamp(36px,4.5vw,58px);max-width:16ch; }
+  .intro-copy { max-width:62ch;margin:14px 0 0;color:#6c6372;line-height:1.55; }
+  .metrics { display:flex;gap:10px;flex:0 0 auto; }
+  .metrics span { display:flex;flex-direction:column;background:white;border:1px solid #e4dee8;border-radius:15px;padding:12px 16px;font-size:11px;color:#807687;min-width:128px; }
+  .metrics strong { font-size:21px;color:#322a39; }
+  .demo-steps { list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 16px;padding:0; }
+  .demo-steps li { display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e4dee8;border-radius:14px;background:#eeecf1;color:#8a818f; }
+  .demo-steps li.active { background:white;color:#3d3445;border-color:#d9c9e6; }
+  .demo-steps b { display:grid;place-items:center;flex:0 0 25px;height:25px;border-radius:50%;background:#ded9e2;font-size:12px; }
+  .demo-steps .active b { background:#8b3fd0;color:white; }
+  .demo-steps span { display:flex;flex-direction:column;line-height:1.2; }
+  .demo-steps strong { font-size:12px; }
+  .demo-steps small { margin-top:3px;font-size:10px;color:#81778d; }
+  .demo-grid { display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:16px;align-items:start; }
+  .demo-grid>section { min-width:0;background:white;border:1px solid #e4dee8;border-radius:22px;padding:24px;box-shadow:0 12px 38px rgba(54,39,65,.06); }
+  .situation-card { min-height:370px;display:flex;flex-direction:column; }
+  .situation-card h2 { font-size:clamp(28px,3.6vw,42px);max-width:14ch; }
+  .situation-card>p:not(.eyebrow) { color:#6c6372;line-height:1.6;max-width:55ch; }
+  .scenario-action { margin-top:auto;display:flex;flex-direction:column;align-items:flex-start;gap:8px; }
+  .scenario-action>span { font-size:11px;font-weight:800;color:#81778d; }
+  .scenario-action .primary,.next-action { min-height:48px; }
+  .primary b { font-size:18px;margin-left:5px; }
+  .payoff { margin-top:auto;padding:18px;border-radius:16px;background:#e9f8f1;border:1px solid #c7eadb;display:flex;flex-direction:column;gap:6px; }
+  .payoff span { font-size:11px;text-transform:uppercase;font-weight:900;color:#27805e; }
+  .payoff small { margin-top:5px;color:#496e60;font-weight:800; }
+  .next-card { position:relative;min-height:370px;background:#f1eff4!important;border-style:dashed!important;display:flex;flex-direction:column; }
+  .next-card.ready { background:white!important;border:2px solid #8b3fd0!important;border-style:solid!important;box-shadow:0 16px 46px rgba(107,52,155,.14)!important; }
+  .duration { position:absolute;right:20px;top:20px;padding:7px 10px;border-radius:999px;background:#f1e7fb;color:#69349b;font-size:11px;font-weight:900; }
+  .course-code { color:#8b3fd0;font-weight:900;letter-spacing:.08em;text-transform:uppercase; }
+  .next-card h2 { margin-top:9px;font-size:clamp(25px,3vw,34px);max-width:14ch; }
+  .why-next { margin-top:18px;padding:14px;border-radius:14px;background:#f6f1fa; }
+  .why-next span { font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:900;color:#8b3fd0; }
+  .why-next p { margin:5px 0 0;line-height:1.45;color:#5f5567; }
+  .next-action { align-self:flex-start;margin-top:auto; }
+  .next-placeholder { margin:auto;max-width:36ch;text-align:center; }
+  .next-placeholder .eyebrow { margin-top:15px!important; }
+  .next-placeholder h2 { margin-inline:auto; }
+  .next-placeholder p:not(.eyebrow) { color:#7b7282;line-height:1.5; }
+  .placeholder-number { display:grid;place-items:center;width:46px;height:46px;margin:auto;border-radius:50%;background:#e2dde6;color:#746b7b;font-family:'Fraunces Variable',serif;font-size:22px;font-weight:800; }
+  .session-preview { margin-top:16px;padding-top:15px;border-top:1px solid #e5deea; }
+  .session-preview>strong { font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#69349b; }
+  .session-preview ol { margin:10px 0 16px;padding-left:23px;color:#5f5567;font-size:13px;line-height:1.7; }
+  .session-preview .primary { width:100%;padding-inline:14px; }
+  .week-card p,.proof-card p { color:#746a7b; }
+  .week-days { display:grid;grid-template-columns:repeat(5,1fr);gap:8px; }
+  .week-days span { display:flex;flex-direction:column;align-items:center;gap:8px; }
+  .week-days i { height:54px;width:100%;border-radius:10px;background:#f0edf2; }
+  .week-days .busy i { background:linear-gradient(#dceee7 0 45%,#f5dfe7 45% 70%,#eee9f1 70%); }
+  .proof-card a { font-weight:900;color:#8b3fd0; }
+  @media(max-width:1080px){
+    .setup-progress small{display:none}
+    .demo-shell{display:block}
+    .demo-header{height:64px;position:sticky;top:0;z-index:5}
+    .demo-sidebar{border:0;border-bottom:1px solid #e4dee8;padding:10px 16px;overflow:auto;position:sticky;top:64px;z-index:4}
+    .demo-sidebar>div,.demo-sidebar .reset{display:none}
+    .demo-sidebar nav{flex-direction:row;width:max-content}
+    .demo-sidebar nav button{max-width:190px;padding:9px 12px;background:#f7f5f8;border:1px solid #ece7ef}
+    .demo-sidebar nav button.active{box-shadow:inset 0 -3px #8b3fd0}
+    .demo-main{padding:28px clamp(20px,4vw,40px)}
+    .demo-grid{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:840px){
+    .field-grid,.course-columns,.demo-grid{grid-template-columns:1fr}
+    .demo-intro{align-items:start;flex-direction:column}
+    .metrics{width:100%}
+    .metrics span{flex:1;min-width:0}
+    .demo-steps small{display:none}
+    .situation-card,.next-card{min-height:330px}
+  }
+  @media(max-width:560px){.field-grid,.mini-grid{grid-template-columns:1fr}.segments{grid-template-columns:1fr}.actions.split{flex-direction:column-reverse}.actions.split button{width:100%}.course-results button{grid-template-columns:auto 1fr}.course-results small{grid-column:2}.setup-card{border-radius:20px;padding:24px 18px}.demo-header .compact{font-size:0}.demo-header .compact::after{content:'Sign up';font-size:13px}.demo-pill{display:none}.demo-main{padding:24px 16px}.demo-steps li{padding:9px 7px;gap:6px}.demo-steps b{width:22px;height:22px;flex-basis:22px}.demo-steps strong{font-size:10px}}
   @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 </style>

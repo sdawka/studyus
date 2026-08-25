@@ -30,9 +30,9 @@ const isCompare = Astro.url.pathname.startsWith('/compare');
       <div class="mk-container mk-nav-inner">
         <a class="mk-wordmark" href="/">studyus</a>
         <nav class="mk-nav-links" aria-label="Site">
-          <a href="/compare" aria-current={isCompare ? 'page' : undefined}>Compare</a>
+          <a class="mk-nav-compare" href="/compare" aria-current={isCompare ? 'page' : undefined}>Compare</a>
           <a href="/login">Log in</a>
-          <a class="mk-btn mk-btn-primary mk-nav-cta" href="/try">Try it</a>
+          <a class="mk-btn mk-btn-primary mk-nav-cta" href="/try">Try Studyus</a>
         </nav>
       </div>
     </header>
@@ -115,7 +115,7 @@ const isCompare = Astro.url.pathname.startsWith('/compare');
       .mk-nav-links a[aria-current='page'] {
         color: var(--mk-ink);
       }
-      .mk-nav-cta { padding: 9px 18px; font-size: 14px; }
+      .mk-nav-cta { padding: 9px 18px; font-size: 14px; white-space: nowrap; }
 
       .mk-footer {
         position: relative;
@@ -149,8 +149,29 @@ const isCompare = Astro.url.pathname.startsWith('/compare');
       }
       @media (max-width: 560px) {
         .mk-nav-inner { height: 58px; }
-        .mk-nav-links { gap: 14px; }
-        .mk-nav-cta { display: none; }
+        .mk-nav .mk-wordmark {
+          min-height: 44px;
+          display: inline-flex;
+          align-items: center;
+        }
+        .mk-nav-links { gap: 4px; }
+        .mk-nav-links a:not(.mk-btn),
+        .mk-footer-links a {
+          min-height: 44px;
+          display: inline-flex;
+          align-items: center;
+          padding-inline: 10px;
+        }
+        .mk-nav-compare { display: none !important; }
+        .mk-nav-cta {
+          display: inline-flex;
+          min-height: 40px;
+          padding: 8px 13px;
+          font-size: 13px;
+        }
+        .mk-footer { margin-top: 56px; padding-block: 28px; }
+        .mk-footer-inner { align-items: center; }
+        .mk-footer-links { margin-left: auto; gap: 0; }
         .mk-footer-note { margin-left: 0; }
       }
     </style>

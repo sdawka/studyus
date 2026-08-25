@@ -2,6 +2,7 @@
 import AppShell from '../layouts/AppShell.astro';
 import AppearanceSettings from '../components/settings/AppearanceSettings.svelte';
 import TaskGeneratorSettings from '../components/settings/TaskGeneratorSettings.svelte';
+import CalendarIntegrationSettings from '../components/settings/CalendarIntegrationSettings.svelte';
 import { resolveSettings } from '../lib/services/user';
 
 const user = Astro.locals.user!;
@@ -9,6 +10,12 @@ const settings = resolveSettings(user.settings);
 ---
 <AppShell title="Settings">
   <h1>Settings</h1>
+
+  <section class="card settings-section">
+    <div class="card-head"><h2>Calendar</h2></div>
+    <p class="section-hint">Use outside calendars as constraints and keep Studyus blocks in their own calendar.</p>
+    <CalendarIntegrationSettings client:load />
+  </section>
 
   <section class="card settings-section">
     <div class="card-head"><h2>Appearance</h2></div>
@@ -31,6 +38,10 @@ const settings = resolveSettings(user.settings);
       <label>
         Current term
         <input type="text" name="current_term" value={user.currentTerm ?? ''} placeholder="e.g. Fall 2026" />
+      </label>
+      <label>
+        Timezone
+        <input id="timezone-input" type="text" name="timezone" value={user.timezone} placeholder="America/Toronto" />
       </label>
       <button type="submit" class="btn btn-primary">Save</button>
       <span id="profile-saved" class="saved-msg" hidden>Saved</span>
@@ -55,6 +66,7 @@ const settings = resolveSettings(user.settings);
     const body: Record<string, string | null> = {
       name: String(data.get('name') || ''),
       current_term: String(data.get('current_term') || '') || null,
+      timezone: String(data.get('timezone') || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'),
     };
     const result = await apiFetch(
       '/api/v1/user',
@@ -72,6 +84,12 @@ const settings = resolveSettings(user.settings);
       setTimeout(() => { savedMsg.hidden = true; }, 2000);
     }
   });
+
+  const timezoneInput = document.getElementById('timezone-input') as HTMLInputElement | null;
+  const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (timezoneInput && timezoneInput.value === 'UTC' && detectedTimezone && detectedTimezone !== 'UTC') {
+    timezoneInput.value = detectedTimezone;
+  }
 
   document.getElementById('logout-btn')?.addEventListener('click', () => {
     const clerk = (window as Window & {

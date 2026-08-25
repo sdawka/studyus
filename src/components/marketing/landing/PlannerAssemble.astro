@@ -27,7 +27,7 @@
 
         <!-- Two crossfading copy beats stacked in the same box -->
         <div class="planner-heads">
-          <p class="rd-kicker">The five-apps problem</p>
+          <p class="rd-kicker">Student life can be a mess</p>
           <div class="planner-beats">
             <h2 class="planner-beat planner-beat--early" data-beat-early>
               The deadline was <span class="rd-em">somewhere.</span><br />
@@ -54,12 +54,12 @@
           </svg>
 
           <!-- Open-next hero card -->
-          <article class="card card--next chaos" data-card data-cx="-0.34" data-cy="-0.30" data-cr="-11">
+          <article class="card card--next chaos" data-card data-cx="-0.34" data-cy="-0.30" data-cr="-11" data-topic-cycle data-topic-offset="1">
             <span class="next-badge" data-next-badge>Open next</span>
-            <p class="card-course">CHEM 220 · Physical Chemistry</p>
-            <p class="card-task">Resonance structures</p>
-            <p class="card-why">Ranked <strong>#1 of 6</strong> — your weakest topic (<strong>24%</strong>), and the quiz is <strong>Friday</strong>.</p>
-            <p class="card-meta">~25 min · unlocks bonding &amp; MO theory next</p>
+            <p class="card-course" data-topic-field="courseLong">COMP 202 · Foundations of Programming</p>
+            <p class="card-task" data-topic-field="topic">Recursive tree traversal</p>
+            <p class="card-why" data-topic-field="rankReason">Ranked #1 of 8 — your last attempt stalled, and the assignment is due Friday.</p>
+            <p class="card-meta" data-topic-field="meta">~22 min · unlocks divide-and-conquer problems next</p>
           </article>
 
           <!-- Mon–Fri week grid -->
@@ -131,12 +131,11 @@
     z-index: 2;
   }
 
-  /* Tall scroll runway; the stage is the pinned 100svh frame. In reduced motion
-     nothing pins, so the wrap collapses to the stage's natural height. */
-  /* Scroll runway: taller than the viewport so pinning the 100svh stage gives
-     ~200vh of scrub distance (wrap 300vh − 100vh stage). Collapsed under
-     reduced motion (no pin) below. */
-  .planner-wrap { position: relative; min-height: 300vh; }
+  /* The one flagship scrub on desktop. A 240vh runway gives the pinned stage
+     140vh to resolve, then holds the finished plan briefly without making the
+     visitor spend three full screens inside one idea. Mobile collapses this
+     runway entirely below. */
+  .planner-wrap { position: relative; min-height: 240vh; }
   .planner-stage {
     min-height: 100svh;
     display: grid;
@@ -373,8 +372,11 @@
     .card--next { max-width: 100%; }
   }
   @media (max-width: 440px) {
-    .board-week { grid-template-columns: 1fr; }
-    .day:nth-child(5) { grid-column: auto; }
+    .planner-frame { padding-inline: max(18px, var(--rd-pad-x)); }
+    .board-week { gap: 7px; }
+    .card--day { padding: 11px 10px; }
+    .card--day .card-task { font-size: 14px; }
+    .card--day .card-meta { font-size: 10.5px; }
   }
 
   /* Reduced motion: no pin, no scatter — the DOM already renders the resolved
@@ -566,6 +568,11 @@
 
           // The promise lands: the "Open next" badge pops in last.
           tl.to(nextBadge, { scale: 1, rotation: 0, ease: 'back.out(2.2)', duration: 0.22 }, 0.72);
+
+          // Leave enough scrub after the resolution for the completed planner
+          // to register before the section releases the pin.
+          const resolvedHold = { progress: 0 };
+          tl.to(resolvedHold, { progress: 1, duration: 0.2 }, 0.94);
 
           // Keep chaos offsets correct across resizes/orientation changes.
           ScrollTrigger.addEventListener('refreshInit', applyChaos);

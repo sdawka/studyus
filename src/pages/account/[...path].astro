@@ -7,7 +7,18 @@ if (!Astro.locals.user) return Astro.redirect('/sign-in');
 
 <MarketingLayout title="Your account · studyus" description="Manage your studyus account and security settings.">
   <section class="account-shell">
-    <UserProfile routing="path" path="/account" />
+    <UserProfile
+      routing="path"
+      path="/account"
+      additionalOAuthScopes={{
+        google: [
+          'https://www.googleapis.com/auth/calendar.events.readonly',
+          'https://www.googleapis.com/auth/calendar.calendarlist.readonly',
+          'https://www.googleapis.com/auth/calendar.app.created',
+        ],
+        microsoft: ['Calendars.ReadWrite'],
+      }}
+    />
   </section>
 </MarketingLayout>
 

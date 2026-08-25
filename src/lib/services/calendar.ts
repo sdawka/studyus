@@ -1,6 +1,20 @@
 import { and, eq, gte, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { assessments, classSessions, courses, events, kcs, studySessions, taskCourses, tasks } from '../../db/schema';
+import {
+  assessments,
+  calendarConnections,
+  calendarEventLinks,
+  calendarExternalEvents,
+  calendarProviderCalendars,
+  classSessions,
+  courses,
+  events,
+  kcs,
+  studySessions,
+  taskCourses,
+  tasks,
+} from '../../db/schema';
+import { calendarItemId } from '../calendar/domain';
 import { sweepTasks } from './taskSweep';
 import type { CalendarItem } from '../types/calendar';
 
@@ -28,6 +42,76 @@ export async function getCalendar(
   if (opts.sweep ?? true) await sweepTasks(db, userId);
 
   const items: CalendarItem[] = [];
+
+  // --- external_event ---------------------------------------------------
+  // Imported provider events are materialized by the sync worker. Provider
+  // events linked back to a native Studyus entity are suppressed here: the
+  // native assessment/task/session/class projection below is authoritative,
+  // and rendering both would duplicate the same block.
+  const externalRows = await db
+    .select({
+      event: calendarExternalEvents,
+      provider: calendarConnections.provider,
+      externalAccountId: calendarConnections.externalAccountId,
+      syncMode: calendarConnections.syncMode,
+      studyusOwned: calendarProviderCalendars.studyusOwned,
+      selected: calendarProviderCalendars.selected,
+    })
+    .from(calendarExternalEvents)
+    .innerJoin(calendarProviderCalendars, eq(calendarExternalEvents.providerCalendarId, calendarProviderCalendars.id))
+    .innerJoin(calendarConnections, eq(calendarProviderCalendars.connectionId, calendarConnections.id))
+    .where(and(eq(calendarExternalEvents.userId, userId), eq(calendarProviderCalendars.selected, true)));
+  const externalLinks = externalRows.length
+    ? await db
+        .select({
+          providerCalendarId: calendarEventLinks.providerCalendarId,
+          providerEventId: calendarEventLinks.providerEventId,
+        })
+        .from(calendarEventLinks)
+        .where(eq(calendarEventLinks.userId, userId))
+    : [];
+  const linkedExternalKeys = new Set(externalLinks.map((link) => `${link.providerCalendarId}\u0000${link.providerEventId}`));
+
+  for (const row of externalRows) {
+    const event = row.event;
+    if (event.status === 'cancelled') continue;
+    if (linkedExternalKeys.has(`${event.providerCalendarId}\u0000${event.providerEventId}`)) continue;
+
+    const isTimed = event.startKind === 'timed' && event.startAt !== null;
+    const inWindow = isTimed
+      ? event.startAt! <= toMs && (event.endAt ?? event.startAt!) >= fromMs
+      : event.startKind === 'date' && event.startDate
+        ? Date.parse(`${event.startDate}T12:00:00.000Z`) <= toMs &&
+          Date.parse(`${event.endDate ?? event.startDate}T12:00:00.000Z`) >= fromMs
+        : false;
+    if (!inWindow) continue;
+
+    const date = isTimed ? new Date(event.startAt!).toISOString() : `${event.startDate}T12:00:00.000Z`;
+    const endDate = isTimed && event.endAt !== null ? new Date(event.endAt).toISOString() : null;
+    items.push({
+      id: calendarItemId(`provider.${row.provider}`, event.providerEventId),
+      type: 'external_event',
+      title: event.title || 'Busy',
+      date,
+      end_date: endDate,
+      all_day: !isTimed,
+      course_id: null,
+      href: null,
+      details: {
+        provider: row.provider,
+        external_account_id: row.externalAccountId,
+        provider_calendar_id: event.providerCalendarId,
+        provider_event_id: event.providerEventId,
+        provider_version: event.providerVersion,
+        ownership: 'provider',
+        sync_policy: row.studyusOwned && row.syncMode === 'controlled' ? 'two-way' : 'read-only',
+        busy_status: event.busyStatus,
+        timezone: event.timezone,
+        date_only: isTimed ? null : event.startDate,
+        end_date_exclusive: isTimed ? null : event.endDate,
+      },
+    });
+  }
 
   // --- assessment_due -------------------------------------------------
   const assessmentConditions = [

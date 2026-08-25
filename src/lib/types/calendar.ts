@@ -20,7 +20,7 @@
 // `details.start_min`/`details.end_min` directly, never by reading
 // hour/minute off the ISO fields via local Date getters (getHours()),
 // which would apply the browser's real UTC offset and show the wrong time.
-export type CalendarItemType = 'assessment_due' | 'task_due' | 'study_session' | 'event_logged' | 'class_session';
+export type CalendarItemType = 'assessment_due' | 'task_due' | 'study_session' | 'event_logged' | 'class_session' | 'external_event';
 
 export interface CalendarItem {
   id: string;
