@@ -6,6 +6,7 @@ This directory holds product and architecture documentation for studyus, a KLI-g
 
 ### Product (`/product/`)
 - **vision.md** — Target user (McGill ChemEng student), the two halves (admin: calendar/deadlines/grades; learning: feed/courses/tutor), design vibe, webapp first / iPad via frozen API.
+- **learning-science.md** — Public-claim source of truth: principle-by-principle implementation status, concrete code/surface checklist, evidence links, and explicit boundaries for features that are partial or student-controlled.
 - **user-journeys.md** — Current public-trial and Clerk entry flow, returning-user entry points, recording outside-app events, and future channels.
 - **onboarding.md** — Implemented public trial and first-run contract: local shadow state, university + semester, at least one course/KC, safe auth import, hard completion invariant, and explicit ingestion follow-ups.
 - **screens.md** — Full screen inventory from the build plan with purpose and key components per route.

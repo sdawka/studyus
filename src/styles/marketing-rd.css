@@ -144,6 +144,26 @@
   padding: clamp(20px, 3vw, 32px);
 }
 
+/* Course identifiers recur across the landing-page product vignettes. Keep
+   them visibly separate from the task/concept name, with enough internal
+   space to read as an intentional badge instead of text touching a box edge. */
+.rd-course-chip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 4px 8px;
+  border: 1px solid oklch(58% 0.19 300 / 0.18);
+  border-radius: var(--rd-r-pill);
+  background: oklch(58% 0.19 300 / 0.09);
+  color: var(--rd-grape);
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Section headings inherit Fraunces from `.rd :where(h2)`; this is the common
    size for a section title. */
 .rd-h2 {

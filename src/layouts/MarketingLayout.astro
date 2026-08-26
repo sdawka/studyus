@@ -10,6 +10,7 @@ interface Props {
 }
 const { title, description } = Astro.props;
 const isCompare = Astro.url.pathname.startsWith('/compare');
+const isHowItWorks = Astro.url.pathname.startsWith('/how-it-works');
 ---
 <!doctype html>
 <html lang="en">
@@ -30,6 +31,7 @@ const isCompare = Astro.url.pathname.startsWith('/compare');
       <div class="mk-container mk-nav-inner">
         <a class="mk-wordmark" href="/">studyus</a>
         <nav class="mk-nav-links" aria-label="Site">
+          <a class="mk-nav-how" href="/how-it-works" aria-current={isHowItWorks ? 'page' : undefined}>How it works</a>
           <a class="mk-nav-compare" href="/compare" aria-current={isCompare ? 'page' : undefined}>Compare</a>
           <a href="/login">Log in</a>
           <a class="mk-btn mk-btn-primary mk-nav-cta" href="/try">Try Studyus</a>
@@ -45,6 +47,7 @@ const isCompare = Astro.url.pathname.startsWith('/compare');
       <div class="mk-container mk-footer-inner">
         <span class="mk-wordmark">studyus</span>
         <nav class="mk-footer-links" aria-label="Footer">
+          <a href="/how-it-works">How it works</a>
           <a href="/compare">Compare</a>
           <a href="/login">Log in</a>
         </nav>
@@ -162,6 +165,7 @@ const isCompare = Astro.url.pathname.startsWith('/compare');
           align-items: center;
           padding-inline: 10px;
         }
+        .mk-nav-how { display: none !important; }
         .mk-nav-compare { display: none !important; }
         .mk-nav-cta {
           display: inline-flex;

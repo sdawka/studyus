@@ -6,7 +6,7 @@ import { apiError } from './lib/api';
 import { ClerkIdentityConflictError, resolveLocalUser } from './lib/auth/local-user';
 import { hasUsableCourse } from './lib/services/onboarding';
 
-const PUBLIC_PAGE_PATHS = new Set(['/', '/login', '/sign-in', '/sign-up', '/compare']);
+const PUBLIC_PAGE_PATHS = new Set(['/', '/login', '/sign-in', '/sign-up', '/compare', '/how-it-works']);
 
 function isPublicPage(pathname: string): boolean {
   return (
@@ -30,6 +30,7 @@ function isAuthIndependentPath(pathname: string): boolean {
   return (
     pathname === '/' ||
     pathname === '/compare' ||
+    pathname === '/how-it-works' ||
     pathname === '/try' ||
     pathname.startsWith('/try/') ||
     isPublicApiPath(pathname)

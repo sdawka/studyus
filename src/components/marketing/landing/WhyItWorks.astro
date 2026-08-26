@@ -48,6 +48,9 @@ const signals = [
         </li>
       ))}
     </ol>
+    <a class="why-link" href="/how-it-works" data-reveal-item>
+      See the learning design and implementation checklist <span aria-hidden="true">→</span>
+    </a>
   </div>
 </section>
 
@@ -85,6 +88,18 @@ const signals = [
     padding: 0;
     list-style: none;
   }
+  .why-link {
+    grid-column: 1 / -1;
+    width: fit-content;
+    margin-top: -12px;
+    color: var(--rd-accent-deep);
+    font-size: 13px;
+    font-weight: 900;
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 4px;
+  }
+  .why-link span { display: inline-block; transition: transform .2s var(--rd-ease-bounce); }
+  .why-link:hover span { transform: translateX(4px); }
   .signal-list li {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
@@ -142,5 +157,6 @@ const signals = [
   }
   @media (prefers-reduced-motion: reduce) {
     .signal-list li { transform: none; }
+    .why-link span { transition: none; }
   }
 </style>
