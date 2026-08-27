@@ -11,6 +11,7 @@ export type TutorMode = (typeof TUTOR_MODES)[number];
 export const conversationDetailsSchema = z.strictObject({
   flow: z.literal('absorb').optional(),
   focus_order: z.array(idSchema).optional(),
+  planned_minutes: z.union([z.literal(15), z.literal(25), z.literal(50)]).optional(),
 });
 export type ConversationDetailsInput = z.infer<typeof conversationDetailsSchema>;
 

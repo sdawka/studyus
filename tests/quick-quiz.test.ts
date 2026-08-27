@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../src/db/client';
-import { branches, courses, events, exercises, kcs, users } from '../src/db/schema';
+import { branches, courses, events, exercises, kcs, studySessions, users } from '../src/db/schema';
 import { generateQuickQuiz, QuizNotGradableError, submitQuickQuizAnswers } from '../src/lib/flows/quick_quiz';
 
 const db = getDb(env.DB);
@@ -191,6 +191,23 @@ async function seedMcq(kcId: string, overrides: Partial<typeof exercises.$inferI
 }
 
 describe('generateQuickQuiz — v2.0 seeded exercise bank', () => {
+  it('creates a non-repeating exact-KC set and persists the recommendation time budget', async () => {
+    for (let index = 0; index < 3; index++) await seedMcq(kcIds[0], { prompt: `Targeted question ${index}` });
+
+    const quiz = await generateQuickQuiz(
+      db,
+      userId,
+      { kc_id: kcIds[0], count: 3, planned_minutes: 15 },
+      { OPENROUTER_API_KEY: '', OPENROUTER_MODEL: '' },
+    );
+
+    expect(quiz.questions).toHaveLength(3);
+    expect(new Set(quiz.questions.map((question) => question.question)).size).toBe(3);
+    expect(quiz.questions.every((question) => question.kc_id === kcIds[0])).toBe(true);
+    const session = await db.select().from(studySessions).where(eq(studySessions.id, quiz.id)).limit(1);
+    expect(session[0].plannedMinutes).toBe(15);
+  });
+
   it('prefers a seeded mcq item over AI generation for a KC that has one', async () => {
     await seedMcq(kcIds[0]);
     // If the AI path were hit for kcIds[0] it would return this instead —

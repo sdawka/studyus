@@ -4,22 +4,48 @@ export const kcTypeSchema = z.enum(['fact', 'association', 'concept', 'rule', 'p
 
 export const courseSetupKcSchema = z.strictObject({
   client_id: z.string().uuid(),
+  template_ref: z.string().trim().max(120).optional(),
+  included: z.boolean().default(true),
   name: z.string().trim().min(2).max(160),
   kc_type: kcTypeSchema.default('concept'),
   description: z.string().trim().max(1200).optional(),
+  sort_order: z.number().int().min(0).max(500).default(0),
+  prereq_refs: z.array(z.string().trim().max(240)).max(40).default([]),
   source_refs: z.array(z.string().trim().max(240)).max(8).default([]),
 });
 
 export const courseSetupBranchSchema = z.strictObject({
   client_id: z.string().uuid(),
+  template_ref: z.string().trim().max(120).optional(),
+  included: z.boolean().default(true),
   name: z.string().trim().min(2).max(120),
   sort_order: z.number().int().min(0).max(500),
   kcs: z.array(courseSetupKcSchema).max(100),
 });
 
+export const courseSetupAssessmentSchema = z
+  .strictObject({
+    template_ref: z.string().trim().min(1).max(160),
+    title: z.string().trim().min(1).max(300),
+    type: z.enum(['quiz', 'assignment', 'midterm', 'final', 'lab']),
+    kind: z.enum(['official', 'practice']),
+    weight_pct: z.number().min(0).max(100).optional(),
+    date_status: z.enum(['unset', 'confirmed', 'unknown']).default('unset'),
+    due_on: z.string().date().optional(),
+  })
+  .superRefine((assessment, issue) => {
+    if (assessment.date_status === 'confirmed' && !assessment.due_on) {
+      issue.addIssue({ code: 'custom', path: ['due_on'], message: 'A confirmed assessment date is required' });
+    }
+    if (assessment.date_status !== 'confirmed' && assessment.due_on) {
+      issue.addIssue({ code: 'custom', path: ['due_on'], message: 'Only confirmed assessments may include a date' });
+    }
+  });
+
 export const courseSetupProposalSchema = z.strictObject({
   schema_version: z.literal(1),
   template_id: z.string().trim().max(120).optional(),
+  template_revision: z.string().trim().max(80).optional(),
   course: z.strictObject({
     code: z.string().trim().min(2).max(32),
     title: z.string().trim().min(2).max(180),
@@ -27,6 +53,7 @@ export const courseSetupProposalSchema = z.strictObject({
     credits: z.number().int().min(0).max(30).optional(),
   }),
   branches: z.array(courseSetupBranchSchema).min(1).max(40),
+  assessments: z.array(courseSetupAssessmentSchema).max(40).default([]),
   source: z.strictObject({
     kind: z.enum(['template', 'manual', 'upload', 'simulated']),
     filename: z.string().trim().max(240).optional(),

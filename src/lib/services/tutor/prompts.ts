@@ -68,6 +68,7 @@ export type AbsorbContext = {
   prereqs: AbsorbPrereq[];
   misconceptions: AbsorbMisconception[];
   scaffolds: AbsorbScaffold[];
+  plannedMinutes?: number | null;
 };
 
 export type TutorContext = {
@@ -136,6 +137,10 @@ function summarizeEvents(events: TutorContextEvent[]): string {
 // Only ever called when ctx.mode === 'absorb' and ctx.absorb is present.
 function describeAbsorbContext(absorb: AbsorbContext): string {
   const sections: string[] = [];
+
+  if (absorb.plannedMinutes !== null && absorb.plannedMinutes !== undefined) {
+    sections.push(`Session budget: about ${absorb.plannedMinutes} minutes. Pace the lesson to reach one useful retrieval check within that budget; do not rush, promise completion, or mention an exact countdown.`);
+  }
 
   if (absorb.prereqs.length === 0) {
     sections.push('Prerequisite readiness: this KC has no recorded prerequisites — skip straight to Stage B.');

@@ -1,35 +1,68 @@
 <script lang="ts">
-  import { extractModelSpec, type ModelSpec } from '../../lib/services/tutor/modelSpec';
+  import { onMount } from 'svelte';
+  import { extractModelSpec } from '../../lib/services/tutor/modelSpec';
   import { extractCorrectionProposal, type CorrectionProposal } from '../../lib/services/tutor/correctionSpec';
   import { apiFetch } from '../../lib/apiClient';
+  import {
+    hydrateRuntimeConversation,
+    refetchRuntimeConversation,
+    refreshLearnerRuntime,
+    runtimeConversationsById,
+    startLearnerRuntimeSync,
+    updateRuntimeConversation,
+    type RuntimeConversation,
+    type RuntimeConversationSummary,
+    type RuntimeMessage,
+  } from '../../lib/stores/learnerRuntime';
   import { pushToast } from '../../lib/stores/toast';
   import InteractiveModel from './InteractiveModel.svelte';
 
-  type Message = { id: string; role: 'user' | 'assistant'; content: string };
   type CorrectionState = 'pending' | 'saving' | 'accepted' | 'dismissed';
 
   let {
-    conversationId,
+    initialConversation,
     kcId,
-    initialMessages = [],
-  }: { conversationId: string; mode?: string; kcId?: string; initialMessages?: Message[] } = $props();
+  }: { initialConversation: RuntimeConversation; kcId?: string } = $props();
 
-  let messages = $state<Message[]>(initialMessages);
+  const conversationId = initialConversation.id;
+  // Svelte components also execute during Astro SSR. Only hydrate the shared
+  // module store in the browser so one request can never leak runtime state
+  // into another user's server render.
+  if (typeof window !== 'undefined') hydrateRuntimeConversation(initialConversation);
+  let conversation = $derived($runtimeConversationsById[conversationId] ?? initialConversation);
+  let messages = $derived(conversation.messages);
+  let ended = $derived(conversation.status === 'ended');
   let draft = $state('');
   let sending = $state(false);
   let error = $state<string | null>(null);
-  let latestModelSpec = $state<ModelSpec | null>(null);
-  let ended = $state(false);
+  let latestModelSpec = $derived.by(() => {
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      if (messages[index].role !== 'assistant') continue;
+      const spec = extractModelSpec(messages[index].content);
+      if (spec) return spec;
+    }
+    return null;
+  });
 
-  // Keyed by assistant message id, not a single "latest" like latestModelSpec
-  // above — a correction card needs its own persistent accept/dismiss state
-  // that a later message (with or without its own proposal) must not clobber.
-  let correctionProposals = $state<Record<string, CorrectionProposal>>({});
+  // Both artifacts are derived from the DO transcript so reloading/resuming a
+  // conversation restores the same model and correction cards. Only the
+  // learner's transient accept/dismiss interaction remains component-local.
+  let correctionProposals = $derived.by(() => {
+    const proposals: Record<string, CorrectionProposal> = {};
+    for (const message of messages) {
+      if (message.role !== 'assistant') continue;
+      const proposal = extractCorrectionProposal(message.content);
+      if (proposal) proposals[message.id] = proposal;
+    }
+    return proposals;
+  });
   let correctionState = $state<Record<string, CorrectionState>>({});
 
   // Lazily fetched + cached for the life of this component: only needed when
   // a proposal actually carries a misconception_slug to resolve.
   let misconceptionsCache: { id: string; slug: string }[] | null = null;
+
+  onMount(() => startLearnerRuntimeSync(conversationId));
 
   function stripFences(text: string): string {
     // Global flag: an absorb-mode turn may carry both an interactive_model
@@ -90,9 +123,10 @@
     draft = '';
     sending = true;
 
-    const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content };
-    const assistantMsg: Message = { id: crypto.randomUUID(), role: 'assistant', content: '' };
-    messages = [...messages, userMsg, assistantMsg];
+    const now = new Date().toISOString();
+    const userMsg: RuntimeMessage = { id: `pending-user:${crypto.randomUUID()}`, conversation_id: conversationId, role: 'user', content, created_at: now };
+    const assistantMsg: RuntimeMessage = { id: `pending-assistant:${crypto.randomUUID()}`, conversation_id: conversationId, role: 'assistant', content: '', created_at: now };
+    updateRuntimeConversation(conversationId, (current) => ({ ...current, messages: [...current.messages, userMsg, assistantMsg] }));
 
     try {
       const res = await fetch(`/api/v1/tutor/conversations/${conversationId}/messages`, {
@@ -104,7 +138,9 @@
       if (!res.ok || !res.body) {
         const json = await res.json().catch(() => null);
         error = json?.error?.message ?? 'The tutor is unavailable right now.';
-        messages = messages.filter((m) => m.id !== assistantMsg.id);
+        // The request may have reached the DO before the response failed.
+        // Replace the optimistic pair with whatever was durably committed.
+        await refetchRuntimeConversation(conversationId);
         return;
       }
 
@@ -128,7 +164,12 @@
             if (typeof parsedFrame.delta === 'string') {
               fullText += parsedFrame.delta;
               const textSoFar = fullText;
-              messages = messages.map((m) => (m.id === assistantMsg.id ? { ...m, content: textSoFar } : m));
+              updateRuntimeConversation(conversationId, (current) => ({
+                ...current,
+                messages: current.messages.map((message) =>
+                  message.id === assistantMsg.id ? { ...message, content: textSoFar } : message,
+                ),
+              }));
             }
           } catch {
             // ignore malformed/partial frame
@@ -136,28 +177,43 @@
         }
       }
 
-      const spec = extractModelSpec(fullText);
-      if (spec) latestModelSpec = spec;
+      // The SSE closes only after the DO has finalized the durable assistant
+      // message and any cap-driven status transition. Re-read that record so
+      // temporary ids and optimistic content never become the lasting UI.
+      const authoritative = await refetchRuntimeConversation(conversationId);
+      void refreshLearnerRuntime();
 
       const proposal = extractCorrectionProposal(fullText);
       if (proposal) {
-        correctionProposals = { ...correctionProposals, [assistantMsg.id]: proposal };
-        correctionState = { ...correctionState, [assistantMsg.id]: 'pending' };
+        const durableAssistantId = authoritative?.messages.findLast((message) => message.role === 'assistant')?.id ?? assistantMsg.id;
+        correctionState = { ...correctionState, [durableAssistantId]: 'pending' };
       }
     } catch {
       error = 'Connection to the tutor was interrupted.';
+      await refetchRuntimeConversation(conversationId);
+      void refreshLearnerRuntime();
     } finally {
       sending = false;
     }
   }
 
   async function endSession() {
-    await fetch(`/api/v1/tutor/conversations/${conversationId}/end`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: '{}',
-    });
-    ended = true;
+    if (sending) return;
+    error = null;
+    const result = await apiFetch<{ conversation: RuntimeConversationSummary }>(
+      `/api/v1/tutor/conversations/${conversationId}/end`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' },
+      'Could not end this tutor session.',
+    );
+    if (!result.ok) {
+      error = result.error;
+      pushToast(result.error, 'error');
+      await refetchRuntimeConversation(conversationId);
+      return;
+    }
+    updateRuntimeConversation(conversationId, (current) => ({ ...current, ...result.data.conversation }));
+    await refetchRuntimeConversation(conversationId);
+    void refreshLearnerRuntime();
   }
 </script>
 
@@ -213,7 +269,7 @@
     >
       <input type="text" bind:value={draft} placeholder="Type your answer or question…" disabled={sending} />
       <button type="submit" disabled={sending || !draft.trim()}>{sending ? 'Thinking…' : 'Send'}</button>
-      <button type="button" class="end-btn" onclick={endSession}>End session</button>
+      <button type="button" class="end-btn" disabled={sending} onclick={endSession}>End session</button>
     </form>
   {/if}
 </div>

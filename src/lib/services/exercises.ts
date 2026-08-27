@@ -2,7 +2,7 @@
 // KCs, populated from courses/<slug>/exercises.json by scripts/seed.ts (see
 // courses/exercise-schema.md for the frozen authoring contract and
 // docs/api.md's v2.0 section for the API shapes this backs).
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, isNull } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { courses, exercises, kcs } from '../../db/schema';
 import type { ExerciseKind } from '../content/exercises';
@@ -51,7 +51,7 @@ export async function listKcExercises(
 ): Promise<ShapedExercise[]> {
   await requireOwnedKc(db, userId, kcId);
 
-  const conditions = [eq(exercises.kcId, kcId)];
+  const conditions = [eq(exercises.kcId, kcId), isNull(exercises.retiredAt)];
   if (opts.kind) conditions.push(eq(exercises.kind, opts.kind));
 
   const rows = await db
@@ -76,7 +76,7 @@ export async function listCourseMcqBank(db: Db, userId: string, courseId: string
     .select({ exercise: exercises })
     .from(exercises)
     .innerJoin(kcs, eq(exercises.kcId, kcs.id))
-    .where(and(eq(kcs.courseId, courseId), eq(exercises.kind, 'mcq')))
+    .where(and(eq(kcs.courseId, courseId), eq(exercises.kind, 'mcq'), isNull(kcs.archivedAt), isNull(exercises.retiredAt)))
     .orderBy(asc(exercises.sortOrder))
     .then((rows) => rows.map((r) => r.exercise));
 }
@@ -93,7 +93,7 @@ export async function getExerciseWithAnswers(db: Db, userId: string, exerciseId:
     .from(exercises)
     .innerJoin(kcs, eq(exercises.kcId, kcs.id))
     .innerJoin(courses, eq(kcs.courseId, courses.id))
-    .where(eq(exercises.id, exerciseId))
+    .where(and(eq(exercises.id, exerciseId), isNull(exercises.retiredAt), isNull(kcs.archivedAt)))
     .limit(1);
   const row = rows[0];
   if (!row || row.courseUserId !== userId) throw new NotFoundError('Exercise');

@@ -31,6 +31,10 @@ describe('LearnerAgent', () => {
       updatedAt: state.updatedAt,
     });
     expect(resolved).toMatchObject({ status: 'succeeded', output: { correct: false } });
+    const secondConversation = await learnerOne.createConversation({ kcId: 'kc-2', mode: 'recall' });
+    expect(new Set((await learnerOne.getSnapshot()).activeConversations.map((item) => item.id))).toEqual(
+      new Set([secondConversation.id, conversation.id]),
+    );
     expect(await learnerTwo.listConversations()).toEqual([]);
   });
 
@@ -60,6 +64,9 @@ describe('LearnerAgent', () => {
 
     const scheduledAt = Date.now() + 60_000;
     await learner.scheduleAlarm({ kind: 'review', payload: { kcId: 'kc-legacy' }, scheduledAt });
-    expect(await learner.getSnapshot()).toMatchObject({ nextAlarmAt: scheduledAt });
+    expect(await learner.getSnapshot()).toMatchObject({
+      activeConversations: [{ id: conversationId, status: 'active' }],
+      nextAlarmAt: scheduledAt,
+    });
   });
 });

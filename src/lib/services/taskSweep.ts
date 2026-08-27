@@ -10,7 +10,7 @@
 // a user-minted todo.
 import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, lte } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { assessmentKcs, assessments, classSessions, courses, kcs, rituals, taskCourses, tasks, users } from '../../db/schema';
+import { assessmentKcs, assessments, branches, classSessions, courses, kcs, rituals, taskCourses, tasks, users } from '../../db/schema';
 import { isoWeekday, localNoon, parseMeetingDays } from './classSessions';
 import { resolveSettings, type ResolvedSettings } from './user';
 
@@ -245,11 +245,14 @@ async function collectStaleKc(db: Db, userId: string, now: number): Promise<NewT
       courseId: kcs.courseId,
     })
     .from(kcs)
+    .innerJoin(branches, eq(kcs.branchId, branches.id))
     .innerJoin(courses, eq(kcs.courseId, courses.id))
     .where(
       and(
         eq(courses.userId, userId),
         eq(courses.archived, false),
+        isNull(branches.archivedAt),
+        isNull(kcs.archivedAt),
         gt(kcs.mastery, 0),
         lt(kcs.lastEventAt, now - STALE_KC_IDLE_MS),
       ),

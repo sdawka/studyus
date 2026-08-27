@@ -73,30 +73,40 @@ export const academicTerms = sqliteTable(
 // Courses / branches / KCs
 // ---------------------------------------------------------------------------
 
-export const courses = sqliteTable('courses', {
-  id: id(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  code: text('code').notNull(),
-  slug: text('slug').notNull().unique(),
-  title: text('title').notNull(),
-  credits: integer('credits'),
-  term: text('term'),
-  termId: text('term_id').references(() => academicTerms.id, { onDelete: 'set null' }),
-  instructor: text('instructor'),
-  prereqs: text('prereqs'),
-  overview: text('overview'),
-  sourceUrl: text('source_url'),
-  color: text('color'),
-  // JSON array of ISO weekday numbers (Mon=1..Sun=7), e.g. "[1,3,5]"; null
-  // means the course has no fixed meeting schedule. Drives the class
-  // sessions generation sweep — see classSessions below.
-  meetingDays: text('meeting_days'),
-  archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
-  setupState: text('setup_state', { enum: ['draft', 'active'] }).notNull().default('active'),
-  createdAt: createdAt(),
-});
+export const courses = sqliteTable(
+  'courses',
+  {
+    id: id(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    code: text('code').notNull(),
+    // Stable reviewed-catalog provenance. Null for manual/uploaded courses.
+    templateId: text('template_id'),
+    mapRevision: integer('map_revision').notNull().default(1),
+    templateRevision: text('template_revision'),
+    templateSyncedAt: integer('template_synced_at'),
+    templateBaseline: text('template_baseline', { mode: 'json' }),
+    slug: text('slug').notNull().unique(),
+    title: text('title').notNull(),
+    credits: integer('credits'),
+    term: text('term'),
+    termId: text('term_id').references(() => academicTerms.id, { onDelete: 'set null' }),
+    instructor: text('instructor'),
+    prereqs: text('prereqs'),
+    overview: text('overview'),
+    sourceUrl: text('source_url'),
+    color: text('color'),
+    // JSON array of ISO weekday numbers (Mon=1..Sun=7), e.g. "[1,3,5]"; null
+    // means the course has no fixed meeting schedule. Drives the class
+    // sessions generation sweep — see classSessions below.
+    meetingDays: text('meeting_days'),
+    archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
+    setupState: text('setup_state', { enum: ['draft', 'active'] }).notNull().default('active'),
+    createdAt: createdAt(),
+  },
+  (table) => [index('courses_user_template_idx').on(table.userId, table.templateId)],
+);
 
 export const branches = sqliteTable('branches', {
   id: id(),
@@ -104,7 +114,9 @@ export const branches = sqliteTable('branches', {
     .notNull()
     .references(() => courses.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
+  templateRef: text('template_ref'),
   sortOrder: integer('sort_order').notNull().default(0),
+  archivedAt: integer('archived_at'),
   createdAt: createdAt(),
 });
 
@@ -133,6 +145,7 @@ export const kcs = sqliteTable(
     // unique semantics let every legacy NULL slug coexist fine.
     slug: text('slug'),
     sortOrder: integer('sort_order').notNull().default(0),
+    archivedAt: integer('archived_at'),
     // Derived caches, recomputed on every event write.
     mastery: integer('mastery').notNull().default(0), // 0-100
     status: text('status').notNull().default('not-started'),
@@ -226,6 +239,7 @@ export const misconceptions = sqliteTable(
     diagnosticProbe: text('diagnostic_probe').notNull(),
     correction: text('correction').notNull(),
     source: text('source', { enum: ['seed', 'tutor'] }).notNull().default('seed'),
+    retiredAt: integer('retired_at'),
     createdAt: createdAt(),
   },
   (table) => [uniqueIndex('misconceptions_kc_slug_unique').on(table.kcId, table.slug)],
@@ -304,6 +318,7 @@ export const exercises = sqliteTable(
     // items so a future authoring review can filter or replace them safely.
     origin: text('origin', { enum: ['seed', 'user', 'generated'] }).notNull().default('seed'),
     sortOrder: integer('sort_order').notNull().default(0),
+    retiredAt: integer('retired_at'),
     createdAt: createdAt(),
   },
   (table) => [
@@ -379,6 +394,23 @@ export const onboardingImports = sqliteTable(
     createdAt: createdAt(),
   },
   (table) => [uniqueIndex('onboarding_imports_user_draft_unique').on(table.userId, table.sourceDraftId)],
+);
+
+export const courseTemplateDecisions = sqliteTable(
+  'course_template_decisions',
+  {
+    id: id(),
+    courseId: text('course_id')
+      .notNull()
+      .references(() => courses.id, { onDelete: 'cascade' }),
+    itemKind: text('item_kind', { enum: ['branch', 'kc'] }).notNull(),
+    templateRef: text('template_ref').notNull(),
+    decision: text('decision', { enum: ['dismissed', 'kept'] }).notNull(),
+    templateRevision: text('template_revision').notNull(),
+    createdAt: createdAt(),
+    updatedAt: integer('updated_at').notNull(),
+  },
+  (table) => [uniqueIndex('course_template_decisions_item_unique').on(table.courseId, table.itemKind, table.templateRef)],
 );
 
 export const demoFunnelEvents = sqliteTable(

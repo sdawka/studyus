@@ -35,12 +35,16 @@ export function proposalFromTemplate(slug: string, simulated = false): CourseSet
   if (!course) return null;
   const branches = (course.branches ?? []).map((branch, branchIndex) => ({
     client_id: crypto.randomUUID(),
+    included: true,
     name: branch.branch,
     sort_order: branchIndex,
-    kcs: branch.concepts.map((concept) => ({
+    kcs: branch.concepts.map((concept, conceptIndex) => ({
       client_id: crypto.randomUUID(),
+      included: true,
       name: concept.name,
       kc_type: 'concept' as const,
+      sort_order: conceptIndex,
+      prereq_refs: [],
       ...(concept.notes ? { description: concept.notes } : {}),
       source_refs: [`${course.code} reviewed template`],
     })),
@@ -48,12 +52,16 @@ export function proposalFromTemplate(slug: string, simulated = false): CourseSet
   if (branches.length === 0) {
     branches.push({
       client_id: crypto.randomUUID(),
+      included: true,
       name: 'Foundations',
       sort_order: 0,
       kcs: [{
         client_id: crypto.randomUUID(),
+        included: true,
         name: `${course.title} foundations`,
         kc_type: 'concept',
+        sort_order: 0,
+        prereq_refs: [],
         source_refs: [`${course.code} template`],
       }],
     });
@@ -63,6 +71,7 @@ export function proposalFromTemplate(slug: string, simulated = false): CourseSet
     template_id: course.slug,
     course: { code: course.code, title: course.title, ...(course.credits ? { credits: course.credits } : {}) },
     branches,
+    assessments: [],
     source: { kind: simulated ? 'simulated' : 'template' },
   };
 }
@@ -74,15 +83,20 @@ export function manualProposal(code: string, title: string, topics: string[]): C
     course: { code: code.trim(), title: title.trim() },
     branches: [{
       client_id: crypto.randomUUID(),
+      included: true,
       name: 'Course map',
       sort_order: 0,
-      kcs: cleanTopics.map((name) => ({
+      kcs: cleanTopics.map((name, topicIndex) => ({
         client_id: crypto.randomUUID(),
+        included: true,
         name,
         kc_type: 'concept',
+        sort_order: topicIndex,
+        prereq_refs: [],
         source_refs: ['Manual entry'],
       })),
     }],
+    assessments: [],
     source: { kind: 'manual' },
   };
 }

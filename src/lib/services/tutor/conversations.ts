@@ -222,6 +222,9 @@ async function assembleTutorContext(
       prereqs,
       misconceptions: (misconceptionRows as Array<Record<string, unknown>>).map(toAbsorbMisconception),
       scaffolds: (scaffoldRows as Array<Record<string, unknown>>).map(toAbsorbScaffold),
+      plannedMinutes: typeof (details as Record<string, unknown> | null | undefined)?.planned_minutes === 'number'
+        ? ((details as Record<string, unknown>).planned_minutes as number)
+        : null,
     },
   };
 }

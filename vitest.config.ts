@@ -1,10 +1,13 @@
 import path from 'node:path';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers';
 
 export default defineConfig({
   test: {
     setupFiles: ['./tests/setup/apply-migrations.ts'],
+    // Playwright owns browser E2E specs. Loading them in the Workers pool
+    // attempts to bundle Playwright's Node runtime into Miniflare.
+    exclude: [...configDefaults.exclude, 'tests/e2e/**'],
   },
   plugins: [
     cloudflareTest(async () => {

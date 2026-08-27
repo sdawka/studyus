@@ -2,9 +2,9 @@
 // student has done, separate from the official weighted grade (grades.ts).
 // Sources: events (practice_done, retrieval_practice, quiz_taken,
 // tutor_session) for the course, and assessments with kind='practice'.
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { assessments, events, kcs } from '../../db/schema';
+import { assessments, branches, events, kcs } from '../../db/schema';
 import { requireOwnedCourse } from './util';
 
 const PRACTICE_EVENT_TYPES = ['practice_done', 'retrieval_practice', 'quiz_taken', 'tutor_session'] as const;
@@ -26,7 +26,8 @@ export async function getPracticeSummary(db: Db, userId: string, courseId: strin
 
   const lastPracticedAt = practiceEvents.reduce<number | null>((max, e) => (max === null || e.ts > max ? e.ts : max), null);
 
-  const courseKcs = await db.select({ id: kcs.id }).from(kcs).where(eq(kcs.courseId, courseId));
+  const courseKcs = await db.select({ id: kcs.id }).from(kcs).innerJoin(branches, eq(kcs.branchId, branches.id))
+    .where(and(eq(kcs.courseId, courseId), isNull(kcs.archivedAt), isNull(branches.archivedAt)));
 
   const practiceAssessments = await db
     .select({ gradeReceived: assessments.gradeReceived })

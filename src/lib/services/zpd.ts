@@ -2,9 +2,9 @@
 // wrappers around src/lib/zpd.ts's frontier selector. Computed on read from
 // kcs + kc_edges, zero persistence (see docs/api.md's ZPD section and
 // data-model.md).
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { courses, kcEdges, kcs } from '../../db/schema';
+import { branches, courses, kcEdges, kcs } from '../../db/schema';
 import type { FrontierByCourse, FrontierResponse } from '../schemas/zpd';
 import { computeReadiness, selectFrontier, type ZpdKc } from '../zpd';
 import { requireOwnedCourse } from './util';
@@ -55,7 +55,8 @@ export async function getGlobalFrontier(db: Db, userId: string): Promise<Frontie
     return { by_course: [], counts: { frontier: 0, blocked: 0, mastered: 0, total: 0 } };
   }
 
-  const rows = await db.select().from(kcs).where(inArray(kcs.courseId, courseIds));
+  const rows = await db.select({ kc: kcs }).from(kcs).innerJoin(branches, eq(kcs.branchId, branches.id))
+    .where(and(inArray(kcs.courseId, courseIds), isNull(kcs.archivedAt), isNull(branches.archivedAt))).then((items) => items.map((item) => item.kc));
   const kcIdSet = new Set(rows.map((r) => r.id));
   const prereqsOf = await loadPrereqsOf(db, [...kcIdSet]);
 
@@ -119,7 +120,8 @@ export type KcReadiness = {
 export async function getCourseReadiness(db: Db, userId: string, courseId: string): Promise<KcReadiness[]> {
   await requireOwnedCourse(db, userId, courseId);
 
-  const courseKcs = await db.select().from(kcs).where(eq(kcs.courseId, courseId));
+  const courseKcs = await db.select({ kc: kcs }).from(kcs).innerJoin(branches, eq(kcs.branchId, branches.id))
+    .where(and(eq(kcs.courseId, courseId), isNull(kcs.archivedAt), isNull(branches.archivedAt))).then((items) => items.map((item) => item.kc));
   const courseKcIds = courseKcs.map((k) => k.id);
   if (courseKcIds.length === 0) return [];
 
@@ -131,8 +133,9 @@ export async function getCourseReadiness(db: Db, userId: string, courseId: strin
     ? await db
         .select({ id: kcs.id, name: kcs.name, status: kcs.status, mastery: kcs.mastery })
         .from(kcs)
+        .innerJoin(branches, eq(kcs.branchId, branches.id))
         .innerJoin(courses, eq(kcs.courseId, courses.id))
-        .where(and(inArray(kcs.id, outOfCourseIds), eq(courses.userId, userId)))
+        .where(and(inArray(kcs.id, outOfCourseIds), eq(courses.userId, userId), isNull(kcs.archivedAt), isNull(branches.archivedAt)))
     : [];
 
   const nameById = new Map<string, string>();

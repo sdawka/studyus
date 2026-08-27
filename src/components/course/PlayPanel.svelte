@@ -1,6 +1,14 @@
 <script lang="ts">
   type Kc = { id: string; name: string; kcType: string; mastery: number | null };
-  type Conversation = { id: string; kcId: string; kcName: string; mode: string; createdAt: number };
+  type Conversation = {
+    id: string;
+    kcId: string;
+    kcName: string;
+    mode: string;
+    status: 'active' | 'ended';
+    createdAt: number;
+    endedAt: number | null;
+  };
 
   interface Props {
     courseSlug: string;
@@ -59,9 +67,10 @@
       <ul class="convo-list">
         {#each conversations as c (c.id)}
           <li>
-            <a class="convo-row" href={`/tutor/${c.kcId}`}>
+            <a class="convo-row" href={`/tutor/${c.kcId}?c=${encodeURIComponent(c.id)}`}>
               <span class="kc-name">{c.kcName}</span>
               <span class="mode-badge">{MODE_LABELS[c.mode] ?? c.mode}</span>
+              <span class:active={c.status === 'active'} class="status-badge">{c.status === 'active' ? 'In progress' : 'Completed'}</span>
               <span class="date">{new Date(c.createdAt).toLocaleDateString()}</span>
             </a>
           </li>
@@ -108,5 +117,7 @@
   .convo-row:hover { border-color: var(--accent); }
   .convo-row .kc-name { flex: 1; font-weight: 450; }
   .mode-badge { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.1rem 0.4rem; }
+  .status-badge { font-size: 0.68rem; color: var(--muted); }
+  .status-badge.active { color: var(--accent); font-weight: 600; }
   .date { font-size: 0.78rem; color: var(--muted); }
 </style>

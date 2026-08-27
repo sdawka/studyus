@@ -2,9 +2,9 @@
 // assessment auto-appends one assessment-role event per linked
 // assessment_kcs row via the events service, so the linked KCs' mastery
 // caches move in the same request.
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { assessmentKcs, assessments, courses, kcs, tasks } from '../../db/schema';
+import { assessmentKcs, assessments, branches, courses, kcs, tasks } from '../../db/schema';
 import type { CreateAssessmentInput, UpdateAssessmentInput, AssessmentType } from '../schemas/assessments';
 import { toEpochMs } from '../schemas/common';
 import { createEvent } from './events';
@@ -44,7 +44,8 @@ async function requireKcsInCourse(db: Db, courseId: string, kcIds: string[]): Pr
   const owned = await db
     .select({ id: kcs.id })
     .from(kcs)
-    .where(and(inArray(kcs.id, kcIds), eq(kcs.courseId, courseId)));
+    .innerJoin(branches, eq(kcs.branchId, branches.id))
+    .where(and(inArray(kcs.id, kcIds), eq(kcs.courseId, courseId), isNull(kcs.archivedAt), isNull(branches.archivedAt)));
   if (owned.length !== kcIds.length) throw new NotFoundError('KC');
 }
 

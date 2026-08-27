@@ -104,4 +104,15 @@ describe('buildSystemPrompt — absorb mode', () => {
     expect(prompt).toContain('none declared');
     expect(prompt).toContain('depth order');
   });
+
+  it('paces a recommendation-launched absorb session to its planned time', () => {
+    const prompt = buildSystemPrompt(
+      baseCtx({
+        mode: 'absorb',
+        absorb: { focusOrder: [], prereqs: [], misconceptions: [], scaffolds: [], plannedMinutes: 25 },
+      }),
+    );
+    expect(prompt).toContain('Session budget: about 25 minutes');
+    expect(prompt).toContain('one useful retrieval check within that budget');
+  });
 });

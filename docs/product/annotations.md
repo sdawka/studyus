@@ -117,7 +117,7 @@ this app render a bare `<section class="card">` as their outermost element (`Cou
 `src/components/dashboard/` and `src/components/course/` follow this pattern) — `.card` alone
 can't distinguish one from another on a page with a dozen cards. The pages that host these
 components already wrap each one in a purpose-named `.slot-*` div for their own CSS ordering
-(`dashboard.astro`'s `.slot-week` / `.slot-today` / `.slot-courses` / `.slot-record` /
+(`dashboard.astro`'s `.slot-week` / `.slot-today` / `.slot-next-move` / `.slot-courses` / `.slot-record` /
 `.slot-deadlines`; `CourseHome.svelte`'s `.slot-tasks` / `.slot-understand` / `.slot-attendance` /
 `.slot-upnext` / `.slot-standing` / `.slot-assessments` / `.slot-mastery` / `.slot-practice` /
 `.slot-activity` / `.slot-about`) — anchor to those instead. They're unique, they're already

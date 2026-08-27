@@ -37,6 +37,12 @@ No `updated_at`. Not user-scoped by a `user_id` FK (it's the root of the ownersh
 - `id` (text, pk)
 - `user_id` → `users.id`, **ON DELETE CASCADE**
 - `code` (text) — e.g., `"CHEM 213"`
+- `template_id` (text, nullable) — stable reviewed-catalog provenance for cloned
+  courses; null for manual and document-derived courses
+- `map_revision` (integer, default `1`) — optimistic-concurrency token for the
+  atomic branch/KC map snapshot
+- `template_revision`, `template_synced_at`, `template_baseline` (nullable) —
+  reviewed-content hash, last successful sync time, and JSON merge baseline
 - `slug` (text, **unique**) — collision-suffixed at create time (`-2`, `-3`, ...)
 - `title` (text)
 - `credits` (integer, nullable)
@@ -57,7 +63,9 @@ No `updated_at`. Not user-scoped by a `user_id` FK (it's the root of the ownersh
 - `id` (text, pk)
 - `course_id` → `courses.id`, **ON DELETE CASCADE**
 - `name` (text) — e.g., "Unit 1: Reaction Mechanisms"
+- `template_ref` (text, nullable) — stable reviewed branch slug
 - `sort_order` (integer, default `0`)
+- `archived_at` (integer, nullable) — reversible structural removal
 - `created_at`
 
 **No `user_id` column** (ownership is via `course_id` → `courses.user_id`) and **no `description` column**.
@@ -72,6 +80,7 @@ No `updated_at`. Not user-scoped by a `user_id` FK (it's the root of the ownersh
 - `description` (text, nullable)
 - `practice_notes` (text, nullable)
 - `sort_order` (integer, default `0`)
+- `archived_at` (integer, nullable) — reversible removal from active study
 - `mastery` (integer, 0–100, default `0`) — **derived cache**, recomputed on every event write via `foldMastery` (see `events-and-mastery.md`)
 - `status` (text, default `'not-started'`) — one of `not-started | learning | review | mastered` (`KC_STATUSES` in `src/lib/services/mastery.ts`; **not** `not_started`/`in_progress` as a prior draft of this doc claimed)
 - `last_event_at` (integer, nullable) — most recent event timestamp for this KC, used as the idle-decay anchor
@@ -79,6 +88,13 @@ No `updated_at`. Not user-scoped by a `user_id` FK (it's the root of the ownersh
 - `created_at`
 
 **No `user_id` column** (ownership is via `course_id`). Indexes: `kcs_course_id_idx` on (`course_id`); `kcs_course_slug_unique` (unique, v1.7) on (`course_id`, `slug`) — SQLite's multi-NULL unique semantics let every legacy `NULL` slug coexist fine.
+
+### course_template_decisions
+
+Durable reviewed-template reconciliation decisions, unique on
+`(course_id, item_kind, template_ref)`. `item_kind` is `branch | kc`;
+`decision` is `dismissed | kept`; `template_revision` records which reviewed
+revision the learner decided against. Ownership flows through `course_id`.
 
 ### kc_edges (v1.7 — knowledge graph)
 

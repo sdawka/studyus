@@ -4,117 +4,24 @@ import { env } from 'cloudflare:workers';
 import { getDb } from '../../../db/client';
 import { getCourseBySlug } from '../../../lib/services/courses';
 import { NotFoundError, notFound } from '../../../lib/handleNotFound';
-import MasteryBar from '../../../components/course/MasteryBar.astro';
-import StatusChip from '../../../components/course/StatusChip.astro';
-import KcTypeBadge from '../../../components/course/KcTypeBadge.astro';
+import { getCourseMap } from '../../../lib/services/courseMap';
+import { toApi } from '../../../lib/serialize';
+import CourseMapManager from '../../../components/course/CourseMapManager.svelte';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
 const slug = Astro.params.slug!;
 
 let course;
+let courseMap;
 try {
   course = await getCourseBySlug(db, userId, slug);
+  courseMap = await getCourseMap(db, userId, course.id);
 } catch (err) {
   if (err instanceof NotFoundError) return notFound(Astro);
   throw err;
 }
 ---
 <CourseLayout course={course} active="concepts">
-  {course.branches.length === 0 && <p class="placeholder">No branches yet.</p>}
-  {course.branches.map((branch) => (
-    <div class="branch">
-      <h3>{branch.name}</h3>
-      <ul class="kc-list">
-        {branch.kcs.map((kc) => (
-          <li>
-            <!-- Not an <a> at the row level — Understand needs its own link
-                 target alongside the KC-detail one, and anchors can't nest. -->
-            <div class="kc-row">
-              <a class="kc-name-link" href={`/courses/${course.slug}/kc/${kc.id}`}>
-                <span class="kc-name">{kc.name}</span>
-              </a>
-              <KcTypeBadge kcType={kc.kcType} />
-              <span class="kc-bar"><MasteryBar mastery={kc.mastery} status={kc.status} /></span>
-              <StatusChip status={kc.status} />
-              <a class="understand-link" href={`/learn/${kc.id}`}>Understand</a>
-            </div>
-          </li>
-        ))}
-        {branch.kcs.length === 0 && <li class="placeholder">No KCs in this branch.</li>}
-      </ul>
-    </div>
-  ))}
+  <CourseMapManager client:load initialMap={toApi(courseMap)} courseSlug={course.slug} />
 </CourseLayout>
-
-<style>
-  .placeholder { color: var(--muted); font-size: 0.9rem; }
-
-  .branch { margin-bottom: 1.75rem; }
-  /* Dense, repeated (one per branch on the page) — sans escape hatch. */
-  .branch h3 { margin: 0 0 0.5rem 0; font-size: 1rem; font-family: var(--font-title, var(--font-display)); }
-  .kc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
-  .kc-row {
-    display: flex;
-    align-items: center;
-    gap: 0.9rem;
-    padding: 0.55rem 0.8rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-  }
-  .kc-row:hover { border-color: var(--accent); }
-  .kc-name-link {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    text-decoration: none;
-    color: inherit;
-  }
-  .kc-name {
-    font-size: 0.92rem;
-    min-width: 0;
-    /* Two-line clamp, not single-line ellipsis (repo convention, see
-       TaskItem.svelte): at phone widths nowrap crushed every KC name to
-       "Navier-Stokes equati…". */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    overflow-wrap: anywhere;
-  }
-  .kc-bar { width: 140px; flex-shrink: 0; }
-  .understand-link {
-    flex: none;
-    font-size: 0.82rem;
-    font-weight: 550;
-    color: var(--accent);
-    text-decoration: none;
-    white-space: nowrap;
-  }
-  .understand-link:hover { text-decoration: underline; }
-
-  /* PHONE — main content-box ≤ 480px: three-line row so the mastery bar
-     and Understand link each get their own full-width row instead of
-     squeezing next to name/badge/status.
-     KcTypeBadge and StatusChip are separate components — their root
-     elements need :global() to be targeted from this file's scoped CSS. */
-  @container (max-width: 480px) {
-    .kc-row {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      grid-template-areas:
-        "name badge status"
-        "bar bar bar"
-        "understand understand understand";
-      column-gap: 0.6rem;
-      row-gap: 0.4rem;
-      align-items: center;
-    }
-    .kc-name-link { grid-area: name; }
-    .kc-row :global(.kc-type-badge) { grid-area: badge; }
-    .kc-bar { grid-area: bar; width: auto; }
-    .kc-row :global(.status-chip) { grid-area: status; }
-    .understand-link { grid-area: understand; justify-self: end; }
-  }
-</style>

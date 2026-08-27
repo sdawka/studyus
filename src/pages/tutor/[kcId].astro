@@ -4,6 +4,8 @@ import AppShell from '../../layouts/AppShell.astro';
 import { getDb } from '../../db/client';
 import { getKc } from '../../lib/services/kcs';
 import { createRuntimeConversation, getRuntimeConversation } from '../../lib/runtime/tutorRuntime';
+import { toApi } from '../../lib/serialize';
+import type { RuntimeConversation } from '../../lib/stores/learnerRuntime';
 import { NotFoundError, notFound } from '../../lib/handleNotFound';
 import ScaffoldChat from '../../components/tutor/ScaffoldChat.svelte';
 
@@ -33,11 +35,7 @@ try {
   throw err;
 }
 
-const initialMessages = conversation.messages.map((m) => ({
-  id: m.id,
-  role: m.role as 'user' | 'assistant',
-  content: m.content,
-}));
+const initialConversation = toApi(conversation) as unknown as RuntimeConversation;
 
 const MODE_LABELS: Record<string, string> = {
   recall: 'Spaced recall',
@@ -54,7 +52,7 @@ const MODE_LABELS: Record<string, string> = {
     <span class="mode-badge">{MODE_LABELS[conversation.mode] ?? conversation.mode}</span>
     <p class="muted">Mastery: {kc.mastery}% · {kc.status}</p>
   </div>
-  <ScaffoldChat conversationId={conversation.id} mode={conversation.mode} initialMessages={initialMessages} client:load />
+  <ScaffoldChat {initialConversation} kcId={kc.id} client:load />
 </AppShell>
 
 <style>

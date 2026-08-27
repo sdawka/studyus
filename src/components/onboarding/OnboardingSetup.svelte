@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import CourseMapReview from './CourseMapReview.svelte';
   import { clearDemoDraft, demoDraft, initializeDemoStore, patchDemoDraft, realDemoImport } from '../../lib/demo/store';
-  import { DEMO_CATALOG_META, MCGILL_TERMS, demoCourseCatalog, manualProposal, proposalFromExtractedText, proposalFromTemplate } from '../../lib/demo/catalog';
+  import { DEMO_CATALOG_META, MCGILL_TERMS, demoCourseCatalog, manualProposal, proposalFromExtractedText } from '../../lib/demo/catalog';
   import type { CourseSetupProposal } from '../../lib/schemas/onboarding';
 
   let ready = $state(false);
@@ -25,9 +26,22 @@
   let manualTitle = $state('');
   let manualTopics = $state('');
   let parsing = $state(false);
+  let loadingTemplate = $state(false);
+  let acceptedHandoff = $state(false);
+  let templateOptions = $state(demoCourseCatalog);
 
   const importableCourses = $derived(draft.courses.filter((course) => course.source.kind !== 'simulated'));
-  const filteredCourses = $derived(demoCourseCatalog.filter((course) => `${course.code} ${course.title}`.toLowerCase().includes(query.toLowerCase())).slice(0, 7));
+  const filteredCourses = $derived(templateOptions.filter((course) => `${course.code} ${course.title}`.toLowerCase().includes(query.toLowerCase())).slice(0, 7));
+  const termStart = $derived(university === 'Other' ? customStartsOn : MCGILL_TERMS[termIndex]?.starts_on ?? '');
+  const termEnd = $derived(university === 'Other' ? customEndsOn : MCGILL_TERMS[termIndex]?.ends_on ?? '');
+
+  function reviewReady() {
+    if (!selectedCourse) return false;
+    const includedBranches = selectedCourse.branches.filter((branch) => branch.included);
+    const includedKcs = includedBranches.flatMap((branch) => branch.kcs.filter((kc) => kc.included));
+    const validNames = includedBranches.every((branch) => branch.name.trim().length >= 2) && includedKcs.every((kc) => kc.name.trim().length >= 2);
+    return includedKcs.length > 0 && validNames && selectedCourse.assessments.filter((assessment) => assessment.kind === 'official').every((assessment) => assessment.date_status !== 'unset');
+  }
 
   onMount(() => {
     const loaded = initializeDemoStore();
@@ -37,8 +51,21 @@
     const requestedImport = new URLSearchParams(location.search).get('import') === 'demo';
     phase = requestedImport && Boolean(loaded.context || loaded.courses.some((course) => course.source.kind !== 'simulated')) ? 'offer' : 'setup';
     if (phase === 'offer') void track('import_offered');
+    void loadTemplateOptions();
     ready = true;
   });
+
+  async function loadTemplateOptions() {
+    try {
+      const response = await fetch('/api/v1/onboarding/templates');
+      const payload = await response.json() as { data?: Array<{ template_id: string; code: string; title: string; credits: number | null; kc_count: number }> };
+      if (response.ok && payload.data) {
+        templateOptions = payload.data.map((course) => ({ code: course.code, slug: course.template_id, title: course.title, credits: course.credits ?? undefined, kc_count: course.kc_count }));
+      }
+    } catch {
+      // The bundled lightweight catalog remains a resilient fallback.
+    }
+  }
 
   async function track(name: 'import_offered' | 'import_accepted' | 'import_declined' | 'onboarding_completed') {
     const current = demoDraft.get();
@@ -80,12 +107,52 @@
     void track('import_declined');
     clearDemoDraft();
     selectedCourse = null;
+    acceptedHandoff = false;
     phase = 'setup';
   }
 
-  function chooseTemplate(slug: string) {
-    selectedCourse = proposalFromTemplate(slug, false);
-    status = selectedCourse ? `${selectedCourse.branches.reduce((sum, branch) => sum + branch.kcs.length, 0)} KCs ready to review.` : null;
+  async function loadTemplate(slug: string): Promise<CourseSetupProposal> {
+    const response = await fetch(`/api/v1/onboarding/templates/${encodeURIComponent(slug)}`);
+    const payload = await response.json() as { data?: CourseSetupProposal; error?: { message: string } };
+    if (!response.ok || !payload.data) throw new Error(payload.error?.message ?? 'Could not load this reviewed course.');
+    return payload.data;
+  }
+
+  async function chooseTemplate(slug: string) {
+    loadingTemplate = true;
+    status = 'Loading the reviewed course map…';
+    try {
+      selectedCourse = await loadTemplate(slug);
+      status = `${selectedCourse.branches.reduce((sum, branch) => sum + branch.kcs.length, 0)} KCs ready to review.`;
+    } catch (cause) {
+      selectedCourse = null;
+      status = cause instanceof Error ? cause.message : 'Could not load this reviewed course.';
+    } finally {
+      loadingTemplate = false;
+    }
+  }
+
+  async function beginImportReview() {
+    error = null;
+    acceptedHandoff = true;
+    const context = draft.context;
+    if (context) {
+      university = context.institution_name === DEMO_CATALOG_META.institution ? 'McGill University' : 'Other';
+      otherUniversity = university === 'Other' ? context.institution_name : '';
+      program = context.program_name ?? '';
+      const matchingTerm = MCGILL_TERMS.findIndex((term) => term.label === context.term_label && term.starts_on === context.starts_on);
+      if (matchingTerm >= 0) termIndex = matchingTerm;
+      else {
+        university = 'Other';
+        customTermLabel = context.term_label;
+        customStartsOn = context.starts_on;
+        customEndsOn = context.ends_on;
+      }
+    }
+    const course = importableCourses[0];
+    if (course?.template_id) await chooseTemplate(course.template_id);
+    else selectedCourse = course ? structuredClone(course) : null;
+    phase = 'setup';
   }
 
   function useManual() {
@@ -143,7 +210,7 @@
       courses: [selectedCourse], simulated: false,
     });
     if (!saved) { error = 'Your browser could not save the setup draft.'; return; }
-    await sendImport();
+    await sendImport(acceptedHandoff);
   }
 </script>
 
@@ -162,7 +229,7 @@
         <div><dt>Courses</dt><dd>{importableCourses.length ? importableCourses.map((course) => `${course.course.code} (${course.branches.reduce((sum, branch) => sum + branch.kcs.length, 0)} KCs)`).join(', ') : 'No real course yet'}</dd></div>
       </dl>
       {#if error}<p class="error" role="alert">{error}</p>{/if}
-      <div class="actions"><button class="primary" type="button" onclick={() => sendImport(true)}>Import this setup</button><button class="secondary" type="button" onclick={startFresh}>Start fresh</button><a href="/try/app/today">Back to demo</a></div>
+      <div class="actions"><button class="primary" type="button" onclick={beginImportReview}>Review and import</button><button class="secondary" type="button" onclick={startFresh}>Start fresh</button><a href="/try/app/today">Back to demo</a></div>
     </section>
   {:else if phase === 'saving'}
     <section class="card import-card" aria-live="polite"><p class="eyebrow">Building your workspace</p><h1>Creating your course and knowledge map…</h1><p>This usually takes only a moment.</p></section>
@@ -173,8 +240,8 @@
       {#if error}<p class="error" role="alert">{error}</p>{/if}
       <div class="section"><b>1</b><div><h2>University and semester</h2><p>This keeps weeks, exams, and plans honest.</p></div><div class="fields"><label>University<select bind:value={university}><option>McGill University</option><option>Other</option></select></label>{#if university === 'Other'}<label>University name<input bind:value={otherUniversity} /></label>{/if}<label>Program<input bind:value={program} disabled={university === 'McGill University'} /></label>{#if university === 'Other'}<label>Semester name<input bind:value={customTermLabel} /></label><label>Starts<input type="date" bind:value={customStartsOn} /></label><label>Ends<input type="date" bind:value={customEndsOn} /></label>{:else}<label>Semester<select bind:value={termIndex}>{#each MCGILL_TERMS as term, index}<option value={index}>{term.label}</option>{/each}</select></label>{/if}</div></div>
       <div class="section"><b>2</b><div><h2>Capacity and guidance</h2><p>Constraints the planner can use—no learning-style labels.</p></div><div class="fields prefs"><label>Weekly capacity <strong>{weeklyHours} hours</strong><input type="range" min="2" max="15" bind:value={weeklyHours} /></label><label>Guidance<select bind:value={guidance}><option value="self_directed">Let me explore</option><option value="balanced">Balanced</option><option value="tell_me_next">Tell me what is next</option></select></label><label>Goal<select bind:value={depth}><option value="keep_up">Keep up</option><option value="understand">Understand</option><option value="master">Master deeply</option></select></label></div></div>
-      <div class="section"><b>3</b><div><h2>Course and knowledge map</h2><p>Choose a reviewed template, enter topics, or extract suggestions locally.</p></div><div class="course-grid"><div><input bind:value={query} placeholder="Search McGill course" /><div class="results">{#each filteredCourses as course}<button class:selected={selectedCourse?.template_id === course.slug} type="button" onclick={() => chooseTemplate(course.slug)}><strong>{course.code}</strong><span>{course.title}</span><small>{course.kc_count} KCs</small></button>{/each}</div></div><div><div class="manual"><input bind:value={manualCode} placeholder="Course code" /><input bind:value={manualTitle} placeholder="Course title" /></div><textarea bind:value={manualTopics} rows="4" placeholder="Topics, one per line"></textarea><button class="small" type="button" onclick={useManual}>Use manual map</button><label class="upload">{parsing ? 'Reading…' : 'Upload syllabus / lesson plan'}<input type="file" accept=".pdf,.docx,.txt,.md" onchange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void extractFile(file); }} /></label></div></div>{#if status}<p class="status" role="status">{status}</p>{/if}{#if selectedCourse}<div class="review"><strong>{selectedCourse.course.code} · {selectedCourse.course.title}</strong>{#each selectedCourse.branches as branch}<div><span>{branch.name}</span><ul>{#each branch.kcs.slice(0, 8) as kc}<li>{kc.name}</li>{/each}</ul></div>{/each}</div>{/if}</div>
-      <div class="finish"><button class="primary" type="button" disabled={!selectedCourse || phase === 'saving'} onclick={finishFresh}>{phase === 'saving' ? 'Creating your workspace…' : 'Create course and enter studyus'}</button></div>
+      <div class="section"><b>3</b><div><h2>Course and knowledge map</h2><p>Choose a reviewed template, enter topics, or extract suggestions locally.</p></div><div class="course-grid"><div><input bind:value={query} placeholder="Search McGill course" /><div class="results">{#each filteredCourses as course}<button class:selected={selectedCourse?.template_id === course.slug} disabled={loadingTemplate} type="button" onclick={() => chooseTemplate(course.slug)}><strong>{course.code}</strong><span>{course.title}</span><small>{course.kc_count} KCs</small></button>{/each}</div></div><div><div class="manual"><input bind:value={manualCode} placeholder="Course code" /><input bind:value={manualTitle} placeholder="Course title" /></div><textarea bind:value={manualTopics} rows="4" placeholder="Topics, one per line"></textarea><button class="small" type="button" onclick={useManual}>Use manual map</button><label class="upload">{parsing ? 'Reading…' : 'Upload syllabus / lesson plan'}<input type="file" accept=".pdf,.docx,.txt,.md" onchange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void extractFile(file); }} /></label></div></div>{#if status}<p class="status" role="status">{status}</p>{/if}{#if selectedCourse}<CourseMapReview proposal={selectedCourse} {termStart} {termEnd} onchange={(proposal) => { selectedCourse = proposal; }} />{/if}</div>
+      <div class="finish"><button class="primary" type="button" disabled={!reviewReady() || phase === 'saving' || loadingTemplate} onclick={finishFresh}>{phase === 'saving' ? 'Creating your workspace…' : 'Create course and enter studyus'}</button></div>
     </section>
   {/if}
 </main>

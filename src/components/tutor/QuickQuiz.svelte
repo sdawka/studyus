@@ -1,14 +1,28 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import type { AvailableMinutes } from '../../lib/schemas/nextMove';
   type Course = { id: string; title: string };
   type Question = { index: number; kc_id: string; question: string; options: string[] };
   type Result = { question_index: number; kc_id: string; correct: boolean; correct_index: number; explanation: string };
   type MasteryDelta = { kc_id: string; old_mastery: number; new_mastery: number };
 
-  let { courses = [], preselectedCourse = '' }: { courses?: Course[]; preselectedCourse?: string } = $props();
+  let {
+    courses = [],
+    preselectedCourse = '',
+    preselectedKc = '',
+    preselectedMinutes = 25,
+    autoStart = false,
+  }: {
+    courses?: Course[];
+    preselectedCourse?: string;
+    preselectedKc?: string;
+    preselectedMinutes?: AvailableMinutes;
+    autoStart?: boolean;
+  } = $props();
 
   let stage = $state<'setup' | 'loading' | 'quiz' | 'grading' | 'score' | 'error'>('setup');
   let courseId = $state(preselectedCourse);
-  let count = $state(5);
+  let count = $state(preselectedMinutes === 15 ? 3 : preselectedMinutes === 50 ? 8 : 5);
   let quizId = $state<string | null>(null);
   let questions = $state<Question[]>([]);
   let current = $state(0);
@@ -25,7 +39,12 @@
       const res = await fetch('/api/v1/flows/quick_quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ course_id: courseId || undefined, count }),
+        body: JSON.stringify({
+          course_id: courseId || undefined,
+          kc_id: preselectedKc || undefined,
+          count,
+          planned_minutes: preselectedKc ? preselectedMinutes : undefined,
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error?.message ?? 'Could not start the quiz right now.');
@@ -76,28 +95,37 @@
     quizId = null;
     questions = [];
   }
+
+  onMount(() => {
+    if (autoStart) void startQuiz();
+  });
 </script>
 
 <div class="quick-quiz">
   {#if stage === 'setup' || stage === 'loading'}
     <div class="setup">
-      <label>
-        Course
-        <select bind:value={courseId}>
-          <option value="">All courses</option>
-          {#each courses as c (c.id)}
-            <option value={c.id}>{c.title}</option>
-          {/each}
-        </select>
-      </label>
-      <label>
-        Questions
-        <select bind:value={count}>
-          {#each [3, 5, 8, 10] as n}
-            <option value={n}>{n}</option>
-          {/each}
-        </select>
-      </label>
+      {#if preselectedKc}
+        <p class="target-note">Targeted review · {preselectedMinutes} minutes · {count} questions</p>
+      {/if}
+      {#if !preselectedKc}
+        <label>
+          Course
+          <select bind:value={courseId}>
+            <option value="">All courses</option>
+            {#each courses as c (c.id)}
+              <option value={c.id}>{c.title}</option>
+            {/each}
+          </select>
+        </label>
+        <label>
+          Questions
+          <select bind:value={count}>
+            {#each [3, 5, 8, 10] as n}
+              <option value={n}>{n}</option>
+            {/each}
+          </select>
+        </label>
+      {/if}
       <button onclick={startQuiz} disabled={stage === 'loading'}>{stage === 'loading' ? 'Preparing…' : 'Start quiz'}</button>
     </div>
   {:else if stage === 'quiz'}
@@ -168,4 +196,5 @@
   .deltas h4 { margin: 0 0 0.4rem 0; font-size: 0.9rem; }
   .error { color: var(--danger); }
   .muted { color: var(--muted); font-size: 0.9rem; }
+  .target-note { margin: 0; color: var(--muted); font-size: 0.9rem; }
 </style>

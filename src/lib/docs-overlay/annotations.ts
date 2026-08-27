@@ -266,6 +266,15 @@ const dashboardComponents: Annotation[] = [
     docs: [SCREENS, 'src/components/dashboard/DeadlinesList.astro', 'src/pages/dashboard.astro'],
   },
   {
+    name: 'NextMoveCard',
+    selector: '.slot-next-move',
+    purpose: 'The best learning-only action across active courses, recalculated from current deadlines, prerequisite readiness, mastery, recency, and available time.',
+    affordances: ['Choose 15, 25, or 50 available minutes.', 'Open “Why this?” for the evidence behind the choice.', 'Start the recommended Understand/Quick Quiz action or cycle through up to two alternatives.'],
+    actions: ['GET /api/v1/profile/next-move?available_minutes=15|25|50 on time changes.', 'POST /api/v1/events with recommendation_followed or recommendation_ignored as non-blocking context telemetry.'],
+    feedback: ['Time changes show a busy state and preserve the prior recommendation if refresh fails.', 'An empty state appears when all active concepts are mastered or blocked.'],
+    docs: [SCREENS, API, 'src/components/dashboard/NextMoveCard.svelte', 'src/lib/nextMove.ts'],
+  },
+  {
     name: 'RecordEventCard',
     selector: '.slot-record',
     purpose: 'A standing door to log anything that happened outside the app — a lecture, a grade, a practice set — from the dashboard rail.',

@@ -4,17 +4,29 @@ import AppShell from '../../layouts/AppShell.astro';
 import { getDb } from '../../db/client';
 import { listCourses } from '../../lib/services/courses';
 import QuickQuiz from '../../components/tutor/QuickQuiz.svelte';
+import { nextMoveQuerySchema } from '../../lib/schemas/nextMove';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
 const courses = await listCourses(db, userId);
 const preselectedCourse = Astro.url.searchParams.get('course') ?? '';
+const preselectedKc = Astro.url.searchParams.get('kc') ?? '';
+const parsedMinutes = nextMoveQuerySchema.safeParse({ available_minutes: Astro.url.searchParams.get('minutes') ?? undefined });
+const preselectedMinutes = parsedMinutes.success ? parsedMinutes.data.available_minutes : 25;
+const autoStart = Astro.url.searchParams.get('autostart') === '1' && preselectedKc.length > 0;
 ---
 
 <AppShell title="Quick Quiz">
   <h1>Quick quiz</h1>
   <p class="muted">A short, low-stakes set of retrieval questions on whatever's due for review.</p>
-  <QuickQuiz courses={courses} preselectedCourse={preselectedCourse} client:load />
+  <QuickQuiz
+    courses={courses}
+    preselectedCourse={preselectedCourse}
+    {preselectedKc}
+    {preselectedMinutes}
+    {autoStart}
+    client:load
+  />
 </AppShell>
 
 <style>

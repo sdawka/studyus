@@ -1,22 +1,50 @@
 # studyus Roadmap: Deferred Features
 
-**Current-state rule (2026-08-24)**: historical “shipped summary” sections below
+**Current-state rule (2026-08-26)**: historical “shipped summary” sections below
 explain how the product evolved; they are not the active backlog. The active
 priorities are listed here and detailed in their owning docs.
 
-1. **Deepen course ingestion and map maintenance** — the public trial, Clerk
-   handoff, route gate, term/preferences, and atomic first-course/KC import are
-   implemented. Next add durable R2 material ingestion, richer proposal review,
-   and reusable branch/KC maintenance. Full status: `docs/product/onboarding.md`.
+### Active product chain
+
+- [x] **Brand cleanup and rich course onboarding** — reviewed-template APIs,
+  editable include/rename/reorder review, prerequisite protection, explicit
+  assessment-date decisions, template provenance, and atomic cloning of the
+  full authored learning content are implemented.
+- [x] **Post-onboarding course-map maintenance** — atomic branch/KC
+  add/edit/reorder/archive/restore, global prerequisite validation, and
+  reviewed-template refresh/reconciliation are implemented on Concepts.
+- [x] **Global Next Move** — the dashboard now ranks learning actions across
+  active courses from assessment urgency, prerequisite leverage, mastery need,
+  recency, and an explicit 15/25/50-minute budget. It launches a targeted
+  Understand session or exact-KC Quick Quiz and records follow/ignore context.
+- [ ] **Replanning loop** — recompute recommendations when classes are missed,
+  dates or weekly capacity change, grades arrive, or plans are disrupted.
+- [ ] **Durable material ingestion** — retain validated syllabus/schedule files
+  in R2 with extraction provenance, retry state, and asynchronous processing.
+- [ ] **Better extraction** — structured optional AI extraction, confidence and
+  source spans, OCR, and prompt-injection defenses while keeping manual/local
+  fallback paths.
+- [ ] **First-use orientation** — contextual guidance, optional placement,
+  resumable server-owned drafts, and schedule-driven class/task generation.
+- [ ] **Catalog expansion** — normalized institutions/programs and additional
+  reviewed course templates when coverage warrants it.
+
+### Other active priorities
+
+1. **Deepen course ingestion** — rich reviewed-course onboarding and reusable
+   post-onboarding map maintenance are implemented. Next add durable R2
+   ingestion. Full status:
+   `docs/product/onboarding.md`.
 2. **Complete activity-stream instrumentation** — the widened event taxonomy is
    present, but task/course/session/settings mutations do not all append their
    canonical context events yet.
 3. **Expose the coach/orchestrator** — four domain engines and the per-learner
-   Durable Object foundation exist; learner-facing session orchestration and
-   external channel adapters remain pending.
-4. **Content maintenance** — branch/KC create/delete/reorder and reusable course
-   templates are required both for onboarding and for later correction of an
-   imported map.
+   Durable Object foundation exist. The web tutor now projects authoritative
+   DO conversation/session/alarm state into Nanostores and reconciles streams,
+   closes, reloads, and exact history resumes; learner-facing orchestration
+   beyond tutor conversations and external channel adapters remain pending.
+4. **Content authoring** — learner map maintenance is shipped; full rich
+   scaffold, misconception, exercise, and resource authoring remains deferred.
 
 Clerk multi-user authentication, the ZPD frontier, rituals/capabilities, the
 exercise bank, and the native per-learner Durable Object runtime are implemented
@@ -134,10 +162,11 @@ Flagged during the ZPD/capabilities/rituals verify pass, not fixed there because
 
 **Core path shipped.** The two-minute public trial, browser-local draft,
 Clerk handoff, authenticated route gate, university/semester/preferences,
-template/manual/local-document paths, atomic first-course import, and the
-meaningful-KC completion invariant are implemented. Remaining work is durable
-R2 ingestion, richer editable proposals, full template-content cloning, and
-post-onboarding branch/KC maintenance; see `docs/product/onboarding.md`.
+template/manual/local-document paths, prerequisite-aware rich review, atomic
+full-template cloning, and the meaningful-KC completion invariant are
+implemented. Remaining work is durable R2 ingestion and extraction
+improvements; post-onboarding branch/KC maintenance is shipped. See
+`docs/product/onboarding.md`.
 
 Clerk now owns passwords, verification, reset, and sessions. PBKDF2/legacy
 session code is retained only to import old accounts. Role-based authorization
@@ -146,9 +175,10 @@ for future instructor/institutional surfaces remains deferred.
 ### Complete Activity Stream
 
 The context-only event types are defined, but most originating actions are not
-wired. Add idempotent events for task complete/dismiss, course add/archive,
-session schedule/reschedule, settings changes, recommendations, coach sessions,
-reflections, and digests. `correction_accepted` is the reference implementation.
+wired. Recommendation follow/ignore is now wired from Global Next Move. Add
+idempotent events for task complete/dismiss, course add/archive, session
+schedule/reschedule, settings changes, coach sessions, reflections, and
+digests. `correction_accepted` is the reference implementation.
 Do this before relying on coach digests or recommendation-followed metrics.
 
 ## Mastery Inference
@@ -241,7 +271,7 @@ onboarding requirement in place of a real course.
 
 ### External Agent Channels
 
-**Current**: The single-Worker, per-learner SQLite Durable Object runtime is implemented for web tutor conversations, tool-call/session/alarm state, and one-time D1 transcript import. Four transport-free pedagogy engines also exist. Flue and external channel adapters are not implemented.
+**Current**: The single-Worker, per-learner SQLite Durable Object runtime is implemented for web tutor conversations, tool-call/session/alarm state, one-time D1 transcript import, and an authenticated browser projection. The shared Nanostore reconciles streaming/close mutations with the DO and revalidates on tab return; course history resumes exact conversations. Four transport-free pedagogy engines also exist. Flue and external channel adapters are not implemented.
 
 **Post-v1**: Deploy Flue agents to multiple channels:
 
@@ -312,7 +342,7 @@ onboarding requirement in place of a real course.
 
 **Current**: No CI workflow. Tests/check/build run locally; `npm run deploy` exists but is a direct local build + Wrangler deploy with no promotion or rollback automation.
 
-**Post-v1**: A GitHub Actions workflow on PR/push that runs, in order: `npm test` (Vitest + pool-workers), `npm run check` (wrangler types + astro check), `npm run build` (astro build — catches anything the type checker doesn't). Layout checks (`npm run check:layout`) need a running dev server plus Playwright under Node 20 (see `scripts/layout-check.cjs` header) — either spin up `astro dev` in the background in CI and point the script at it, or defer this step to a separate, slower workflow if startup cost is a problem.
+**Post-v1**: A GitHub Actions workflow on PR/push that runs, in order: `npm test` (Vitest + pool-workers), `npm run check` (wrangler types + astro check), `npm run build` (astro build — catches anything the type checker doesn't), and `npm run test:e2e`. The Playwright configuration now owns its Astro dev server and Clerk setup; CI still needs Clerk test-instance secrets. Keep `npm run test:e2e:visual` as a slower artifact-producing job, either on UI-changing PRs or on demand.
 
 `@types/node` is installed and the current type check reports zero errors. Keep CI wording tied to actual command results rather than preserving resolved setup notes.
 
@@ -379,14 +409,25 @@ videos, tours, or FAQ content optional and dismissible.
 
 ### E2E Test Automation
 
-**Current**: Manual smoke tests per milestone.
+**Current (shipped 2026-08-27)**: Playwright starts Astro in foreground
+E2E mode, creates a real Clerk test session once, and reuses its storage state
+for authenticated suites. `npm run test:e2e:auth` exercises the Clerk handoff;
+`npm run test:e2e` covers live documentation annotations, course-map hydration
+and editing, same-origin resource failures, and the 376-assertion responsive
+layout harness; `npm run test:e2e:visual` captures 95 desktop/mobile/landscape,
+theme, interaction, and modal states while checking console, page, and
+same-origin HTTP errors. Vitest explicitly excludes `tests/e2e/**` so the
+Cloudflare Workers pool and Playwright keep separate runtimes.
 
-**Post-v1**:
-- Playwright or similar for automated E2E tests.
-- Test matrix (browser, mobile, tablet).
-- Performance tests (load, stress).
+**Remaining**:
+- Wire the three tiers into CI with Clerk test-instance secrets and retained
+  failure/screenshot artifacts.
+- Add Firefox/WebKit once Clerk and the app's supported-browser policy require
+  them; current automated coverage is Chromium across desktop, tablet-width,
+  phone portrait, and phone landscape layouts.
+- Add performance tests (load, stress) separately from functional E2E.
 
-**Scope**: Test infrastructure, CI integration.
+**Scope**: CI integration, browser policy, and performance infrastructure.
 
 ### Load Testing
 

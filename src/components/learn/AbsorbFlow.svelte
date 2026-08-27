@@ -4,6 +4,7 @@
   // chat. Server-rendered initial graph comes in as props; everything after
   // that is client state (apiFetch round-trips for verify/refetch/create).
   import { apiFetch } from '../../lib/apiClient';
+  import type { RuntimeConversation, RuntimeConversationSummary } from '../../lib/stores/learnerRuntime';
   import { pushToast } from '../../lib/stores/toast';
   import PrereqGraph from './PrereqGraph.svelte';
   import VerifyQuiz from './VerifyQuiz.svelte';
@@ -16,8 +17,9 @@
     initialKc: TargetKc;
     initialPrereqs: PrereqNode[];
     initialWarnings: string[];
+    plannedMinutes?: 15 | 25 | 50;
   }
-  const { kcId, initialKc, initialPrereqs, initialWarnings }: Props = $props();
+  const { kcId, initialKc, initialPrereqs, initialWarnings, plannedMinutes = 25 }: Props = $props();
 
   type Stage = 'map' | 'verify' | 'rank' | 'chat';
   let stage = $state<Stage>('map');
@@ -27,7 +29,7 @@
   let warnings = $state<string[]>(initialWarnings);
   let verifyIds = $state<string[]>([]);
 
-  let conversationId = $state<string | null>(null);
+  let conversation = $state<RuntimeConversation | null>(null);
   let creatingConversation = $state(false);
 
   async function refetchGraph() {
@@ -60,12 +62,16 @@
 
   async function startAbsorbConversation(focusOrder: string[]) {
     creatingConversation = true;
-    const res = await apiFetch<{ id: string }>(
+    const res = await apiFetch<RuntimeConversationSummary>(
       '/api/v1/tutor/conversations',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kc_id: kcId, mode: 'absorb', details: { flow: 'absorb', focus_order: focusOrder } }),
+        body: JSON.stringify({
+          kc_id: kcId,
+          mode: 'absorb',
+          details: { flow: 'absorb', focus_order: focusOrder, planned_minutes: plannedMinutes },
+        }),
       },
       "Couldn't start the tutor session right now.",
     );
@@ -74,12 +80,13 @@
       pushToast(res.error, 'error');
       return;
     }
-    conversationId = res.data.id;
+    conversation = { ...res.data, messages: [] };
     stage = 'chat';
   }
 </script>
 
 <div class="absorb-flow">
+  <p class="time-budget">Focused session · about {plannedMinutes} minutes</p>
   {#if stage === 'map'}
     <PrereqGraph {kc} {prereqs} {warnings} onVerify={handleVerify} onProceed={handleProceed} />
   {:else if stage === 'verify'}
@@ -90,12 +97,13 @@
     {:else}
       <p class="status">Starting your session…</p>
     {/if}
-  {:else if stage === 'chat' && conversationId}
-    <ScaffoldChat {conversationId} mode="absorb" initialMessages={[]} kcId={kcId} />
+  {:else if stage === 'chat' && conversation}
+    <ScaffoldChat initialConversation={conversation} kcId={kcId} />
   {/if}
 </div>
 
 <style>
   .absorb-flow { display: flex; flex-direction: column; gap: 1.5rem; }
   .status { color: var(--muted); font-size: 0.9rem; }
+  .time-budget { margin: 0; color: var(--muted); font-size: 0.82rem; }
 </style>

@@ -31,6 +31,14 @@ const conversations = await listRuntimeConversations(db, env, userId, { course: 
     courseSlug={course.slug}
     principleKcs={principleKcs.map((kc) => ({ id: kc.id, name: kc.name, kcType: kc.kcType, mastery: kc.mastery }))}
     conceptKcs={conceptKcs.map((kc) => ({ id: kc.id, name: kc.name, kcType: kc.kcType, mastery: kc.mastery }))}
-    conversations={conversations.map((c) => ({ id: c.id, kcId: c.kcId, kcName: c.kcName, mode: c.mode, createdAt: c.createdAt }))}
+    conversations={conversations.map((c) => ({
+      id: c.id,
+      kcId: c.kcId,
+      kcName: c.kcName,
+      mode: c.mode,
+      status: c.status,
+      createdAt: c.createdAt,
+      endedAt: c.endedAt,
+    }))}
   />
 </CourseLayout>

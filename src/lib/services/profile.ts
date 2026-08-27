@@ -1,8 +1,8 @@
 // Learner profile aggregation. Not a table — computed on read from courses,
 // kcs, and events.
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { courses, events, kcs, users } from '../../db/schema';
+import { branches, courses, events, kcs, users } from '../../db/schema';
 import { NotFoundError } from './util';
 import { getGlobalFrontier } from './zpd';
 import { listUserMisconceptions } from './misconceptionLifecycle';
@@ -61,8 +61,9 @@ export async function getProfile(
   const allKcs = await db
     .select({ courseId: kcs.courseId, mastery: kcs.mastery })
     .from(kcs)
+    .innerJoin(branches, eq(kcs.branchId, branches.id))
     .innerJoin(courses, eq(kcs.courseId, courses.id))
-    .where(eq(courses.userId, userId));
+    .where(and(eq(courses.userId, userId), isNull(kcs.archivedAt), isNull(branches.archivedAt)));
 
   const kcsByCourse = new Map<string, number[]>();
   for (const kc of allKcs) {

@@ -79,16 +79,21 @@ async function loadSeededMcqByKc(
 // Random-among-them is intentionally simple (Date.now-based randomness is
 // fine here — this is runtime app code serving quiz variety, not a
 // determinism-sensitive workflow script).
-function pickSeededItem(pool: ExerciseRow[], kcId: string): QuizItem {
-  const chosen = pool[Math.floor(Math.random() * pool.length)];
-  const details = chosen.details as McqDetails;
-  return {
-    kc_id: kcId,
-    question: chosen.prompt,
-    options: details.options,
-    correct_index: details.correct_index,
-    explanation: details.explanation,
-  };
+function pickSeededItems(pool: ExerciseRow[], kcId: string, count: number): QuizItem[] {
+  // Sample without replacement. A recommendation is only routed here when
+  // the authored bank can fill its requested budget, but generic callers may
+  // still need the AI fallback for a short bank.
+  const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, count);
+  return shuffled.map((chosen) => {
+    const details = chosen.details as McqDetails;
+    return {
+      kc_id: kcId,
+      question: chosen.prompt,
+      options: details.options,
+      correct_index: details.correct_index,
+      explanation: details.explanation,
+    };
+  });
 }
 
 async function pickDueKcs(db: Db, userId: string, input: CreateQuickQuizInput, count: number) {
@@ -180,11 +185,16 @@ function parseQuizItems(raw: unknown, targetKcs: Array<{ id: string }>): QuizIte
   }
   if (items.length === 0) throw new QuizGenerationError();
 
-  // Fall back to one generic self-check item for any KC the model skipped,
-  // so grading/event-append still has full coverage of the picked KCs.
-  const covered = new Set(items.map((it) => it.kc_id));
+  // Fall back for every missing target occurrence, not merely every unique
+  // KC. An exact-KC recommendation intentionally repeats one KC to request a
+  // 3/5/8-question set.
+  const covered = new Map<string, number>();
+  for (const item of items) covered.set(item.kc_id, (covered.get(item.kc_id) ?? 0) + 1);
+  const consumed = new Map<string, number>();
   for (const kc of targetKcs) {
-    if (!covered.has(kc.id)) {
+    const used = consumed.get(kc.id) ?? 0;
+    consumed.set(kc.id, used + 1);
+    if (used >= (covered.get(kc.id) ?? 0)) {
       items.push({
         kc_id: kc.id,
         question: 'Quick check: can you explain the key idea behind this topic in your own words?',
@@ -201,16 +211,24 @@ export async function generateQuickQuiz(db: Db, userId: string, input: CreateQui
   const count = input.count ?? DEFAULT_COUNT;
   const targetKcs = await pickDueKcs(db, userId, input, count);
 
+  // Existing callers get one question per selected KC. Only an explicit
+  // singular target plus explicit count asks for several questions on that
+  // same KC (the Global Next Move contract).
+  const targetOccurrences = input.kc_id && !input.kc_ids?.length && input.count !== undefined
+    ? Array.from({ length: count }, () => targetKcs[0])
+    : targetKcs;
+
   const seededByKc = await loadSeededMcqByKc(db, userId, input, targetKcs);
-  const seededItemByKc = new Map<string, QuizItem>();
-  const aiTargetKcs = [];
+  const requestedCountByKc = new Map<string, number>();
+  for (const kc of targetOccurrences) requestedCountByKc.set(kc.id, (requestedCountByKc.get(kc.id) ?? 0) + 1);
+  const seededItemsByKc = new Map<string, QuizItem[]>();
+  const aiTargetKcs: typeof targetKcs = [];
   for (const kc of targetKcs) {
     const pool = seededByKc.get(kc.id);
-    if (pool && pool.length > 0) {
-      seededItemByKc.set(kc.id, pickSeededItem(pool, kc.id));
-    } else {
-      aiTargetKcs.push(kc);
-    }
+    const requested = requestedCountByKc.get(kc.id) ?? 1;
+    const seeded = pool ? pickSeededItems(pool, kc.id, requested) : [];
+    seededItemsByKc.set(kc.id, seeded);
+    for (let i = seeded.length; i < requested; i++) aiTargetKcs.push(kc);
   }
 
   // Only call out to AI generation for KCs the seeded bank didn't cover —
@@ -226,8 +244,13 @@ export async function generateQuickQuiz(db: Db, userId: string, input: CreateQui
     aiItems = parseQuizItems(raw, aiTargetKcs);
   }
 
-  const aiItemByKc = new Map(aiItems.map((item) => [item.kc_id, item]));
-  const items = targetKcs.map((kc) => seededItemByKc.get(kc.id) ?? aiItemByKc.get(kc.id)!);
+  const aiItemsByKc = new Map<string, QuizItem[]>();
+  for (const item of aiItems) {
+    const list = aiItemsByKc.get(item.kc_id) ?? [];
+    list.push(item);
+    aiItemsByKc.set(item.kc_id, list);
+  }
+  const items = targetOccurrences.map((kc) => seededItemsByKc.get(kc.id)?.shift() ?? aiItemsByKc.get(kc.id)?.shift()!);
 
   const sessionId = crypto.randomUUID();
   const blob: QuizBlob = { items };
@@ -237,7 +260,7 @@ export async function generateQuickQuiz(db: Db, userId: string, input: CreateQui
     userId,
     courseId: input.course_id ?? null,
     intendedEventType: QUICK_QUIZ_SENTINEL,
-    plannedMinutes: null,
+    plannedMinutes: input.planned_minutes ?? null,
     startedAt: Date.now(),
     reflection: JSON.stringify(blob),
   });

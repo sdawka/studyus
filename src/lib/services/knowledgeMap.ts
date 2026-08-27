@@ -2,7 +2,7 @@
 // scaffolds — all anchored on kc_edges/misconceptions/scaffolds, populated
 // from courses/<slug>/content.json by scripts/seed.ts (see docs/api.md's
 // "v1.7 Additions" section for the frozen contract these implement).
-import { and, asc, eq, inArray, lte } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, lte } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { kcEdges, kcs, misconceptions, scaffolds } from '../../db/schema';
 import { MASTERY_CONSTANTS } from './mastery';
@@ -140,7 +140,7 @@ export async function getKcGraph(db: Db, userId: string, kcId: string) {
 
 export async function listKcMisconceptions(db: Db, userId: string, kcId: string): Promise<MisconceptionRow[]> {
   await requireOwnedKc(db, userId, kcId);
-  return db.select().from(misconceptions).where(eq(misconceptions.kcId, kcId)).orderBy(asc(misconceptions.createdAt));
+  return db.select().from(misconceptions).where(and(eq(misconceptions.kcId, kcId), isNull(misconceptions.retiredAt))).orderBy(asc(misconceptions.createdAt));
 }
 
 export async function listKcScaffolds(

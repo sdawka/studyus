@@ -21,23 +21,15 @@
 //   npm run check:layout
 //   node scripts/layout-check.cjs [baseUrl]
 //
-// Requires Playwright, which in this repo is installed globally under Node 20
-// (not the Node 24 used for `astro dev`/`npm run`), so invoke via:
-//   N20=~/.nvm/versions/node/v20.20.2
-//   NODE_PATH=$N20/lib/node_modules $N20/bin/node scripts/layout-check.cjs
-// `npm run check:layout` will fail with "Cannot find module 'playwright'"
-// unless NODE_PATH is set that way first, or Playwright is installed locally.
+// Requires the local Playwright dependency and Clerk development credentials
+// in .env.e2e.local (see .env.e2e.example). The Clerk helper provisions a
+// stable +clerk_test identity and links it to the seeded learner.
 //
-// Env vars: LAYOUT_CHECK_EMAIL / LAYOUT_CHECK_PASSWORD (seeded user creds —
-// the password default below tracks scripts/seed.ts; only set the env
-// override if that default ever drifts from the seeded password),
-// LAYOUT_CHECK_COURSE (course slug to use for course-page checks).
+// Env vars: LAYOUT_CHECK_COURSE (course slug to use for course-page checks).
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { createRequire } = require('node:module');
-const require20 = createRequire(__filename);
-const { chromium } = require20('playwright');
+const { chromium } = require('playwright');
 
 // ---------------------------------------------------------------------------
 // CONFIG — re-baseline here. Numbers below are read from the current app
@@ -46,8 +38,6 @@ const { chromium } = require20('playwright');
 // ---------------------------------------------------------------------------
 const CONFIG = {
   baseUrl: process.argv[2] || process.env.LAYOUT_CHECK_BASE_URL || 'http://localhost:4321',
-  email: process.env.LAYOUT_CHECK_EMAIL || 'student@example.com',
-  password: process.env.LAYOUT_CHECK_PASSWORD || 'studyus',
   course: process.env.LAYOUT_CHECK_COURSE || 'chee-314-fluid-mechanics',
   // v1.7 /learn absorb experience (wave-2 UI track) — "Continuity equation"
   // in the seeded chee-314 course, chosen because it has 3 not-ready
@@ -455,20 +445,16 @@ async function main() {
   const dashboardStackBreakpoint = readDashboardStackBreakpoint();
   console.log(`layout-check: base=${CONFIG.baseUrl} dashboard rail breakpoint=${dashboardStackBreakpoint}px\n`);
 
+  const { authenticateClerkContext, CLERK_AUTH_STATE_PATH } = await import('./lib/clerk-e2e-auth.mjs');
+  const useStoredAuth = process.env.E2E_USE_STORED_AUTH === '1';
   const browser = await chromium.launch();
-  const context = await browser.newContext({ baseURL: CONFIG.baseUrl });
+  const context = await browser.newContext({
+    baseURL: CONFIG.baseUrl,
+    ...(useStoredAuth ? { storageState: CLERK_AUTH_STATE_PATH } : {}),
+  });
   const page = await context.newPage();
 
-  // Log in via the API, same as visual-qa.mjs.
-  const loginRes = await context.request.fetch(CONFIG.baseUrl + '/api/v1/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Origin: CONFIG.baseUrl },
-    data: JSON.stringify({ email: CONFIG.email, password: CONFIG.password }),
-  });
-  if (!loginRes.ok()) {
-    console.error(`Login failed: ${loginRes.status()} ${await loginRes.text()}`);
-    process.exit(1);
-  }
+  if (!useStoredAuth) await authenticateClerkContext({ context, page, baseUrl: CONFIG.baseUrl });
 
   const resolvedPages = Object.entries(CONFIG.pages).map(([name, p]) => [
     name,

@@ -65,9 +65,25 @@ true only when `onboarded_at` and the meaningful-KC invariant both hold.
 Accepts the strict version-1 browser draft subset: `draft_id`, optional learner
 context, learning preferences, and up to five `CourseSetupProposal` objects.
 Proposals marked `source.kind = simulated` are ignored. A single idempotent D1
-batch creates the real term/course/branch/KC content and returns
+batch creates the real term/course content and returns
 `{ complete, course_id, course_slug, imported }`; repeated learner/draft pairs
 return the existing result with `imported: false`.
+
+Reviewed template proposals include stable branch/KC references, inclusion and
+ordering choices, prerequisite summaries, and assessment date decisions. The
+server re-resolves the authored template, enforces selected prerequisites and
+in-term confirmed dates, then clones its graph, scaffolds, misconceptions,
+exercise bank, resources, and assessments. Rich authored answers and teaching
+bodies are not accepted from the browser.
+
+### GET /onboarding/templates
+
+Lists browser-safe metadata for the reviewed course catalog.
+
+### GET /onboarding/templates/:id
+
+Returns the editable course-map and assessment summary used by onboarding. It
+does not return exercise answers, scaffold bodies, or misconception corrections.
 
 ### POST /api/public/demo-events
 
@@ -241,10 +257,10 @@ Server-side OpenRouter integration (`src/lib/services/tutor/{openrouter,prompts,
 ### POST /tutor/conversations
 **Request**: `{ "kc_id": "uuid", "mode": "recall|classify|worked_example|self_explain|interactive_model"? }`
 
-**Response** (201): the created `tutor_conversations` row (`id`, `kc_id`, `mode`, `created_at`).
+**Response** (201): the created Durable Object conversation summary (`id`, `kc_id`, `mode`, `details`, `status`, `active_turn_id`, `created_at`, `ended_at`).
 
 ### GET /tutor/conversations/:id
-**Response** (200): `{ ...conversation, "messages": [{ id, role, content, created_at }] }`, messages oldest-first.
+**Response** (200): `{ ...conversation, "messages": [{ id, conversation_id, role, content, created_at }] }`, messages oldest-first. The conversation includes `status`, `active_turn_id`, and `ended_at`; clients must reconcile these server values after a stream or close rather than treating optimistic browser state as durable.
 
 ### POST /tutor/conversations/:id/messages
 **Request**: `{ "content": "string" }`. **Response**: `text/event-stream`, not the `{data}` envelope — each frame is `data: {"delta":"..."}\n\n`, terminated by `data: {"done":true}\n\n`. The user message is persisted immediately; the assistant's full reply is persisted once the stream completes.
@@ -253,6 +269,10 @@ Per-conversation message cap: **30** (`MAX_MESSAGES_PER_CONVERSATION` in `conver
 
 ### POST /tutor/conversations/:id/end — additive, beyond the original plan draft
 **Request**: `{ "final_rating": 1-5? }`. Appends one dual-role `tutor_session` event (`payload: { conversation_id, mode, final_rating? }`) via the events service and returns `{ conversation, event, mastery_deltas }`. Also fired automatically when the message cap is reached — the client button just exposes the same action. Not idempotency-guarded: calling it twice appends two events (each representing a distinct self-assessment/close), same as the `tutor_session` events a Flue channel agent would append per session-close.
+
+### GET /runtime/snapshot
+
+Authenticated, browser-safe projection of the caller's per-learner Durable Object. Returns `{ active_conversations, sessions, next_alarm_at }`. `active_conversations` is the complete ordered set, not a singular “current” conversation, because separate tabs or future channels may legitimately have concurrent sessions. The local learner ID and Durable Object identity are never exposed, and conversations whose KCs are no longer caller-owned are filtered out. Browser Nanostores use this endpoint for focus/page-show revalidation; it is a projection, not a second source of truth.
 
 ### Interactive model spec (principle KCs, `interactive_model` mode)
 The tutor may emit at most one fenced ` ```json ` block per message, validated against `modelSpecSchema` in `src/lib/services/tutor/modelSpec.ts`:
@@ -383,7 +403,7 @@ Frozen route shapes (P2A owns the implementation):
 
 ### Tutor conversations list
 
-`GET /tutor/conversations?course=&kc=&limit=` → newest-first list with `kc_name` joined in. Powers the course Play tab (P2C).
+`GET /tutor/conversations?course=&kc=&limit=` → newest-first list with `kc_name`, `status`, `active_turn_id`, and `ended_at` joined in. Powers the course Play tab (P2C), whose history links include `?c=<conversation_id>` so they reopen the selected DO conversation instead of starting a replacement.
 
 ### tasks.source
 
@@ -841,6 +861,55 @@ New resource (`src/lib/schemas/rituals.ts`, `src/lib/services/rituals.ts`). A ri
 
 ---
 
+## Course-map maintenance
+
+### `GET /courses/:id/map`
+
+Returns every branch/KC (including archived nodes), the course's
+`map_revision`, prerequisite/dependent ids, active prerequisite candidates from
+all caller-owned courses, and pending reviewed-template additions/removals.
+The read performs a best-effort reviewed-template refresh; a refresh failure
+does not block course access.
+
+### `PUT /courses/:id/map`
+
+Replaces the editable map snapshot atomically. Body:
+
+```json
+{
+  "expected_revision": 3,
+  "branches": [{
+    "id": "uuid",
+    "name": "Foundations",
+    "sort_order": 0,
+    "archived": false,
+    "kcs": [{
+      "id": "uuid",
+      "name": "Mass balance",
+      "kc_type": "principle",
+      "description": "...",
+      "practice_notes": "...",
+      "sort_order": 0,
+      "archived": false,
+      "prerequisite_kc_ids": ["uuid"]
+    }]
+  }]
+}
+```
+
+New nodes use `client_id` instead of `id`. Existing nodes must remain in the
+snapshot and use `archived: true` rather than being omitted. Returns `409` for
+a stale revision, graph cycle, non-owned prerequisite, active dependent of an
+archived prerequisite, or removal of the final meaningful active KC.
+
+### `POST /courses/:id/template-updates`
+
+Body: `{ "expected_revision": 3, "actions": [{ "item_kind": "branch|kc",
+"template_ref": "stable-ref", "action": "include|dismiss|archive|keep" }] }`.
+Inclusion clones the current reviewed rich content and required same-course
+prerequisites. Dismiss/keep decisions are durable. Archive preserves learner
+history. Returns the refreshed course-map response.
+
 ## v2.0 Additions — Exercise bank
 
 **Status**: LANDED (schema, Zod mirror, service, routes, QuickQuiz integration, KC-detail UI), additive. Auto-gradeable / self-checkable exercises attached to KCs — the complement to scaffolds (which teach, no answers). Schema: new `exercises` table (`src/db/schema.ts`), populated from `courses/<slug>/exercises.json` (sibling file to `content.json`, frozen contract `courses/exercise-schema.md`) by `scripts/seed.ts`, validated by the Zod mirror in `src/lib/content/exercises.ts`.
@@ -877,3 +946,79 @@ A body shape that doesn't match the exercise's actual `kind` (including `worked`
 - mcq: `{ "correct": boolean, "correct_index": number, "explanation": "string" }`.
 
 Event: `type: "retrieval_practice"`, `kc_id` = the exercise's KC, `payload: { correct, exercise_id, channel: "exercise" }`, `source: "tutor"` — same non-manual "flow-computed correctness check" idiom as quick_quiz's grading events (not the `POST /events` default of `"manual"`). Implementation: `src/lib/flows/exercise_attempt.ts::gradeExerciseAttempt`.
+
+---
+
+## Global Next Move
+
+### GET /profile/next-move
+
+Computes the learner's highest-value learning action across active, owned
+courses. This endpoint never returns tasks or persists recommendations. Query:
+`available_minutes=15|25|50` (optional, default `25`; other values return `400
+invalid_input`).
+
+Candidate ranking is deterministic: 40% assessment urgency (ungraded, dated,
+official assessments in the next 30 days), 30% mastery need, 20% recency, and
+10% prerequisite leverage. Assessment weight is a tie-break. A blocked
+assessment target redirects recursively to an actionable prerequisite, which
+may belong to another active owned course. Mastered KCs are excluded from the
+generic frontier but may be recommended for an imminent assessment retrieval
+check.
+
+**Response** (200):
+
+```json
+{
+  "data": {
+    "generated_at": "iso",
+    "available_minutes": 25,
+    "recommendation": {
+      "action_id": "quick_quiz:kc-id:assessment-id:25",
+      "kind": "assessment_practice|prerequisite_repair|stale_review|frontier_understand",
+      "method": "understand|quick_quiz",
+      "title": "Mass balance",
+      "course": {
+        "course_id": "uuid",
+        "course_slug": "mass-transfer",
+        "course_code": "CHEE 310",
+        "course_title": "Mass Transfer",
+        "color": "264"
+      },
+      "kc": { "kc_id": "uuid", "name": "Mass balance", "mastery": 55, "status": "review" },
+      "assessment": {
+        "assessment_id": "uuid",
+        "title": "Midterm",
+        "due_at": "iso",
+        "weight_pct": 25
+      },
+      "planned_minutes": 25,
+      "question_count": 5,
+      "action_href": "/study/quiz?kc=uuid&course=uuid&minutes=25&autostart=1",
+      "reasons": [{ "code": "assessment_urgency", "label": "Midterm is due in 3 days · 25% of the course" }]
+    },
+    "alternatives": []
+  }
+}
+```
+
+`recommendation` is `null` when no actionable active KC exists;
+`alternatives` contains at most two items. Every move includes `time_fit` among
+its reason codes. For `understand`, `question_count` is `null` and
+`action_href` is `/learn/:kcId?minutes=...`.
+
+### Recommendation-launched learning flows
+
+`POST /flows/quick_quiz` additionally accepts `planned_minutes: 15|25|50`. An
+explicit singular `kc_id` together with explicit `count` requests that many
+non-repeating authored MCQs for the same KC, using AI only to fill a short
+bank. Global Next Move maps 15/25/50 minutes to 3/5/8 questions and only chooses
+Quick Quiz when the active authored bank can fill the request; other existing
+Quick Quiz selection modes retain their prior behavior. The resulting
+`study_sessions.planned_minutes` records the plan.
+
+An Understand launch passes the same `minutes` query value into the absorb
+conversation's opaque `details.planned_minutes`; prompt assembly uses it for
+pacing but does not promise exact completion. `recommendation_followed` and
+`recommendation_ignored` are posted through the normal Events endpoint as
+context-only telemetry and therefore never change mastery.

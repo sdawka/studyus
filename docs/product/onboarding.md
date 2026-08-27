@@ -1,7 +1,7 @@
 # Public Trial and New Learner Onboarding
 
-**Status:** Public trial and the first useful authenticated setup are implemented
-as of 2026-08-24. The remaining ingestion and authoring work is listed below.
+**Status:** Public trial and rich reviewed-course onboarding are implemented as
+of 2026-08-26. The remaining ingestion and authoring work is listed below.
 
 ## Product contract
 
@@ -61,7 +61,8 @@ and never satisfies this invariant in place of a real academic course.
 - Clerk force/fallback redirects preserve the intended handoff to
   `/onboarding?import=demo`.
 - Authenticated onboarding shows exactly what can be imported and states that
-  demo evidence will be discarded. Import and start-fresh are explicit choices.
+  demo evidence will be discarded. A handoff opens the same review step used by
+  fresh setup; import and start-fresh are explicit choices.
 - Import is idempotent per learner and browser draft. Retries return the
   existing course rather than duplicating courses, branches, KCs, or events.
 
@@ -73,9 +74,15 @@ and never satisfies this invariant in place of a real academic course.
 - Learners provide institution/program, a dated academic term, preferences,
   and one course through a reviewed template, manual topic entry, or local
   document extraction.
-- A single D1 batch updates context and preferences, creates the term, course,
-  branches, and KCs, appends `course_added`, records the idempotency key, and
-  stamps onboarding only when the invariant is satisfied.
+- Reviewed templates can be renamed, reordered, and selectively included.
+  Required prerequisites cannot be removed while a selected dependent needs
+  them. Every official assessment needs either a confirmed in-term date or an
+  explicit unknown-date choice; a batch unknown action is available.
+- A single D1 batch updates context/preferences and creates the term, course,
+  branches, KCs, prerequisite edges, scaffolds, misconceptions, exercises,
+  resources, assessments, and assessment/KC links. It appends `course_added`,
+  records the idempotency key, and stamps onboarding only when the invariant is
+  satisfied. Cross-course edges are created only when both KCs are learner-owned.
 - The learner lands on the created course overview.
 
 ## Data model
@@ -84,19 +91,26 @@ Implemented additions:
 
 - `users.institution_name`, `users.program_name`;
 - `academic_terms` with label, date boundaries, timezone, and current marker;
-- `courses.term_id` and `courses.setup_state` (`draft | active`);
+- `courses.term_id`, `courses.template_id`, and `courses.setup_state`
+  (`draft | active`);
 - `onboarding_imports` as the unique learner/draft idempotency ledger;
 - `demo_funnel_events`, containing only allow-listed event names and structural
   dimensions—never university, program, course, filename, or document text.
 
 `CourseSetupProposal` is a shared, strict, versioned Zod contract for template,
 manual, and upload-derived proposals. Its branch and KC nodes use draft-local
-UUIDs which are replaced with persisted ids during import.
+UUIDs which are replaced with persisted ids during import. Reviewed nodes also
+carry stable template references, include flags, ordering, prerequisite
+summaries, and assessment date decisions.
 
 ## Routes and services
 
 - `GET /api/v1/onboarding` returns completion, usable-course status, learner
   context/preferences, and current term.
+- `GET /api/v1/onboarding/templates` lists reviewed templates and
+  `GET /api/v1/onboarding/templates/:id` returns a browser-safe editable map.
+  Authored exercise answers, scaffold bodies, and misconception corrections are
+  never sent to the browser.
 - `POST /api/v1/onboarding/import-demo` validates and atomically imports the
   safe subset of a browser draft.
 - `POST /api/public/demo-events` accepts a strict batch of allow-listed funnel
@@ -124,20 +138,17 @@ These are intentional follow-ups, not current behavior:
    (`syllabus`, `lesson_plan`, `schedule`, `assignment_sheet`, `other`), MIME
    validation, retained extracted text, proposal provenance, retry states, and
    a Queue/Workflow path. Treat document text as untrusted input.
-2. **Richer review and maintenance.** Add reorder/add/remove UI, KLI type and
-   description editing, prerequisite edges, assessments, source spans, and
-   reusable branch/KC CRUD after onboarding. The present review covers names and
-   included starter KCs, while template content itself is repository-reviewed.
-3. **Template cloning breadth.** Clone prerequisite edges, scaffolds,
-   misconceptions, exercises, assessments, and resources—not only the course,
-   branches, and KCs used to establish the first workspace.
-4. **Extraction quality.** Add optional schema-constrained model structuring,
+2. **Rich content authoring.** Map maintenance now covers branch/KC structure,
+   KLI type, descriptions, practice notes, and prerequisites. Full learner
+   authoring for scaffolds, misconceptions, exercises, resources, and source
+   spans remains deferred.
+3. **Extraction quality.** Add optional schema-constrained model structuring,
    confidence/provenance, prompt-injection tests, and OCR for scanned PDFs.
    Deterministic extraction and manual entry must remain available without AI.
-5. **First-use orientation.** Add contextual guidance on the new course, an
+4. **First-use orientation.** Add contextual guidance on the new course, an
    optional placement check, resume/recovery UX for server-owned drafts, and
    class-session/task generation from reviewed schedules.
-6. **Catalog expansion.** Add normalized institutions/programs and more
+5. **Catalog expansion.** Add normalized institutions/programs and more
    university-reviewed course templates only when coverage warrants it.
 
 ## Acceptance checks
@@ -147,10 +158,35 @@ Implemented and covered by automated checks:
 - simulated courses are excluded from account import;
 - malformed/expired local state is discarded;
 - a repeated import is idempotent;
-- a valid manual/template proposal creates a course and meaningful KCs;
+- a valid manual proposal creates a course and meaningful KCs;
+- a reviewed template import clones its authored learning content atomically;
+- unresolved/out-of-term assessment dates and excluded prerequisites fail
+  before any course is written;
+- the browser-safe template detail contains no authored answers or teaching
+  bodies;
 - simulated or placeholder-only content cannot complete onboarding;
 - the route gate reopens legacy stamped learners who have no usable course;
 - manual onboarding works without OpenRouter or an uploaded file.
+
+## Post-onboarding course-map maintenance
+
+The course Concepts page now has an explicit edit mode. A learner can add,
+rename, move, reorder, archive, and restore branches and KCs; edit KLI type,
+description, and practice notes; and choose prerequisites from any active KC
+they own. Save is one atomic snapshot guarded by `courses.map_revision`, so a
+stale browser receives a conflict instead of overwriting newer work.
+
+Archiving is reversible and preserves events, mastery, notes, assessment links,
+and other history. Active study, exercise, misconception, course, and ZPD reads
+exclude archived/retired content. The service rejects graph cycles, foreign
+prerequisites, archiving a prerequisite with an active dependent, and removing
+the learner's final meaningful active KC.
+
+Reviewed courses store a content hash and baseline. Course access performs a
+best-effort revision check: untouched template fields, prerequisite edges, and
+rich authored content refresh automatically, while learner overrides are kept.
+New or removed structural nodes appear in a review inbox with include/dismiss
+or archive/keep decisions; nothing structural is imposed automatically.
 
 ## Learning to Learn course
 

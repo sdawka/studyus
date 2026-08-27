@@ -5,7 +5,7 @@
 // from services/assessments.ts at the grade-entry site (grade_recorded).
 import { and, desc, eq, inArray, isNotNull, isNull, lt, lte, or, sql } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { assessments, courses, kcs, notifications, studySessions, tasks, userCorrections } from '../../db/schema';
+import { assessments, branches, courses, kcs, notifications, studySessions, tasks, userCorrections } from '../../db/schema';
 import type { CreateNotificationInput } from '../schemas/notifications';
 
 const ASSESSMENT_DUE_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
@@ -91,8 +91,9 @@ async function collectKcReview(db: Db, userId: string, now: number): Promise<New
       courseSlug: courses.slug,
     })
     .from(kcs)
+    .innerJoin(branches, eq(kcs.branchId, branches.id))
     .innerJoin(courses, eq(kcs.courseId, courses.id))
-    .where(and(eq(courses.userId, userId), eq(kcs.status, 'review')));
+    .where(and(eq(courses.userId, userId), eq(kcs.status, 'review'), isNull(kcs.archivedAt), isNull(branches.archivedAt)));
 
   return rows.map((r) => ({
     id: crypto.randomUUID(),

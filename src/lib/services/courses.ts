@@ -3,6 +3,7 @@ import type { Db } from '../../db/client';
 import { branches, classSessions, courses, kcs } from '../../db/schema';
 import type { CreateCourseInput, UpdateCourseInput } from '../schemas/courses';
 import { isoWeekday, localNoon } from './classSessions';
+import { syncReviewedTemplateContent } from './courseMap';
 import { NotFoundError, requireOwnedCourse } from './util';
 
 // Spaced hue list (golden-angle-ish, not literal golden angle) new courses
@@ -80,8 +81,9 @@ export async function listCourses(
   const allKcs = await db
     .select({ courseId: kcs.courseId, mastery: kcs.mastery, status: kcs.status })
     .from(kcs)
+    .innerJoin(branches, eq(kcs.branchId, branches.id))
     .innerJoin(courses, eq(kcs.courseId, courses.id))
-    .where(eq(courses.userId, userId));
+    .where(and(eq(courses.userId, userId), isNull(branches.archivedAt), isNull(kcs.archivedAt)));
   const byCourse = new Map<string, { mastery: number; status: string }[]>();
   for (const kc of allKcs) {
     const list = byCourse.get(kc.courseId) ?? [];
@@ -115,13 +117,23 @@ export async function getCourseBySlug(db: Db, userId: string, slug: string) {
   const course = rows[0];
   if (!course) throw new NotFoundError('Course');
 
+  await syncReviewedTemplateContent(db, userId, course.id).catch((error) =>
+    console.error(`Reviewed template sync failed for course ${course.id}`, error),
+  );
+
   const courseBranches = await db
     .select()
     .from(branches)
-    .where(eq(branches.courseId, course.id))
+    .where(and(eq(branches.courseId, course.id), isNull(branches.archivedAt)))
     .orderBy(asc(branches.sortOrder));
 
-  const courseKcs = await db.select().from(kcs).where(eq(kcs.courseId, course.id)).orderBy(asc(kcs.sortOrder));
+  const courseKcs = await db
+    .select()
+    .from(kcs)
+    .innerJoin(branches, eq(kcs.branchId, branches.id))
+    .where(and(eq(kcs.courseId, course.id), isNull(kcs.archivedAt), isNull(branches.archivedAt)))
+    .orderBy(asc(kcs.sortOrder))
+    .then((rows) => rows.map((row) => row.kcs));
 
   const kcsByBranch = new Map<string, typeof courseKcs>();
   for (const kc of courseKcs) {

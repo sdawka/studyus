@@ -5,6 +5,7 @@ import TodayTasks from '../components/dashboard/TodayTasks.svelte';
 import CourseCards from '../components/dashboard/CourseCards.astro';
 import DeadlinesList from '../components/dashboard/DeadlinesList.astro';
 import RecordEventCard from '../components/dashboard/RecordEventCard.astro';
+import NextMoveCard from '../components/dashboard/NextMoveCard.svelte';
 import { hueFor } from '../lib/courseHue';
 import { toApi } from '../lib/serialize';
 import { env } from 'cloudflare:workers';
@@ -14,6 +15,8 @@ import { getCalendar } from '../lib/services/calendar';
 import { getGradesSummary } from '../lib/services/grades';
 import { listTasks } from '../lib/services/tasks';
 import { sweepTasks } from '../lib/services/taskSweep';
+import { getNextMove } from '../lib/services/nextMove';
+import type { NextMoveResponse } from '../lib/schemas/nextMove';
 
 const db = getDb(env.DB);
 const user = Astro.locals.user!;
@@ -28,12 +31,14 @@ const weekFromNow = now + 7 * 24 * 60 * 60 * 1000;
 // instead of a serialized await chain.
 await sweepTasks(db, userId, now);
 
-const [userCourses, deadlines, gradesSummary, allTasks] = await Promise.all([
+const [userCourses, deadlines, gradesSummary, allTasks, nextMove] = await Promise.all([
   listCourses(db, userId),
   getCalendar(db, userId, now, weekFromNow, undefined, { sweep: false }),
   getGradesSummary(db, userId),
   listTasks(db, userId, { sweep: false }),
+  getNextMove(db, userId, 25, now),
 ]);
+const initialNextMove = toApi(nextMove) as NextMoveResponse;
 
 const courseById = new Map(userCourses.map((c) => [c.id, c]));
 const weightedGradeByCourse = new Map(gradesSummary.by_course.map((c) => [c.course_id, c.weighted_grade]));
@@ -153,11 +158,14 @@ if (userCourses.length === 0) {
       </div>
     ) : (
       <div class="main">
-        <div class="slot-week">
-          <WeekView client:load initialItems={deadlines} courses={weekViewCourses} />
-        </div>
         <div class="slot-today">
           <TodayTasks client:load initialTasks={toApi(allTasks)} courses={todayTasksCourses} />
+        </div>
+        <div class="slot-next-move">
+          <NextMoveCard client:load initialResponse={initialNextMove} />
+        </div>
+        <div class="slot-week">
+          <WeekView client:load initialItems={deadlines} courses={weekViewCourses} />
         </div>
         <div class="slot-courses">
           <CourseCards courses={courseCards} />
@@ -257,8 +265,8 @@ if (userCourses.length === 0) {
   }
 
   /* STACK — main content-box ≤ 720px. Reflows reading order for mobile:
-     TodayTasks (hallway job — check things off) first, then the week
-     strip, deadlines, course cards, and the record-event form last.
+     TodayTasks (hallway job — check things off) first, then Next Move,
+     the week strip, deadlines, course cards, and the record-event form.
      .main/.rail already stack to one column above this (the 936 rule),
      so grid-template-columns is redeclared here to keep the block
      self-contained. display:contents on both promotes every .slot-*
@@ -283,6 +291,7 @@ if (userCourses.length === 0) {
        and would misread the inflated width as room for more days. */
     .slot-week,
     .slot-today,
+    .slot-next-move,
     .slot-courses,
     .slot-record,
     .slot-deadlines {
@@ -291,17 +300,20 @@ if (userCourses.length === 0) {
     .slot-today {
       order: 1;
     }
-    .slot-week {
+    .slot-next-move {
       order: 2;
     }
-    .slot-deadlines {
+    .slot-week {
       order: 3;
     }
-    .slot-courses {
+    .slot-deadlines {
       order: 4;
     }
-    .slot-record {
+    .slot-courses {
       order: 5;
+    }
+    .slot-record {
+      order: 6;
     }
 
     .page-head {

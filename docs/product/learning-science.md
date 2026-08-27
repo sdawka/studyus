@@ -23,6 +23,8 @@ This document is the source of truth for the public `/how-it-works` page. It pre
 - [x] Mastery includes recency-sensitive evidence and idle decay (`src/lib/services/mastery.ts`).
 - [x] The sweep creates `stale_kc` tasks for concepts that have not been practised recently (`src/lib/services/taskSweep.ts`).
 - [x] Review activity is visible through task, concept, and profile surfaces.
+- [x] Global Next Move can resurface stale frontier or assessment-linked KCs,
+  while keeping the deterministic scoring explanation visible to the learner.
 - [ ] A personalized spaced-repetition interval scheduler is not shipped. Public copy must say resurfacing is live and exact interval optimization is planned.
 - [ ] Do not claim a universal fixed spacing sequence; useful intervals depend on the desired retention period and learning context.
 

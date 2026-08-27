@@ -20,6 +20,13 @@ below. Flue remains an optional adapter once its API stabilizes.
 - The web tutor routes call typed DO RPC methods for create/read/list/end and
   DO `fetch()` only for SSE, then use ordinary learner/pedagogy services for
   context assembly and event recording. This keeps folds non-agentic.
+- The authenticated `GET /api/v1/runtime/snapshot` route exposes a browser-safe
+  projection containing every active conversation plus session/alarm timing;
+  it never exposes the learner ID, Durable Object ID, namespace, or stub. The
+  `learnerRuntime` Nanostore hydrates SSR conversation data, revalidates this
+  projection on page show/focus/visibility, derives transcript-backed UI, and
+  replaces optimistic SSE messages with the final DO record. It is a cache for
+  rendering, not another store.
 - A future Telegram/SMS/Discord/email adapter must authenticate/link its
   channel identity to the same local learner ID and use this ingress. It must
   not create a per-channel agent or access D1 directly.

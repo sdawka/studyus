@@ -53,7 +53,16 @@ async function agentFor(db: Db, env: RuntimeEnv, userId: string) {
 }
 
 function asConversation(row: LearnerConversation) {
-  return { id: row.id, kcId: row.kcId, mode: row.mode, details: row.details, createdAt: row.createdAt, endedAt: row.endedAt };
+  return {
+    id: row.id,
+    kcId: row.kcId,
+    mode: row.mode,
+    details: row.details,
+    status: row.status,
+    activeTurnId: row.activeTurnId,
+    createdAt: row.createdAt,
+    endedAt: row.endedAt,
+  };
 }
 
 async function recordRuntimeTutorSession(
@@ -162,9 +171,49 @@ export async function listRuntimeConversations(db: Db, env: RuntimeEnv, userId: 
     .map((row) => {
       const kc = row.kcId ? byId.get(row.kcId) : undefined;
       if (!kc || (query.course && kc.courseId !== query.course)) return null;
-      return { id: row.id, kcId: row.kcId!, kcName: kc.name, mode: row.mode, createdAt: row.createdAt };
+      return {
+        id: row.id,
+        kcId: row.kcId!,
+        kcName: kc.name,
+        mode: row.mode,
+        status: row.status,
+        activeTurnId: row.activeTurnId,
+        createdAt: row.createdAt,
+        endedAt: row.endedAt,
+      };
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
+}
+
+/**
+ * Browser-safe projection of the caller's runtime coordinator. The DO remains
+ * authoritative; this endpoint-shaped service only removes the immutable
+ * local learner id (already represented by the authenticated session) and
+ * excludes any active conversation whose KC is no longer caller-owned.
+ */
+export async function getLearnerRuntimeSnapshot(db: Db, env: RuntimeEnv, userId: string) {
+  const agent = await agentFor(db, env, userId);
+  const snapshot = await agent.getSnapshot();
+  const kcIds = snapshot.activeConversations.flatMap((conversation) => (conversation.kcId ? [conversation.kcId] : []));
+  const ownedKcIds = kcIds.length
+    ? new Set(
+        (
+          await db
+            .select({ id: kcs.id })
+            .from(kcs)
+            .innerJoin(courses, eq(kcs.courseId, courses.id))
+            .where(and(eq(courses.userId, userId), inArray(kcs.id, kcIds)))
+        ).map((row) => row.id),
+      )
+    : new Set<string>();
+
+  return {
+    activeConversations: snapshot.activeConversations
+      .filter((conversation) => conversation.kcId === null || ownedKcIds.has(conversation.kcId))
+      .map(asConversation),
+    sessions: snapshot.sessions,
+    nextAlarmAt: snapshot.nextAlarmAt,
+  };
 }
 
 export async function streamRuntimeTutorReply(db: Db, env: RuntimeEnv, userId: string, conversationId: string, content: string) {

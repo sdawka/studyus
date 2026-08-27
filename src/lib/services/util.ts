@@ -1,9 +1,9 @@
 // Shared service-layer helpers: typed errors routes translate to HTTP status,
 // and ownership assertions (every table is user_id-scoped, directly or via
 // its parent course) that every service query must apply.
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { courses, kcs } from '../../db/schema';
+import { branches, courses, kcs } from '../../db/schema';
 
 export class NotFoundError extends Error {
   constructor(what: string) {
@@ -46,8 +46,9 @@ export async function requireOwnedKc(db: Db, userId: string, kcId: string) {
   const rows = await db
     .select({ kc: kcs, courseUserId: courses.userId })
     .from(kcs)
+    .innerJoin(branches, eq(kcs.branchId, branches.id))
     .innerJoin(courses, eq(kcs.courseId, courses.id))
-    .where(eq(kcs.id, kcId))
+    .where(and(eq(kcs.id, kcId), isNull(kcs.archivedAt), isNull(branches.archivedAt)))
     .limit(1);
   const row = rows[0];
   if (!row || row.courseUserId !== userId) throw new NotFoundError('KC');

@@ -1,6 +1,9 @@
 // Idempotent seed script: reads courses/courses.json and upserts
 // courses -> branches -> kcs (concepts), canonical/feed links -> resources,
-// and a single seeded user from SEED_USER_EMAIL/SEED_USER_PASSWORD.
+// and a single seeded user from SEED_USER_EMAIL/SEED_USER_PASSWORD. The
+// fixture is onboarding-complete by default so authenticated browser checks
+// can reach the app shell; set SEED_USER_ONBOARDED=false when exercising the
+// first-run onboarding flow itself.
 //
 // v1.7: for any course with a courses/<slug>/content.json (see
 // courses/content-schema.md), that file supersedes the course's legacy
@@ -10,6 +13,7 @@
 // `wrangler d1 execute --local` with generated SQL rather than importing the
 // Workers-only `cloudflare:workers` module or drizzle's D1 driver directly.
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -133,6 +137,23 @@ async function main() {
     contentBySlug.set(course.slug, result.data);
   }
   const contentFiles = [...contentBySlug.values()];
+  const exercisesBySlug = new Map<string, ExerciseFile>();
+  for (const course of coursesData) {
+    const exercisesPath = join(process.cwd(), 'courses', course.slug, 'exercises.json');
+    if (!existsSync(exercisesPath)) continue;
+    let raw: unknown;
+    try {
+      raw = JSON.parse(readFileSync(exercisesPath, 'utf-8'));
+    } catch (err) {
+      throw new Error(`Failed to read/parse ${exercisesPath}: ${(err as Error).message}`);
+    }
+    const result = exerciseFileSchema.safeParse(raw);
+    if (!result.success) {
+      const issues = result.error.issues.map((i) => `  ${i.path.join('.') || '(root)'}: ${i.message}`).join('\n');
+      throw new Error(`Exercise validation failed for ${exercisesPath}:\n${issues}`);
+    }
+    exercisesBySlug.set(course.slug, result.data);
+  }
   // Throws (aborting the seed) on an unresolvable cycle, including through
   // cross-course edges — see courses/content-schema.md's prereqs section.
   const contentGraph = resolveContentGraph(contentFiles);
@@ -159,6 +180,8 @@ async function main() {
   const userId = deterministicId('user', seedEmail);
   const now = Date.now();
 
+  const seedUserOnboarded = process.env.SEED_USER_ONBOARDED !== 'false';
+  const seedOnboardedAt = seedUserOnboarded ? now : null;
   const statements: string[] = [];
 
   // --- user (upsert by email) ---
@@ -168,8 +191,8 @@ async function main() {
   const CURRENT_TERM = 'Winter 2025';
   statements.push(
     `INSERT INTO users (id, email, password_hash, name, current_term, settings, onboarded_at, created_at)
-     VALUES (${sqlStr(userId)}, ${sqlStr(seedEmail)}, ${sqlStr(passwordHash)}, ${sqlStr('Student')}, ${sqlStr(CURRENT_TERM)}, '{}', NULL, ${Date.now()})
-     ON CONFLICT(email) DO UPDATE SET current_term=excluded.current_term;`,
+     VALUES (${sqlStr(userId)}, ${sqlStr(seedEmail)}, ${sqlStr(passwordHash)}, ${sqlStr('Student')}, ${sqlStr(CURRENT_TERM)}, '{}', ${sqlStr(seedOnboardedAt)}, ${Date.now()})
+     ON CONFLICT(email) DO UPDATE SET current_term=excluded.current_term, onboarded_at=excluded.onboarded_at;`,
   );
 
   // Per-course accent hue (OKLCH H, 0-360): a spaced list so adjacent courses
@@ -205,17 +228,23 @@ async function main() {
     const isCurrentTerm = course.term.includes(CURRENT_TERM);
     const meetingDays = isCurrentTerm ? MEETING_DAY_PATTERNS[currentTermCourses.length % MEETING_DAY_PATTERNS.length] : null;
     const timeSlot = isCurrentTerm ? CLASS_TIME_SLOTS[currentTermCourses.length % CLASS_TIME_SLOTS.length] : null;
+    const contentFile = contentBySlug.get(course.slug);
+    const exerciseFile = exercisesBySlug.get(course.slug);
+    const templateBaseline = contentFile ? { branches: contentFile.branches.map((branch) => ({ ref: branch.slug, name: branch.name, sort_order: branch.sort_order, kcs: branch.kcs.map((kc) => ({ ref: kc.slug, name: kc.name, kc_type: kc.kc_type, description: kc.description, practice_notes: kc.practice_notes, sort_order: kc.sort_order, prereq_refs: kc.prereqs })) })) } : null;
+    const templateRevision = contentFile && exerciseFile
+      ? createHash('sha256').update(JSON.stringify({ meta: course, content: contentFile, exercises: exerciseFile })).digest('hex')
+      : null;
     statements.push(
-      `INSERT INTO courses (id, user_id, code, slug, title, credits, term, instructor, prereqs, overview, source_url, color, meeting_days, archived, created_at)
-       VALUES (${sqlStr(courseId)}, ${sqlStr(userId)}, ${sqlStr(course.code)}, ${sqlStr(course.slug)}, ${sqlStr(course.title)}, ${sqlStr(course.credits)}, ${sqlStr(course.term)}, ${sqlStr(course.instructor)}, ${sqlStr(course.prereqs)}, ${sqlStr(course.overview)}, ${sqlStr(course.source)}, ${sqlStr(colorHue)}, ${sqlStr(meetingDays ? JSON.stringify(meetingDays) : null)}, 0, ${Date.now()})
+      `INSERT INTO courses (id, user_id, code, template_id, map_revision, template_revision, template_synced_at, template_baseline, slug, title, credits, term, instructor, prereqs, overview, source_url, color, meeting_days, archived, created_at)
+       VALUES (${sqlStr(courseId)}, ${sqlStr(userId)}, ${sqlStr(course.code)}, ${sqlStr(contentFile ? course.slug : null)}, 1, ${sqlStr(templateRevision)}, ${sqlStr(templateRevision ? now : null)}, ${sqlStr(templateBaseline ? JSON.stringify(templateBaseline) : null)}, ${sqlStr(course.slug)}, ${sqlStr(course.title)}, ${sqlStr(course.credits)}, ${sqlStr(course.term)}, ${sqlStr(course.instructor)}, ${sqlStr(course.prereqs)}, ${sqlStr(course.overview)}, ${sqlStr(course.source)}, ${sqlStr(colorHue)}, ${sqlStr(meetingDays ? JSON.stringify(meetingDays) : null)}, 0, ${Date.now()})
        ON CONFLICT(slug) DO UPDATE SET
-         code=excluded.code, title=excluded.title, credits=excluded.credits, term=excluded.term,
+         code=excluded.code, template_id=excluded.template_id, template_revision=excluded.template_revision,
+         template_synced_at=excluded.template_synced_at, template_baseline=excluded.template_baseline,
+         title=excluded.title, credits=excluded.credits, term=excluded.term,
          instructor=excluded.instructor, prereqs=excluded.prereqs, overview=excluded.overview, source_url=excluded.source_url, color=excluded.color, meeting_days=excluded.meeting_days;`,
     );
 
     const courseKcs: { id: string; name: string }[] = [];
-    const contentFile = contentBySlug.get(course.slug);
-
     if (contentFile) {
       // --- content.json path (v1.7): supersedes this course's legacy
       // branches/canonical/feed keys entirely — see
@@ -248,9 +277,9 @@ async function main() {
       contentFile.branches.forEach((branch) => {
         const branchId = deterministicId('branch', `${course.slug}#${branch.slug}`);
         statements.push(
-          `INSERT INTO branches (id, course_id, name, sort_order, created_at)
-           VALUES (${sqlStr(branchId)}, ${sqlStr(courseId)}, ${sqlStr(branch.name)}, ${branch.sort_order}, ${Date.now()})
-           ON CONFLICT(id) DO UPDATE SET name=excluded.name, sort_order=excluded.sort_order;`,
+          `INSERT INTO branches (id, course_id, name, template_ref, sort_order, created_at)
+           VALUES (${sqlStr(branchId)}, ${sqlStr(courseId)}, ${sqlStr(branch.name)}, ${sqlStr(branch.slug)}, ${branch.sort_order}, ${Date.now()})
+           ON CONFLICT(id) DO UPDATE SET name=excluded.name, template_ref=excluded.template_ref, sort_order=excluded.sort_order;`,
         );
 
         branch.kcs.forEach((kc) => {
@@ -414,24 +443,6 @@ async function main() {
   // map is populated; unresolvable refs warn + skip rather than abort,
   // matching content.json's cross-course-ref handling.
   // ---------------------------------------------------------------------
-  const exercisesBySlug = new Map<string, ExerciseFile>();
-  for (const course of coursesData) {
-    const exercisesPath = join(process.cwd(), 'courses', course.slug, 'exercises.json');
-    if (!existsSync(exercisesPath)) continue;
-    let raw: unknown;
-    try {
-      raw = JSON.parse(readFileSync(exercisesPath, 'utf-8'));
-    } catch (err) {
-      throw new Error(`Failed to read/parse ${exercisesPath}: ${(err as Error).message}`);
-    }
-    const result = exerciseFileSchema.safeParse(raw);
-    if (!result.success) {
-      const issues = result.error.issues.map((i) => `  ${i.path.join('.') || '(root)'}: ${i.message}`).join('\n');
-      throw new Error(`Exercise validation failed for ${exercisesPath}:\n${issues}`);
-    }
-    exercisesBySlug.set(course.slug, result.data);
-  }
-
   // courseSlug -> { count, unresolved }, printed in the summary at the end.
   const exerciseStatsBySlug = new Map<string, { count: number; unresolved: number }>();
   // Every id this run actually produced (across all courses) — the purge

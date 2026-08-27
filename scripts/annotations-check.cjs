@@ -27,19 +27,11 @@
 //   npm run check:annotations
 //   node scripts/annotations-check.cjs [baseUrl]
 //
-// The live half requires Playwright, which in this repo is installed
-// globally under Node 20 (not the Node 24 used for `astro dev`/`npm run`) —
-// identical constraint to layout-check.cjs, so invoke the same way to get
-// the live half to actually run:
-//   N20=~/.nvm/versions/node/v20.20.2
-//   NODE_PATH=$N20/lib/node_modules $N20/bin/node scripts/annotations-check.cjs
-// Plain `npm run check:annotations` (Node 24) is still fine — the static
-// half runs in full either way, and the live half prints a one-line SKIP
-// instead of a "Cannot find module 'playwright'" stack trace.
+// The live half uses the local Playwright dependency and Clerk development
+// credentials from .env.e2e.local (see .env.e2e.example). With no reachable
+// dev server it still skips cleanly after completing all static checks.
 //
-// Env vars: ANNOTATIONS_CHECK_EMAIL / ANNOTATIONS_CHECK_PASSWORD (seeded
-// creds — defaults track scripts/seed.ts, same as layout-check.cjs),
-// ANNOTATIONS_CHECK_COURSE (course slug for the /courses/[slug] live
+// Env vars: ANNOTATIONS_CHECK_COURSE (course slug for the /courses/[slug] live
 // check), ANNOTATIONS_CHECK_KC (KC id for the /learn/[kcId] live check).
 
 const fs = require('node:fs');
@@ -50,8 +42,6 @@ const path = require('node:path');
 // ---------------------------------------------------------------------------
 const CONFIG = {
   baseUrl: process.argv[2] || process.env.ANNOTATIONS_CHECK_BASE_URL || 'http://localhost:4321',
-  email: process.env.ANNOTATIONS_CHECK_EMAIL || 'student@example.com',
-  password: process.env.ANNOTATIONS_CHECK_PASSWORD || 'studyus',
   // Same seeded course/KC layout-check.cjs uses for its dynamic routes —
   // keep these two in sync if either script's default ever drifts.
   course: process.env.ANNOTATIONS_CHECK_COURSE || 'chee-314-fluid-mechanics',
@@ -415,33 +405,31 @@ async function runLiveHalf(parsed) {
 
   let chromium;
   try {
-    const { createRequire } = require('node:module');
-    const require20 = createRequire(__filename);
-    ({ chromium } = require20('playwright'));
+    ({ chromium } = require('playwright'));
   } catch (err) {
     return {
       skipped: true,
-      reason:
-        `playwright not requirable under this Node (${err.code || err.message}) — run via ` +
-        `NODE_PATH=$N20/lib/node_modules $N20/bin/node scripts/annotations-check.cjs, see header comment`,
+      reason: `local Playwright dependency unavailable (${err.code || err.message})`,
       results: [],
     };
   }
 
   const results = [];
   const expectedUnresolved = []; // components on CONFIG.EXPECTED_UNRESOLVED — never pass/fail, always reported
+  const { authenticateClerkContext, CLERK_AUTH_STATE_PATH } = await import('./lib/clerk-e2e-auth.mjs');
+  const useStoredAuth = process.env.E2E_USE_STORED_AUTH === '1';
   const browser = await chromium.launch();
-  const context = await browser.newContext({ baseURL: CONFIG.baseUrl });
+  const context = await browser.newContext({
+    baseURL: CONFIG.baseUrl,
+    ...(useStoredAuth ? { storageState: CLERK_AUTH_STATE_PATH } : {}),
+  });
   const page = await context.newPage();
 
-  const loginRes = await context.request.fetch(CONFIG.baseUrl + '/api/v1/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Origin: CONFIG.baseUrl },
-    data: JSON.stringify({ email: CONFIG.email, password: CONFIG.password }),
-  });
-  if (!loginRes.ok()) {
+  try {
+    if (!useStoredAuth) await authenticateClerkContext({ context, page, baseUrl: CONFIG.baseUrl });
+  } catch (error) {
     await browser.close();
-    return { skipped: true, reason: `login failed (${loginRes.status()})`, results: [], expectedUnresolved: [] };
+    return { skipped: true, reason: `Clerk authentication failed (${error.message})`, results: [], expectedUnresolved: [] };
   }
 
   async function checkSelectors(routeLabel, components) {

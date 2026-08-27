@@ -61,7 +61,10 @@ export type LearnerSessionState = {
 
 export type LearnerAgentSnapshot = {
   learnerId: string;
-  activeConversationId: string | null;
+  // Multiple tabs/channels may legitimately have separate active sessions.
+  // Preserve the complete ordered set instead of pretending there is one
+  // globally-exclusive "current" conversation.
+  activeConversations: LearnerConversation[];
   sessions: LearnerSessionState[];
   nextAlarmAt: number | null;
 };
@@ -343,15 +346,16 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
 
   async getSnapshot(): Promise<LearnerAgentSnapshot> {
     const learnerId = this.requireLearnerId();
-    const active = this.ctx.storage.sql
-      .exec<{ id: string }>("SELECT id FROM conversations WHERE status = 'active' ORDER BY created_at DESC LIMIT 1")
-      .toArray()[0]?.id ?? null;
+    const activeConversations = this.ctx.storage.sql
+      .exec<ConversationRow>("SELECT id, kc_id, mode, details_json, status, active_turn_id, created_at, ended_at FROM conversations WHERE status = 'active' ORDER BY created_at DESC, id")
+      .toArray()
+      .map(toConversation);
     const sessions = this.ctx.storage.sql
       .exec<SessionStateRow>('SELECT key, value_json, version, updated_at FROM session_state ORDER BY key')
       .toArray()
       .map((row) => ({ key: row.key, value: parseJson(row.value_json), version: row.version, updatedAt: row.updated_at }));
     const nextAlarmAt = this.nextScheduledAlarmAt();
-    return { learnerId, activeConversationId: active, sessions, nextAlarmAt };
+    return { learnerId, activeConversations, sessions, nextAlarmAt };
   }
 
   async createConversation(input: CreateLearnerConversationInput): Promise<LearnerConversation> {

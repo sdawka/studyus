@@ -38,6 +38,8 @@ Cross-island state that used to be prop-threaded or duplicated per-component now
 
 `stores/tasks.ts` (v1.4) is the larger third: a `map` of tasks by id, a `TasksStatus` atom (`idle|loading|ready|error`), and plain-function selectors (`selectOpen`/`selectForCourse`/`selectChildren`/`bucketByDue`) rather than a `computed` list, since consumers need to filter/group differently (TodayTasks buckets by due date, TasksView groups by course, CourseTasks/PlannerRail want a plain open-tasks slice). v1.8 adds `recentlyCompletedIds` — a just-completed task is held in that set for `COMPLETION_HOLD_MS` and is passed through each surface's "open" classification with its `completed` flag faked off, so the row keeps its place (struck through, confetti landing) instead of vanishing on the optimistic flip, then leaves via the `taskDepart` transition. `ensureLoaded()` dedupes concurrent first-load fetches across islands on the same page via a module-level promise; `addTask`/`toggleTask`/`deleteTask` mutate optimistically (except `addTask`, which awaits the `POST` and inserts the real row — no temp-id reconciliation) with rollback on a failed request; `refetchTasks()` does a full replace, used after attendance mutations elsewhere on the page so a backend-side `attend_class` sync is picked up without mirroring the sync rule client-side. Every task-consuming island (`TodoDropdown`, `TodayTasks`, `TasksView`, `CourseTasks`, `EventPopover`, `AttendanceCard`) reads and writes through this one store instead of doing its own fetch — `PlannerRail` is the one exception, still server-fetched via props (it only gained a `TaskTypeIcon` on its rows, no structural change).
 
+`stores/learnerRuntime.ts` is deliberately different from application-data stores: it is a browser projection of the authenticated learner Durable Object, never an authority and never persisted in `localStorage`. SSR provides the initial full conversation; the island hydrates it only in the browser, derives interactive models and correction proposals from that transcript, uses temporary message IDs while an SSE turn is visibly streaming, then replaces the optimistic transcript with `GET /tutor/conversations/:id`. `GET /runtime/snapshot` supplies the complete active-conversation/session/alarm projection, revalidated on page show, window focus, and when a hidden tab becomes visible. D1 remains authoritative for courses, tasks, KCs, evidence, and mastery; moving those into this store or the Durable Object would create a competing data plane.
+
 ### Design Tokens — 3 Themes × 2 Schemes
 The whole app shares one token vocabulary, split across files under `src/styles/`:
 - **`tokens.css`** — theme-agnostic derivations only: `--course`/`--course-ink`/`--course-soft` computed from a per-element `--course-h` (0-360, set inline from `courses.color`) plus theme-owned `--course-l/-c` knobs, so the same hue reads correctly in every theme × scheme combination. Derived on the universal selector `*` (not `:root`) so a per-element `--course-h` override actually re-evaluates — a `:root`-level derivation would pin every element to one hue.
@@ -105,7 +107,7 @@ src/
                                            #   prefersReducedMotion. Pure TS so stores/tasks.ts can import it.
     confetti.ts                           # Dependency-free WAAPI confetti burst (every completion path:
                                            #   TaskCheckbox, CompletionFlow's Done button, EventPopover task_due)
-    stores/                               # nanostores: ui.ts, courseContext.ts, tasks.ts, toast.ts, viewport.ts
+    stores/                               # nanostores: ui.ts, courseContext.ts, tasks.ts, learnerRuntime.ts, toast.ts, viewport.ts
     schemas/                              # Zod validators — one file per domain (assessments, attachments,
                                            #   calendar, classSessions, common, corrections, courses, events, kcs,
                                            #   knowledgeMap, notes, notifications, quickQuiz, resources, sessions,
@@ -216,6 +218,7 @@ src/
       profile/index.ts
       tutor/conversations/index.ts, tutor/conversations/[id]/index.ts,
         tutor/conversations/[id]/messages.ts, tutor/conversations/[id]/end.ts
+      runtime/snapshot.ts                 # authenticated browser projection of the caller's learner DO
       flows/quick_quiz/index.ts, flows/quick_quiz/[id]/answers.ts
 
 tests/                                    # Flat layout (no unit//integration split — that was never built)
