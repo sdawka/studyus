@@ -10,6 +10,10 @@ This document captures the Cloudflare Workers-specific details and gotchas from 
 - **SSR mode**: `output: 'server'` in `astro.config.mjs`.
 - **Dev server**: `npm run dev` runs Astro on a real workerd instance (via wrangler 4), not a Node.js process.
 - **Bindings**: D1, R2, KV, Durable Objects are injected via `wrangler.jsonc`, not Astro's platform/locals.
+- **Canonical origin**: `https://studyus.app`. Requests to the raw
+  `studyus.dawka.workers.dev` deployment hostname redirect there before Clerk
+  initializes, because the production Clerk Frontend API only accepts the
+  configured application origin.
 
 ## Configuration
 

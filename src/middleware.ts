@@ -4,6 +4,7 @@ import { env } from 'cloudflare:workers';
 import { getDb } from './db/client';
 import { apiError } from './lib/api';
 import { ClerkIdentityConflictError, resolveLocalUser } from './lib/auth/local-user';
+import { canonicalRedirectUrl } from './lib/canonicalOrigin';
 import { hasUsableCourse } from './lib/services/onboarding';
 
 const PUBLIC_PAGE_PATHS = new Set(['/', '/login', '/sign-in', '/sign-up', '/compare', '/how-it-works']);
@@ -97,6 +98,9 @@ const authenticatedRequest = clerkMiddleware(async (auth, context, next) => {
 // an auth-provider configuration problem or outage. No protected path bypasses
 // Clerk through this wrapper.
 export const onRequest: MiddlewareHandler = (context, next) => {
+  const canonicalUrl = canonicalRedirectUrl(context.url);
+  if (canonicalUrl) return Response.redirect(canonicalUrl, 308);
+
   if (isAuthIndependentPath(context.url.pathname)) {
     context.locals.user = null;
     return next();
