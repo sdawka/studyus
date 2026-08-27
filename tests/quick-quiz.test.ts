@@ -4,8 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../src/db/client';
 import { branches, courses, events, exercises, kcs, studySessions, users } from '../src/db/schema';
 import { generateQuickQuiz, QuizNotGradableError, submitQuickQuizAnswers } from '../src/lib/flows/quick_quiz';
+import { AiFeatureUnavailableError } from '../src/lib/ai/capabilities';
 
 const db = getDb(env.DB);
+const AI_ENV = { AI_FEATURES_ENABLED: 'true', OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' } as const;
+const NO_AI_ENV = { AI_FEATURES_ENABLED: 'false', OPENROUTER_API_KEY: '', OPENROUTER_MODEL: '' } as const;
 
 let userId: string;
 let courseId: string;
@@ -55,7 +58,7 @@ describe('generateQuickQuiz', () => {
       db,
       userId,
       { course_id: courseId, count: 3 },
-      { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' },
+      AI_ENV,
     );
 
     expect(quiz.questions).toHaveLength(3);
@@ -74,7 +77,7 @@ describe('generateQuickQuiz', () => {
       db,
       userId,
       { course_id: courseId, count: 3 },
-      { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' },
+      AI_ENV,
     );
 
     expect(quiz.questions).toHaveLength(3);
@@ -94,7 +97,7 @@ describe('submitQuickQuizAnswers', () => {
         explanation: `Explanation ${i}`,
       })),
     });
-    const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' });
+    const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, AI_ENV);
 
     // Answer question 0 correctly, 1 and 2 incorrectly.
     const result = await submitQuickQuizAnswers(db, userId, quiz.id, {
@@ -118,7 +121,7 @@ describe('submitQuickQuizAnswers', () => {
 
   it('rejects grading the same quiz twice', async () => {
     mockJsonFetch({ items: [{ kc_id: kcIds[0], question: 'Q?', options: ['A', 'B'], correct_index: 0, explanation: 'E' }] });
-    const quiz = await generateQuickQuiz(db, userId, { kc_id: kcIds[0] }, { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' });
+    const quiz = await generateQuickQuiz(db, userId, { kc_id: kcIds[0] }, AI_ENV);
 
     await submitQuickQuizAnswers(db, userId, quiz.id, { answers: [{ question_index: 0, selected_index: 0 }] });
     await expect(
@@ -148,7 +151,7 @@ describe('generateQuickQuiz — kc_ids explicit targeting (v1.7)', () => {
       db,
       userId,
       { kc_ids: [kcIds[1], kcIds[0]] },
-      { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' },
+      AI_ENV,
     );
 
     expect(quiz.questions.map((q) => q.kc_id)).toEqual([kcIds[1], kcIds[0]]);
@@ -165,7 +168,7 @@ describe('generateQuickQuiz — kc_ids explicit targeting (v1.7)', () => {
     await db.insert(kcs).values({ id: otherKcId, branchId: otherBranchId, courseId: otherCourseId, name: 'Other KC', kcType: 'concept' });
 
     await expect(
-      generateQuickQuiz(db, userId, { kc_ids: [otherKcId] }, { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' }),
+      generateQuickQuiz(db, userId, { kc_ids: [otherKcId] }, AI_ENV),
     ).rejects.toThrow();
   });
 
@@ -173,7 +176,7 @@ describe('generateQuickQuiz — kc_ids explicit targeting (v1.7)', () => {
     mockJsonFetch({
       items: kcIds.map((kc_id, i) => ({ kc_id, question: `Q${i}?`, options: ['A', 'B', 'C', 'D'], correct_index: 0, explanation: 'E' })),
     });
-    const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' });
+    const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, AI_ENV);
     expect(new Set(quiz.questions.map((q) => q.kc_id))).toEqual(new Set(kcIds));
   });
 });
@@ -198,7 +201,7 @@ describe('generateQuickQuiz — v2.0 seeded exercise bank', () => {
       db,
       userId,
       { kc_id: kcIds[0], count: 3, planned_minutes: 15 },
-      { OPENROUTER_API_KEY: '', OPENROUTER_MODEL: '' },
+      NO_AI_ENV,
     );
 
     expect(quiz.questions).toHaveLength(3);
@@ -222,7 +225,7 @@ describe('generateQuickQuiz — v2.0 seeded exercise bank', () => {
       })),
     });
 
-    const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' });
+    const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, AI_ENV);
 
     const seededQuestion = quiz.questions.find((q) => q.kc_id === kcIds[0]);
     expect(seededQuestion?.question).toBe('Seeded question?');
@@ -243,7 +246,7 @@ describe('generateQuickQuiz — v2.0 seeded exercise bank', () => {
       })),
     });
 
-    const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' });
+    const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, AI_ENV);
 
     expect(quiz.questions).toHaveLength(3);
     expect(quiz.questions.find((q) => q.kc_id === kcIds[0])?.question).toBe('Seeded only for kc0');
@@ -256,7 +259,7 @@ describe('generateQuickQuiz — v2.0 seeded exercise bank', () => {
     // Deliberately no mockJsonFetch stub — if the AI path were reached, the
     // unstubbed global fetch would throw/fail, failing this test.
 
-    const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, { OPENROUTER_API_KEY: '', OPENROUTER_MODEL: '' });
+    const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, NO_AI_ENV);
 
     expect(quiz.questions).toHaveLength(3);
     for (const q of quiz.questions) {
@@ -264,9 +267,23 @@ describe('generateQuickQuiz — v2.0 seeded exercise bank', () => {
     }
   });
 
+  it('fails with the AI gate when the seeded bank has a gap and AI is disabled', async () => {
+    for (const kcId of kcIds.slice(0, 2)) await seedMcq(kcId);
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+
+    await expect(
+      generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, NO_AI_ENV),
+    ).rejects.toThrow(AiFeatureUnavailableError);
+    expect(fetchSpy).not.toHaveBeenCalled();
+
+    const sessions = await db.select().from(studySessions).where(eq(studySessions.userId, userId));
+    expect(sessions).toHaveLength(0);
+  });
+
   it('grading a fully-seeded quiz still appends retrieval_practice events with the standard payload/channel', async () => {
     for (const kcId of kcIds) await seedMcq(kcId, { details: { options: ['S1', 'S2', 'S3', 'S4'], correct_index: 2, explanation: 'E' } });
-    const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, { OPENROUTER_API_KEY: '', OPENROUTER_MODEL: '' });
+    const quiz = await generateQuickQuiz(db, userId, { course_id: courseId, count: 3 }, NO_AI_ENV);
 
     const result = await submitQuickQuizAnswers(db, userId, quiz.id, {
       answers: quiz.questions.map((q) => ({ question_index: q.index, selected_index: 2 })),
@@ -286,7 +303,7 @@ describe('generateQuickQuiz — v2.0 seeded exercise bank', () => {
 describe('submitQuickQuizAnswers — event source (v1.7)', () => {
   it('appends grading retrieval_practice events with source "tutor", not the createEvent default "manual"', async () => {
     mockJsonFetch({ items: [{ kc_id: kcIds[0], question: 'Q?', options: ['A', 'B'], correct_index: 0, explanation: 'E' }] });
-    const quiz = await generateQuickQuiz(db, userId, { kc_id: kcIds[0] }, { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' });
+    const quiz = await generateQuickQuiz(db, userId, { kc_id: kcIds[0] }, AI_ENV);
     await submitQuickQuizAnswers(db, userId, quiz.id, { answers: [{ question_index: 0, selected_index: 0 }] });
 
     const kcEvents = await db.select().from(events).where(eq(events.kcId, kcIds[0]));

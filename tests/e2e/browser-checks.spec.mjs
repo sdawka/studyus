@@ -23,8 +23,25 @@ test('course map editor hydrates and becomes interactive', async ({ page }) => {
   expect(hydrationErrors).toEqual([]);
 });
 
-test('ended tutor sessions survive reload and resume from course history', async ({ page }) => {
+test('AI tutor is gated when unavailable, otherwise sessions survive reload', async ({ page }) => {
+  const capabilityResponse = await page.request.get('/api/v1/capabilities');
+  expect(capabilityResponse.ok()).toBe(true);
+  const { data: capabilities } = await capabilityResponse.json();
+
   await page.goto('/courses/chee-314-fluid-mechanics/play', { waitUntil: 'networkidle' });
+  if (!capabilities.ai.features.tutor) {
+    const gate = page.locator('[data-ai-feature="tutor"]');
+    await expect(gate).toContainText('AI unavailable');
+    await expect(page.locator('a.model-link')).toHaveCount(0);
+
+    const kcId = await page.locator('.model-link.disabled').first().getAttribute('data-kc-id');
+    expect(kcId).toBeTruthy();
+    const blocked = await page.request.post('/api/v1/tutor/conversations', { data: { kc_id: kcId } });
+    expect(blocked.status()).toBe(503);
+    await expect(blocked.json()).resolves.toMatchObject({ error: { code: 'ai_unavailable' } });
+    return;
+  }
+
   const exploration = page.locator('a.model-link').first();
   const startHref = await exploration.getAttribute('href');
   expect(startHref).toMatch(/^\/tutor\/[^?]+$/);

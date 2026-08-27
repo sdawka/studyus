@@ -4,6 +4,12 @@
 
 The AI tutor is a **server-side SSE stream** that adapts its pedagogy by KC type. It's headless (services + HTTP endpoints, `src/lib/services/tutor/` and `src/lib/flows/quick_quiz.ts`) so Flue agents can invoke the same functions later. Implemented in M4; this doc now describes the as-built system (see `docs/api.md` for the frozen-as-of-M4 request/response contract).
 
+## AI boundary and feature gate
+
+`src/lib/ai/capabilities.ts` is the single policy boundary. AI requires both `AI_FEATURES_ENABLED=true` and a non-blank `OPENROUTER_API_KEY`; otherwise tutor creation and message streaming fail closed with `503 ai_unavailable` before a provider call or conversation mutation. `GET /api/v1/capabilities` exposes only booleans and an unavailable reason so SSR pages and hydrated islands can clearly label or disable AI-only entry points without receiving the secret.
+
+The product boundary is deliberate: tutor conversations and missing-question generation are AI features; course maps, prerequisite checks, study planning, seeded exercises, grading, mastery updates, and fully seeded Quick Quizzes are not. Quick Quiz checks the gate only if its seeded bank cannot cover every selected KC.
+
 ## Integration Points
 
 - **Endpoints**: `POST /api/v1/tutor/conversations`, `GET /api/v1/tutor/conversations/:id`, `POST /api/v1/tutor/conversations/:id/messages` (SSE), `POST /api/v1/tutor/conversations/:id/end`.
@@ -88,7 +94,7 @@ Format, grammar, and the parser/evaluator live in `src/lib/services/tutor/modelS
 ## Verification status (M4)
 
 - `npm run build` and `npm run test` (vitest, `@cloudflare/vitest-pool-workers`) are clean — see `tests/tutor-modelSpec.test.ts`, `tests/tutor-openrouter.test.ts`, `tests/tutor-conversations.test.ts`, `tests/quick-quiz.test.ts`.
-- **No `OPENROUTER_API_KEY` is set in this repo's `.dev.vars`** (only `.dev.vars.example` exists, with the key blank) — so there has been no live call to OpenRouter. All tutor/flow tests mock `fetch` to verify the SSE relay, JSON-mode parsing, mode derivation, message persistence, cap/auto-end behavior, and quiz generation/grading end-to-end against the mocked responses. Live verification (real prompt quality, actual model-spec emission rate, real streaming latency) is a TODO once a key is available.
+- Tutor/flow tests use a fake test binding and mocked provider responses; no real deployment credential is copied into source or fixtures. Live prompt-quality and latency verification remains environment-specific.
 
 ## Coaching Stance (applies to every tutor surface)
 
@@ -113,7 +119,7 @@ new runtime transcripts are not written back to D1.
 
 ## TODO
 
-- **Live OpenRouter verification** once `OPENROUTER_API_KEY` is set locally (see above).
+- **Live OpenRouter quality verification** in an explicitly AI-enabled non-production environment (see above).
 - **ExecutionContext/`waitUntil`**: `Astro.locals.cfContext` isn't wired up anywhere in the codebase yet (checked as of M4). Assistant-message persistence currently relies on the SSE relay's `onDone` being awaited before the stream closes, which works because Workers keeps the response body open until then — but a real `waitUntil` would be more robust once the adapter exposes `ExecutionContext` to Astro pages.
 - **Adaptive difficulty**: track in-conversation performance and adjust question complexity turn-to-turn (currently only the KC's *stored* mastery calibrates difficulty, not the conversation's own trajectory).
 - **Mode switching**: let the tutor suggest switching modes mid-conversation if the student isn't progressing.

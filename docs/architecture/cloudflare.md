@@ -58,7 +58,8 @@ All bindings, database config, and environment variables go here. This is the **
     }
   ],
   "vars": {
-    "OPENROUTER_MODEL": "openrouter/auto"
+    "OPENROUTER_MODEL": "openrouter/auto",
+    "AI_FEATURES_ENABLED": "true"
   },
   "observability": {
     "traces": {
@@ -68,9 +69,13 @@ All bindings, database config, and environment variables go here. This is the **
 }
 ```
 
-There is **no `env` block** (no `production`/`staging` sub-environments) and **no `env_secrets` key** — that's not a real wrangler config field. `database_id` is a `"local-placeholder"` since this project has never deployed (see "Deployment" below and `docs/todo.md`).
+The checked-in config also has an `env.staging` block with isolated D1, R2,
+Durable Object, route, and vars. Production uses the top-level bindings;
+staging deploys with `--env staging`. Secrets are never declared through a
+fictional `env_secrets` key: each environment receives them through Wrangler's
+secret commands.
 
-**Secrets**: Store API keys via `wrangler secret put OPENROUTER_API_KEY`, which stores them in `.wrangler/env.json` (local) or Cloudflare (remote). Reference in code via `env.OPENROUTER_API_KEY` (not `OPENROUTER_KEY` — see `src/env.d.ts`, which augments the generated `Cloudflare.Env`/`Env` type with this secret since it's not a `wrangler.jsonc` var wrangler's own type generator knows about).
+**Secrets and gate**: Store API keys via `wrangler secret put OPENROUTER_API_KEY` (add `--env staging` for an isolated staging secret). Reference it only server-side via `env.OPENROUTER_API_KEY`. `AI_FEATURES_ENABLED` is the non-secret deployment policy switch. The application enables AI only when the switch is exactly `true` and the secret is non-blank; it exposes the resulting safe status at `GET /api/v1/capabilities`, never the credential.
 
 ## Accessing Bindings in Code
 

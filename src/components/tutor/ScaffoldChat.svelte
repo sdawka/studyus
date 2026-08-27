@@ -22,7 +22,14 @@
   let {
     initialConversation,
     kcId,
-  }: { initialConversation: RuntimeConversation; kcId?: string } = $props();
+    aiEnabled,
+    aiUnavailableReason,
+  }: {
+    initialConversation: RuntimeConversation;
+    kcId?: string;
+    aiEnabled: boolean;
+    aiUnavailableReason: 'disabled' | 'provider_not_configured' | null;
+  } = $props();
 
   const conversationId = initialConversation.id;
   // Svelte components also execute during Astro SSR. Only hydrate the shared
@@ -118,7 +125,7 @@
 
   async function send() {
     const content = draft.trim();
-    if (!content || sending) return;
+    if (!aiEnabled || !content || sending) return;
     error = null;
     draft = '';
     sending = true;
@@ -260,6 +267,12 @@
 
   {#if ended}
     <p class="ended">Session ended — nice work.</p>
+  {:else if !aiEnabled}
+    <div class="ai-gate" role="status" data-ai-feature="tutor">
+      <strong>AI replies unavailable</strong>
+      <span>{aiUnavailableReason === 'provider_not_configured' ? 'OpenRouter is not configured for this environment.' : 'AI tutoring is disabled in this environment.'}</span>
+      <button type="button" class="end-btn" onclick={endSession}>End session</button>
+    </div>
   {:else}
     <form
       onsubmit={(e) => {
@@ -296,6 +309,7 @@
   .end-btn { background: var(--border); color: var(--text); }
   .error { color: var(--danger); font-size: 0.85rem; }
   .ended { color: var(--good); font-size: 0.9rem; }
+  .ai-gate { display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem; padding: 0.8rem 0.9rem; border: 1px solid var(--warn); border-radius: var(--radius-md); background: var(--warn-soft); color: var(--warn-ink); font-size: 0.85rem; }
 
   .correction-card {
     align-self: flex-start;

@@ -14,6 +14,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const input = createQuickQuizSchema.parse(body);
     const db = getDb(env.DB);
     const quiz = await generateQuickQuiz(db, locals.user!.id, input, {
+      AI_FEATURES_ENABLED: env.AI_FEATURES_ENABLED,
       OPENROUTER_API_KEY: env.OPENROUTER_API_KEY,
       OPENROUTER_MODEL: env.OPENROUTER_MODEL,
     });

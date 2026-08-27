@@ -7,6 +7,7 @@ import { listSessions } from '../../../lib/services/sessions';
 import { listSessionShapeRituals } from '../../../lib/services/rituals';
 import { NotFoundError, notFound } from '../../../lib/handleNotFound';
 import PracticePanel from '../../../components/course/PracticePanel.svelte';
+import { getAiCapabilities } from '../../../lib/ai/capabilities';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
@@ -38,6 +39,7 @@ const openSession = sessions
   .filter((s) => !s.endedAt)
   .sort((a, b) => b.startedAt - a.startedAt)[0] ?? null;
 const rituals = await listSessionShapeRituals(db, userId);
+const aiCapabilities = getAiCapabilities(env);
 
 const drillKcs = course.branches
   .flatMap((b) => b.kcs)
@@ -67,5 +69,7 @@ const drillKcs = course.branches
       ritualId: openSession.ritualId,
     }}
     rituals={rituals}
+    aiGenerationEnabled={aiCapabilities.features.quiz_generation}
+    aiUnavailableReason={aiCapabilities.reason}
   />
 </CourseLayout>

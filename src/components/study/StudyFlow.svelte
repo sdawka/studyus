@@ -65,7 +65,7 @@
     { label: 'Reading', value: 'reading_done' },
     { label: 'Review — retrieval', value: 'retrieval_practice' },
     { label: 'Watch video', value: 'video_watched' },
-    { label: 'Quick quiz (AI)', value: 'quick_quiz' },
+    { label: 'Quick quiz', value: 'quick_quiz' },
   ];
 
   type Step = 'resume' | 'course' | 'duration' | 'type' | 'ritual' | 'running' | 'complete' | 'done';

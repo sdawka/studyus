@@ -18,7 +18,14 @@ export default defineConfig({
         // LearnerAgent export available to Miniflare's DO bindings.
         main: './tests/worker.ts',
         wrangler: { configPath: './wrangler.jsonc' },
-        miniflare: { bindings: { TEST_MIGRATIONS: migrations } },
+        miniflare: {
+          bindings: {
+            TEST_MIGRATIONS: migrations,
+            // Deliberately fake: runtime tests exercise the gate without
+            // depending on or exposing a real provider credential.
+            OPENROUTER_API_KEY: 'test-openrouter-key',
+          },
+        },
       };
     }),
   ],

@@ -28,6 +28,7 @@ import {
 } from '../src/lib/services/tutor/conversations';
 
 const db = getDb(env.DB);
+const AI_ENV = { AI_FEATURES_ENABLED: 'true', OPENROUTER_API_KEY: 'test-key', OPENROUTER_MODEL: 'test-model' } as const;
 
 const mockGetKcGraph = vi.mocked(getKcGraph);
 const mockListKcMisconceptions = vi.mocked(listKcMisconceptions);
@@ -167,10 +168,7 @@ describe('appendMessageAndStream — absorb context assembly', () => {
     });
 
     const getSentBody = mockStreamingFetch("Let's start with fluid velocity — what happens to it as a pipe narrows?");
-    const stream = await appendMessageAndStream(db, userId, convo.id, 'Ready to learn Bernoulli', {
-      OPENROUTER_API_KEY: 'k',
-      OPENROUTER_MODEL: 'm',
-    });
+    const stream = await appendMessageAndStream(db, userId, convo.id, 'Ready to learn Bernoulli', AI_ENV);
     await drainToText(stream);
 
     expect(mockGetKcGraph).toHaveBeenCalledWith(db, userId, kcId);
@@ -190,7 +188,7 @@ describe('appendMessageAndStream — absorb context assembly', () => {
     const convo = await createConversation(db, userId, { kc_id: kcId });
 
     mockStreamingFetch('A classification question.');
-    const stream = await appendMessageAndStream(db, userId, convo.id, 'Hi', { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' });
+    const stream = await appendMessageAndStream(db, userId, convo.id, 'Hi', AI_ENV);
     await drainToText(stream);
 
     expect(mockGetKcGraph).not.toHaveBeenCalled();
@@ -216,7 +214,7 @@ describe('appendMessageAndStream — absorb message cap', () => {
     }
 
     mockStreamingFetch('Still going.');
-    const stream = await appendMessageAndStream(db, userId, convo.id, 'one more', { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' });
+    const stream = await appendMessageAndStream(db, userId, convo.id, 'one more', AI_ENV);
     await expect(drainToText(stream)).resolves.not.toThrow();
   });
 
@@ -234,7 +232,7 @@ describe('appendMessageAndStream — absorb message cap', () => {
     }
 
     await expect(
-      appendMessageAndStream(db, userId, convo.id, 'one more please', { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' }),
+      appendMessageAndStream(db, userId, convo.id, 'one more please', AI_ENV),
     ).rejects.toThrow(ConversationCapReachedError);
   });
 });

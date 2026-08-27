@@ -15,8 +15,14 @@
     principleKcs: Kc[];
     conceptKcs: Kc[];
     conversations: Conversation[];
+    aiEnabled: boolean;
+    aiUnavailableReason: 'disabled' | 'provider_not_configured' | null;
   }
-  const { courseSlug, principleKcs, conceptKcs, conversations }: Props = $props();
+  const { courseSlug, principleKcs, conceptKcs, conversations, aiEnabled, aiUnavailableReason }: Props = $props();
+
+  const aiUnavailableMessage = aiUnavailableReason === 'provider_not_configured'
+    ? 'The AI tutor is not configured in this environment.'
+    : 'The AI tutor is disabled in this environment.';
 
   const MODE_LABELS: Record<string, string> = {
     recall: 'Recall',
@@ -30,26 +36,49 @@
 
 <div class="play-panel">
   <section class="section">
-    <h2>Models &amp; deep dives</h2>
+    <div class="section-heading">
+      <h2>Models &amp; deep dives</h2>
+      <span class="ai-label">AI tutor</span>
+    </div>
+    {#if !aiEnabled}
+      <div class="ai-gate" role="status" data-ai-feature="tutor">
+        <strong>AI unavailable</strong>
+        <span>{aiUnavailableMessage} Understand, practice, and seeded quizzes still work.</span>
+      </div>
+    {/if}
     {#if principleKcs.length === 0 && conceptKcs.length === 0}
       <p class="placeholder">No principles or concepts to explore yet.</p>
     {:else}
       <div class="card-grid">
         {#each principleKcs as kc (kc.id)}
           <div class="model-card">
-            <a class="model-link" href={`/tutor/${kc.id}`}>
-              <span class="kc-type">Principle</span>
-              <span class="kc-name">{kc.name}</span>
-            </a>
+            {#if aiEnabled}
+              <a class="model-link" href={`/tutor/${kc.id}`}>
+                <span class="kc-type">Principle</span>
+                <span class="kc-name">{kc.name}</span>
+              </a>
+            {:else}
+              <div class="model-link disabled" aria-disabled="true" data-kc-id={kc.id}>
+                <span class="kc-type">Principle · AI unavailable</span>
+                <span class="kc-name">{kc.name}</span>
+              </div>
+            {/if}
             <a class="understand-link" href={`/learn/${kc.id}`}>Understand</a>
           </div>
         {/each}
         {#each conceptKcs as kc (kc.id)}
           <div class="model-card secondary">
-            <a class="model-link" href={`/tutor/${kc.id}`}>
-              <span class="kc-type">Concept</span>
-              <span class="kc-name">{kc.name}</span>
-            </a>
+            {#if aiEnabled}
+              <a class="model-link" href={`/tutor/${kc.id}`}>
+                <span class="kc-type">Concept</span>
+                <span class="kc-name">{kc.name}</span>
+              </a>
+            {:else}
+              <div class="model-link disabled" aria-disabled="true" data-kc-id={kc.id}>
+                <span class="kc-type">Concept · AI unavailable</span>
+                <span class="kc-name">{kc.name}</span>
+              </div>
+            {/if}
             <a class="understand-link" href={`/learn/${kc.id}`}>Understand</a>
           </div>
         {/each}
@@ -83,6 +112,10 @@
 <style>
   .play-panel { display: flex; flex-direction: column; gap: 2rem; }
   .section h2 { font-size: 1rem; margin: 0 0 0.8rem 0; }
+  .section-heading { display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 0.8rem; }
+  .section-heading h2 { margin: 0; }
+  .ai-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  .ai-gate { display: flex; flex-direction: column; gap: 0.2rem; padding: 0.75rem 0.9rem; margin-bottom: 0.8rem; border: 1px solid var(--warn); border-radius: var(--radius-md); background: var(--warn-soft); color: var(--warn-ink); font-size: 0.85rem; }
   .placeholder { color: var(--muted); font-size: 0.9rem; }
 
   .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 0.8rem; }
@@ -98,6 +131,7 @@
   .model-card:hover { border-color: var(--accent); }
   .model-card.secondary { opacity: 0.85; }
   .model-link { display: flex; flex-direction: column; gap: 0.4rem; text-decoration: none; color: var(--text); }
+  .model-link.disabled { color: var(--muted); cursor: not-allowed; }
   .kc-type { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
   .kc-name { font-size: 0.95rem; font-weight: 550; }
   .understand-link { align-self: flex-start; font-size: 0.78rem; font-weight: 550; color: var(--accent); text-decoration: none; }

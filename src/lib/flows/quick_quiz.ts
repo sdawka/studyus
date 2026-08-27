@@ -22,6 +22,7 @@ import { createEvent } from '../services/events';
 import { listCourseMcqBank, listKcExercises, type ExerciseRow } from '../services/exercises';
 import { NotFoundError, requireOwnedCourse, requireOwnedKc } from '../services/util';
 import { chatCompletionJSON, type ChatMessage } from '../services/tutor/openrouter';
+import { requireAiFeature } from '../ai/capabilities';
 
 const QUICK_QUIZ_SENTINEL = 'quick_quiz';
 const DEFAULT_COUNT = 5;
@@ -39,7 +40,7 @@ type QuizBlob = {
   graded?: { answers: Array<{ question_index: number; selected_index: number; correct: boolean }>; score: number };
 };
 
-type TutorEnv = { OPENROUTER_API_KEY: string; OPENROUTER_MODEL: string };
+type TutorEnv = { AI_FEATURES_ENABLED?: string; OPENROUTER_API_KEY?: string; OPENROUTER_MODEL: string };
 
 type McqDetails = { options: string[]; correct_index: number; explanation: string };
 
@@ -236,6 +237,7 @@ export async function generateQuickQuiz(db: Db, userId: string, input: CreateQui
   // OPENROUTER_API_KEY set at all.
   let aiItems: QuizItem[] = [];
   if (aiTargetKcs.length > 0) {
+    requireAiFeature(env, 'quiz_generation');
     const raw = await chatCompletionJSON({
       apiKey: env.OPENROUTER_API_KEY,
       model: env.OPENROUTER_MODEL,

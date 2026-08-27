@@ -18,8 +18,10 @@
     initialPrereqs: PrereqNode[];
     initialWarnings: string[];
     plannedMinutes?: 15 | 25 | 50;
+    aiEnabled: boolean;
+    aiUnavailableReason: 'disabled' | 'provider_not_configured' | null;
   }
-  const { kcId, initialKc, initialPrereqs, initialWarnings, plannedMinutes = 25 }: Props = $props();
+  const { kcId, initialKc, initialPrereqs, initialWarnings, plannedMinutes = 25, aiEnabled, aiUnavailableReason }: Props = $props();
 
   type Stage = 'map' | 'verify' | 'rank' | 'chat';
   let stage = $state<Stage>('map');
@@ -54,6 +56,15 @@
   }
 
   function handleProceed() {
+    if (!aiEnabled) {
+      pushToast(
+        aiUnavailableReason === 'provider_not_configured'
+          ? 'AI tutoring is not configured here. Prerequisite maps and seeded verification quizzes still work.'
+          : 'AI tutoring is disabled here. Prerequisite maps and seeded verification quizzes still work.',
+        'error',
+      );
+      return;
+    }
     stage = 'rank';
     // No prereqs to rank at all (leaf KC) — the ranking screen would be
     // empty, so skip straight to starting the conversation.
@@ -87,6 +98,12 @@
 
 <div class="absorb-flow">
   <p class="time-budget">Focused session · about {plannedMinutes} minutes</p>
+  {#if !aiEnabled}
+    <div class="ai-gate" role="status" data-ai-feature="tutor">
+      <strong>AI absorb session unavailable</strong>
+      <span>You can still inspect prerequisites and run seeded verification quizzes.</span>
+    </div>
+  {/if}
   {#if stage === 'map'}
     <PrereqGraph {kc} {prereqs} {warnings} onVerify={handleVerify} onProceed={handleProceed} />
   {:else if stage === 'verify'}
@@ -98,7 +115,7 @@
       <p class="status">Starting your session…</p>
     {/if}
   {:else if stage === 'chat' && conversation}
-    <ScaffoldChat initialConversation={conversation} kcId={kcId} />
+    <ScaffoldChat initialConversation={conversation} kcId={kcId} {aiEnabled} {aiUnavailableReason} />
   {/if}
 </div>
 
@@ -106,4 +123,5 @@
   .absorb-flow { display: flex; flex-direction: column; gap: 1.5rem; }
   .status { color: var(--muted); font-size: 0.9rem; }
   .time-budget { margin: 0; color: var(--muted); font-size: 0.82rem; }
+  .ai-gate { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.75rem 0.9rem; border: 1px solid var(--warn); border-radius: var(--radius-md); background: var(--warn-soft); color: var(--warn-ink); font-size: 0.85rem; }
 </style>

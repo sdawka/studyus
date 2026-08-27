@@ -6,6 +6,7 @@ import { getCourseBySlug } from '../../../lib/services/courses';
 import { listRuntimeConversations } from '../../../lib/runtime/tutorRuntime';
 import { NotFoundError, notFound } from '../../../lib/handleNotFound';
 import PlayPanel from '../../../components/course/PlayPanel.svelte';
+import { getAiCapabilities } from '../../../lib/ai/capabilities';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
@@ -24,6 +25,7 @@ const principleKcs = allKcs.filter((kc) => kc.kcType === 'principle');
 const conceptKcs = allKcs.filter((kc) => kc.kcType === 'concept');
 
 const conversations = await listRuntimeConversations(db, env, userId, { course: course.id, limit: 10 });
+const aiCapabilities = getAiCapabilities(env);
 ---
 <CourseLayout course={course} active="play">
   <PlayPanel
@@ -40,5 +42,7 @@ const conversations = await listRuntimeConversations(db, env, userId, { course: 
       createdAt: c.createdAt,
       endedAt: c.endedAt,
     }))}
+    aiEnabled={aiCapabilities.features.tutor}
+    aiUnavailableReason={aiCapabilities.reason}
   />
 </CourseLayout>

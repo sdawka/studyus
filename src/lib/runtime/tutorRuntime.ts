@@ -10,8 +10,9 @@ import { buildTutorSystemPrompt, ConversationCapReachedError, messageCapForMode 
 import { modeForKcType } from '../services/tutor/prompts';
 import { NotFoundError, requireOwnedKc } from '../services/util';
 import { createLearnerReplyStreamRequest, getLearnerAgentForUser, type LearnerConversation } from './learnerAgent';
+import { requireAiFeature } from '../ai/capabilities';
 
-type RuntimeEnv = Pick<Cloudflare.Env, 'LEARNER_AGENT'>;
+type RuntimeEnv = Pick<Cloudflare.Env, 'LEARNER_AGENT' | 'AI_FEATURES_ENABLED' | 'OPENROUTER_API_KEY'>;
 
 async function findConversation(agent: Awaited<ReturnType<typeof getLearnerAgentForUser>>, conversationId: string) {
   const conversation = await agent.findConversation(conversationId);
@@ -123,6 +124,7 @@ function finaliseAfterStream(
 }
 
 export async function createRuntimeConversation(db: Db, env: RuntimeEnv, userId: string, input: CreateConversationInput) {
+  requireAiFeature(env, 'tutor');
   const kc = await requireOwnedKc(db, userId, input.kc_id);
   const mode = (input.mode ?? modeForKcType(kc.kcType as Parameters<typeof modeForKcType>[0])) as TutorMode;
   const agent = await agentFor(db, env, userId);
@@ -217,6 +219,7 @@ export async function getLearnerRuntimeSnapshot(db: Db, env: RuntimeEnv, userId:
 }
 
 export async function streamRuntimeTutorReply(db: Db, env: RuntimeEnv, userId: string, conversationId: string, content: string) {
+  requireAiFeature(env, 'tutor');
   const agent = await agentFor(db, env, userId);
   const conversation = await findConversation(agent, conversationId);
   if (!conversation.kcId) throw new Error('Tutor conversation has no knowledge component');

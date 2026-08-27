@@ -17,6 +17,9 @@ priorities are listed here and detailed in their owning docs.
   active courses from assessment urgency, prerequisite leverage, mastery need,
   recency, and an explicit 15/25/50-minute budget. It launches a targeted
   Understand session or exact-KC Quick Quiz and records follow/ignore context.
+- [x] **AI feature boundary** — one server-authoritative capability gate now
+  separates OpenRouter-backed tutoring/question generation from non-AI study
+  tools; seeded quizzes remain usable without AI and staging defaults off.
 - [ ] **Replanning loop** — recompute recommendations when classes are missed,
   dates or weekly capacity change, grades arrive, or plans are disrupted.
 - [ ] **Durable material ingestion** — retain validated syllabus/schedule files

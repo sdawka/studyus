@@ -32,6 +32,9 @@ async function callOpenRouter(opts: {
   temperature?: number;
   responseFormatJson?: boolean;
 }): Promise<Response> {
+  if (!opts.apiKey.trim()) {
+    throw new OpenRouterError('OpenRouter is not configured', 503);
+  }
   const res = await fetch(OPENROUTER_URL, {
     method: 'POST',
     headers: {

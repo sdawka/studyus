@@ -254,6 +254,10 @@ Matches draft. `kc_ids_touched` defaults to whatever KCs were linked at session 
 
 Server-side OpenRouter integration (`src/lib/services/tutor/{openrouter,prompts,modelSpec,conversations}.ts`). Mode is derived from the KC's `kc_type` per the KLI mapping in `docs/architecture/events-and-mastery.md` (`fact`/`association`→`recall`, `concept`→`classify`, `rule`→`worked_example`, `principle`→`interactive_model` by default, with `self_explain` available as an explicit override) unless the client passes `mode` explicitly at creation.
 
+### GET /capabilities
+
+Returns the browser-safe runtime gate without exposing a key: `{ "data": { "ai": { "enabled": boolean, "provider": "openrouter", "reason": "disabled"|"provider_not_configured"|null, "features": { "tutor": boolean, "quiz_generation": boolean } } } }`. AI is available only when `AI_FEATURES_ENABLED=true` and a non-blank `OPENROUTER_API_KEY` secret are both present. This response is a UI projection; tutor creation/message endpoints and quiz generation enforce the same gate server-side. A gated AI request returns `503 { "error": { "code": "ai_unavailable", "message": "..." } }`.
+
 ### POST /tutor/conversations
 **Request**: `{ "kc_id": "uuid", "mode": "recall|classify|worked_example|self_explain|interactive_model"? }`
 
@@ -293,6 +297,8 @@ Before every LLM call, `conversations.ts` assembles: KC name/type/description/pr
 
 ### POST /flows/quick_quiz
 **Request**: `{ "course_id": "uuid"?, "kc_id": "uuid"?, "count": 1-10? (default 5) }`. If `kc_id` is given, the quiz is that one KC; otherwise KCs are picked by lowest `mastery` then oldest (or never-touched) `last_event_at`, optionally scoped to `course_id`, across the user's owned KCs.
+
+Quick Quiz is not itself an AI feature. Seeded MCQ bank items work while AI is disabled. Only an uncovered selected KC invokes the `quiz_generation` capability; if that capability is unavailable, creation fails with `503 ai_unavailable` before an OpenRouter call or quiz-session write.
 
 **Response** (201): `{ "id": "uuid", "questions": [{ "index": 0, "kc_id": "uuid", "question": "string", "options": ["string", "string", "string", "string"] }] }` — **no answers or explanations included**.
 
@@ -359,7 +365,7 @@ All constants live in `MASTERY_CONSTANTS` in that file.
 - `study_session`/`lecture` calendar item types (see Calendar deviation above).
 - Adaptive difficulty within a tutor conversation; mode-switching mid-conversation; multi-turn lesson planning (see `docs/architecture/tutor.md`).
 - `quick_quiz`'s `study_sessions.reflection`-as-JSON-blob storage is a v1 shortcut — a dedicated `quiz_items` table would be cleaner if quizzes grow more structure (partial credit, free-response, etc).
-- OpenRouter live verification: local dev has no `OPENROUTER_API_KEY` set in `.dev.vars` as of this writing — tutor/flow tests mock the OpenRouter `fetch` call; a real key is needed to verify actual model behavior (prompt quality, model-spec emission rate) end-to-end.
+- OpenRouter live verification remains environment-specific. Automated tests use a fake credential and mocked provider responses; never copy a deployment secret into test fixtures.
 
 ---
 

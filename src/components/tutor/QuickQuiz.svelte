@@ -12,12 +12,16 @@
     preselectedKc = '',
     preselectedMinutes = 25,
     autoStart = false,
+    aiGenerationEnabled,
+    aiUnavailableReason,
   }: {
     courses?: Course[];
     preselectedCourse?: string;
     preselectedKc?: string;
     preselectedMinutes?: AvailableMinutes;
     autoStart?: boolean;
+    aiGenerationEnabled: boolean;
+    aiUnavailableReason: 'disabled' | 'provider_not_configured' | null;
   } = $props();
 
   let stage = $state<'setup' | 'loading' | 'quiz' | 'grading' | 'score' | 'error'>('setup');
@@ -106,6 +110,14 @@
     <div class="setup">
       {#if preselectedKc}
         <p class="target-note">Targeted review · {preselectedMinutes} minutes · {count} questions</p>
+      {/if}
+      {#if !aiGenerationEnabled}
+        <p class="ai-note" role="status" data-ai-feature="quiz-generation">
+          <strong>Seeded quiz mode.</strong> Questions already in the course remain available.
+          {aiUnavailableReason === 'provider_not_configured'
+            ? ' OpenRouter is not configured, so missing questions cannot be generated.'
+            : ' AI question generation is disabled in this environment.'}
+        </p>
       {/if}
       {#if !preselectedKc}
         <label>
@@ -197,4 +209,6 @@
   .error { color: var(--danger); }
   .muted { color: var(--muted); font-size: 0.9rem; }
   .target-note { margin: 0; color: var(--muted); font-size: 0.9rem; }
+  .ai-note { margin: 0; padding: 0.7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); font-size: 0.85rem; line-height: 1.4; }
+  .ai-note strong { color: var(--text); }
 </style>

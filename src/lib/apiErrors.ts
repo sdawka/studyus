@@ -5,6 +5,7 @@ import { ZodError } from 'zod';
 import { apiError } from './api';
 import { NotFoundError, ForbiddenError, ConflictError } from './services/util';
 import { NotManualEventError } from './services/events';
+import { AiFeatureUnavailableError } from './ai/capabilities';
 
 export function serviceErrorResponse(err: unknown): Response {
   if (err instanceof ZodError) {
@@ -21,6 +22,9 @@ export function serviceErrorResponse(err: unknown): Response {
   }
   if (err instanceof ForbiddenError) {
     return apiError('forbidden', err.message, 403);
+  }
+  if (err instanceof AiFeatureUnavailableError) {
+    return apiError('ai_unavailable', err.message, 503);
   }
   console.error(err);
   return apiError('internal_error', 'Something went wrong', 500);

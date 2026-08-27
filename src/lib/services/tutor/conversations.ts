@@ -23,6 +23,7 @@ import { getKcGraph, listKcMisconceptions, listKcScaffolds } from '../knowledgeM
 import { NotFoundError, requireOwnedKc } from '../util';
 import { buildSystemPrompt, modeForKcType, type AbsorbMisconception, type AbsorbPrereq, type AbsorbScaffold, type TutorContext } from './prompts';
 import { relayAsSSE, streamChatCompletion, type ChatMessage } from './openrouter';
+import { requireAiFeature } from '../../ai/capabilities';
 
 export const MAX_MESSAGES_PER_CONVERSATION = 30;
 
@@ -52,7 +53,7 @@ export class ConversationCapReachedError extends Error {
   }
 }
 
-type TutorEnv = { OPENROUTER_API_KEY: string; OPENROUTER_MODEL: string };
+type TutorEnv = { AI_FEATURES_ENABLED?: string; OPENROUTER_API_KEY?: string; OPENROUTER_MODEL: string };
 
 export async function createConversation(db: Db, userId: string, input: CreateConversationInput) {
   const kc = await requireOwnedKc(db, userId, input.kc_id);
@@ -252,6 +253,7 @@ export async function appendMessageAndStream(
   content: string,
   env: TutorEnv,
 ): Promise<ReadableStream<Uint8Array>> {
+  requireAiFeature(env, 'tutor');
   const convo = await requireOwnedConversation(db, userId, conversationId);
   const kc = await requireOwnedKc(db, userId, convo.kcId);
   const mode = convo.mode as TutorMode;

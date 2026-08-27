@@ -5,6 +5,7 @@ import { getDb } from '../../db/client';
 import { listCourses } from '../../lib/services/courses';
 import QuickQuiz from '../../components/tutor/QuickQuiz.svelte';
 import { nextMoveQuerySchema } from '../../lib/schemas/nextMove';
+import { getAiCapabilities } from '../../lib/ai/capabilities';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
@@ -14,6 +15,7 @@ const preselectedKc = Astro.url.searchParams.get('kc') ?? '';
 const parsedMinutes = nextMoveQuerySchema.safeParse({ available_minutes: Astro.url.searchParams.get('minutes') ?? undefined });
 const preselectedMinutes = parsedMinutes.success ? parsedMinutes.data.available_minutes : 25;
 const autoStart = Astro.url.searchParams.get('autostart') === '1' && preselectedKc.length > 0;
+const aiCapabilities = getAiCapabilities(env);
 ---
 
 <AppShell title="Quick Quiz">
@@ -25,6 +27,8 @@ const autoStart = Astro.url.searchParams.get('autostart') === '1' && preselected
     {preselectedKc}
     {preselectedMinutes}
     {autoStart}
+    aiGenerationEnabled={aiCapabilities.features.quiz_generation}
+    aiUnavailableReason={aiCapabilities.reason}
     client:load
   />
 </AppShell>

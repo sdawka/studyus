@@ -13,6 +13,7 @@ import {
 } from '../src/lib/services/tutor/conversations';
 
 const db = getDb(env.DB);
+const AI_ENV = { AI_FEATURES_ENABLED: 'true', OPENROUTER_API_KEY: 'test-key', OPENROUTER_MODEL: 'test-model' } as const;
 
 let userId: string;
 let courseId: string;
@@ -85,10 +86,7 @@ describe('appendMessageAndStream', () => {
     const convo = await createConversation(db, userId, { kc_id: kcId });
     mockStreamingFetch('Here is a classification question. What category is this?');
 
-    const stream = await appendMessageAndStream(db, userId, convo.id, 'Hi tutor', {
-      OPENROUTER_API_KEY: 'test-key',
-      OPENROUTER_MODEL: 'test-model',
-    });
+    const stream = await appendMessageAndStream(db, userId, convo.id, 'Hi tutor', AI_ENV);
     await drainToText(stream);
 
     const messages = await db.select().from(tutorMessages).where(eq(tutorMessages.conversationId, convo.id));
@@ -115,7 +113,7 @@ describe('appendMessageAndStream', () => {
     }
 
     await expect(
-      appendMessageAndStream(db, userId, convo.id, 'one more please', { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' }),
+      appendMessageAndStream(db, userId, convo.id, 'one more please', AI_ENV),
     ).rejects.toThrow(ConversationCapReachedError);
 
     const kcEvents = await db.select().from(events).where(eq(events.kcId, kcId));

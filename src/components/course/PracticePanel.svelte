@@ -22,8 +22,18 @@
     drillKcs: Kc[];
     openSession: OpenSession;
     rituals?: RitualOption[];
+    aiGenerationEnabled: boolean;
+    aiUnavailableReason: 'disabled' | 'provider_not_configured' | null;
   }
-  const { course, courseSlug, drillKcs, openSession, rituals = [] }: Props = $props();
+  const {
+    course,
+    courseSlug,
+    drillKcs,
+    openSession,
+    rituals = [],
+    aiGenerationEnabled,
+    aiUnavailableReason,
+  }: Props = $props();
 </script>
 
 <div class="practice-panel">
@@ -34,7 +44,12 @@
 
   <section class="section" id="quick-quiz">
     <h2>Quick quiz</h2>
-    <QuickQuiz courses={[{ id: course.id, title: course.title }]} preselectedCourse={course.id} />
+    <QuickQuiz
+      courses={[{ id: course.id, title: course.title }]}
+      preselectedCourse={course.id}
+      {aiGenerationEnabled}
+      {aiUnavailableReason}
+    />
   </section>
 
   <section class="section">

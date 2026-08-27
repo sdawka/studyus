@@ -15,6 +15,7 @@ import { getKcGraph } from '../../lib/services/knowledgeMap';
 import { NotFoundError, notFound } from '../../lib/handleNotFound';
 import AbsorbFlow from '../../components/learn/AbsorbFlow.svelte';
 import { nextMoveQuerySchema } from '../../lib/schemas/nextMove';
+import { getAiCapabilities } from '../../lib/ai/capabilities';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
@@ -31,6 +32,7 @@ try {
 }
 
 const graph = await getKcGraph(db, userId, kcId);
+const aiCapabilities = getAiCapabilities(env);
 
 const courseRows = await db
   .select({ slug: courses.slug, code: courses.code })
@@ -56,6 +58,8 @@ const course = courseRows[0];
     initialPrereqs={graph.prereqs}
     initialWarnings={graph.warnings}
     {plannedMinutes}
+    aiEnabled={aiCapabilities.features.tutor}
+    aiUnavailableReason={aiCapabilities.reason}
   />
 </AppShell>
 

@@ -8,10 +8,12 @@ import { toApi } from '../../lib/serialize';
 import type { RuntimeConversation } from '../../lib/stores/learnerRuntime';
 import { NotFoundError, notFound } from '../../lib/handleNotFound';
 import ScaffoldChat from '../../components/tutor/ScaffoldChat.svelte';
+import { getAiCapabilities } from '../../lib/ai/capabilities';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
 const kcId = Astro.params.kcId!;
+const aiCapabilities = getAiCapabilities(env);
 
 let kc;
 try {
@@ -23,19 +25,23 @@ try {
 
 const existingId = Astro.url.searchParams.get('c');
 if (!existingId) {
-  const created = await createRuntimeConversation(db, env, userId, { kc_id: kcId });
-  return Astro.redirect(`/tutor/${kcId}?c=${created.id}`);
+  if (aiCapabilities.features.tutor) {
+    const created = await createRuntimeConversation(db, env, userId, { kc_id: kcId });
+    return Astro.redirect(`/tutor/${kcId}?c=${created.id}`);
+  }
 }
 
 let conversation;
-try {
-  conversation = await getRuntimeConversation(db, env, userId, existingId);
-} catch (err) {
-  if (err instanceof NotFoundError) return notFound(Astro);
-  throw err;
+if (existingId) {
+  try {
+    conversation = await getRuntimeConversation(db, env, userId, existingId);
+  } catch (err) {
+    if (err instanceof NotFoundError) return notFound(Astro);
+    throw err;
+  }
 }
 
-const initialConversation = toApi(conversation) as unknown as RuntimeConversation;
+const initialConversation = conversation ? toApi(conversation) as unknown as RuntimeConversation : null;
 
 const MODE_LABELS: Record<string, string> = {
   recall: 'Spaced recall',
@@ -49,10 +55,24 @@ const MODE_LABELS: Record<string, string> = {
 <AppShell title={`Tutor · ${kc.name}`}>
   <div class="tutor-header">
     <h1>{kc.name}</h1>
-    <span class="mode-badge">{MODE_LABELS[conversation.mode] ?? conversation.mode}</span>
+    {conversation && <span class="mode-badge">{MODE_LABELS[conversation.mode] ?? conversation.mode}</span>}
     <p class="muted">Mastery: {kc.mastery}% · {kc.status}</p>
   </div>
-  <ScaffoldChat {initialConversation} kcId={kc.id} client:load />
+  {initialConversation ? (
+    <ScaffoldChat
+      {initialConversation}
+      kcId={kc.id}
+      aiEnabled={aiCapabilities.features.tutor}
+      aiUnavailableReason={aiCapabilities.reason}
+      client:load
+    />
+  ) : (
+    <div class="ai-gate" role="status" data-ai-feature="tutor">
+      <strong>AI tutor unavailable</strong>
+      <p>{aiCapabilities.reason === 'provider_not_configured' ? 'OpenRouter is not configured for this environment.' : 'AI tutoring is disabled in this environment.'}</p>
+      <a href="/courses">Continue with non-AI study tools</a>
+    </div>
+  )}
 </AppShell>
 
 <style>
@@ -72,4 +92,7 @@ const MODE_LABELS: Record<string, string> = {
     color: var(--muted);
     font-size: 0.9rem;
   }
+  .ai-gate { max-width: 640px; padding: 1rem; border: 1px solid var(--warn); border-radius: var(--radius-md); background: var(--warn-soft); color: var(--warn-ink); }
+  .ai-gate p { margin: 0.35rem 0 0.75rem; }
+  .ai-gate a { color: inherit; font-weight: 600; }
 </style>

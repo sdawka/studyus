@@ -1,5 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import { relayAsSSE, streamChatCompletion, type ChatMessage } from '../services/tutor/openrouter';
+import { requireAiFeature } from '../ai/capabilities';
 
 /**
  * A learner is the tenancy boundary for state that needs strict ordering. The
@@ -140,7 +141,7 @@ export class LearnerAgentConflictError extends Error {
   }
 }
 
-type LearnerAgentEnv = Pick<Cloudflare.Env, 'OPENROUTER_API_KEY' | 'OPENROUTER_MODEL'>;
+type LearnerAgentEnv = Pick<Cloudflare.Env, 'AI_FEATURES_ENABLED' | 'OPENROUTER_API_KEY' | 'OPENROUTER_MODEL'>;
 
 type ConversationRow = {
   id: string;
@@ -630,6 +631,7 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
   private async streamReply(input: StreamLearnerReplyInput): Promise<ReadableStream<Uint8Array>> {
     const conversation = this.requireConversation(input.conversationId);
     this.assertCanAppend(conversation, input.content);
+    requireAiFeature(this.env, 'tutor');
     const turnId = crypto.randomUUID();
     this.insertMessage(input.conversationId, 'user', input.content);
     this.ctx.storage.sql.exec('UPDATE conversations SET active_turn_id = ? WHERE id = ?', turnId, input.conversationId);
