@@ -10,8 +10,9 @@
 // branches/canonical/feed keys — see the content.json pipeline block below.
 //
 // Runs outside the Workers runtime (plain Node + tsx), so it shells out to
-// `wrangler d1 execute --local` with generated SQL rather than importing the
+// `wrangler d1 execute` with generated SQL rather than importing the
 // Workers-only `cloudflare:workers` module or drizzle's D1 driver directly.
+// Pass `--remote --env <name>` to target a named remote environment safely.
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
@@ -105,6 +106,11 @@ async function pbkdf2Hash(password: string): Promise<string> {
 async function main() {
   const isRemote = process.argv.includes('--remote');
   const dbFlag = isRemote ? '--remote' : '--local';
+  const envFlagIndex = process.argv.indexOf('--env');
+  const wranglerEnv = envFlagIndex === -1 ? undefined : process.argv[envFlagIndex + 1];
+  if (envFlagIndex !== -1 && (!wranglerEnv || wranglerEnv.startsWith('--'))) {
+    throw new Error('--env requires a Wrangler environment name.');
+  }
 
   const coursesPath = join(process.cwd(), 'courses', 'courses.json');
   const coursesData: CourseJson[] = JSON.parse(readFileSync(coursesPath, 'utf-8'));
@@ -935,7 +941,16 @@ async function main() {
 
   execFileSync(
     'npx',
-    ['wrangler', 'd1', 'execute', 'studyus', dbFlag, '--file', sqlPath],
+    [
+      'wrangler',
+      'd1',
+      'execute',
+      'DB',
+      dbFlag,
+      ...(wranglerEnv ? ['--env', wranglerEnv] : []),
+      '--file',
+      sqlPath,
+    ],
     { stdio: 'inherit' },
   );
 

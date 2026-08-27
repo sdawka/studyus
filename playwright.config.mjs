@@ -2,6 +2,8 @@ import { defineConfig } from '@playwright/test';
 import { loadClerkE2EEnv, CLERK_AUTH_STATE_PATH } from './scripts/lib/clerk-e2e-auth.mjs';
 
 const baseURL = process.env.E2E_BASE_URL || 'http://127.0.0.1:4321';
+const baseHostname = new URL(baseURL).hostname;
+const shouldStartLocalServer = baseHostname === '127.0.0.1' || baseHostname === 'localhost';
 loadClerkE2EEnv();
 
 export default defineConfig({
@@ -31,7 +33,7 @@ export default defineConfig({
       use: { storageState: CLERK_AUTH_STATE_PATH, trace: 'off' },
     },
   ],
-  webServer: {
+  webServer: shouldStartLocalServer ? {
     // Astro 7 auto-detects agent environments and otherwise detaches `astro
     // dev` into the background. Playwright must own a foreground process so
     // it can observe startup failures and reliably stop the server afterward.
@@ -40,5 +42,5 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: true,
     timeout: 120_000,
-  },
+  } : undefined,
 });

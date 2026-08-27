@@ -42,5 +42,49 @@
   },
   "triggers": {
     "crons": ["*/5 * * * *"]
+  },
+  "env": {
+    "staging": {
+      "workers_dev": false,
+      "routes": [
+        {
+          "pattern": "staging.studyus.app",
+          "custom_domain": true
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "studyus-staging",
+          "database_id": "3fa2bcce-5f22-4f5f-b51b-e57dc394d36b",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "UPLOADS",
+          "bucket_name": "studyus-staging-uploads"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "LEARNER_AGENT",
+            "class_name": "LearnerAgent"
+          }
+        ]
+      },
+      "vars": {
+        "OPENROUTER_MODEL": "openrouter/auto"
+      },
+      "observability": {
+        "traces": {
+          "enabled": true
+        }
+      },
+      "triggers": {
+        "crons": []
+      }
+    }
   }
 }
