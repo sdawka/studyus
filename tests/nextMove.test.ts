@@ -109,7 +109,7 @@ describe('rankNextMoves', () => {
       NOW,
     );
     expect(result.recommendation?.method).toBe('understand');
-    expect(result.recommendation?.action_href).toBe('/learn/review?minutes=25');
+    expect(result.recommendation?.action_href).toBe('/learn/review?minutes=25&entry=next_move');
   });
 
   it('keeps an exam-linked mastered KC eligible but excludes generic mastered KCs', () => {

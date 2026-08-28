@@ -22,6 +22,7 @@ const userId = Astro.locals.user!.id;
 const kcId = Astro.params.kcId!;
 const parsedMinutes = nextMoveQuerySchema.safeParse({ available_minutes: Astro.url.searchParams.get('minutes') ?? undefined });
 const plannedMinutes = parsedMinutes.success ? parsedMinutes.data.available_minutes : 25;
+const tutorEntry = Astro.url.searchParams.get('entry') === 'next_move' ? 'next_move' : 'absorb';
 
 let kc;
 try {
@@ -58,6 +59,7 @@ const course = courseRows[0];
     initialPrereqs={graph.prereqs}
     initialWarnings={graph.warnings}
     {plannedMinutes}
+    {tutorEntry}
     aiEnabled={aiCapabilities.features.tutor}
     aiUnavailableReason={aiCapabilities.reason}
   />

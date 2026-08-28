@@ -83,6 +83,75 @@ async function tutorSessionEvents() {
 }
 
 describe('runtime tutor cap finalization', () => {
+  it('queues content-free message analytics only after the learner turn is durable', async () => {
+    const conversation = await createRuntimeConversation(db, env, userId, { kc_id: kcId, mode: 'recall' });
+    const pending: Promise<unknown>[] = [];
+    const analyticsBodies: Record<string, unknown>[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input, init) => {
+      if (String(input).includes('posthog.com')) {
+        analyticsBodies.push(JSON.parse(String(init?.body)));
+        return new Response(null, { status: 200 });
+      }
+      return new Response(upstreamReply(), { status: 200 });
+    }));
+    const analyticsEnv = Object.assign(Object.create(env), {
+      ANALYTICS_ENABLED: 'true',
+      POSTHOG_HOST: 'https://us.i.posthog.com',
+      POSTHOG_PROJECT_TOKEN: 'phc_test',
+      ANALYTICS_EXCLUDED_USER_IDS: '',
+    }) as Cloudflare.Env;
+
+    const stream = await streamRuntimeTutorReply(db, analyticsEnv, userId, conversation.id, 'my private explanation', {
+      request: new Request('https://studyus.app/api/v1/tutor/conversations/id/messages', {
+        headers: { cookie: 'studyus_session_id=session-message' },
+      }),
+      execution: { waitUntil: (promise) => pending.push(promise) },
+      analyticsOptOut: false,
+      surface: '/tutor/[kcId]',
+    });
+    const durable = await (await getLearnerAgentForUser(env, userId)).getConversation(conversation.id);
+    expect(durable.messages[0]).toMatchObject({ role: 'user', content: 'my private explanation' });
+    await drain(stream);
+    await Promise.all(pending);
+
+    expect(analyticsBodies).toHaveLength(1);
+    expect(analyticsBodies[0]).toMatchObject({
+      event: 'tutor_message_sent',
+      properties: {
+        conversation_id: conversation.id,
+        session_id: 'session-message',
+        surface: '/tutor/[kcId]',
+        turn_index: 1,
+      },
+    });
+    expect(JSON.stringify(analyticsBodies)).not.toContain('my private explanation');
+  });
+
+  it('accepts the durable tutor turn but schedules no analytics under request DNT', async () => {
+    const conversation = await createRuntimeConversation(db, env, userId, { kc_id: kcId, mode: 'recall' });
+    mockReply();
+    const waitUntil = vi.fn();
+    const analyticsEnv = Object.assign(Object.create(env), {
+      ANALYTICS_ENABLED: 'true',
+      POSTHOG_HOST: 'https://us.i.posthog.com',
+      POSTHOG_PROJECT_TOKEN: 'phc_test',
+      ANALYTICS_EXCLUDED_USER_IDS: '',
+    }) as Cloudflare.Env;
+    await drain(await streamRuntimeTutorReply(db, analyticsEnv, userId, conversation.id, 'durable but private', {
+      request: new Request('https://studyus.app/api/v1/tutor/conversations/id/messages', {
+        headers: { cookie: 'studyus_session_id=session-dnt', DNT: '1' },
+      }),
+      execution: { waitUntil },
+      analyticsOptOut: false,
+      surface: '/tutor/[kcId]',
+    }));
+
+    expect(waitUntil).not.toHaveBeenCalled();
+    const learner = await getLearnerAgentForUser(env, userId);
+    expect((await learner.getConversation(conversation.id)).messages[0]).toMatchObject({ content: 'durable but private' });
+    expect((await learner.getSnapshot()).nextAlarmAt).toBeNull();
+  });
+
   it('leaves a standard conversation active one message below its cap', async () => {
     const conversation = await createRuntimeConversation(db, env, userId, { kc_id: kcId, mode: 'recall' });
     const agent = await fillConversation(conversation.id, MAX_MESSAGES_PER_CONVERSATION - 3);

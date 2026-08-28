@@ -14,6 +14,7 @@
   import InterestRanker from './InterestRanker.svelte';
   import ScaffoldChat from '../tutor/ScaffoldChat.svelte';
   import type { KcGraph, PrereqNode, TargetKc } from './types';
+  import type { TutorEntry } from '../../lib/analytics/tutor';
 
   interface Props {
     kcId: string;
@@ -23,8 +24,9 @@
     plannedMinutes?: 15 | 25 | 50;
     aiEnabled: boolean;
     aiUnavailableReason: 'disabled' | 'provider_not_configured' | null;
+    tutorEntry?: Extract<TutorEntry, 'absorb' | 'next_move'>;
   }
-  const { kcId, initialKc, initialPrereqs, initialWarnings, plannedMinutes = 25, aiEnabled, aiUnavailableReason }: Props = $props();
+  const { kcId, initialKc, initialPrereqs, initialWarnings, plannedMinutes = 25, aiEnabled, aiUnavailableReason, tutorEntry = 'absorb' }: Props = $props();
 
   type Stage = 'map' | 'verify' | 'rank' | 'chat';
   let stage = $state<Stage>('map');
@@ -127,7 +129,7 @@
       <p class="status">Starting your session…</p>
     {/if}
   {:else if stage === 'chat' && conversation}
-    <ScaffoldChat initialConversation={conversation} kcId={kcId} {aiEnabled} {aiUnavailableReason} />
+    <ScaffoldChat initialConversation={conversation} kcId={kcId} {aiEnabled} {aiUnavailableReason} entry={tutorEntry} />
   {/if}
 </div>
 

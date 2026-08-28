@@ -9,10 +9,23 @@ import { createRuntimeTutorSessionEvent } from '../services/events';
 import { buildTutorSystemPrompt, ConversationCapReachedError, messageCapForMode } from '../services/tutor/conversations';
 import { modeForKcType } from '../services/tutor/prompts';
 import { NotFoundError, requireOwnedKc } from '../services/util';
-import { createLearnerReplyStreamRequest, getLearnerAgentForUser, type LearnerConversation } from './learnerAgent';
+import { createLearnerReplyStreamRequest, createLearnerTutorTurnAcceptanceRequest, getLearnerAgentForUser, type AcceptedLearnerTutorTurn, type LearnerConversation } from './learnerAgent';
 import { requireAiFeature } from '../ai/capabilities';
+import { analyticsGate, resolveAnalyticsConfig } from '../analytics/config';
+import { analyticsRequestCorrelation, queueBehavioralEvent, type AnalyticsWaitUntil } from '../analytics/server';
+import type { TutorTurnAnalyticsCorrelation } from './learnerAgent';
 
-type RuntimeEnv = Pick<Cloudflare.Env, 'LEARNER_AGENT' | 'AI_FEATURES_ENABLED' | 'OPENROUTER_API_KEY'>;
+type RuntimeEnv = Pick<
+  Cloudflare.Env,
+  'LEARNER_AGENT' | 'AI_FEATURES_ENABLED' | 'OPENROUTER_API_KEY' | 'ANALYTICS_ENABLED' | 'POSTHOG_HOST' | 'POSTHOG_PROJECT_TOKEN' | 'ANALYTICS_EXCLUDED_USER_IDS'
+>;
+
+export type TutorTurnAnalyticsRequest = {
+  request: Request;
+  execution: AnalyticsWaitUntil;
+  analyticsOptOut: boolean;
+  surface: TutorTurnAnalyticsCorrelation['surface'];
+};
 
 async function findConversation(agent: Awaited<ReturnType<typeof getLearnerAgentForUser>>, conversationId: string) {
   const conversation = await agent.findConversation(conversationId);
@@ -218,7 +231,14 @@ export async function getLearnerRuntimeSnapshot(db: Db, env: RuntimeEnv, userId:
   };
 }
 
-export async function streamRuntimeTutorReply(db: Db, env: RuntimeEnv, userId: string, conversationId: string, content: string) {
+export async function streamRuntimeTutorReply(
+  db: Db,
+  env: RuntimeEnv,
+  userId: string,
+  conversationId: string,
+  content: string,
+  analyticsRequest?: TutorTurnAnalyticsRequest,
+) {
   requireAiFeature(env, 'tutor');
   const agent = await agentFor(db, env, userId);
   const conversation = await findConversation(agent, conversationId);
@@ -231,8 +251,56 @@ export async function streamRuntimeTutorReply(db: Db, env: RuntimeEnv, userId: s
     throw new ConversationCapReachedError(messageCap);
   }
   const systemPrompt = await buildTutorSystemPrompt(db, userId, conversation.kcId, mode, conversation.details as Record<string, unknown>);
-  const response = await agent.fetch(createLearnerReplyStreamRequest({ conversationId, content, systemPrompt, messageCap }));
-  if (!response.ok || !response.body) throw new Error(await response.text());
+  const correlation = analyticsRequest ? analyticsRequestCorrelation(analyticsRequest.request) : {};
+  const analyticsAllowed = Boolean(
+    analyticsRequest &&
+    correlation.session_id &&
+    analyticsGate(resolveAnalyticsConfig(env), {
+      request: analyticsRequest.request,
+      user_id: userId,
+      analytics_opt_out: analyticsRequest.analyticsOptOut,
+    }),
+  );
+  const acceptanceResponse = await agent.fetch(
+    createLearnerTutorTurnAcceptanceRequest({
+      conversationId,
+      content,
+      ...(analyticsAllowed ? { analytics: { sessionId: correlation.session_id!, surface: analyticsRequest!.surface } } : {}),
+    }),
+  );
+  if (!acceptanceResponse.ok) throw new Error(await acceptanceResponse.text());
+  const accepted = await acceptanceResponse.json<AcceptedLearnerTutorTurn>();
+  if (analyticsAllowed) {
+    queueBehavioralEvent(
+      {
+        env,
+        request: analyticsRequest!.request,
+        execution: analyticsRequest!.execution,
+        user_id: userId,
+        analytics_opt_out: analyticsRequest!.analyticsOptOut,
+      },
+      {
+        name: 'tutor_message_sent',
+        user_id: userId,
+        session_id: correlation.session_id!,
+        surface: analyticsRequest!.surface,
+        ts: accepted.acceptedAt,
+        conversation_id: conversationId,
+        turn_index: accepted.turnIndex,
+      },
+    );
+  }
+  let response: Response;
+  try {
+    response = await agent.fetch(createLearnerReplyStreamRequest({ conversationId, turnId: accepted.turnId, systemPrompt, messageCap }));
+  } catch (error) {
+    await agent.cancelStreamingReply(conversationId);
+    throw error;
+  }
+  if (!response.ok || !response.body) {
+    await agent.cancelStreamingReply(conversationId);
+    throw new Error(await response.text());
+  }
   return finaliseAfterStream(
     response.body,
     async () => {

@@ -53,7 +53,7 @@
         {#each principleKcs as kc (kc.id)}
           <div class="model-card">
             {#if aiEnabled}
-              <a class="model-link" href={`/tutor/${kc.id}`}>
+              <a class="model-link" href={`/tutor/${kc.id}?entry=course`}>
                 <span class="kc-type">Principle</span>
                 <span class="kc-name">{kc.name}</span>
               </a>
@@ -69,7 +69,7 @@
         {#each conceptKcs as kc (kc.id)}
           <div class="model-card secondary">
             {#if aiEnabled}
-              <a class="model-link" href={`/tutor/${kc.id}`}>
+              <a class="model-link" href={`/tutor/${kc.id}?entry=course`}>
                 <span class="kc-type">Concept</span>
                 <span class="kc-name">{kc.name}</span>
               </a>
@@ -96,7 +96,7 @@
       <ul class="convo-list">
         {#each conversations as c (c.id)}
           <li>
-            <a class="convo-row" href={`/tutor/${c.kcId}?c=${encodeURIComponent(c.id)}`}>
+            <a class="convo-row" href={`/tutor/${c.kcId}?c=${encodeURIComponent(c.id)}&entry=course`}>
               <span class="kc-name">{c.kcName}</span>
               <span class="mode-badge">{MODE_LABELS[c.mode] ?? c.mode}</span>
               <span class:active={c.status === 'active'} class="status-badge">{c.status === 'active' ? 'In progress' : 'Completed'}</span>
