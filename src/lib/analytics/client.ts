@@ -1,5 +1,6 @@
 import type { CaptureResult } from 'posthog-js';
 import { behavioralSchemaFor, enrichBehavioralEvent, type BehavioralEventInput } from './events';
+import { analyticsIdentityBootstrap, analyticsPersonProperties } from './identity';
 import { clearAnalyticsState, persistAnalyticsCookies, resolveAnalyticsSession, type AnalyticsSession } from './session';
 import { capturePageLifecycle } from './daily';
 
@@ -8,6 +9,7 @@ export type BrowserAnalyticsBootstrap = {
   host?: string;
   token?: string;
   user_id?: string;
+  trial_session_id?: string;
   analytics_opt_out: boolean;
   excluded: boolean;
   surface: string;
@@ -59,13 +61,20 @@ function viewport(): 'mobile' | 'tablet' | 'desktop' {
   return 'desktop';
 }
 
-function sanitizeCapture(result: CaptureResult | null): CaptureResult | null {
+export function sanitizeAnalyticsCapture(result: CaptureResult | null): CaptureResult | null {
   if (!result) return null;
   const keptProtocol = Object.fromEntries(Object.entries(result.properties).filter(([key]) => protocolProperties.has(key)));
   keptProtocol.$geoip_disable = true;
 
   if (result.event === '$identify') {
-    return { ...result, properties: keptProtocol, $set: undefined, $set_once: undefined, $unset: undefined };
+    const trialSessionId = typeof result.$set?.trial_session_id === 'string' ? result.$set.trial_session_id : undefined;
+    return {
+      ...result,
+      properties: keptProtocol,
+      $set: analyticsPersonProperties(trialSessionId),
+      $set_once: undefined,
+      $unset: undefined,
+    };
   }
 
   const schema = behavioralSchemaFor(result.event);
@@ -132,11 +141,13 @@ export async function initializeAnalytics(config: BrowserAnalyticsBootstrap): Pr
       opt_out_capturing_by_default: false,
       person_profiles: 'identified_only',
       property_denylist: ['$current_url', '$referrer', '$referring_domain', '$pathname', '$host'],
-      bootstrap: config.user_id ? undefined : { distinctID: session.anonymous_id, isIdentifiedID: false },
-      before_send: sanitizeCapture,
+      // Pre-auth initialization starts from the app-owned anonymous identity.
+      // Authenticated loads preserve PostHog's persisted identity before identify.
+      bootstrap: config.user_id ? undefined : analyticsIdentityBootstrap(session.anonymous_id),
+      before_send: sanitizeAnalyticsCapture,
     });
     posthog.opt_in_capturing({ captureEventName: false });
-    if (config.user_id) posthog.identify(config.user_id);
+    if (config.user_id) posthog.identify(config.user_id, analyticsPersonProperties(config.trial_session_id));
   }
 
   capturePageLifecycle(session, config.surface, captureBehavioralEvent);

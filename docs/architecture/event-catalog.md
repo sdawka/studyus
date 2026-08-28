@@ -231,15 +231,16 @@ Ordered by severity. D1–D4 and D7–D8 were fixed on 2026-08-28 (branch
 
 ---
 
-## Behavioral stream: recorded design (foundation and daily-loop emitters implemented)
+## Behavioral stream: implementation catalog
 
-### Architecture decision (foundation implemented; instrumentation partial)
+### Architecture decision (foundation, acquisition/activation, and daily loop implemented)
 
 **PostHog, deliberate capture only** — no autocapture, no session replay.
 `posthog-js` for UI-only events; server-side capture via plain HTTP `/i/v0/e/`
 (single) and `/batch/` with `ctx.waitUntil` for server-truth events (the Node SDK's batching doesn't fit the
-Workers lifecycle). `demo_funnel_events` D1 stays as-is (mirror-forward to PostHog,
-no backfill). Rejected: a D1 `behavioral_events` table (recreates the analysis layer
+Workers lifecycle). `demo_funnel_events` D1 stays as-is and newly inserted rows are
+mirror-forwarded once through `/batch/`; replays and historical rows are not
+forwarded. Rejected: a D1 `behavioral_events` table (recreates the analysis layer
 from scratch, unbounded hot table beside learner reads) and Workers Analytics Engine
 (sampling, ~90-day retention, no joins — wrong for semester-long per-user sequences).
 
@@ -251,6 +252,16 @@ ids, enums, counts, durations — no free text (tutor messages, notes, quiz answ
 enforced by a shared Zod property schema per event, mirroring the `EVENT_TYPES`
 discipline. Honor a `settings.analytics_opt_out` flag before every capture; exclude
 the developer's own user id server-side.
+
+**Implemented acquisition/activation slice (2026-08-28):** public demo clients
+reuse the foundation's device/app-session state and do not call D1 under DNT.
+The Clerk bridge exposes creation truth, so `signup_completed` fires only for a
+new local row with a coarse method. Browser identify starts from that same
+anonymous device identity and permits only the validated `trial_session_id`
+person property. A successful, non-replayed onboarding course commit queues the
+three activation events together in canonical order. Counts/path/duration are
+structural; filenames, course/KC names, Clerk identifiers, and provider values
+never enter the behavioral stream.
 
 ### Canonical behavioral events (~30; snake_case past-tense, matching domain style)
 
@@ -367,8 +378,9 @@ Invariant: stage monotonic within a visit; stage 4 without 2–3 legal only when
 
 ## TODO
 
-- Wire the remaining approved product-specific behavioral emitters onto the implemented
-  schema/session/privacy/transport foundation, including the `demo_funnel_events`
-  mirror-forward. Daily page/app-session lifecycle and Next Move are already live.
+- Wire the remaining approved engagement, learning-surface, and retention
+  emitters onto the implemented foundation. Acquisition/activation and the
+  `demo_funnel_events` mirror-forward are complete; daily page/app-session
+  lifecycle and Next Move are also live.
 - After implementation, add the analysis conventions here (source filters, seed/dev
   exclusion, funnel queries).

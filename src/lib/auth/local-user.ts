@@ -39,7 +39,7 @@ function fallbackEmail(clerkUserId: string): string {
  */
 export async function resolveLocalUser(db: Db, identity: ClerkIdentity) {
   const byClerkId = await db.select().from(users).where(eq(users.clerkUserId, identity.id)).limit(1);
-  if (byClerkId[0]) return byClerkId[0];
+  if (byClerkId[0]) return { user: byClerkId[0], wasCreated: false };
 
   if (identity.externalId) {
     const byLegacyId = await db.select().from(users).where(eq(users.id, identity.externalId)).limit(1);
@@ -49,7 +49,7 @@ export async function resolveLocalUser(db: Db, identity: ClerkIdentity) {
         throw new ClerkIdentityConflictError('This learner is already linked to another Clerk account.');
       }
       await db.update(users).set({ clerkUserId: identity.id }).where(eq(users.id, legacyUser.id));
-      return { ...legacyUser, clerkUserId: identity.id };
+      return { user: { ...legacyUser, clerkUserId: identity.id }, wasCreated: false };
     }
   }
 
@@ -70,5 +70,5 @@ export async function resolveLocalUser(db: Db, identity: ClerkIdentity) {
   // The insert was acknowledged and id is generated locally; this narrows the
   // return type without manufacturing a partial user object.
   if (!created[0]) throw new Error('Could not provision the local learner profile.');
-  return created[0];
+  return { user: created[0], wasCreated: true };
 }

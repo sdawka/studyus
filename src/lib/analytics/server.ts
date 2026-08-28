@@ -8,6 +8,7 @@ export type AnalyticsWaitUntil = Pick<ExecutionContext, 'waitUntil'>;
 export type AnalyticsTransportOptions = {
   fetcher?: typeof fetch;
   timeout_ms?: number;
+  force_batch?: boolean;
   warn?: (message: string, details: { event_count: number; reason: string }) => void;
 };
 
@@ -16,6 +17,8 @@ export type ServerAnalyticsContext = Omit<AnalyticsGateInput, 'request' | 'analy
   execution: AnalyticsWaitUntil;
   request: Request;
   analytics_opt_out: boolean;
+  /** Validated request correlation for clients that cannot rely on Cookie parsing. */
+  anonymous_id?: string;
 };
 
 function ingestionUrl(host: string, path: '/i/v0/e/' | '/batch/'): string {
@@ -45,7 +48,7 @@ async function deliver(
   options: AnalyticsTransportOptions,
 ): Promise<void> {
   const fetcher = options.fetcher ?? fetch;
-  const single = events.length === 1;
+  const single = events.length === 1 && !options.force_batch;
   const wires = events
     .map((event) => wireEvent(event, anonymousId))
     .filter((wire): wire is NonNullable<typeof wire> => Boolean(wire));
@@ -90,7 +93,7 @@ export function queueBehavioralEvents(
   const events = parsed.flatMap((result) => (result.success ? [result.data] : []));
   if (events.some((event) => event.user_id && config.excluded_user_ids.has(event.user_id))) return false;
   if (context.user_id && events.some((event) => event.user_id && event.user_id !== context.user_id)) return false;
-  const anonymousId = readAnalyticsCorrelation(context.request.headers.get('cookie')).anonymous_id;
+  const anonymousId = context.anonymous_id ?? readAnalyticsCorrelation(context.request.headers.get('cookie')).anonymous_id;
   if (events.some((event) => !event.user_id) && !anonymousId) return false;
   const task = deliver(config.host, config.token, events, anonymousId, options).catch((error: unknown) => {
     (options.warn ?? console.warn)('Behavioral analytics delivery failed', {

@@ -112,10 +112,17 @@ summaries, and assessment date decisions.
   Authored exercise answers, scaffold bodies, and misconception corrections are
   never sent to the browser.
 - `POST /api/v1/onboarding/import-demo` validates and atomically imports the
-  safe subset of a browser draft.
+  safe subset of a browser draft. After a newly successful course commit, it
+  queues the ordered behavioral sequence `onboarding_path_chosen` →
+  `onboarding_map_reviewed` → `onboarding_completed_auth`; an idempotent replay
+  never recaptures it. Course/KC counts are derived from committed rows and
+  duration begins at the first authenticated onboarding render via an opaque,
+  HttpOnly, SameSite cookie.
 - `POST /api/public/demo-events` accepts a strict batch of allow-listed funnel
   events, rejects arbitrary payload fields, ignores events outside the seven-day
   window, deduplicates event ids, and caps each session at 100 accepted events.
+  Analytics-aware clients add anonymous/app-session correlation UUIDs; only
+  newly inserted D1 rows are mirror-forwarded to PostHog, without backfill.
 - `hasUsableCourse`, `getOnboardingState`, and `importDemoSetup` are the shared
   server boundaries for the gate and commit behavior.
 

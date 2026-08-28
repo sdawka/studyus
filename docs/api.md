@@ -63,7 +63,8 @@ true only when `onboarded_at` and the meaningful-KC invariant both hold.
 ### POST /onboarding/import-demo
 
 Accepts the strict version-1 browser draft subset: `draft_id`, optional learner
-context, learning preferences, and up to five `CourseSetupProposal` objects.
+context, learning preferences, up to five `CourseSetupProposal` objects, and
+bounded structural `review_metrics` counts (`renamed`, `reordered`, `excluded`).
 Proposals marked `source.kind = simulated` are ignored. A single idempotent D1
 batch creates the real term/course content and returns
 `{ complete, course_id, course_slug, imported }`; repeated learner/draft pairs
@@ -88,10 +89,15 @@ does not return exercise answers, scaffold bodies, or misconception corrections.
 ### POST /api/public/demo-events
 
 Public, outside the `/api/v1` base. Accepts at most 20 strict allow-listed
-funnel events per request. It stores structural fields only, ignores timestamps
+funnel events per request. Existing clients may continue to send only `events`;
+analytics-aware clients may additionally send top-level UUIDs `anonymous_id`
+and `app_session_id`. It stores structural fields only, ignores timestamps
 outside seven days, deduplicates event UUIDs, and caps a browser session at 100
-accepted events. Arbitrary values such as institution, course title, filename,
-or document text are rejected by the strict schema.
+accepted events. Only rows actually inserted are mirror-forwarded once to
+PostHog `/batch/`; replays and historical rows are never mirrored. DNT suppresses
+the request client-side and is also honored at the route boundary. Arbitrary
+values such as institution, course title, filename, or document text are
+rejected by the strict schema.
 
 ---
 

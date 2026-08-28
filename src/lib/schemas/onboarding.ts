@@ -118,6 +118,17 @@ export const demoImportSchema = demoDraftSchema.pick({
 });
 export type DemoImportInput = z.infer<typeof demoImportSchema>;
 
+export const onboardingReviewMetricsSchema = z.strictObject({
+  renamed: z.number().int().min(0).max(100_000),
+  reordered: z.number().int().min(0).max(100_000),
+  excluded: z.number().int().min(0).max(100_000),
+});
+
+export const onboardingCommitSchema = demoImportSchema.extend({
+  review_metrics: onboardingReviewMetricsSchema,
+});
+export type OnboardingCommitInput = z.infer<typeof onboardingCommitSchema>;
+
 export const DEMO_FUNNEL_EVENTS = [
   'landing_try_clicked',
   'setup_step_completed',
@@ -142,5 +153,8 @@ export const demoFunnelEventSchema = z.strictObject({
 });
 
 export const demoFunnelBatchSchema = z.strictObject({
+  anonymous_id: z.string().uuid().optional(),
+  app_session_id: z.string().uuid().optional(),
   events: z.array(demoFunnelEventSchema).min(1).max(20),
 });
+export type DemoFunnelBatchInput = z.infer<typeof demoFunnelBatchSchema>;

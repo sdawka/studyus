@@ -1,6 +1,7 @@
 ---
 import { env } from 'cloudflare:workers';
 import { resolveAnalyticsConfig } from '../lib/analytics/config';
+import { readTrialHandoff } from '../lib/analytics/session';
 
 interface Props {
   userId?: string;
@@ -9,11 +10,13 @@ interface Props {
 
 const { userId, analyticsOptOut = false } = Astro.props;
 const config = resolveAnalyticsConfig(env);
+const trialSessionId = userId ? readTrialHandoff(Astro.request.headers.get('cookie')) : undefined;
 const browserConfig = {
   enabled: config.enabled,
   host: config.host,
   token: config.token,
   user_id: userId,
+  trial_session_id: trialSessionId,
   analytics_opt_out: analyticsOptOut,
   excluded: Boolean(userId && config.excluded_user_ids.has(userId)),
   surface: Astro.routePattern,

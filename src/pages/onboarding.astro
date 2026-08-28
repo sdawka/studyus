@@ -1,5 +1,21 @@
 ---
 import TrialLayout from '../layouts/TrialLayout.astro';
 import OnboardingSetup from '../components/onboarding/OnboardingSetup.svelte';
+import {
+  createOnboardingStartedToken,
+  ONBOARDING_STARTED_COOKIE,
+  readOnboardingStartedAt,
+} from '../lib/analytics/onboarding';
+
+const existingStartedAt = readOnboardingStartedAt(Astro.cookies.get(ONBOARDING_STARTED_COOKIE)?.value);
+if (!existingStartedAt) {
+  Astro.cookies.set(ONBOARDING_STARTED_COOKIE, createOnboardingStartedToken(), {
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60,
+    path: '/',
+    sameSite: 'lax',
+    secure: Astro.url.protocol === 'https:',
+  });
+}
 ---
 <TrialLayout title="Set up studyus"><OnboardingSetup client:load /></TrialLayout>

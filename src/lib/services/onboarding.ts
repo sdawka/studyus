@@ -170,7 +170,13 @@ export async function importDemoSetup(db: Db, userId: string, input: DemoImportI
   if (prior[0]) {
     const existingCourse = prior[0].courseId
       ? await db.select({ slug: courses.slug }).from(courses).where(eq(courses.id, prior[0].courseId)).limit(1) : [];
-    return { ...(await getOnboardingState(db, userId)), course_id: prior[0].courseId, course_slug: existingCourse[0]?.slug ?? null, imported: false };
+    return {
+      ...(await getOnboardingState(db, userId)),
+      course_id: prior[0].courseId,
+      course_slug: existingCourse[0]?.slug ?? null,
+      imported: false,
+      behavioral: null,
+    };
   }
 
   const userRows = await db.select().from(users).where(eq(users.id, userId)).limit(1);
@@ -194,6 +200,7 @@ export async function importDemoSetup(db: Db, userId: string, input: DemoImportI
   const termId = input.context ? crypto.randomUUID() : null;
   const createdCourseIds: string[] = [];
   const createdCourseSlugs: string[] = [];
+  const committedProposals: CourseSetupProposal[] = [];
   const statements: BatchItem<'sqlite'>[] = [];
   const kcIdByTemplateKey = new Map<string, string>();
 
@@ -229,6 +236,7 @@ export async function importDemoSetup(db: Db, userId: string, input: DemoImportI
     const courseSlug = safeSlug(courseCode, userId, input.draft_id, courseIndex);
     createdCourseIds.push(courseId);
     createdCourseSlugs.push(courseSlug);
+    committedProposals.push(proposal);
     statements.push(db.insert(courses).values({
       id: courseId, userId, code: courseCode, templateId: proposal.template_id, slug: courseSlug,
       templateRevision: reviewedRevisions.get(proposal),
@@ -369,5 +377,16 @@ export async function importDemoSetup(db: Db, userId: string, input: DemoImportI
     course_id: createdCourseIds[0] ?? null,
     course_slug: createdCourseSlugs[0] ?? null,
     imported: createdCourseIds.length > 0,
+    behavioral: createdCourseIds.length > 0 ? {
+      completed_at: now,
+      path: committedProposals[0]?.source.kind === 'upload'
+        ? 'document' as const
+        : committedProposals[0]?.source.kind === 'template'
+          ? 'template' as const
+          : 'manual' as const,
+      template_id: committedProposals.length === 1 ? committedProposals[0]?.template_id : undefined,
+      course_count: createdCourseIds.length,
+      kc_count: committedProposals.reduce((total, proposal) => total + meaningfulKcs(proposal).length, 0),
+    } : null,
   };
 }

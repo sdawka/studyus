@@ -124,6 +124,12 @@ export const POST: APIRoute = async (context) => {
 };
 ```
 
+Behavioral delivery uses this context only after the business mutation has
+committed. Server-truth events are schema-validated synchronously, while the
+bounded PostHog fetch is owned by `cfContext.waitUntil()` and can never change
+the business response. The public demo route uses D1 `RETURNING` as the mirror
+boundary, so only rows newly inserted by that request reach `/batch/`.
+
 ## Local Development: workerd + .wrangler/state
 
 ### Dev Server
