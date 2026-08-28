@@ -61,7 +61,7 @@ describe('onboarding import', () => {
     expect(await db.select().from(academicTerms).where(eq(academicTerms.userId, userId))).toHaveLength(1);
     expect(await db.select().from(courses).where(eq(courses.userId, userId))).toHaveLength(1);
     expect(await db.select().from(kcs)).toHaveLength(2);
-    expect((await db.select().from(events).where(eq(events.userId, userId)))[0].type).toBe('course_added');
+    expect((await db.select().from(events).where(eq(events.userId, userId)))[0]).toMatchObject({ type: 'course_added', source: 'system' });
   });
 
   it('is idempotent for repeated auth redirects or submissions', async () => {

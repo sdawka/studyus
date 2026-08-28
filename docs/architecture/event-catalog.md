@@ -28,13 +28,16 @@ see Defect D7.)
 
 ## Domain stream: catalog
 
-Sources: `manual | session | tutor | seed` (`src/lib/schemas/events.ts:84`). Role flags
+Sources: `manual | session | tutor | seed | system` (`src/lib/schemas/events.ts:84`;
+`system` = server emissions inside atomic batches, e.g. onboarding's `course_added`).
+Role flags
 (IE = instructional, AE = assessment) are derived exclusively from type via
 `EVENT_ROLE_FLAGS` (`src/lib/schemas/events.ts:52`).
 
-The fold reads **only** these payload keys (`src/lib/services/mastery.ts:70-77`):
-`correct` (bool), `correctness` (0–1), `score` (0–100), `self_rating` (1–5); any AE
-event carrying none of them folds at the neutral `DEFAULT_AE_SUCCESS = 0.7`.
+The fold reads **only** these payload keys (`src/lib/services/mastery.ts` `eventSuccess`):
+`correct` (bool), `correctness` (0–1, reserved — no emitter yet), `score` (0–100),
+`self_rating` (1–5), `final_rating` (1–5, tutor sessions); any AE event carrying none
+of them folds at the neutral `MASTERY_CONSTANTS.DEFAULT_AE_SUCCESS` (0.7, `mastery.ts:37`).
 
 ### Emitted today
 
@@ -49,10 +52,10 @@ event carrying none of them folds at the neutral `DEFAULT_AE_SUCCESS = 0.7`.
 | `practice_done` | IE/AE | `sessions.ts:124-130` (completion fallback type, one per touched KC) | `PATCH /sessions/:id/complete` | `{session_id}` — **no outcome** | nothing → 0.7 |
 | `retrieval_practice` | IE/AE | `quick_quiz.ts:317-327`, `exercise_attempt.ts:70-79`, `exercise.ts:218` (all source `'tutor'`); manual; sessions | Quiz/exercise graded; self-log | `{correct, session_id?/exercise_id?, channel}` | `correct` |
 | `placement_probe` / `diagnostic_probe` | –/AE | `domain/pedagogy/exercise.ts:218-235` `recordExerciseEvidence` only (caller-supplied `event_id` dedupe) | Agentic channel records probe outcome | `{correct, exercise_id, misconception_id, purpose, channel}` | `correct` |
-| `tutor_session` | IE/AE | `events.ts:102-167` `createRuntimeTutorSessionEvent` (ledger-idempotent); legacy `tutor/conversations.ts:309-317` | Tutor conversation ends | `{conversation_id, mode, final_rating?}` | **nothing → 0.7** (Defect D1) |
+| `tutor_session` | IE/AE | `events.ts:102-167` `createRuntimeTutorSessionEvent` (ledger-idempotent); legacy `tutor/conversations.ts:309-317` | Tutor conversation ends | `{conversation_id, mode, final_rating?}` | `final_rating` |
 | `correction_accepted` | context | `corrections.ts:96-104` (source `'tutor'`) | Student accepts a correction | `{correction_id, misconception_id}` | excluded |
 | `recommendation_followed` / `recommendation_ignored` | context | `NextMoveCard.svelte:41-63`, fire-and-forget keepalive fetch | Follow / "show another" on next-move card | `{recommendation_id, action_id, kind, method, available_minutes, rank}` | excluded |
-| `course_added` | context | `onboarding.ts:320-323` — raw `db.insert`, bypasses `createEvent` (Defect D4) | Onboarding course commit | `{source:'demo_import', draft_id}` | excluded |
+| `course_added` | context | `onboarding.ts` — sanctioned inline insert (`source:'system'`): must join the atomic clone batch creating the course it references | Onboarding course commit | `{source:'demo_import', draft_id}` | excluded |
 
 ### In the vocabulary but never emitted (verified repo-wide, 2026-08-28)
 
@@ -99,15 +102,21 @@ behavior is unreconstructable), and course archival.
 4. Client then posts one `self_assessment` per rated KC — ratings ride separate events
    *after* completion (`StudyFlow.svelte:278-293`). If these fire-and-forget POSTs
    fail, ratings are silently lost and only the neutral practice event remains (D6).
-   Discard path: complete with empty `kc_ids_touched` → zero events.
+   Discard path: complete with empty `kc_ids_touched` → zero events — but only
+   because StudyFlow creates its sessions without `kc_ids`: an empty or omitted
+   `kc_ids_touched` falls back to the session's stored KC links
+   (`sessions.ts:116-118`), so "discarding" a KC-linked (e.g. planner-created)
+   session would still append one event per linked KC.
 
 **Quick quiz** (`quick_quiz.ts`): generate → sentinel session row → grade exactly once
 (`graded` flag) → `endedAt` + one `retrieval_practice{correct}` per KC. Never goes
 through `completeSession`.
 
 **Exercise / agentic evidence** (`exercise.ts:202-254`): `recordExerciseEvidence`
-(at-least-once delivery, `event_id` dedupe) → probe/practice event → if incorrect
-diagnostic AND event `wasCreated`: misconception advances `suspected → confirmed`.
+(at-least-once delivery, `event_id` dedupe) → probe/practice event → when the
+response is incorrect, a misconception is attached, and the event `wasCreated`: the
+first such probe marks the misconception `suspected`, a repeat advances it to
+`confirmed` (`exercise.ts:241-251`).
 Status ladder `suspected → confirmed → correcting → internalized` is monotone
 (`misconceptionLifecycle.ts:10-15`); `evidence_event_ids` accumulate.
 
@@ -158,21 +167,25 @@ middleware-enforced). Trial data never crosses into learner `events`.
 
 ## Known defects & gaps (the implementation backlog from this storm)
 
-Ordered by severity. D1–D3 are bugs; the rest are instrumentation debt.
+Ordered by severity. D1–D4 were fixed on 2026-08-28 (branch `event-catalog`); kept
+here as history because existing rows predate the fixes.
 
-- **D1 — Tutor ratings never reach mastery.** `createRuntimeTutorSessionEvent` writes
-  `payload.final_rating` (`events.ts:120`) but the fold reads `self_rating`
-  (`mastery.ts:75`). Every tutor session folds at the neutral 0.7 regardless of the
-  learner's 1–5 rating. Fix: rename the key or teach the fold `final_rating`.
-- **D2 — `correctness` is a phantom key**: read by the fold (`mastery.ts:73`), written
-  by no emitter. Decide: reserved (document it) or dead (remove it).
-- **D3 — Session-completion events default to `source:'manual'`**
-  (`sessions.ts:125`), making system-appended rows user-editable via PATCH;
-  quiz/exercise flows correctly pass `'tutor'`. Also `'seed'` is declared but unused
-  by the API path.
-- **D4 — Single-writer violation**: `onboarding.ts:320` raw-inserts `course_added`,
-  bypassing `createEvent` (harmless today — no kc_id — but it is the one break in the
-  invariant and it mislabels `source:'manual'`).
+- **D1 — FIXED. Tutor ratings never reached mastery.** The writer emitted
+  `payload.final_rating` but the fold only read `self_rating`, so every tutor session
+  folded at the neutral 0.7. Fix: the fold now reads `final_rating` (1–5, ÷5) — which
+  also retroactively corrects historical rows on their KC's next re-fold.
+- **D2 — RESOLVED as reserved.** `correctness` is read by the fold but written by no
+  emitter; kept and documented in `eventSuccess` as reserved for graders producing a
+  continuous [0,1].
+- **D3 — FIXED.** Session-completion events defaulted to `source:'manual'`, making
+  system-appended rows user-editable via PATCH; `completeSession` now passes
+  `'session'`. Rows created before the fix remain `'manual'`. `'seed'` remains
+  declared but unused by the API path (only `scripts/seed.ts`).
+- **D4 — RESOLVED as sanctioned exception.** Onboarding's `course_added` must be
+  inserted inline (it joins the atomic clone batch that creates the course it
+  references, so `createEvent`'s own batch can't be used); it now stamps
+  `source:'system'` (added to `EVENT_SOURCES`) instead of masquerading as `'manual'`,
+  and the call site documents the exception.
 - **D5 — No idempotency key on browser event POSTs** (manual logs, self-assessments,
   recommendation telemetry): retries and double-taps duplicate evidence.
 - **D6 — `practice_done` carries no outcome** and post-session `self_assessment`
@@ -182,8 +195,18 @@ Ordered by severity. D1–D3 are bugs; the rest are instrumentation debt.
   stream but carry no KC evidence — under the boundary rule they migrate to the
   behavioral stream (open question B1 below). And there is **no impression event**, so
   follow-rate has no denominator.
-- **D8 — 11 unwired vocabulary entries** (list above): task lifecycle, scheduling,
-  settings, archival, coach family produce no events.
+- **D8 — 11 unwired vocabulary entries** (list above). Round-2 storm verdict:
+  **prune all 11** — applied consistently, the two-stream boundary rule dissolves the
+  widened taxonomy (it predates the rule). `task_completed/dismissed`,
+  `course_archived`, `settings_changed`, `correction_dismissed` are superseded by
+  behavioral events (taxonomy below); `plan_committed`, `reflection_captured`,
+  `digest_sent`, `session_scheduled` model state or nonexistent features, not
+  evidence; `session_rescheduled` history is real but belongs in a D1
+  schedule-change log owned by the Replanning loop; `coach_session` returns as a real
+  domain event when the coach ships (ledger-idempotent, like `tutor_session`).
+  Execute as one vocabulary-narrowing change bundled with B1: pre-check prod D1 for
+  stray rows (expect zero), edit `EVENT_TYPES` + `EVENT_ROLE_FLAGS`, record the
+  narrowing in `docs/api.md`. **Pending ratification with B1.**
 - **D9 — Attendance undercount**: the primary attendance path records no event; only
   the secondary manual-modal path feeds the fold.
 - **D10 — Calendar sync leaves no trace**: sync outcomes and schedule disruptions
@@ -192,6 +215,11 @@ Ordered by severity. D1–D3 are bugs; the rest are instrumentation debt.
 - **D11 — Post-signup funnel is invisible**: between `signup` and `course_added`
   nothing is recorded; onboarding drop-off cannot be measured (behavioral layer fixes
   this).
+- **D12 — `completeSession` discard footgun**: empty/omitted `kc_ids_touched` falls
+  back to the session's stored KC links (`sessions.ts:116-118`), so the client-side
+  "discard" convention (complete with empty list) only yields zero events for
+  sessions created without KC links — discarding a KC-linked session would still
+  append neutral evidence. Discard semantics should live server-side.
 
 ---
 
@@ -245,6 +273,7 @@ per-page events.
 | `next_move_viewed` | `recommendation_id`, `rank`, `kind`, `available_minutes` | NextMove card renders (**the missing impression**) | `app_session_started` |
 | `recommendation_followed` / `recommendation_ignored` | `recommendation_id`, `rank` | migrates here from domain stream (B1) | `next_move_viewed` same id |
 | `task_checked` | `task_type`, `source_surface`, `overdue` | task toggle | — |
+| `task_dismissed` | `task_type`, `source_surface` | system-task dismissal (`deleteTask` soft delete) | — |
 | `record_event_opened` / `record_event_submitted` | `event_type?` on submit | Record Event modal | opened → submitted |
 | `notification_opened` | `notification_type` | bell item clicked | — |
 | `resource_opened` | `resource_id`, `origin: feed\|course\|shared` | resource card opened | — |
@@ -272,6 +301,7 @@ per-page events.
 |---|---|---|---|
 | `calendar_connect_started` / `calendar_connected` / `calendar_connect_failed` | `provider` | OAuth flow | started → terminal |
 | `settings_changed` | `keys` (names only, never values) | settings save | — |
+| `course_archived` | `course_id`, `weeks_since_added` | course archive (`updateCourse`) | — |
 | `correction_internalized` | `correction_id`, `days_since_accepted` | ledger action | — |
 
 Deliberately excluded: keystroke/scroll telemetry, tutor message content, quiz answer
@@ -317,9 +347,11 @@ Invariant: stage monotonic within a visit; stage 4 without 2–3 legal only when
 
 ### Open questions (decide before implementing)
 
-- **B1** — Migrating `recommendation_followed/ignored` out of `EVENT_TYPES` narrows
-  `POST /api/v1/events`: acceptable v1 change (they were never mastery-bearing) or
-  additivity violation per `docs/api.md`? Disposition of existing rows needed.
+- **B1** — Narrowing `EVENT_TYPES`: migrate `recommendation_followed/ignored` to the
+  behavioral stream AND prune the 11 dead types (D8 verdict) in one vocabulary change
+  to `POST /api/v1/events`. Acceptable v1 change (none were mastery-bearing; the 11
+  have zero rows) or additivity violation per `docs/api.md`? Disposition of existing
+  `recommendation_*` rows needed.
 - **B2** — `app_session_started` idle threshold: 30 min is the default; the
   15/25/50-minute budget concept suggests shorter — revisit after two weeks of
   `page_viewed` data.
@@ -328,8 +360,10 @@ Invariant: stage monotonic within a visit; stage 4 without 2–3 legal only when
 
 ## TODO
 
+- Ratify B1 (vocabulary narrowing: `recommendation_*` migration + D8 prune), then
+  execute it as one change.
 - Implement the behavioral layer (PostHog decision above) once ratified.
-- Fix D1–D6 in the domain stream; wire the 11 dead vocabulary entries (D8) or prune
-  them.
+- Fix the remaining domain-stream debt: D5 (idempotency keys), D6 (ratings in the
+  completion request), D12 (server-side discard semantics).
 - After implementation, add the analysis conventions here (source filters, seed/dev
   exclusion, funnel queries).

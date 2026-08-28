@@ -317,9 +317,11 @@ export async function importDemoSetup(db: Db, userId: string, input: DemoImportI
       });
     }
 
+    // Inline insert (not createEvent): the event must join the atomic clone
+    // batch that creates the course row it references. No kc_id, so no fold.
     statements.push(db.insert(events).values({
       id: crypto.randomUUID(), userId, ts: now, type: 'course_added', isInstructional: false,
-      isAssessment: false, courseId, payload: { source: 'demo_import', draft_id: input.draft_id }, source: 'manual', createdAt: now,
+      isAssessment: false, courseId, payload: { source: 'demo_import', draft_id: input.draft_id }, source: 'system', createdAt: now,
     }));
   });
 

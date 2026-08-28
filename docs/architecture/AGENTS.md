@@ -38,8 +38,9 @@ There are **two event streams**, and they must stay separate:
 
 ## Invariants to preserve when touching event code
 
-1. Only `services/events.ts` writes the `events` table (one historical violation was
-   onboarding's `course_added`; don't add more).
+1. Only `services/events.ts` writes the `events` table. One sanctioned exception:
+   onboarding's `course_added` (`source:'system'`) is inserted inline because it must
+   join the atomic clone batch creating the course it references. Don't add more.
 2. Role flags are always derived from type via `EVENT_ROLE_FLAGS`; never set by hand.
 3. Context events (both flags false) are excluded from the fold — they can never move
    mastery.
@@ -52,7 +53,8 @@ There are **two event streams**, and they must stay separate:
 ## Conventions
 
 Event names are snake_case past-tense verbs in both streams. Payload keys the fold
-reads: `correct`, `correctness`, `score`, `self_rating` (see mastery.ts); an AE event
+reads: `correct`, `correctness`, `score`, `self_rating`, `final_rating` (see
+mastery.ts `eventSuccess`); an AE event
 carrying none folds at the neutral 0.7 — so an outcome-less assessment event is
 usually a bug, not a feature. When adding a domain event type: add to `EVENT_TYPES` +
 `EVENT_ROLE_FLAGS`, wire a real emitter in the same change (the catalog's D8 lists 11

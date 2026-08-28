@@ -350,7 +350,7 @@ export const events = sqliteTable(
     payload: text('payload', { mode: 'json' })
       .notNull()
       .default(sql`'{}'`),
-    source: text('source', { enum: ['manual', 'session', 'tutor', 'seed'] }).notNull(),
+    source: text('source', { enum: ['manual', 'session', 'tutor', 'seed', 'system'] }).notNull(),
     createdAt: createdAt(),
   },
   (table) => [

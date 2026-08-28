@@ -21,7 +21,9 @@ priorities are listed here and detailed in their owning docs.
   separates OpenRouter-backed tutoring/question generation from non-AI study
   tools; seeded quizzes remain usable without AI and staging defaults off.
 - [ ] **Replanning loop** — recompute recommendations when classes are missed,
-  dates or weekly capacity change, grades arrive, or plans are disrupted.
+  dates or weekly capacity change, grades arrive, or plans are disrupted. Needs a
+  D1 schedule-change log: session reschedules currently overwrite `scheduledAt`
+  with no history (see `docs/architecture/event-catalog.md` D8/D10).
 - [ ] **Durable material ingestion** — retain validated syllabus/schedule files
   in R2 with extraction provenance, retry state, and asynchronous processing.
 - [ ] **Better extraction** — structured optional AI extraction, confidence and

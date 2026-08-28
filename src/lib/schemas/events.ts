@@ -81,7 +81,7 @@ export const EVENT_ROLE_FLAGS: Record<EventType, EventRoleFlags> = {
   digest_sent: { isInstructional: false, isAssessment: false },
 };
 
-export const EVENT_SOURCES = ['manual', 'session', 'tutor', 'seed'] as const;
+export const EVENT_SOURCES = ['manual', 'session', 'tutor', 'seed', 'system'] as const;
 export type EventSource = (typeof EVENT_SOURCES)[number];
 
 // Free-form event payload (score, correctness, self_rating, channel, etc.) —

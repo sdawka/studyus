@@ -122,12 +122,17 @@ export async function completeSession(db: Db, userId: string, sessionId: string,
   const masteryDeltas = [];
 
   for (const kcId of touchedKcIds) {
-    const { event, masteryDeltas: deltas } = await createEvent(db, userId, {
-      type: eventType,
-      kc_id: kcId,
-      course_id: session.courseId ?? undefined,
-      payload: { session_id: sessionId },
-    });
+    const { event, masteryDeltas: deltas } = await createEvent(
+      db,
+      userId,
+      {
+        type: eventType,
+        kc_id: kcId,
+        course_id: session.courseId ?? undefined,
+        payload: { session_id: sessionId },
+      },
+      'session',
+    );
     eventsAppended.push(event);
     masteryDeltas.push(...deltas);
   }
