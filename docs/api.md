@@ -14,7 +14,7 @@ or on error:
 ```json
 { "error": { "code": "invalid_input", "message": "..." } }
 ```
-Error `code`s in use: `invalid_input` (400, includes Zod validation failures), `unauthorized` (401), `forbidden` (403), `not_manual_event` (400 — see Events below), `not_found` (404), `internal_error` (500), `conversation_capped` (400 — see AI Tutor below), `quiz_generation_failed` (502 — see Agentic Flows below), `quiz_not_gradable` (400 — see Agentic Flows below).
+Error `code`s in use: `invalid_input` (400, includes Zod validation failures), `idempotency_conflict` (409 — see Events below), `unauthorized` (401), `forbidden` (403), `not_manual_event` (400 — see Events below), `not_found` (404), `internal_error` (500), `conversation_capped` (400 — see AI Tutor below), `quiz_generation_failed` (502 — see Agentic Flows below), `quiz_not_gradable` (400 — see Agentic Flows below).
 
 **IDs**: All entity ids are UUID-*shaped* strings (`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`, lowercase hex) but are **not guaranteed to be valid RFC4122 v4 UUIDs** — seed data uses deterministic UUID-shaped hashes (stable across reseeds) that don't set the version/variant nibits real UUIDs do. Clients must treat ids as opaque strings matching that grouping, not validate strict UUID version.
 
@@ -158,7 +158,19 @@ Single source of truth for the type → role-flag (`is_instructional`/`is_assess
 ```
 `is_instructional`/`is_assessment` are **always derived server-side from `type`** — they are not client-settable (this differs from the draft's request shape, which listed them as request fields; they're response-only). `source` is always `"manual"` for events created through this endpoint.
 
-**Response** (201): `{ ...event, "mastery_deltas": [...] }`. `mastery_deltas` has zero or one entries — one iff `kc_id` was provided (each event has at most one KC).
+Maintained clients send an optional UUID-shaped `Idempotency-Key` header. The first
+use creates the event and returns `201`. Repeating the same normalized request under
+the same learner and key returns the current event with `200`,
+`Idempotency-Replayed: true`, and `mastery_deltas: []`; it never re-folds mastery.
+Object-key order and equivalent ISO offsets do not change request identity. Changing
+the type, KC, course, explicit timestamp, or payload while reusing a key returns
+`409 idempotency_conflict`. Keys are tenant-scoped. Deleting the event leaves a
+ledger tombstone, so a late retry conflicts instead of recreating deleted evidence.
+Omitting the header remains accepted for v1 clients but has no retry guarantee.
+
+**Response** (201 first creation; 200 replay): `{ ...event, "mastery_deltas": [...] }`.
+For a first creation, `mastery_deltas` has zero or one entries — one iff `kc_id` was
+provided (each event has at most one KC). Replays always return an empty array.
 
 ### GET /events
 **Query**: `course=uuid?`, `kc=uuid?`, `limit` (default 20, max 200). Response: array of event objects, newest first.

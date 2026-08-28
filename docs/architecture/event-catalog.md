@@ -94,7 +94,10 @@ names, so no data migration or backfill was needed.
 
 ## Domain stream: lifecycles & expected orderings
 
-**Manual log**: modal → `POST /events` → 201 `{event, mastery_deltas}`. One step.
+**Manual log**: modal assigns one UUID idempotency key to the serialized submission
+→ `POST /events` → 201 `{event, mastery_deltas}`. An unchanged ambiguous retry keeps
+that key and receives the bound event with 200/empty deltas; editing the submission
+mints a new key.
 
 **Study session** (`StudyFlow.svelte`, `sessions.ts`):
 1. `POST /sessions {intended_event_type, planned_minutes, …}` — no event at scheduling.
@@ -156,10 +159,11 @@ middleware-enforced). Trial data never crosses into learner `events`.
 - Durable context facts (both role flags false) are filtered before folding
   (`mastery.ts:89-93`) — they can never move mastery or freshness.
 - Idempotency exists only where a ledger enforces it: tutor sessions (conversation
-  ledger), study-session completion/discard (session-finalization ledger), agentic evidence (caller `event_id`; same id with different type/kc → 409),
-  class-session sweep (UNIQUE), demo funnel (event id). **Browser event POSTs (manual
-  logs and self-assessments) have no idempotency key** —
-  double-submit means double mastery evidence (D5).
+  ledger), study-session completion/discard (session-finalization ledger), keyed
+  browser event POSTs (`event_idempotency_keys`, tenant-scoped), agentic evidence
+  (caller `event_id`; all supplied evidence fields must match), class-session sweep
+  (UNIQUE), and demo funnel (event id). Unkeyed legacy `POST /events` remains
+  accepted but has no retry guarantee.
 - Edit policy: PATCH only `source='manual'` rows; role flags re-derived from type on
   every edit; DELETE allowed for any source.
 - Instructional events without `kc_id` skip the fold entirely (`events.ts:87-88`) —
@@ -188,8 +192,11 @@ Ordered by severity. D1–D4 and D7–D8 were fixed on 2026-08-28 (branch
   references, so `createEvent`'s own batch can't be used); it now stamps
   `source:'system'` (added to `EVENT_SOURCES`) instead of masquerading as `'manual'`,
   and the call site documents the exception.
-- **D5 — No idempotency key on browser event POSTs** (manual logs and
-  self-assessments): retries and double-taps duplicate evidence.
+- **D5 — FIXED.** Maintained manual browser event POSTs carry a stable UUID key for
+  an unchanged submission. A tenant-scoped ledger is committed atomically with the
+  event/mastery update; exact retries return the current event without refolding,
+  changed requests conflict, and deletion leaves a tombstone. Unkeyed v1 clients
+  remain compatible without the guarantee.
 - **D6 — FIXED.** Completion now accepts per-KC ratings and commits them atomically
   with the session, intended events, and mastery caches. StudyFlow no longer posts
   follow-up `self_assessment` requests.
@@ -361,6 +368,5 @@ Invariant: stage monotonic within a visit; stage 4 without 2–3 legal only when
 - Wire the approved product-specific behavioral emitters onto the implemented
   schema/session/privacy/transport foundation, including the `demo_funnel_events`
   mirror-forward.
-- Fix the remaining domain-stream debt: D5 (idempotency keys for manual browser event posts).
 - After implementation, add the analysis conventions here (source filters, seed/dev
   exclusion, funnel queries).

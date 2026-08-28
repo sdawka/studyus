@@ -2,8 +2,15 @@ import { env } from 'cloudflare:test';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
-import { branches, courses, events, kcs, studySessionFinalizations, studySessions, users } from '../src/db/schema';
-import { appendEventsAtomically, createEvent, deleteEvent, listEvents } from '../src/lib/services/events';
+import { branches, courses, eventIdempotencyKeys, events, kcs, studySessionFinalizations, studySessions, users } from '../src/db/schema';
+import {
+  appendEventsAtomically,
+  createEvent,
+  deleteEvent,
+  IdempotencyConflictError,
+  listEvents,
+  updateEvent,
+} from '../src/lib/services/events';
 
 const db = getDb(env.DB);
 
@@ -79,6 +86,139 @@ describe('events service', () => {
     });
     expect(event.kcId).toBeNull();
     expect(masteryDeltas).toHaveLength(0);
+  });
+
+  it('deduplicates a keyed event, including canonically equivalent payload and timestamp representations', async () => {
+    const key = crypto.randomUUID();
+    const first = await createEvent(
+      db,
+      userId,
+      {
+        type: 'quiz_taken',
+        kc_id: kcId,
+        course_id: courseId,
+        ts: '2026-08-28T16:00:00.000Z',
+        payload: { score: 80, nested: { beta: 2, alpha: 1 } },
+      },
+      'manual',
+      key,
+    );
+    const replay = await createEvent(
+      db,
+      userId,
+      {
+        type: 'quiz_taken',
+        kc_id: kcId,
+        course_id: courseId,
+        ts: '2026-08-28T12:00:00.000-04:00',
+        payload: { nested: { alpha: 1, beta: 2 }, score: 80 },
+      },
+      'manual',
+      key,
+    );
+
+    expect(first.wasCreated).toBe(true);
+    expect(replay).toMatchObject({ wasCreated: false, masteryDeltas: [], event: { id: first.event.id } });
+    expect(await db.select().from(events).where(eq(events.userId, userId))).toHaveLength(1);
+    expect(await db.select().from(eventIdempotencyKeys).where(eq(eventIdempotencyKeys.userId, userId))).toHaveLength(1);
+  });
+
+  it('settles concurrent keyed deliveries to one event and one mastery fold', async () => {
+    const key = crypto.randomUUID();
+    const input = { type: 'quiz_taken' as const, kc_id: kcId, payload: { correct: true } };
+    const [left, right] = await Promise.all([
+      createEvent(db, userId, input, 'manual', key),
+      createEvent(db, userId, input, 'manual', key),
+    ]);
+
+    expect([left.wasCreated, right.wasCreated].sort()).toEqual([false, true]);
+    expect(left.event.id).toBe(right.event.id);
+    expect(await db.select().from(events).where(eq(events.userId, userId))).toHaveLength(1);
+  });
+
+  it('scopes idempotency keys by learner', async () => {
+    const key = crypto.randomUUID();
+    const otherUserId = crypto.randomUUID();
+    await db.insert(users).values({ id: otherUserId, email: `${otherUserId}@test.local`, passwordHash: 'x' });
+
+    const first = await createEvent(db, userId, { type: 'reading_done' }, 'manual', key);
+    const second = await createEvent(db, otherUserId, { type: 'reading_done' }, 'manual', key);
+
+    expect(first.event.id).not.toBe(second.event.id);
+    expect(await db.select().from(eventIdempotencyKeys).where(eq(eventIdempotencyKeys.idempotencyKey, key))).toHaveLength(2);
+  });
+
+  it('rejects a reused key with changed evidence', async () => {
+    const key = crypto.randomUUID();
+    await createEvent(db, userId, { type: 'quiz_taken', kc_id: kcId, payload: { score: 80 } }, 'manual', key);
+
+    await expect(
+      createEvent(db, userId, { type: 'quiz_taken', kc_id: kcId, payload: { score: 81 } }, 'manual', key),
+    ).rejects.toBeInstanceOf(IdempotencyConflictError);
+    expect(await db.select().from(events).where(eq(events.userId, userId))).toHaveLength(1);
+  });
+
+  it('returns the current event after PATCH but leaves a tombstone after DELETE', async () => {
+    const key = crypto.randomUUID();
+    const input = { type: 'reading_done' as const, kc_id: kcId, payload: { note: 'Original' } };
+    const created = await createEvent(db, userId, input, 'manual', key);
+    await updateEvent(db, userId, created.event.id, { type: 'video_watched', payload: { note: 'Corrected' } });
+
+    const replay = await createEvent(db, userId, input, 'manual', key);
+    expect(replay).toMatchObject({
+      wasCreated: false,
+      masteryDeltas: [],
+      event: { type: 'video_watched', payload: { note: 'Corrected' } },
+    });
+
+    await deleteEvent(db, userId, created.event.id);
+    const [ledger] = await db
+      .select()
+      .from(eventIdempotencyKeys)
+      .where(eq(eventIdempotencyKeys.idempotencyKey, key));
+    expect(ledger.eventId).toBeNull();
+    await expect(createEvent(db, userId, input, 'manual', key)).rejects.toBeInstanceOf(IdempotencyConflictError);
+    expect(await db.select().from(events).where(eq(events.userId, userId))).toHaveLength(0);
+  });
+
+  it('tightens internal event_id retries across payload, course, timestamp, and source', async () => {
+    const eventId = crypto.randomUUID();
+    const base = {
+      type: 'diagnostic_probe' as const,
+      event_id: eventId,
+      kc_id: kcId,
+      course_id: courseId,
+      ts: '2026-08-28T16:00:00.000Z',
+      payload: { correct: true, channel: 'web' },
+    };
+    await createEvent(db, userId, base, 'tutor');
+
+    const changed = [
+      { ...base, payload: { correct: false, channel: 'web' } },
+      { ...base, course_id: undefined },
+      { ...base, ts: '2026-08-28T16:00:01.000Z' },
+    ];
+    for (const input of changed) {
+      await expect(createEvent(db, userId, input, 'tutor')).rejects.toThrow('different evidence');
+    }
+    await expect(createEvent(db, userId, base, 'manual')).rejects.toThrow('different evidence');
+  });
+
+  it('settles concurrent internal event_id deliveries after the primary-key race', async () => {
+    const input = {
+      type: 'diagnostic_probe' as const,
+      event_id: crypto.randomUUID(),
+      kc_id: kcId,
+      payload: { correct: false, channel: 'web' },
+    };
+    const [left, right] = await Promise.all([
+      createEvent(db, userId, input, 'tutor'),
+      createEvent(db, userId, input, 'tutor'),
+    ]);
+
+    expect([left.wasCreated, right.wasCreated].sort()).toEqual([false, true]);
+    expect(left.event.id).toBe(right.event.id);
+    expect(await db.select().from(events).where(eq(events.id, input.event_id))).toHaveLength(1);
   });
 
   it('records context-only events without changing a KC mastery cache or freshness', async () => {
