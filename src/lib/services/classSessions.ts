@@ -9,7 +9,7 @@
 // lecture_missed event the user logged for that course on the same local
 // day (attended wins if both exist) — after that, status is only ever
 // changed via PATCH, never by the sweep re-running.
-import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm';
+import { and, count, desc, eq, gte, inArray, isNull, lt, lte } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { classSessions, events, tasks } from '../../db/schema';
 import type { CreateClassSessionInput, ListClassSessionsQuery, UpdateClassSessionInput } from '../schemas/classSessions';
@@ -184,6 +184,20 @@ export async function updateClassSessionStatus(db: Db, userId: string, id: strin
 
   const rows = await db.select().from(classSessions).where(eq(classSessions.id, id)).limit(1);
   return rows[0];
+}
+
+/** Number of overdue, still-unmarked sessions after an attendance mutation. */
+export async function countSessionsBehind(db: Db, userId: string, courseId: string, now = Date.now()): Promise<number> {
+  const [row] = await db
+    .select({ total: count() })
+    .from(classSessions)
+    .where(and(
+      eq(classSessions.userId, userId),
+      eq(classSessions.courseId, courseId),
+      isNull(classSessions.status),
+      lt(classSessions.date, localNoon(now)),
+    ));
+  return Math.min(100_000, Number(row?.total ?? 0));
 }
 
 export async function createManualClassSession(db: Db, userId: string, courseId: string, input: CreateClassSessionInput) {

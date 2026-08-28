@@ -3,6 +3,8 @@ import { env } from 'cloudflare:workers';
 import { getDb } from '../../../../db/client';
 import { apiError, apiOk } from '../../../../lib/api';
 import { withServiceErrors } from '../../../../lib/apiErrors';
+import { changedSettingsKeys, retentionEventSurface, settingsChangedEvent } from '../../../../lib/analytics/retention';
+import { analyticsRequestCorrelation, queueBehavioralEvent } from '../../../../lib/analytics/server';
 import { updateUserSchema } from '../../../../lib/schemas/user';
 import { resolveSettings, updateUser } from '../../../../lib/services/user';
 import { getOnboardingState } from '../../../../lib/services/onboarding';
@@ -31,7 +33,35 @@ export const PATCH: APIRoute = async ({ request, locals }) =>
         return apiError('onboarding_incomplete', 'Add a course with at least one knowledge component first', 409);
       }
     }
+    const settingsBefore = resolveSettings(locals.user!.settings);
     const updated = await updateUser(db, locals.user!.id, input);
+    const settingsAfter = resolveSettings(updated.settings);
+    const changedKeys = changedSettingsKeys(input.settings, settingsBefore, settingsAfter)
+      // This key is emitted only by the successful opt-in control. Opt-out
+      // must clear analytics before any event can be captured.
+      .filter((key) => key !== 'analytics_opt_out');
+    try {
+      const correlation = analyticsRequestCorrelation(request);
+      if (correlation.session_id) {
+        const event = settingsChangedEvent({
+          user_id: locals.user!.id,
+          session_id: correlation.session_id,
+          surface: retentionEventSurface(request, 'settings'),
+          ts: Date.now(),
+        }, changedKeys, settingsAfter.analytics_opt_out);
+        if (event) {
+          queueBehavioralEvent({
+            env,
+            request,
+            execution: locals.cfContext,
+            user_id: locals.user!.id,
+            analytics_opt_out: settingsAfter.analytics_opt_out,
+          }, event);
+        }
+      }
+    } catch {
+      console.warn(JSON.stringify({ message: 'settings analytics queue failed' }));
+    }
     return apiOk({
       id: updated.id,
       email: updated.email,
@@ -39,6 +69,6 @@ export const PATCH: APIRoute = async ({ request, locals }) =>
       current_term: updated.currentTerm,
       timezone: updated.timezone,
       onboarded_at: updated.onboardedAt ? new Date(updated.onboardedAt).toISOString() : null,
-      settings: resolveSettings(updated.settings),
+      settings: settingsAfter,
     });
   });

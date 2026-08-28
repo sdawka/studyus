@@ -27,6 +27,7 @@
   onMount(() => { void load(); });
 
   async function connect(provider: Provider) {
+    if (busy !== null) return;
     busy = provider;
     message = null;
     needsPermission = false;

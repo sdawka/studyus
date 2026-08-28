@@ -45,15 +45,17 @@
   }
 
   function selectTheme(id: Settings['theme']) {
+    if (saving || theme === id) return;
     theme = id;
     stampHtml();
-    persist();
+    void persist();
   }
 
   function selectScheme(id: Settings['scheme']) {
+    if (saving || scheme === id) return;
     scheme = id;
     stampHtml();
-    persist();
+    void persist();
   }
 </script>
 
@@ -63,6 +65,7 @@
       type="button"
       class="swatch"
       class:active={theme === t.id}
+      disabled={saving}
       onclick={() => selectTheme(t.id)}
       aria-pressed={theme === t.id}
     >
@@ -81,6 +84,7 @@
     <button
       type="button"
       aria-selected={scheme === id}
+      disabled={saving}
       onclick={() => selectScheme(id as Settings['scheme'])}
     >{label}</button>
   {/each}

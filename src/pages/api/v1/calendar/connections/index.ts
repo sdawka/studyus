@@ -4,8 +4,11 @@ import { env } from 'cloudflare:workers';
 import { z } from 'zod';
 import { getDb } from '../../../../../db/client';
 import { apiError, apiOk } from '../../../../../lib/api';
+import { calendarConnectAttemptEvents } from '../../../../../lib/analytics/retention';
+import { analyticsRequestCorrelation, queueBehavioralEvents } from '../../../../../lib/analytics/server';
 import { createClerkCalendarTokenBroker, ProviderTokenUnavailableError } from '../../../../../lib/calendar/providers';
 import { connectCalendarProvider, listCalendarConnections } from '../../../../../lib/services/calendarConnect';
+import { resolveSettings } from '../../../../../lib/services/user';
 
 const connectSchema = z.strictObject({ provider: z.enum(['google', 'microsoft']) });
 
@@ -18,6 +21,33 @@ export const POST: APIRoute = async (context) => {
   const parsed = connectSchema.safeParse(await context.request.json().catch(() => ({})));
   if (!parsed.success) return apiError('invalid_input', parsed.error.issues.map((issue) => issue.message).join('; '), 400);
 
+  const startedAt = Date.now();
+  const queueOutcome = (outcome: 'connected' | 'failed') => {
+    try {
+      const correlation = analyticsRequestCorrelation(context.request);
+      if (!correlation.session_id) return;
+      const events = calendarConnectAttemptEvents({
+        user_id: localUser.id,
+        session_id: correlation.session_id,
+        surface: '/settings',
+      }, {
+        provider: parsed.data.provider,
+        started_at: startedAt,
+        completed_at: Date.now(),
+        outcome,
+      });
+      queueBehavioralEvents({
+        env,
+        request: context.request,
+        execution: context.locals.cfContext,
+        user_id: localUser.id,
+        analytics_opt_out: resolveSettings(localUser.settings).analytics_opt_out,
+      }, events, { force_batch: true });
+    } catch {
+      console.warn(JSON.stringify({ message: 'calendar connection analytics queue failed' }));
+    }
+  };
+
   try {
     const broker = createClerkCalendarTokenBroker(clerkClient(context));
     const result = await connectCalendarProvider(getDb(env.DB), localUser.id, localUser.clerkUserId, parsed.data.provider, {
@@ -25,8 +55,10 @@ export const POST: APIRoute = async (context) => {
       tokenBroker: broker,
       timezone: localUser.timezone,
     });
+    queueOutcome('connected');
     return apiOk(result, { status: 201 });
   } catch (error) {
+    queueOutcome('failed');
     if (error instanceof ProviderTokenUnavailableError) {
       return apiError(
         'calendar_permission_required',

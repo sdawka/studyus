@@ -128,7 +128,13 @@ function monogram(code: string): string {
         <span class="label">Docs overlay</span>
       </button>
     )}
-    <button type="button" class="nav-item collapse-toggle" id="sidebar-collapse-toggle" title="Collapse sidebar">
+    <button
+      type="button"
+      class="nav-item collapse-toggle"
+      id="sidebar-collapse-toggle"
+      title="Collapse sidebar"
+      data-analytics-surface={Astro.routePattern}
+    >
       <Icon name="chevron-left" />
       <span class="label">Collapse</span>
     </button>
@@ -136,6 +142,9 @@ function monogram(code: string): string {
 </nav>
 
 <script>
+  import { apiFetch } from '../../lib/apiClient';
+  import { pushToast } from '../../lib/stores/toast';
+
   document.getElementById('add-course-btn')?.addEventListener('click', () => {
     const evt = new CustomEvent('open-add-course');
     window.dispatchEvent(evt);
@@ -148,17 +157,40 @@ function monogram(code: string): string {
     window.dispatchEvent(new CustomEvent('toggle-docs-overlay'));
   });
 
-  const toggle = document.getElementById('sidebar-collapse-toggle');
-  toggle?.addEventListener('click', () => {
+  const toggle = document.getElementById('sidebar-collapse-toggle') as HTMLButtonElement | null;
+  toggle?.addEventListener('click', async () => {
     const html = document.documentElement;
     const collapsed = html.getAttribute('data-sidebar') === 'collapsed';
-    if (collapsed) {
-      html.removeAttribute('data-sidebar');
-      localStorage.setItem('sb:sidebar', 'expanded');
-    } else {
-      html.setAttribute('data-sidebar', 'collapsed');
-      localStorage.setItem('sb:sidebar', 'collapsed');
+    const nextCollapsed = !collapsed;
+    const stamp = (value: boolean) => {
+      if (!value) {
+        html.removeAttribute('data-sidebar');
+        localStorage.setItem('sb:sidebar', 'expanded');
+      } else {
+        html.setAttribute('data-sidebar', 'collapsed');
+        localStorage.setItem('sb:sidebar', 'collapsed');
+      }
+    };
+    stamp(nextCollapsed);
+    toggle.disabled = true;
+    const result = await apiFetch(
+      '/api/v1/user',
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Studyus-Analytics-Surface': toggle.dataset.analyticsSurface ?? '/settings',
+        },
+        body: JSON.stringify({ settings: { sidebar_collapsed: nextCollapsed } }),
+      },
+      'Could not save sidebar setting',
+      'Network error — could not save sidebar setting',
+    );
+    if (!result.ok) {
+      stamp(collapsed);
+      pushToast(result.error, 'error');
     }
+    toggle.disabled = false;
   });
 </script>
 
