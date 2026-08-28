@@ -3,7 +3,11 @@
   // Session lifecycle goes through the sessions API (POST /sessions, PATCH
   // /sessions/:id/complete). KC outcomes, including optional ratings, are
   // one atomic terminal command; discard has its own evidence-free route.
+  import { onMount } from 'svelte';
   import { apiFetch } from '../../lib/apiClient';
+  import { captureBehavioralEvent } from '../../lib/analytics/client';
+  import { createPracticeAnalytics, installPageExitAbandonment } from '../../lib/analytics/learning';
+  import { EVENT_TYPES, type EventType } from '../../lib/schemas/events';
 
   interface Course {
     id: string;
@@ -96,6 +100,19 @@
 
   type ResultView = { eventsCreated: number; masteryDeltas: { kc_id: string; old_mastery: number; new_mastery: number }[] };
   let result = $state<ResultView | null>(null);
+  const practiceAnalytics = createPracticeAnalytics(captureBehavioralEvent);
+
+  function maintainedEventType(value: string): value is EventType {
+    return EVENT_TYPES.includes(value as EventType) && value !== 'tutor_session';
+  }
+
+  onMount(() => {
+    const cleanupAbandonment = installPageExitAbandonment(practiceAnalytics.abandon);
+    return () => {
+      stopTimer();
+      cleanupAbandonment();
+    };
+  });
 
   function remainingSeconds(): number {
     return Math.max(0, sessionPlannedMinutes * 60 - elapsedSeconds);
@@ -134,6 +151,14 @@
     elapsedSeconds = Math.floor((Date.now() - openSession.startedAt) / 1000);
     step = 'running';
     startTimer();
+    if (selectedCourse && maintainedEventType(openSession.intendedEventType)) {
+      practiceAnalytics.start({
+        course_id: selectedCourse.id,
+        intended_event_type: openSession.intendedEventType,
+        ...(selectedRitual ? { ritual_id: selectedRitual.id } : {}),
+        started_at: openSession.startedAt,
+      });
+    }
   }
 
   async function discardSession() {
@@ -150,6 +175,7 @@
         error = result.error;
         return;
       }
+      practiceAnalytics.terminal();
       step = 'course';
     } finally {
       discarding = false;
@@ -221,10 +247,19 @@
     elapsedSeconds = 0;
     step = 'running';
     startTimer();
+    if (selectedCourse && intendedType && intendedType !== 'quick_quiz') {
+      practiceAnalytics.start({
+        course_id: selectedCourse.id,
+        intended_event_type: intendedType,
+        ...(ritual ? { ritual_id: ritual.id } : {}),
+        started_at: sessionStartedAt,
+      });
+    }
   }
 
   async function endSession() {
     stopTimer();
+    practiceAnalytics.enterStage('reflection');
     branches = [];
     touchedKcIds = new Set();
     selfRatings = {};
@@ -278,6 +313,7 @@
         return;
       }
 
+      practiceAnalytics.terminal();
       result = {
         eventsCreated: completion.data.events_appended?.length ?? 0,
         masteryDeltas: completion.data.mastery_deltas ?? [],

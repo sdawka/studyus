@@ -5,7 +5,10 @@
   // here; the KC set is already decided by which prereqs came back
   // `ready:false` from the graph). Auto-starts on mount since there's no
   // setup step to show.
+  import { onMount } from 'svelte';
   import { apiFetch } from '../../lib/apiClient';
+  import { captureBehavioralEvent } from '../../lib/analytics/client';
+  import { createQuizAnalytics, installPageExitAbandonment } from '../../lib/analytics/learning';
   import { pushToast } from '../../lib/stores/toast';
 
   type Question = { index: number; kc_id: string; question: string; options: string[] };
@@ -28,8 +31,14 @@
   let score = $state(0);
   let masteryDeltas = $state<MasteryDelta[]>([]);
   let errorMessage = $state<string | null>(null);
+  const quizAnalytics = createQuizAnalytics(captureBehavioralEvent);
+
+  function answeredCount(): number {
+    return Object.keys(answers).length;
+  }
 
   async function start() {
+    quizAnalytics.abandon(answeredCount());
     stage = 'loading';
     const res = await apiFetch<{ id: string; questions: Question[] }>(
       '/api/v1/flows/quick_quiz',
@@ -47,9 +56,8 @@
     current = 0;
     answers = {};
     stage = 'quiz';
+    quizAnalytics.start(questions.map((question) => question.kc_id), questions.length);
   }
-
-  start();
 
   function selectOption(index: number) {
     answers = { ...answers, [current]: index };
@@ -82,8 +90,24 @@
     score = res.data.score;
     results = res.data.results;
     masteryDeltas = res.data.mastery_deltas;
+    quizAnalytics.terminal();
     stage = 'score';
   }
+
+  function cancel() {
+    quizAnalytics.abandon(answeredCount());
+    onCancel();
+  }
+
+  function done() {
+    quizAnalytics.terminal();
+    onDone();
+  }
+
+  onMount(() => {
+    void start();
+    return installPageExitAbandonment(() => quizAnalytics.abandon(answeredCount()));
+  });
 </script>
 
 <div class="verify-quiz">
@@ -101,7 +125,7 @@
         {/each}
       </div>
       <div class="row-actions">
-        <button type="button" class="btn-secondary" onclick={onCancel}>Back to prereqs</button>
+        <button type="button" class="btn-secondary" onclick={cancel}>Back to prereqs</button>
         <button type="button" class="btn-primary" onclick={next} disabled={answers[current] === undefined}>
           {current < questions.length - 1 ? 'Next' : 'Submit'}
         </button>
@@ -120,12 +144,12 @@
           </div>
         {/each}
       </div>
-      <button type="button" class="btn-primary" onclick={onDone}>Back to prerequisites</button>
+      <button type="button" class="btn-primary" onclick={done}>Back to prerequisites</button>
     </div>
   {:else if stage === 'error'}
     <p class="error">{errorMessage}</p>
     <div class="row-actions">
-      <button type="button" class="btn-secondary" onclick={onCancel}>Back to prereqs</button>
+      <button type="button" class="btn-secondary" onclick={cancel}>Back to prereqs</button>
       <button type="button" class="btn-primary" onclick={start}>Try again</button>
     </div>
   {/if}
