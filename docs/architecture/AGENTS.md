@@ -20,26 +20,29 @@ There are **two event streams**, and they must stay separate:
   a pure order-insensitive function of the full per-KC event set.
 - **Behavioral stream** — product usage telemetry (page views, impressions,
   abandonment). Never write this into the `events` table. Its deliberate-capture
-  PostHog foundation, acquisition/activation slice, page/app-session lifecycle,
-  and Next Move emitters are implemented; later engagement, learning-surface, and
-  retention emitters remain staged. It uses `users.id` as the authenticated
-  distinct id and admits no PII or free text — full design and rollout status in
-  `event-catalog.md`.
+  PostHog emitter paths are implemented for 45 of 46 approved names across
+  acquisition, activation, engagement, learning, and retention. Checked-in
+  `ANALYTICS_ENABLED` remains `false`; implementation status must not be mistaken for
+  enabled production delivery. `resource_saved` is the sole reserved
+  implement-or-prune decision. It uses `users.id` as the authenticated distinct id and
+  admits no PII or free text — full design and rollout status in `event-catalog.md`;
+  exhaustive classification lives in `src/lib/analytics/coverage.ts`.
 
 ## Where the truth lives
 
 - `event-catalog.md` (this folder) — **the operational catalog**: every emitted event
   with emitter/payload/fold-read keys, the retired vocabulary, lifecycles and expected
   orderings, idempotency guarantees, defect list D1–D12, behavioral-layer design and
-  its remaining questions B2–B4. Start there for any event work.
+  its sole remaining experiment B2. Start there for any event work.
 - `events-and-mastery.md` — the theory (KLI ontology, mastery fold semantics).
 - `data-model.md` — all tables. Adjacent stores that are NOT domain events but hold
   event-like data: `demo_funnel_events` (anonymous trial funnel),
   `class_sessions` (attendance is status rows, not events), `studySessions`
   (quick quizzes hide behind a sentinel `intendedEventType`), the tutor DO's private
-  SQLite (only the terminal `tutor_session` event reaches D1).
-- `docs/todo.md` — active roadmap; behavioral-stream instrumentation is the standing
-  priority this system feeds.
+  SQLite (only the terminal `tutor_session` event reaches D1; the separate
+  `tutor_abandoned` PostHog signal is nonterminal and alarm-driven).
+- `docs/todo.md` — active roadmap; behavioral instrumentation is substantially live,
+  while reporting and the `resource_saved` decision remain.
 
 ## Invariants to preserve when touching event code
 
@@ -57,6 +60,10 @@ There are **two event streams**, and they must stay separate:
    event and mastery update. Never move that ledger write outside the event batch;
    its nullable event FK is a deliberate delete tombstone.
 7. Analysis must filter `source = 'seed'` and the developer's own user id.
+8. `behavioralEventCoverage` must classify every `BehavioralEventName`. A live entry
+   names its reachability and emitter owners; a reserved entry has a reason and
+   decision but no emitters. This is catalog enforcement, not runtime reachability
+   proof, so keep focused emitter tests.
 
 ## Conventions
 

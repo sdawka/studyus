@@ -18,9 +18,9 @@ This directory holds product and architecture documentation for studyus, a KLI-g
 - **authentication.md** — Current Clerk authentication authority, immutable local learner-id bridge, new-user provisioning, and legacy-account migration runbook.
 - **data-model.md** — Every table and relationship (column-by-column, full FK/ON DELETE and index inventory); learner profile as aggregation service, misconception lifecycle, and the computed-on-read frontier/knowledge-map summary.
 - **events-and-mastery.md** — **THE KLI DOC.** Ontology (KCs cause performance; Instructional/Learning/Assessment Events; dual-role flags), KC taxonomy (fact/association/concept/rule/principle), learning processes, instruction matching (asymmetry hypothesis), CMU DataShop convention as conceptual background, and the shipped mastery fold (`src/lib/services/mastery.ts`) as actually implemented.
-- **event-catalog.md** — Operational companion to the KLI doc: the canonical event catalog (every emitted domain event with emitter/payload/fold-read keys, plus the B1-retired vocabulary), expected lifecycles and orderings, idempotency guarantees, known defects, and the partially implemented behavioral analytics design (taxonomy, funnels, PostHog decision).
+- **event-catalog.md** — Operational companion to the KLI doc: the canonical event catalog (every emitted domain event with emitter/payload/fold-read keys, plus the B1-retired vocabulary), expected lifecycles and orderings, idempotency guarantees, known defects, and the deliberate PostHog behavioral stream (45 of 46 approved emitter paths implemented; checked-in delivery remains disabled; `resource_saved` is the sole implement-or-prune decision).
 - **tutor.md** — AI tutor architecture: mode selection by KC type, OpenRouter SSE proxy, interactive-model spec, context assembly, session event hookup.
-- **cloudflare.md** — Adapter v14 specifics (Workers not Pages, wrangler.jsonc, workerd dev, D1 batch atomicity, local .wrangler/state).
+- **cloudflare.md** — Adapter v14 specifics (Workers not Pages, the custom Worker entrypoint, D1/R2/DO bindings, request `waitUntil`, awaited DO alarms, cron environments, workerd dev, deployment, and local `.wrangler/state/v3`).
 - **observability.md** — Local-only Cloudflare native tracing (`wrangler.jsonc`'s `observability.traces` flag, the `cdn-cgi/explorer` UI, the `withSpan` helper) — dev-loop diagnostic only, no persistence or export path.
 - **agentic-channels.md** — Current per-learner Durable Object runtime plus the historical Flue/channel design retained as future-adapter context.
 - **calendar-integrations.md** — Canonical calendar model, controlled bidirectional sync policy, provider/ICS boundaries, outbox guarantees, timezones, and OAuth scope setup.
@@ -50,6 +50,7 @@ This directory holds product and architecture documentation for studyus, a KLI-g
 
 **For architecture**: Start with overview → data-model. Then dive deep:
 - Understanding mastery? Read events-and-mastery.
+- Instrumenting or analyzing domain/behavioral events? Read event-catalog.
 - Building the tutor? Read tutor.
 - Deploying or adding a new binding? Read cloudflare.
 - Planning agentic features? Read agentic-channels.

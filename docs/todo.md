@@ -40,11 +40,13 @@ priorities are listed here and detailed in their owning docs.
    post-onboarding map maintenance are implemented. Next add durable R2
    ingestion. Full status:
    `docs/product/onboarding.md`.
-2. **Complete the behavioral analytics stream** — the D1 event vocabulary has
-   been narrowed back to durable learner-domain facts. The deliberate PostHog
-   foundation plus page/app-session and Next Move emitters are implemented; task,
-   course, study-session, and settings interactions remain in
-   `docs/architecture/event-catalog.md`.
+2. **Close the behavioral analytics catalog** — the D1 event vocabulary has been
+   narrowed back to durable learner-domain facts, and deliberate PostHog emitter paths
+   are implemented for 45 of 46 approved behavioral names. Checked-in delivery remains
+   disabled pending an explicit operational gate/token decision. The only vocabulary
+   decision left is to implement a real save-an-existing-resource-to-course action for
+   `resource_saved`, or prune that name. Reporting conventions and dashboards remain
+   separate follow-up work; see `docs/architecture/event-catalog.md`.
 3. **Expose the coach/orchestrator** — four domain engines and the per-learner
    Durable Object foundation exist. The web tutor now projects authoritative
    DO conversation/session/alarm state into Nanostores and reconciles streams,
@@ -183,10 +185,12 @@ for future instructor/institutional surfaces remains deferred.
 
 ### Behavioral Activity Stream
 
-Complete the deliberate-capture PostHog layer in the event catalog. The privacy-safe
-wrapper and daily-loop page/app-session/Next Move emitters are implemented. Keep UI
-telemetry out of D1 `events`; add the remaining approved product emitters and their
-impressions/denominators before relying on coach digests or broader funnels.
+Deliberate-capture PostHog emitter paths are implemented for 45 of 46 approved names,
+with the anonymous D1 trial stream mirror-forwarded separately when analytics is
+enabled. Checked-in delivery remains off pending an operational gate/token decision.
+Keep UI telemetry out of D1 `events`; decide whether to implement the intended
+`resource_saved` transition or prune it, then define analysis filters and
+funnel/reporting conventions before relying on coach digests or product dashboards.
 
 ## Mastery Inference
 
@@ -320,7 +324,9 @@ onboarding requirement in place of a real course.
 
 ### Learning Analytics Dashboard
 
-**Current**: Learner profile (mastery, streaks), but no trends or cohort comparisons.
+**Current**: Learner profile (mastery, streaks) plus implemented behavioral emitter
+paths for 45 of 46 cataloged events (checked-in delivery is disabled), but no reporting
+UI, trends, or cohort comparisons.
 
 **Post-v1**:
 - Time spent per KC (heatmap by week).

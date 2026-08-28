@@ -35,12 +35,15 @@ export default defineConfig({
 
 ### wrangler.jsonc
 
-All bindings, database config, and environment variables go here. This is the **real, current file** (`wrangler.jsonc` at the repo root) — a prior draft of this doc showed a fictional shape (a `main`/`type: "service"` block, `env.production`/`env.staging` route blocks, and an `env_secrets` section) that never matched what's actually checked in:
+All bindings, database config, entrypoint, triggers, and environment variables go
+here. This is an abbreviated shape of the **real current file** (`wrangler.jsonc` at
+the repo root); identifiers are placeholders:
 
 ```jsonc
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "studyus",
+  "main": "./src/worker.ts",
   "compatibility_date": "2026-08-01",
   "compatibility_flags": ["nodejs_compat"],
   "d1_databases": [
@@ -57,6 +60,12 @@ All bindings, database config, and environment variables go here. This is the **
       "bucket_name": "studyus-uploads"
     }
   ],
+  "durable_objects": {
+    "bindings": [{ "name": "LEARNER_AGENT", "class_name": "LearnerAgent" }]
+  },
+  "exports": {
+    "LearnerAgent": { "type": "durable-object", "storage": "sqlite" }
+  },
   "vars": {
     "OPENROUTER_MODEL": "openrouter/auto",
     "AI_FEATURES_ENABLED": "true",
@@ -67,15 +76,17 @@ All bindings, database config, and environment variables go here. This is the **
     "traces": {
       "enabled": true
     }
-  }
+  },
+  "triggers": { "crons": ["*/5 * * * *"] }
 }
 ```
 
-The checked-in config also has an `env.staging` block with isolated D1, R2,
-Durable Object, route, and vars. Production uses the top-level bindings;
-staging deploys with `--env staging`. Secrets are never declared through a
-fictional `env_secrets` key: each environment receives them through Wrangler's
-secret commands.
+`src/worker.ts` exports `LearnerAgent`, delegates `fetch` to Astro's Cloudflare
+handler, and exposes the calendar scheduled handler. The checked-in config also has
+an `env.staging` block with isolated D1, R2, Durable Object, route, and vars.
+Production uses the top-level five-minute cron; staging explicitly sets an empty cron
+list and deploys with `--env staging`. Secrets are never declared through a fictional
+`env_secrets` key: each environment receives them through Wrangler's secret commands.
 
 **Secrets and gates**: Store API keys via Wrangler secrets (add `--env staging`
 for isolated staging secrets). AI uses `OPENROUTER_API_KEY` plus the non-secret
@@ -84,6 +95,10 @@ for isolated staging secrets). AI uses `OPENROUTER_API_KEY` plus the non-secret
 `ANALYTICS_EXCLUDED_USER_IDS` list of local `users.id` values, and the
 non-secret `ANALYTICS_ENABLED` switch. Missing or invalid configuration is a
 no-op. Never put a token, Clerk id, email address, or name in committed config.
+Both checked-in environments currently set `ANALYTICS_ENABLED=false`; implemented
+emitters do not imply enabled production capture. Enabling delivery requires an
+explicit operational decision to change that gate and provision the environment's
+`POSTHOG_PROJECT_TOKEN` secret.
 
 ## Accessing Bindings in Code
 
@@ -130,6 +145,13 @@ bounded PostHog fetch is owned by `cfContext.waitUntil()` and can never change
 the business response. The public demo route uses D1 `RETURNING` as the mirror
 boundary, so only rows newly inserted by that request reach `/batch/`.
 
+The tutor inactivity path is different: a Durable Object alarm has no Astro request
+context. `LearnerAgent.alarm()` multiplexes generic scheduled alarms with 30-minute
+tutor-inactivity deadlines and **awaits** bounded PostHog delivery. A transport failure
+therefore leaves the alarm row intact and lets Cloudflare retry using the same stable
+insert id. The signal is nonterminal; ending a conversation cancels its pending
+inactivity row.
+
 ## Local Development: workerd + .wrangler/state
 
 ### Dev Server
@@ -141,8 +163,8 @@ npm run dev
 This starts Astro on a real workerd instance. Under the hood:
 - Astro invokes wrangler's dev mode.
 - workerd runs the Cloudflare Worker runtime locally.
-- D1 uses a real local SQLite database stored in `.wrangler/state/d1/`.
-- R2 is emulated in `.wrangler/state/r2/`.
+- D1 uses a real local SQLite database below `.wrangler/state/v3/d1/`.
+- R2 is emulated below `.wrangler/state/v3/r2/`.
 
 **Important**: Don't run `wrangler dev` separately. Astro's `npm run dev` orchestrates it.
 
@@ -202,13 +224,14 @@ Uses vitest 4.1 + `@cloudflare/vitest-pool-workers` 0.21 to spin up real D1 and 
 ## Deployment
 
 ```bash
-wrangler deploy
+npm run deploy
 ```
 
-- Builds the Astro project.
-- Uploads dist/server/entry.mjs to Cloudflare.
-- Migrates D1 if needed.
-- Routes production traffic.
+This runs `astro build && wrangler deploy`, bundling the custom `src/worker.ts`
+entrypoint and uploading the Worker. It does **not** apply D1 migrations. Apply and
+verify migrations as an explicit operation (`npm run db:migrate:remote`) before a
+release that depends on them. `npm run deploy:staging` builds with the staging flag and
+deploys with `--env staging`; neither command supplies a promotion or rollback policy.
 
 ## Common Gotchas
 
@@ -233,7 +256,7 @@ sqlite> SELECT * FROM events;
 
 ## TODO
 
-- Durable Objects integration for agentic flows (post-v1).
 - KV caching strategy (e.g., for expensive mastery queries).
 - Analytics Engine for event tracing.
-- Scheduled jobs / cron triggers (e.g., nightly mastery recompute, digest emails).
+- Additional scheduled jobs (for example nightly mastery recompute or digest emails)
+  beyond the shipped five-minute calendar cron and Durable Object alarms.
