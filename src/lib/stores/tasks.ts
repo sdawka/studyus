@@ -12,6 +12,8 @@
 // every task is normalized to default `type: 'todo'` on the way in.
 import { atom, computed, map } from 'nanostores';
 import { apiFetch } from '../apiClient';
+import { captureBehavioralEvent, currentAnalyticsSurface } from '../analytics/client';
+import { taskCheckedEvent, taskDismissedEvent } from '../analytics/engagement';
 import { COMPLETION_HOLD_MS } from '../completionMotion';
 import type { TaskType } from '../taskTypeMeta';
 
@@ -171,6 +173,8 @@ export interface ToggleTaskOptions {
 // that plays when the hold expires — the two are one choreography.
 export const recentlyCompletedIds = atom<ReadonlySet<string>>(new Set());
 const recentCompletionTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const togglesInFlight = new Set<string>();
+const deletesInFlight = new Set<string>();
 
 function markRecentlyCompleted(id: string) {
   recentlyCompletedIds.set(new Set(recentlyCompletedIds.get()).add(id));
@@ -198,10 +202,12 @@ export function refreshCompletionHold(id: string): void {
 // Optimistic flip (+ open children when cascading), then PATCH. Any
 // failure — parent or a cascaded child — rolls the whole map back to the
 // pre-toggle snapshot and surfaces the message on tasksError.
-export async function toggleTask(id: string, options: ToggleTaskOptions = {}): Promise<void> {
+export async function toggleTask(id: string, options: ToggleTaskOptions = {}): Promise<boolean> {
+  if (togglesInFlight.has(id)) return false;
   const snapshot = tasksById.get();
   const task = snapshot[id];
-  if (!task) return;
+  if (!task) return false;
+  togglesInFlight.add(id);
 
   const completed = !task.completed;
   const completedAt = completed ? new Date().toISOString() : null;
@@ -236,17 +242,27 @@ export async function toggleTask(id: string, options: ToggleTaskOptions = {}): P
       tasksById.setKey(childId, childPatched);
     }
     tasksError.set(null);
+    const surface = currentAnalyticsSurface();
+    if (completed && surface) captureBehavioralEvent(taskCheckedEvent(task, surface));
+    return true;
   } catch (err) {
     tasksById.set(snapshot);
     tasksError.set(err instanceof Error ? err.message : 'Failed to update task');
+    return false;
+  } finally {
+    togglesInFlight.delete(id);
   }
 }
 
 // Optimistic remove (+ children), rollback to the pre-delete snapshot on
 // failure.
-export async function deleteTask(id: string): Promise<void> {
+export async function deleteTask(id: string): Promise<boolean> {
+  if (deletesInFlight.has(id)) return false;
   const snapshot = tasksById.get();
+  const task = snapshot[id];
+  if (!task) return false;
   const children = selectChildren(Object.values(snapshot), id);
+  deletesInFlight.add(id);
 
   const next = { ...snapshot };
   delete next[id];
@@ -257,9 +273,15 @@ export async function deleteTask(id: string): Promise<void> {
     const result = await apiFetch(`/api/v1/tasks/${id}`, { method: 'DELETE' }, 'Failed to delete task');
     if (!result.ok) throw new Error(result.error);
     tasksError.set(null);
+    const surface = currentAnalyticsSurface();
+    if (task.source === 'system' && surface) captureBehavioralEvent(taskDismissedEvent(task, surface));
+    return true;
   } catch (err) {
     tasksById.set(snapshot);
     tasksError.set(err instanceof Error ? err.message : 'Failed to delete task');
+    return false;
+  } finally {
+    deletesInFlight.delete(id);
   }
 }
 

@@ -26,6 +26,7 @@ describe('postManualEvent', () => {
     const retried = await postManualEvent(body, failed.pendingAttempt, 'Could not log that event.');
     expect(retried.result).toMatchObject({ ok: true, data: { id: 'event-1' } });
     expect(retried.pendingAttempt).toBeNull();
+    expect(retried.attempt.idempotencyKey).toBe(failed.attempt.idempotencyKey);
     expect(requestKey(fetchMock, 0)).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     expect(requestKey(fetchMock, 1)).toBe(requestKey(fetchMock, 0));
     expect((fetchMock.mock.calls[1][1] as RequestInit).body).toBe((fetchMock.mock.calls[0][1] as RequestInit).body);

@@ -5,6 +5,8 @@
   // keyboard shortcut), so it can be one island among several popovers
   // instead of mounting its own always-present button.
   import { apiFetch } from '../../lib/apiClient';
+  import { captureBehavioralEvent } from '../../lib/analytics/client';
+  import { createRecordEventAnalytics } from '../../lib/analytics/engagement';
   import { postManualEvent, type EventPostAttempt } from '../../lib/eventPostClient';
   import { courseContext } from '../../lib/stores/courseContext';
   import { portalToBody } from '../../lib/actions/portal';
@@ -88,6 +90,7 @@
   let submitError = $state<string | null>(null);
   let confirmation = $state<string | null>(null);
   let pendingEventAttempt = $state<EventPostAttempt | null>(null);
+  const analytics = createRecordEventAnalytics(captureBehavioralEvent);
 
   function nowLocal(): string {
     const d = new Date();
@@ -121,6 +124,7 @@
   // the old click-triggered openModal() now that there's no in-component button.
   $effect(() => {
     if (open) {
+      analytics.opened();
       confirmation = null;
       submitError = null;
       // Default the course select to whatever course we're viewing — just a
@@ -131,6 +135,8 @@
       } else {
         void loadCourses();
       }
+    } else {
+      analytics.closed();
     }
   });
 
@@ -175,6 +181,11 @@
     selectedType = null;
   }
 
+  function logAnother() {
+    confirmation = null;
+    analytics.opened();
+  }
+
   async function onCourseChange() {
     if (selectedCourseId) await loadKcs(selectedCourseId);
     else {
@@ -184,7 +195,7 @@
   }
 
   async function submit() {
-    if (!selectedType) return;
+    if (!selectedType || submitting) return;
     submitting = true;
     submitError = null;
     try {
@@ -211,6 +222,8 @@
         return;
       }
 
+      analytics.submitted(selectedType, posted.attempt.idempotencyKey);
+
       const courseLabel = courses.find((c) => c.id === selectedCourseId)?.code;
       const typeLabel = ALL_TYPES.get(selectedType) ?? selectedType;
       confirmation = courseLabel ? `Logged: ${typeLabel} — ${courseLabel}` : `Logged: ${typeLabel}`;
@@ -233,7 +246,7 @@
 
       {#if confirmation}
         <p class="confirmation">{confirmation}</p>
-        <button type="button" class="btn btn-primary" onclick={() => (confirmation = null)}>Log another</button>
+        <button type="button" class="btn btn-primary" onclick={logAnother}>Log another</button>
       {:else if !selectedType}
         <div class="groups">
           {#each GROUPS as group (group.label)}

@@ -1,13 +1,15 @@
 <script lang="ts">
   import { bindPopoverDismiss } from './popover.svelte.ts';
   import { apiFetch } from '../../lib/apiClient';
+  import { captureBehavioralEvent } from '../../lib/analytics/client';
+  import { createNotificationAnalytics } from '../../lib/analytics/engagement';
   import { formatRelativeTime } from '../../lib/plannerDates';
   import { isMobile } from '../../lib/stores/viewport';
   import Sheet from './Sheet.svelte';
 
   interface Notification {
     id: string;
-    type: 'assessment_due' | 'task_overdue' | 'kc_review' | 'session_unfinished' | 'grade_recorded';
+    type: 'assessment_due' | 'task_overdue' | 'kc_review' | 'session_unfinished' | 'grade_recorded' | 'correction_review';
     title: string;
     body?: string | null;
     course_id?: string | null;
@@ -35,6 +37,8 @@
   let notifications = $state<Notification[]>([]);
   let listLoaded = $state(false);
   let loading = $state(false);
+  let openingIds = $state<Set<string>>(new Set());
+  const analytics = createNotificationAnalytics(captureBehavioralEvent);
 
   const TYPE_ICON: Record<Notification['type'], string> = {
     assessment_due: '📅',
@@ -42,6 +46,7 @@
     kc_review: '🔁',
     session_unfinished: '⏳',
     grade_recorded: '✅',
+    correction_review: '💡',
   };
 
   function courseCode(id?: string | null) {
@@ -86,6 +91,9 @@
   bindPopoverDismiss({ isOpen: () => open, close: () => onClose(), anchorEl: () => anchorEl });
 
   async function selectNotification(n: Notification) {
+    if (openingIds.has(n.id)) return;
+    openingIds = new Set(openingIds).add(n.id);
+    analytics.opened(n.id, n.type);
     if (!n.read_at) {
       notifications = notifications.map((x) => (x.id === n.id ? { ...x, read_at: new Date().toISOString() } : x));
       unreadCount = Math.max(0, unreadCount - 1);
@@ -131,7 +139,7 @@
       <ul class="list">
         {#each notifications as n (n.id)}
           <li>
-            <button type="button" class="row" class:unread={!n.read_at} onclick={() => selectNotification(n)}>
+            <button type="button" class="row" class:unread={!n.read_at} disabled={openingIds.has(n.id)} onclick={() => selectNotification(n)}>
               <span class="type-icon">{TYPE_ICON[n.type]}</span>
               <span class="row-body">
                 <span class="row-title">{n.title}</span>

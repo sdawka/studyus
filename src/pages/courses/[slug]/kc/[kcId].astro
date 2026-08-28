@@ -7,6 +7,7 @@ import { and, eq } from 'drizzle-orm';
 import { getKc } from '../../../../lib/services/kcs';
 import { getKcEvents } from '../../../../lib/services/events';
 import { NotFoundError, notFound } from '../../../../lib/handleNotFound';
+import ResourceAnalyticsLink from '../../../../components/course/ResourceAnalyticsLink.svelte';
 import MasteryBar from '../../../../components/course/MasteryBar.astro';
 import StatusChip from '../../../../components/course/StatusChip.astro';
 import KcTypeBadge from '../../../../components/course/KcTypeBadge.astro';
@@ -122,7 +123,7 @@ const historyEvents = [...recentEvents].reverse();
       ) : (
         <ul class="plain-list">
           {linkedResources.map((r) => (
-            <li><a href={r.url} target="_blank" rel="noopener">{r.label}</a></li>
+            <li><ResourceAnalyticsLink client:visible resourceId={r.id} href={r.url} label={r.label} origin="course" /></li>
           ))}
         </ul>
       )}

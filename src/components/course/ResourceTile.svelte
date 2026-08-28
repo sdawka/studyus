@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { captureBehavioralEvent } from '../../lib/analytics/client';
+  import { createResourceAnalytics, type ResourceOrigin } from '../../lib/analytics/engagement';
+
   interface Resource {
     id: string;
     url: string;
@@ -9,11 +12,17 @@
   interface Props {
     resource: Resource;
     deletable?: boolean;
+    origin: ResourceOrigin;
   }
 
-  let { resource, deletable = false }: Props = $props();
+  let { resource, deletable = false, origin }: Props = $props();
   let deleting = $state(false);
   let faviconFailed = $state(false);
+  const analytics = createResourceAnalytics(captureBehavioralEvent);
+
+  function trackOpen() {
+    analytics.opened(resource.id, origin);
+  }
 
   function getHostname(urlString: string): string {
     try {
@@ -52,11 +61,13 @@
   function handleTileClick(e: MouseEvent) {
     const target = e.target as HTMLElement;
     if (target.closest('a, button')) return;
+    trackOpen();
     window.open(resource.url, '_blank', 'noopener,noreferrer');
   }
 
   function handleTileKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' && e.target === e.currentTarget) {
+      trackOpen();
       window.open(resource.url, '_blank', 'noopener,noreferrer');
     }
   }
@@ -79,7 +90,7 @@
   </div>
 
   <div class="tile-body">
-    <a href={resource.url} target="_blank" rel="noopener noreferrer" class="tile-label">
+    <a href={resource.url} target="_blank" rel="noopener noreferrer" class="tile-label" onclick={trackOpen}>
       {resource.label}
     </a>
     <span class="tile-domain">{domain}</span>

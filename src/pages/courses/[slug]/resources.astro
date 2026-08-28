@@ -60,7 +60,7 @@ const summaryParts = [
       {canonicalResources.length > 0 ? (
         <div class="tile-grid">
           {canonicalResources.map((r) => (
-            <ResourceTile client:visible resource={{ id: r.id, url: r.url, label: r.label, pinned: r.pinned }} />
+            <ResourceTile client:visible resource={{ id: r.id, url: r.url, label: r.label, pinned: r.pinned }} origin="course" />
           ))}
         </div>
       ) : (
@@ -110,6 +110,7 @@ const summaryParts = [
               client:visible
               resource={{ id: r.id, url: r.url, label: r.label, pinned: r.pinned }}
               deletable
+              origin="shared"
             />
           ))}
         </div>

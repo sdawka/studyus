@@ -1,5 +1,8 @@
 <script lang="ts">
   import { postManualEvent, type EventPostAttempt } from '../../lib/eventPostClient';
+  import { captureBehavioralEvent } from '../../lib/analytics/client';
+  import { createRecordEventAnalytics } from '../../lib/analytics/engagement';
+  import type { EventType } from '../../lib/schemas/events';
 
   interface CourseOption {
     id: string;
@@ -25,9 +28,15 @@
   let message = $state<string | null>(null);
   let error = $state<string | null>(null);
   let pendingEventAttempt = $state<EventPostAttempt | null>(null);
+  const analytics = createRecordEventAnalytics(captureBehavioralEvent);
+
+  $effect(() => {
+    analytics.opened();
+  });
 
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
+    if (submitting) return;
     submitting = true;
     error = null;
     message = null;
@@ -43,6 +52,7 @@
         error = result.error;
         return;
       }
+      analytics.submitted(type as EventType, posted.attempt.idempotencyKey);
       message = 'Logged.';
     } finally {
       submitting = false;
