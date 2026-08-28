@@ -54,6 +54,18 @@ describe('practice analytics lifecycle', () => {
     expect(captured.at(-1)).toEqual({ name: 'practice_abandoned', elapsed_ms: 1_000, stage: 'practice' });
     expect(captured.filter((event) => event.name === 'practice_abandoned')).toHaveLength(1);
   });
+
+  it('records one successful explicit discard even before a resumed visit becomes active', () => {
+    const captured: BehavioralEventInput[] = [];
+    const analytics = createPracticeAnalytics((event) => captured.push(event), () => 12_500);
+
+    analytics.abandonOnDiscard(10_000);
+    analytics.abandonOnDiscard(10_000);
+
+    expect(captured).toEqual([
+      { name: 'practice_abandoned', elapsed_ms: 2_500, stage: 'setup' },
+    ]);
+  });
 });
 
 describe('quiz analytics lifecycle', () => {

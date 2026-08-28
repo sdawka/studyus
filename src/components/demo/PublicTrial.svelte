@@ -16,7 +16,7 @@
     proposalFromTemplate,
   } from '../../lib/demo/catalog';
   import type { DemoScenarioId } from '../../lib/schemas/onboarding';
-  import { trackDemoFunnelEvent } from '../../lib/analytics/demo';
+  import { trackDemoFunnelEvent, trackDemoFunnelEvents, type DemoFunnelEventInput } from '../../lib/analytics/demo';
 
   interface Props { initialMode?: 'setup' | 'demo' }
   const { initialMode = 'setup' }: Props = $props();
@@ -81,17 +81,24 @@
     weeklyHours = loaded.preferences.weekly_hours;
     guidance = loaded.preferences.guidance;
     depth = loaded.preferences.depth;
-    if (initialMode === 'setup') void track('landing_try_clicked');
     if (initialMode === 'demo' && loaded.courses.length === 0) simulateAll();
     else if (initialMode === 'demo') void track('demo_entered');
   });
 
   async function track(
-    name: 'landing_try_clicked' | 'setup_step_completed' | 'setup_step_skipped' | 'demo_entered' | 'scenario_started' | 'scenario_completed' | 'signup_clicked',
+    name: 'setup_step_completed' | 'setup_step_skipped' | 'demo_entered' | 'scenario_started' | 'scenario_completed' | 'signup_clicked',
     extra: { step?: 'context' | 'preferences' | 'course'; scenario_id?: DemoScenarioId } = {},
   ) {
     const current = demoDraft.get();
     await trackDemoFunnelEvent({ name, trial_session_id: current.draft_id, ...extra }, '/try');
+  }
+
+  async function trackTransition(events: Array<Omit<DemoFunnelEventInput, 'trial_session_id'>>) {
+    const current = demoDraft.get();
+    await trackDemoFunnelEvents(
+      events.map((event) => ({ ...event, trial_session_id: current.draft_id }) as DemoFunnelEventInput),
+      '/try',
+    );
   }
 
   function persist(patch: Parameters<typeof patchDemoDraft>[0]) {
@@ -179,8 +186,10 @@
 
   function enterDemo(skipped = false) {
     if (demoDraft.get().courses.length === 0) selectTemplate('chee-314-fluid-mechanics', true);
-    void track(skipped ? 'setup_step_skipped' : 'setup_step_completed', { step: 'course' });
-    void track('demo_entered');
+    void trackTransition([
+      { name: skipped ? 'setup_step_skipped' : 'setup_step_completed', step: 'course' },
+      { name: 'demo_entered' },
+    ]);
     mode = 'demo';
     history.pushState({}, '', '/try/app/today');
   }
@@ -201,22 +210,29 @@
       courses: proposal ? [proposal] : [],
       simulated: true,
     });
-    void track('setup_step_skipped', { step: 'context' });
-    void track('setup_step_skipped', { step: 'preferences' });
-    enterDemo(true);
     // The public trial should lead with the payoff, not another empty state.
     // Seed the first decision so students immediately see what Studyus chose
     // and why; the remaining situations stay interactive.
     completeScenario('overloaded', 3, 0);
-    void track('scenario_started', { scenario_id: 'overloaded' });
-    void track('scenario_completed', { scenario_id: 'overloaded' });
+    void trackTransition([
+      { name: 'setup_step_skipped', step: 'context' },
+      { name: 'setup_step_skipped', step: 'preferences' },
+      { name: 'setup_step_skipped', step: 'course' },
+      { name: 'demo_entered' },
+      { name: 'scenario_started', scenario_id: 'overloaded' },
+      { name: 'scenario_completed', scenario_id: 'overloaded' },
+    ]);
+    mode = 'demo';
+    history.pushState({}, '', '/try/app/today');
   }
 
   function runScenario() {
-    void track('scenario_started', { scenario_id: activeScenario.id });
     completeScenario(activeScenario.id, activeScenario.mastery, activeScenario.standing ?? 0);
     previewedScenario = null;
-    void track('scenario_completed', { scenario_id: activeScenario.id });
+    void trackTransition([
+      { name: 'scenario_started', scenario_id: activeScenario.id },
+      { name: 'scenario_completed', scenario_id: activeScenario.id },
+    ]);
   }
 
   function chooseScenario(id: DemoScenarioId) {

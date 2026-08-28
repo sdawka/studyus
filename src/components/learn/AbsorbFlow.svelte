@@ -74,7 +74,7 @@
       return;
     }
     const weakCount = prereqs.filter((prereq) => !prereq.ready).length;
-    if (weakCount > 0) absorbAnalytics.decided('continue_anyway', weakCount);
+    absorbAnalytics.decided('continue_anyway', weakCount);
     stage = 'rank';
     absorbAnalytics.reached(3);
     // No prereqs to rank at all (leaf KC) — the ranking screen would be

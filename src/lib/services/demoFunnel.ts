@@ -53,7 +53,7 @@ export function demoRowsToBehavioralEvents(
   appSessionId: string | undefined,
 ): BehavioralEvent[] {
   if (!appSessionId) return [];
-  return rows.flatMap((row) => {
+  return [...rows].sort((left, right) => left.occurredAt - right.occurredAt).flatMap((row) => {
     const result = behavioralEventSchema.safeParse({
       name: row.name,
       session_id: appSessionId,

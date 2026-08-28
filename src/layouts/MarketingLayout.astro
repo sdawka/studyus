@@ -61,6 +61,14 @@ const settings = resolveSettings(Astro.locals.user?.settings);
     </footer>
 
     <script>
+      import { trackLandingTryClick } from '../lib/analytics/demo';
+
+      document.querySelectorAll<HTMLAnchorElement>('a[href="/try"]').forEach((anchor) => {
+        anchor.addEventListener('click', () => {
+          void trackLandingTryClick();
+        });
+      });
+
       const els = document.querySelectorAll('.reveal');
       if (matchMedia('(prefers-reduced-motion: no-preference)').matches && 'IntersectionObserver' in window) {
         const io = new IntersectionObserver(

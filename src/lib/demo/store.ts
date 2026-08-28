@@ -59,9 +59,13 @@ export function initializeDemoStore(): DemoDraft {
   return value;
 }
 
-export function saveDemoDraft(next: DemoDraft, storage: Pick<Storage, 'setItem'> = localStorage): boolean {
+export function saveDemoDraft(
+  next: DemoDraft,
+  storage: Pick<Storage, 'setItem'> = localStorage,
+  now = Date.now(),
+): boolean {
   try {
-    const validated = demoDraftSchema.parse({ ...next, updated_at: Date.now() });
+    const validated = demoDraftSchema.parse({ ...next, updated_at: now });
     const raw = JSON.stringify(validated);
     if (new TextEncoder().encode(raw).byteLength > DEMO_MAX_BYTES) return false;
     storage.setItem(DEMO_STORAGE_KEY, raw);

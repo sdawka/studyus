@@ -32,11 +32,11 @@ type Recommendation = Pick<NextMove, 'action_id' | 'kind'>;
  * shown again after a rotation or budget change.
  */
 export function createNextMoveAnalytics(capture: BehavioralCapture) {
-  let visibleImpressionKey: string | undefined;
+  let visibleInteraction: { key: string; terminal: boolean } | undefined;
 
   function viewed(move: Recommendation, rank: number, availableMinutes: AvailableMinutes): void {
     const key = `${move.action_id}:${rank}:${availableMinutes}`;
-    if (visibleImpressionKey === key) return;
+    if (visibleInteraction?.key === key) return;
     capture({
       name: 'next_move_viewed',
       recommendation_id: move.action_id,
@@ -44,7 +44,7 @@ export function createNextMoveAnalytics(capture: BehavioralCapture) {
       kind: move.kind,
       available_minutes: availableMinutes,
     });
-    visibleImpressionKey = key;
+    visibleInteraction = { key, terminal: false };
   }
 
   function terminal(
@@ -54,7 +54,9 @@ export function createNextMoveAnalytics(capture: BehavioralCapture) {
     availableMinutes: AvailableMinutes,
   ): void {
     viewed(move, rank, availableMinutes);
+    if (visibleInteraction?.terminal) return;
     capture({ name, recommendation_id: move.action_id, rank });
+    if (visibleInteraction) visibleInteraction.terminal = true;
   }
 
   return {
