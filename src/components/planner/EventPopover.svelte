@@ -1,6 +1,9 @@
 <script lang="ts">
   import type { CalendarItem } from '../../lib/types/calendar';
   import { apiFetch } from '../../lib/apiClient';
+  import { captureBehavioralEvent, currentAnalyticsSurface } from '../../lib/analytics/client';
+  import { taskCheckedEvent } from '../../lib/analytics/engagement';
+  import type { TaskType } from '../../lib/schemas/tasks';
   import { hueFor } from '../../lib/courseHue';
   import { addMinutes, calendarItemTimeLabel } from '../../lib/plannerDates';
   import { bindPopoverDismiss } from '../shell/popover.svelte.ts';
@@ -208,6 +211,14 @@
         if (!result.ok) {
           item.details = { ...item.details, done: !nextDone };
           onTaskToggled?.(id, !nextDone);
+        } else if (nextDone) {
+          const surface = currentAnalyticsSurface();
+          if (surface) {
+            captureBehavioralEvent(taskCheckedEvent({
+              type: item.details?.task_type as TaskType | undefined,
+              due_date: item.date,
+            }, surface));
+          }
         }
       }
     } finally {

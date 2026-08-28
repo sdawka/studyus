@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { Db } from '../../db/client';
+  import { captureBehavioralEvent } from '../../lib/analytics/client';
+  import { createResourceAnalytics, type ResourceOrigin } from '../../lib/analytics/engagement';
 
   interface Resource {
     id: string;
@@ -28,6 +30,7 @@
   let { resource, course }: Props = $props();
   let deleting = $state(false);
   let faviconFailed = $state(false);
+  const analytics = createResourceAnalytics(captureBehavioralEvent);
 
   const hue = $derived(course?.color ? Number(course.color) : null);
 
@@ -53,6 +56,11 @@
   const hostname = $derived(getHostname(resource.url));
   const faviconUrl = $derived(hostname ? `https://www.google.com/s2/favicons?domain=${hostname}&sz=64` : '');
   const tileHeight = $derived(resource.kind === 'user_shared' ? 88 : 72);
+  const origin = $derived<ResourceOrigin>(resource.kind === 'user_shared' ? 'shared' : resource.kind === 'feed' ? 'feed' : 'course');
+
+  function trackOpen() {
+    analytics.opened(resource.id, origin);
+  }
 
   async function deleteResource(e: MouseEvent) {
     e.stopPropagation();
@@ -76,11 +84,13 @@
     const target = e.target as HTMLElement;
     // Let native anchor/button clicks (title link, course chip, delete) handle themselves.
     if (target.closest('a, button')) return;
+    trackOpen();
     window.open(resource.url, '_blank', 'noopener,noreferrer');
   }
 
   function handleCardKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' && e.target === e.currentTarget) {
+      trackOpen();
       window.open(resource.url, '_blank', 'noopener,noreferrer');
     }
   }
@@ -104,7 +114,7 @@
   </div>
 
   <div class="card-body">
-    <a href={resource.url} target="_blank" rel="noopener noreferrer" class="resource-link">
+    <a href={resource.url} target="_blank" rel="noopener noreferrer" class="resource-link" onclick={trackOpen}>
       {resource.label}
     </a>
     <span class="domain">{domain}</span>

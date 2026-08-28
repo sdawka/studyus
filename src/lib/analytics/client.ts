@@ -34,6 +34,8 @@ const protocolProperties = new Set([
 let bootstrap: BrowserAnalyticsBootstrap | undefined;
 let instance: PostHog | undefined;
 let session: AnalyticsSession | undefined;
+let pendingCaptures: BehavioralEventInput[] = [];
+const MAX_PENDING_CAPTURES = 100;
 
 function dntEnabled(): boolean {
   return navigator.doNotTrack === '1';
@@ -99,6 +101,7 @@ export function sanitizeAnalyticsCapture(result: CaptureResult | null): CaptureR
 export async function initializeAnalytics(config: BrowserAnalyticsBootstrap): Promise<void> {
   bootstrap = config;
   if (!mayCapture(config)) {
+    pendingCaptures = [];
     clearAnalyticsState(browserStorage(), location.protocol === 'https:', writeCookie);
     return;
   }
@@ -151,10 +154,17 @@ export async function initializeAnalytics(config: BrowserAnalyticsBootstrap): Pr
   }
 
   capturePageLifecycle(session, config.surface, captureBehavioralEvent);
+  const queued = pendingCaptures;
+  pendingCaptures = [];
+  for (const input of queued) captureBehavioralEvent(input);
 }
 
 export function captureBehavioralEvent(input: BehavioralEventInput): void {
-  if (!bootstrap || !instance || !mayCapture(bootstrap)) return;
+  if (bootstrap && !mayCapture(bootstrap)) return;
+  if (!bootstrap || !instance) {
+    if (pendingCaptures.length < MAX_PENDING_CAPTURES) pendingCaptures.push(input);
+    return;
+  }
   const storage = browserStorage();
   if (!storage) return;
   session = resolveAnalyticsSession(storage, bootstrap.surface);
@@ -174,9 +184,14 @@ export function currentAnalyticsSession(): AnalyticsSession | undefined {
   return session;
 }
 
+export function currentAnalyticsSurface(): string | undefined {
+  return bootstrap?.surface;
+}
+
 export function setAnalyticsOptOut(optOut: boolean): void {
   if (bootstrap) bootstrap = { ...bootstrap, analytics_opt_out: optOut };
   if (optOut) {
+    pendingCaptures = [];
     instance?.reset(true);
     instance?.opt_out_capturing();
     instance = undefined;
@@ -188,6 +203,7 @@ export function setAnalyticsOptOut(optOut: boolean): void {
 }
 
 export function resetAnalytics(): void {
+  pendingCaptures = [];
   instance?.reset(true);
   instance = undefined;
   session = undefined;

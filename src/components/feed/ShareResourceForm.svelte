@@ -24,6 +24,7 @@
 
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
+    if (submitting) return;
     error = null;
     success = false;
     submitting = true;

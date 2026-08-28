@@ -8,6 +8,7 @@ export type EventPostAttempt = {
 export type EventPostOutcome<T> = {
   result: ApiResult<T>;
   pendingAttempt: EventPostAttempt | null;
+  attempt: EventPostAttempt;
 };
 
 /**
@@ -35,5 +36,5 @@ export async function postManualEvent<T = unknown>(
     },
     fallback,
   );
-  return { result, pendingAttempt: result.ok ? null : attempt };
+  return { result, pendingAttempt: result.ok ? null : attempt, attempt };
 }
