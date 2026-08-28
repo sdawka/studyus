@@ -185,8 +185,8 @@ Allowed for **any** source (system-generated events are delete-only, per the pla
 
 This is a ratified v1 narrowing rather than an additive revision. Product-usage
 telemetry is no longer accepted by `POST /events`: `recommendation_followed` and
-`recommendation_ignored` moved to the separate behavioral vocabulary and will be
-captured when that PostHog layer lands. The 11 never-emitted placeholders
+`recommendation_ignored` moved to the separate behavioral vocabulary and are captured
+deliberately by the dashboard's Next Move card. The 11 never-emitted placeholders
 `task_completed`, `task_dismissed`, `correction_dismissed`, `course_archived`,
 `plan_committed`, `session_scheduled`, `session_rescheduled`, `settings_changed`,
 `coach_session`, `reflection_captured`, and `digest_sent` were removed rather than
@@ -1083,4 +1083,5 @@ conversation's opaque `details.planned_minutes`; prompt assembly uses it for
 pacing but does not promise exact completion. Following or cycling a recommendation
 is product-usage telemetry, not a learner-domain event. The UI therefore does not
 post those actions to `/events`; `recommendation_followed` and
-`recommendation_ignored` are reserved for the separate behavioral layer.
+`recommendation_ignored` are sent through the deliberate behavioral wrapper, after a
+same-recommendation `next_move_viewed` impression.

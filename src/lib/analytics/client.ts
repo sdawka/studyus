@@ -1,6 +1,7 @@
 import type { CaptureResult } from 'posthog-js';
 import { behavioralSchemaFor, enrichBehavioralEvent, type BehavioralEventInput } from './events';
 import { clearAnalyticsState, persistAnalyticsCookies, resolveAnalyticsSession, type AnalyticsSession } from './session';
+import { capturePageLifecycle } from './daily';
 
 export type BrowserAnalyticsBootstrap = {
   enabled: boolean;
@@ -88,8 +89,8 @@ function sanitizeCapture(result: CaptureResult | null): CaptureResult | null {
 
 export async function initializeAnalytics(config: BrowserAnalyticsBootstrap): Promise<void> {
   bootstrap = config;
-  if (!mayCapture(config) || instance) {
-    if (!mayCapture(config)) clearAnalyticsState(browserStorage(), location.protocol === 'https:', writeCookie);
+  if (!mayCapture(config)) {
+    clearAnalyticsState(browserStorage(), location.protocol === 'https:', writeCookie);
     return;
   }
 
@@ -98,43 +99,47 @@ export async function initializeAnalytics(config: BrowserAnalyticsBootstrap): Pr
   session = resolveAnalyticsSession(storage, config.surface);
   persistAnalyticsCookies(session, location.protocol === 'https:', writeCookie);
 
-  const posthog = (await import('posthog-js')).default;
-  instance = posthog.init(config.token!, {
-    api_host: config.host,
-    autocapture: false,
-    rageclick: false,
-    capture_pageview: false,
-    capture_pageleave: false,
-    capture_dead_clicks: false,
-    capture_heatmaps: false,
-    capture_performance: false,
-    capture_exceptions: false,
-    disable_session_recording: true,
-    disable_surveys: true,
-    disable_surveys_automatic_display: true,
-    disable_product_tours: true,
-    disable_conversations: true,
-    disable_web_experiments: true,
-    disable_external_dependency_loading: true,
-    advanced_disable_toolbar_metrics: true,
-    advanced_disable_flags: true,
-    advanced_enable_surveys: false,
-    remote_config_refresh_interval_ms: 0,
-    save_referrer: false,
-    save_campaign_params: false,
-    detect_google_search_app: false,
-    disable_scroll_properties: true,
-    logs: { captureConsoleLogs: false },
-    ip: false,
-    respect_dnt: true,
-    opt_out_capturing_by_default: false,
-    person_profiles: 'identified_only',
-    property_denylist: ['$current_url', '$referrer', '$referring_domain', '$pathname', '$host'],
-    bootstrap: config.user_id ? undefined : { distinctID: session.anonymous_id, isIdentifiedID: false },
-    before_send: sanitizeCapture,
-  });
-  posthog.opt_in_capturing({ captureEventName: false });
-  if (config.user_id) posthog.identify(config.user_id);
+  if (!instance) {
+    const posthog = (await import('posthog-js')).default;
+    instance = posthog.init(config.token!, {
+      api_host: config.host,
+      autocapture: false,
+      rageclick: false,
+      capture_pageview: false,
+      capture_pageleave: false,
+      capture_dead_clicks: false,
+      capture_heatmaps: false,
+      capture_performance: false,
+      capture_exceptions: false,
+      disable_session_recording: true,
+      disable_surveys: true,
+      disable_surveys_automatic_display: true,
+      disable_product_tours: true,
+      disable_conversations: true,
+      disable_web_experiments: true,
+      disable_external_dependency_loading: true,
+      advanced_disable_toolbar_metrics: true,
+      advanced_disable_flags: true,
+      advanced_enable_surveys: false,
+      remote_config_refresh_interval_ms: 0,
+      save_referrer: false,
+      save_campaign_params: false,
+      detect_google_search_app: false,
+      disable_scroll_properties: true,
+      logs: { captureConsoleLogs: false },
+      ip: false,
+      respect_dnt: true,
+      opt_out_capturing_by_default: false,
+      person_profiles: 'identified_only',
+      property_denylist: ['$current_url', '$referrer', '$referring_domain', '$pathname', '$host'],
+      bootstrap: config.user_id ? undefined : { distinctID: session.anonymous_id, isIdentifiedID: false },
+      before_send: sanitizeCapture,
+    });
+    posthog.opt_in_capturing({ captureEventName: false });
+    if (config.user_id) posthog.identify(config.user_id);
+  }
+
+  capturePageLifecycle(session, config.surface, captureBehavioralEvent);
 }
 
 export function captureBehavioralEvent(input: BehavioralEventInput): void {

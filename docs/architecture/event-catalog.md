@@ -5,8 +5,9 @@ whole codebase. B1's vocabulary narrowing is implemented: recommendation interac
 and 11 dead placeholders are no longer accepted by the domain API. The **domain
 stream** sections describe what is implemented today (file:line cited). The
 **behavioral stream** section is approved vocabulary and ordering; its privacy,
-schema, session, and transport foundation is implemented, while product emitters
-remain pending. `events-and-mastery.md` stays the theory doc (KLI, the fold); this
+schema, session, and transport foundation is implemented. The daily-loop page,
+app-session, and Next Move emitters are also implemented; the remaining product
+emitters are pending. `events-and-mastery.md` stays the theory doc (KLI, the fold); this
 doc is the operational catalog: every event, who emits it, what it carries, and what
 order things are expected to arrive in.
 
@@ -18,8 +19,9 @@ studyus has (and must keep) two separate event streams:
    vocabulary `EVENT_TYPES` (`src/lib/schemas/events.ts:8`), single sanctioned writer
    `src/lib/services/events.ts`, folded into mastery by `src/lib/services/mastery.ts`.
    This contains durable learner-domain facts; role flags identify the evidence subset.
-2. **Behavioral stream** — product usage telemetry. Today it exists only as the
-   anonymous trial funnel (`demo_funnel_events`); the full layer is designed below.
+2. **Behavioral stream** — product usage telemetry. The anonymous trial funnel remains
+   in `demo_funnel_events`; authenticated deliberate capture now covers page/app-session
+   lifecycle and the Next Move recommendation loop. The full vocabulary is below.
 
 **Boundary rule**: durable facts that define the learner model or a canonical business
 transition belong in the **domain stream**; observational product usage belongs in the
@@ -141,7 +143,7 @@ mastery deltas → notification, all within one request; events precede notifica
 **Recommendation loop**: `GET /profile/next-move?available_minutes=15|25|50` → learner
 acts or rotates to another option. This produces no domain event. The approved
 behavioral ordering (`next_move_viewed` before followed/ignored) is specified below
-and will become observable when the PostHog layer lands.
+and is captured deliberately by `NextMoveCard` through the PostHog wrapper.
 
 **Onboarding funnel** (`docs/product/onboarding.md`): `/try` shadow state → trial
 situations (demo funnel stream, out-of-band) → `/sign-up?from=demo` → import review
@@ -202,8 +204,8 @@ Ordered by severity. D1–D4 and D7–D8 were fixed on 2026-08-28 (branch
   follow-up `self_assessment` requests.
 - **D7 — FIXED. Boundary violations**: `recommendation_followed/ignored` were removed
   from the domain API and Next Move no longer writes UI telemetry to D1. Their
-  behavioral names are reserved below; capture plus the missing impression denominator
-  land with the PostHog layer.
+  behavioral events now include the `next_move_viewed` impression denominator and
+  enforce an impression-before-follow/ignore ordering for each recommendation id.
 - **D8 — FIXED. 11 unwired vocabulary entries** (list above). Round-2 storm verdict
   was to **prune all 11** — applied consistently, the two-stream boundary rule dissolves the
   widened taxonomy (it predates the rule). `task_completed/dismissed`,
@@ -229,9 +231,9 @@ Ordered by severity. D1–D4 and D7–D8 were fixed on 2026-08-28 (branch
 
 ---
 
-## Behavioral stream: recorded design (foundation implemented; emitters pending)
+## Behavioral stream: recorded design (foundation and daily-loop emitters implemented)
 
-### Architecture decision (foundation implemented; instrumentation pending)
+### Architecture decision (foundation implemented; instrumentation partial)
 
 **PostHog, deliberate capture only** — no autocapture, no session replay.
 `posthog-js` for UI-only events; server-side capture via plain HTTP `/i/v0/e/`
@@ -277,7 +279,7 @@ per-page events.
 |---|---|---|---|
 | `app_session_started` | `entry_route`, `days_since_last_session` | first page view after ≥30 min idle (threshold to revisit with data) | — |
 | `next_move_viewed` | `recommendation_id`, `rank`, `kind`, `available_minutes` | NextMove card renders (**the missing impression**) | `app_session_started` |
-| `recommendation_followed` / `recommendation_ignored` | `recommendation_id`, `rank` | moved out of the domain vocabulary by B1; capture lands with this layer | `next_move_viewed` same id |
+| `recommendation_followed` / `recommendation_ignored` | `recommendation_id`, `rank` | Next Move primary action / “Show another”; moved out of the domain vocabulary by B1 | `next_move_viewed` same id |
 | `task_checked` | `task_type`, `source_surface`, `overdue` | task toggle | — |
 | `task_dismissed` | `task_type`, `source_surface` | system-task dismissal (`deleteTask` soft delete) | — |
 | `record_event_opened` / `record_event_submitted` | `event_type?` on submit | Record Event modal | opened → submitted |
@@ -365,8 +367,8 @@ Invariant: stage monotonic within a visit; stage 4 without 2–3 legal only when
 
 ## TODO
 
-- Wire the approved product-specific behavioral emitters onto the implemented
+- Wire the remaining approved product-specific behavioral emitters onto the implemented
   schema/session/privacy/transport foundation, including the `demo_funnel_events`
-  mirror-forward.
+  mirror-forward. Daily page/app-session lifecycle and Next Move are already live.
 - After implementation, add the analysis conventions here (source filters, seed/dev
   exclusion, funnel queries).

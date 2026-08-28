@@ -270,7 +270,7 @@ const dashboardComponents: Annotation[] = [
     selector: '.slot-next-move',
     purpose: 'The best learning-only action across active courses, recalculated from current deadlines, prerequisite readiness, mastery, recency, and available time.',
     affordances: ['Choose 15, 25, or 50 available minutes.', 'Open “Why this?” for the evidence behind the choice.', 'Start the recommended Understand/Quick Quiz action or cycle through up to two alternatives.'],
-    actions: ['GET /api/v1/profile/next-move?available_minutes=15|25|50 on time changes.', 'The primary link navigates to Understand or Quick Quiz; “Show another” rotates the local alternatives. Behavioral capture is intentionally deferred to the PostHog layer.'],
+    actions: ['GET /api/v1/profile/next-move?available_minutes=15|25|50 on time changes.', 'The primary link navigates to Understand or Quick Quiz; “Show another” rotates the local alternatives. Deliberate behavioral capture records each displayed recommendation before a follow or ignore action.'],
     feedback: ['Time changes show a busy state and preserve the prior recommendation if refresh fails.', 'An empty state appears when all active concepts are mastered or blocked.'],
     docs: [SCREENS, API, 'src/components/dashboard/NextMoveCard.svelte', 'src/lib/nextMove.ts'],
   },

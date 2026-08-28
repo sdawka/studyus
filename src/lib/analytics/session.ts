@@ -7,6 +7,7 @@ export const ANALYTICS_SESSION_COOKIE = 'studyus_session_id';
 const ANONYMOUS_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;
 const SESSION_MAX_AGE_SECONDS = ANALYTICS_IDLE_TIMEOUT_MS / 1000;
 const safeId = /^[A-Za-z0-9:_-]{1,160}$/;
+const safeRoutePattern = /^\/(?!\/)[^?#]{0,199}$/;
 
 export type AnalyticsSessionState = {
   session_id: string;
@@ -27,16 +28,28 @@ function readSafeId(value: string | null | undefined): string | undefined {
   return value && safeId.test(value) ? value : undefined;
 }
 
+function readSafeRoutePattern(value: unknown): string | undefined {
+  return typeof value === 'string' && safeRoutePattern.test(value) && !value.includes('://') ? value : undefined;
+}
+
 function readState(storage: Pick<Storage, 'getItem'>): AnalyticsSessionState | undefined {
   try {
     const parsed = JSON.parse(storage.getItem(ANALYTICS_SESSION_STORAGE_KEY) ?? 'null') as Partial<AnalyticsSessionState> | null;
     if (
       parsed &&
       readSafeId(parsed.session_id) &&
+      typeof parsed.last_activity_at === 'number' &&
       Number.isSafeInteger(parsed.last_activity_at) &&
+      typeof parsed.last_session_started_at === 'number' &&
       Number.isSafeInteger(parsed.last_session_started_at)
     ) {
-      return parsed as AnalyticsSessionState;
+      const previousSurface = readSafeRoutePattern(parsed.previous_surface);
+      return {
+        session_id: parsed.session_id!,
+        last_activity_at: parsed.last_activity_at,
+        last_session_started_at: parsed.last_session_started_at,
+        ...(previousSurface ? { previous_surface: previousSurface } : {}),
+      };
     }
   } catch {
     // Corrupt local state is treated as an expired session.
