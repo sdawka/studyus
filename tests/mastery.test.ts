@@ -92,7 +92,7 @@ describe('foldMastery', () => {
     expect(result.mastery).toBeGreaterThan(80);
   });
 
-  it('ignores context-only activity for mastery and freshness', () => {
+  it('ignores durable context facts for mastery and freshness', () => {
     const evidenceAt = NOW - 20 * DAY_MS;
     const result = foldMastery(
       [

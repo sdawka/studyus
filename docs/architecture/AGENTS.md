@@ -9,10 +9,12 @@ everything below exists to keep that sound.
 
 There are **two event streams**, and they must stay separate:
 
-- **Domain stream** — the D1 `events` table. Learning evidence only: an event belongs
-  here iff it is instructional or assessment evidence about a KC (it can move mastery
-  or freshness). Vocabulary: `EVENT_TYPES` in `src/lib/schemas/events.ts` with
-  IE/AE role flags derived only from type. Single sanctioned writer:
+- **Domain stream** — the D1 `events` table. Durable learner-domain facts only;
+  product-usage observation does not belong here. Instructional/assessment role
+  flags identify the subset that can move mastery or freshness; the two remaining
+  context facts (`correction_accepted`, `course_added`) record canonical business
+  transitions rather than clicks or impressions. Vocabulary: `EVENT_TYPES` in
+  `src/lib/schemas/events.ts`, with IE/AE role flags derived only from type. Single sanctioned writer:
   `src/lib/services/events.ts` (`createEvent` — every append with a `kc_id` re-folds
   mastery in the same atomic `db.batch`). The fold: `src/lib/services/mastery.ts`,
   a pure order-insensitive function of the full per-KC event set.
@@ -24,17 +26,17 @@ There are **two event streams**, and they must stay separate:
 ## Where the truth lives
 
 - `event-catalog.md` (this folder) — **the operational catalog**: every emitted event
-  with emitter/payload/fold-read keys, the unwired vocabulary, lifecycles and expected
-  orderings, idempotency guarantees, defect list D1–D11, behavioral-layer design and
-  its open questions B1–B4. Start there for any event work.
+  with emitter/payload/fold-read keys, the retired vocabulary, lifecycles and expected
+  orderings, idempotency guarantees, defect list D1–D12, behavioral-layer design and
+  its remaining questions B2–B4. Start there for any event work.
 - `events-and-mastery.md` — the theory (KLI ontology, mastery fold semantics).
 - `data-model.md` — all tables. Adjacent stores that are NOT domain events but hold
   event-like data: `demo_funnel_events` (anonymous trial funnel),
   `class_sessions` (attendance is status rows, not events), `studySessions`
   (quick quizzes hide behind a sentinel `intendedEventType`), the tutor DO's private
   SQLite (only the terminal `tutor_session` event reaches D1).
-- `docs/todo.md` — active roadmap; "Complete activity-stream instrumentation" is the
-  standing priority this system feeds.
+- `docs/todo.md` — active roadmap; behavioral-stream instrumentation is the standing
+  priority this system feeds.
 
 ## Invariants to preserve when touching event code
 
@@ -42,8 +44,8 @@ There are **two event streams**, and they must stay separate:
    onboarding's `course_added` (`source:'system'`) is inserted inline because it must
    join the atomic clone batch creating the course it references. Don't add more.
 2. Role flags are always derived from type via `EVENT_ROLE_FLAGS`; never set by hand.
-3. Context events (both flags false) are excluded from the fold — they can never move
-   mastery.
+3. Durable context facts (both flags false) are excluded from the fold — they can
+   never move mastery. UI telemetry belongs in the behavioral stream instead.
 4. Event append + mastery cache update are one atomic D1 batch; never let them diverge.
 5. Tutor sessions are exactly-once per conversation via the
    `runtime_tutor_session_events` ledger, and the DO commits its `ended` state before
@@ -56,7 +58,7 @@ Event names are snake_case past-tense verbs in both streams. Payload keys the fo
 reads: `correct`, `correctness`, `score`, `self_rating`, `final_rating` (see
 mastery.ts `eventSuccess`); an AE event
 carrying none folds at the neutral 0.7 — so an outcome-less assessment event is
-usually a bug, not a feature. When adding a domain event type: add to `EVENT_TYPES` +
-`EVENT_ROLE_FLAGS`, wire a real emitter in the same change (the catalog's D8 lists 11
-types that were added without emitters — don't repeat that), and update
-`event-catalog.md`.
+usually a bug, not a feature. When adding a domain event type: first establish that it
+is a durable business fact rather than product telemetry, then add it to `EVENT_TYPES`
+and `EVENT_ROLE_FLAGS`, wire a real emitter in the same change (D8 records why 11
+emitter-less placeholders were removed), and update `event-catalog.md`.

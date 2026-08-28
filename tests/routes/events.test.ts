@@ -53,30 +53,28 @@ describe('POST /api/v1/events', () => {
     expect(body.error).toBeDefined();
   });
 
-  it('records recommendation feedback as context without changing mastery', async () => {
-    await POST({
-      request: new Request('http://local.test/api/v1/events', {
-        method: 'POST',
-        body: JSON.stringify({ type: 'retrieval_practice', course_id: courseId, kc_id: kcId, payload: { correct: true } }),
-      }),
-      locals: { user: { id: userId } },
-    } as any);
-    const [before] = await db.select().from(kcs).where(eq(kcs.id, kcId));
+  it.each([
+    'task_completed',
+    'task_dismissed',
+    'correction_dismissed',
+    'recommendation_followed',
+    'recommendation_ignored',
+    'course_archived',
+    'plan_committed',
+    'session_scheduled',
+    'session_rescheduled',
+    'settings_changed',
+    'coach_session',
+    'reflection_captured',
+    'digest_sent',
+  ])('rejects retired domain event type %s', async (type) => {
     const request = new Request('http://local.test/api/v1/events', {
       method: 'POST',
-      body: JSON.stringify({
-        type: 'recommendation_followed',
-        course_id: courseId,
-        kc_id: kcId,
-        payload: { action_id: `understand:${kcId}:none:25`, available_minutes: 25 },
-      }),
+      body: JSON.stringify({ type, course_id: courseId, kc_id: kcId }),
     });
 
     const response = await POST({ request, locals: { user: { id: userId } } } as any);
-    expect(response.status).toBe(201);
-    const logged = await db.select().from(events).where(eq(events.kcId, kcId));
-    expect(logged.at(-1)).toMatchObject({ type: 'recommendation_followed', isInstructional: false, isAssessment: false });
-    const [kc] = await db.select().from(kcs).where(eq(kcs.id, kcId));
-    expect(kc.mastery).toBe(before.mastery);
+    expect(response.status).toBe(400);
+    expect(await db.select().from(events).where(eq(events.userId, userId))).toHaveLength(0);
   });
 });

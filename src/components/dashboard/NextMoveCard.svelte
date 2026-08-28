@@ -38,38 +38,9 @@
     activeIndex = 0;
   }
 
-  function track(type: 'recommendation_followed' | 'recommendation_ignored', tracked: NextMove, rank: number) {
-    // Context telemetry must never delay or block the learner's action.
-    void fetch('/api/v1/events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      keepalive: true,
-      body: JSON.stringify({
-        type,
-        course_id: tracked.course.course_id,
-        kc_id: tracked.kc.kc_id,
-        payload: {
-          recommendation_id: tracked.action_id,
-          action_id: tracked.action_id,
-          kind: tracked.kind,
-          method: tracked.method,
-          available_minutes: selectedMinutes,
-          rank,
-          generated_at: response.generated_at,
-          reason_codes: tracked.reasons.map((reason) => reason.code),
-        },
-      }),
-    }).catch(() => undefined);
-  }
-
   function showAnother() {
     if (!move || moves.length < 2) return;
-    track('recommendation_ignored', move, activeIndex + 1);
     activeIndex = (activeIndex + 1) % moves.length;
-  }
-
-  function follow() {
-    if (move) track('recommendation_followed', move, activeIndex + 1);
   }
 
   function methodLabel(item: NextMove): string {
@@ -121,7 +92,7 @@
       </details>
 
       <div class="actions">
-        <a class="btn btn-primary" href={move.action_href} onclick={follow}>{methodLabel(move)} →</a>
+        <a class="btn btn-primary" href={move.action_href}>{methodLabel(move)} →</a>
         {#if moves.length > 1}
           <button type="button" class="btn btn-secondary" onclick={showAnother}>Show another</button>
         {/if}

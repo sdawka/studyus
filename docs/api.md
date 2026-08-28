@@ -147,13 +147,14 @@ Single source of truth for the type → role-flag (`is_instructional`/`is_assess
 | type | is_instructional | is_assessment |
 |---|---|---|
 | lecture_attended, lecture_missed, video_watched, reading_done, taught_someone | true | false |
-| quiz_taken, assignment_graded, exam_graded, self_assessment | false | true |
+| quiz_taken, assignment_graded, exam_graded, self_assessment, placement_probe, diagnostic_probe | false | true |
 | practice_done, retrieval_practice, tutor_session | true | true |
+| correction_accepted, course_added | false | false |
 
 ### POST /events
 **Request**:
 ```json
-{ "type": "<one of the 12 types above>", "kc_id": "uuid?", "course_id": "uuid?", "ts": "iso?", "payload": {}? }
+{ "type": "<one of the 16 types above>", "kc_id": "uuid?", "course_id": "uuid?", "ts": "iso?", "payload": {}? }
 ```
 `is_instructional`/`is_assessment` are **always derived server-side from `type`** — they are not client-settable (this differs from the draft's request shape, which listed them as request fields; they're response-only). `source` is always `"manual"` for events created through this endpoint.
 
@@ -163,10 +164,23 @@ Single source of truth for the type → role-flag (`is_instructional`/`is_assess
 **Query**: `course=uuid?`, `kc=uuid?`, `limit` (default 20, max 200). Response: array of event objects, newest first.
 
 ### PATCH /events/:id
-**Manual-source only.** Attempting to PATCH a `session`/`tutor`/`seed`-sourced event returns `400 not_manual_event`. Changing `type` re-derives the role flags. Response: `{ ...event, mastery_deltas }`.
+**Manual-source only.** Attempting to PATCH a `session`/`tutor`/`seed`/`system`-sourced event returns `400 not_manual_event`. Changing `type` re-derives the role flags. Response: `{ ...event, mastery_deltas }`.
 
 ### DELETE /events/:id
 Allowed for **any** source (system-generated events are delete-only, per the plan — the confirmation step is a client UX concern, not server-enforced). Response: `{ "data": { "mastery_deltas": [...] } }`.
+
+### Domain event vocabulary narrowing (2026-08-28)
+
+This is a ratified v1 narrowing rather than an additive revision. Product-usage
+telemetry is no longer accepted by `POST /events`: `recommendation_followed` and
+`recommendation_ignored` moved to the separate behavioral vocabulary and will be
+captured when that PostHog layer lands. The 11 never-emitted placeholders
+`task_completed`, `task_dismissed`, `correction_dismissed`, `course_archived`,
+`plan_committed`, `session_scheduled`, `session_rescheduled`, `settings_changed`,
+`coach_session`, `reflection_captured`, and `digest_sent` were removed rather than
+promising an activity stream this API does not own. Production D1 contained zero
+rows for all 13 retired names at the time of the change, so no backfill or legacy-row
+migration was required. Posting or filtering by one of these names now returns 400.
 
 ---
 
@@ -1025,6 +1039,7 @@ Quick Quiz selection modes retain their prior behavior. The resulting
 
 An Understand launch passes the same `minutes` query value into the absorb
 conversation's opaque `details.planned_minutes`; prompt assembly uses it for
-pacing but does not promise exact completion. `recommendation_followed` and
-`recommendation_ignored` are posted through the normal Events endpoint as
-context-only telemetry and therefore never change mastery.
+pacing but does not promise exact completion. Following or cycling a recommendation
+is product-usage telemetry, not a learner-domain event. The UI therefore does not
+post those actions to `/events`; `recommendation_followed` and
+`recommendation_ignored` are reserved for the separate behavioral layer.

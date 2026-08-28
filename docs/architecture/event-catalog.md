@@ -1,11 +1,13 @@
 # Event Catalog & Expected Orderings
 
 **Status (2026-08-28)**: canonical reference produced by an event-storming pass over the
-whole codebase. The **domain stream** sections describe what is implemented today
-(file:line cited). The **behavioral stream** section is recorded design — approved
-vocabulary and orderings, not yet implemented. `events-and-mastery.md` stays the theory
-doc (KLI, the fold); this doc is the operational catalog: every event, who emits it,
-what it carries, and what order things are expected to arrive in.
+whole codebase. B1's vocabulary narrowing is implemented: recommendation interactions
+and 11 dead placeholders are no longer accepted by the domain API. The **domain
+stream** sections describe what is implemented today (file:line cited). The
+**behavioral stream** section is recorded design — approved vocabulary and orderings,
+not yet implemented. `events-and-mastery.md` stays the theory doc (KLI, the fold); this
+doc is the operational catalog: every event, who emits it, what it carries, and what
+order things are expected to arrive in.
 
 ## The two streams
 
@@ -14,25 +16,24 @@ studyus has (and must keep) two separate event streams:
 1. **Domain stream** — the `events` table (`migrations/0000_whole_randall.sql:110`),
    vocabulary `EVENT_TYPES` (`src/lib/schemas/events.ts:8`), single sanctioned writer
    `src/lib/services/events.ts`, folded into mastery by `src/lib/services/mastery.ts`.
-   This is learner-model evidence.
+   This contains durable learner-domain facts; role flags identify the evidence subset.
 2. **Behavioral stream** — product usage telemetry. Today it exists only as the
    anonymous trial funnel (`demo_funnel_events`); the full layer is designed below.
 
-**Boundary rule**: an event belongs in the **domain stream** iff it is instructional or
-assessment evidence about a KC — i.e. it can legitimately move mastery or freshness. It
-belongs in the **behavioral stream** iff it is about product usage. UI telemetry must
-never be written into the `events` table. (Two existing types violate this rule —
-see Defect D7.)
+**Boundary rule**: durable facts that define the learner model or a canonical business
+transition belong in the **domain stream**; observational product usage belongs in the
+**behavioral stream**. Only role-flagged domain evidence can legitimately move mastery
+or freshness. UI telemetry must never be written into the `events` table.
 
 ---
 
 ## Domain stream: catalog
 
-Sources: `manual | session | tutor | seed | system` (`src/lib/schemas/events.ts:84`;
+Sources: `manual | session | tutor | seed | system` (`src/lib/schemas/events.ts:55`;
 `system` = server emissions inside atomic batches, e.g. onboarding's `course_added`).
 Role flags
 (IE = instructional, AE = assessment) are derived exclusively from type via
-`EVENT_ROLE_FLAGS` (`src/lib/schemas/events.ts:52`).
+`EVENT_ROLE_FLAGS` (`src/lib/schemas/events.ts:36`).
 
 The fold reads **only** these payload keys (`src/lib/services/mastery.ts` `eventSuccess`):
 `correct` (bool), `correctness` (0–1, reserved — no emitter yet), `score` (0–100),
@@ -54,18 +55,18 @@ of them folds at the neutral `MASTERY_CONSTANTS.DEFAULT_AE_SUCCESS` (0.7, `maste
 | `placement_probe` / `diagnostic_probe` | –/AE | `domain/pedagogy/exercise.ts:218-235` `recordExerciseEvidence` only (caller-supplied `event_id` dedupe) | Agentic channel records probe outcome | `{correct, exercise_id, misconception_id, purpose, channel}` | `correct` |
 | `tutor_session` | IE/AE | `events.ts:102-167` `createRuntimeTutorSessionEvent` (ledger-idempotent); legacy `tutor/conversations.ts:309-317` | Tutor conversation ends | `{conversation_id, mode, final_rating?}` | `final_rating` |
 | `correction_accepted` | context | `corrections.ts:96-104` (source `'tutor'`) | Student accepts a correction | `{correction_id, misconception_id}` | excluded |
-| `recommendation_followed` / `recommendation_ignored` | context | `NextMoveCard.svelte:41-63`, fire-and-forget keepalive fetch | Follow / "show another" on next-move card | `{recommendation_id, action_id, kind, method, available_minutes, rank}` | excluded |
 | `course_added` | context | `onboarding.ts` — sanctioned inline insert (`source:'system'`): must join the atomic clone batch creating the course it references | Onboarding course commit | `{source:'demo_import', draft_id}` | excluded |
 
-### In the vocabulary but never emitted (verified repo-wide, 2026-08-28)
+### Retired from the domain vocabulary (B1, 2026-08-28)
 
 `task_completed`, `task_dismissed`, `correction_dismissed`, `course_archived`,
 `plan_committed`, `session_scheduled`, `session_rescheduled`, `settings_changed`,
-`coach_session`, `reflection_captured`, `digest_sent` — 11 types with no emitter
-anywhere. The enum promises an activity stream the code doesn't produce; this is
-todo.md "Other active priorities" #2. The biggest blind spots: the task lifecycle (the
-task-centric dashboard leaves no event trail), scheduling/rescheduling (planning
-behavior is unreconstructable), and course archival.
+`coach_session`, `reflection_captured`, `digest_sent` had no emitter anywhere and were
+removed rather than promising an activity stream the code did not produce.
+`recommendation_followed` and `recommendation_ignored` were also removed from
+`EVENT_TYPES`; they describe UI behavior and remain reserved in the behavioral
+taxonomy below. The required production D1 pre-check found zero rows across all 13
+names, so no data migration or backfill was needed.
 
 ### Adjacent stores analysis must know about
 
@@ -134,9 +135,9 @@ Status ladder `suspected → confirmed → correcting → internalized` is monot
 mastery deltas → notification, all within one request; events precede notification.
 
 **Recommendation loop**: `GET /profile/next-move?available_minutes=15|25|50` → learner
-acts → `recommendation_followed` (CTA) or `recommendation_ignored` (per rotation click;
-one fetch can yield N ignores + 1 follow). Fire-and-forget by design: no retry, no
-dedupe, nothing enforces fetch-before-track.
+acts or rotates to another option. This produces no domain event. The approved
+behavioral ordering (`next_move_viewed` before followed/ignored) is specified below
+and will become observable when the PostHog layer lands.
 
 **Onboarding funnel** (`docs/product/onboarding.md`): `/try` shadow state → trial
 situations (demo funnel stream, out-of-band) → `/sign-up?from=demo` → import review
@@ -151,12 +152,12 @@ middleware-enforced). Trial data never crosses into learner `events`.
   (`events.ts:84-86`) — cache and log are never observably divergent. Recency comes
   from `ts` (caller-suppliable; backdated manual events are first-class), not insertion
   order. Edit/delete = re-fold over what remains.
-- Context events (both role flags false) are filtered before folding
-  (`mastery.ts:87-91`) — they can never move mastery or freshness.
+- Durable context facts (both role flags false) are filtered before folding
+  (`mastery.ts:89-93`) — they can never move mastery or freshness.
 - Idempotency exists only where a ledger enforces it: tutor sessions (conversation
   ledger), agentic evidence (caller `event_id`; same id with different type/kc → 409),
-  class-session sweep (UNIQUE), demo funnel (event id). **All browser POSTs (manual
-  logs, self-assessments, recommendation telemetry) have no idempotency key** —
+  class-session sweep (UNIQUE), demo funnel (event id). **Browser event POSTs (manual
+  logs and self-assessments) have no idempotency key** —
   double-submit means double mastery evidence (D5).
 - Edit policy: PATCH only `source='manual'` rows; role flags re-derived from type on
   every edit; DELETE allowed for any source.
@@ -167,8 +168,8 @@ middleware-enforced). Trial data never crosses into learner `events`.
 
 ## Known defects & gaps (the implementation backlog from this storm)
 
-Ordered by severity. D1–D4 were fixed on 2026-08-28 (branch `event-catalog`); kept
-here as history because existing rows predate the fixes.
+Ordered by severity. D1–D4 and D7–D8 were fixed on 2026-08-28 (branch
+`event-catalog`); kept here as history because existing rows may predate some fixes.
 
 - **D1 — FIXED. Tutor ratings never reached mastery.** The writer emitted
   `payload.final_rating` but the fold only read `self_rating`, so every tutor session
@@ -186,17 +187,17 @@ here as history because existing rows predate the fixes.
   references, so `createEvent`'s own batch can't be used); it now stamps
   `source:'system'` (added to `EVENT_SOURCES`) instead of masquerading as `'manual'`,
   and the call site documents the exception.
-- **D5 — No idempotency key on browser event POSTs** (manual logs, self-assessments,
-  recommendation telemetry): retries and double-taps duplicate evidence.
+- **D5 — No idempotency key on browser event POSTs** (manual logs and
+  self-assessments): retries and double-taps duplicate evidence.
 - **D6 — `practice_done` carries no outcome** and post-session `self_assessment`
   POSTs are fire-and-forget: failed rating posts silently pull KCs toward the 0.7
   neutral. Consider carrying ratings in the completion request itself.
-- **D7 — Boundary violations**: `recommendation_followed/ignored` live in the domain
-  stream but carry no KC evidence — under the boundary rule they migrate to the
-  behavioral stream (open question B1 below). And there is **no impression event**, so
-  follow-rate has no denominator.
-- **D8 — 11 unwired vocabulary entries** (list above). Round-2 storm verdict:
-  **prune all 11** — applied consistently, the two-stream boundary rule dissolves the
+- **D7 — FIXED. Boundary violations**: `recommendation_followed/ignored` were removed
+  from the domain API and Next Move no longer writes UI telemetry to D1. Their
+  behavioral names are reserved below; capture plus the missing impression denominator
+  land with the PostHog layer.
+- **D8 — FIXED. 11 unwired vocabulary entries** (list above). Round-2 storm verdict
+  was to **prune all 11** — applied consistently, the two-stream boundary rule dissolves the
   widened taxonomy (it predates the rule). `task_completed/dismissed`,
   `course_archived`, `settings_changed`, `correction_dismissed` are superseded by
   behavioral events (taxonomy below); `plan_committed`, `reflection_captured`,
@@ -204,9 +205,8 @@ here as history because existing rows predate the fixes.
   evidence; `session_rescheduled` history is real but belongs in a D1
   schedule-change log owned by the Replanning loop; `coach_session` returns as a real
   domain event when the coach ships (ledger-idempotent, like `tutor_session`).
-  Execute as one vocabulary-narrowing change bundled with B1: pre-check prod D1 for
-  stray rows (expect zero), edit `EVENT_TYPES` + `EVENT_ROLE_FLAGS`, record the
-  narrowing in `docs/api.md`. **Pending ratification with B1.**
+  Executed as one vocabulary-narrowing change bundled with B1 after a clean production
+  D1 pre-check; the v1 contract narrowing is recorded in `docs/api.md`.
 - **D9 — Attendance undercount**: the primary attendance path records no event; only
   the secondary manual-modal path feeds the fold.
 - **D10 — Calendar sync leaves no trace**: sync outcomes and schedule disruptions
@@ -225,7 +225,7 @@ here as history because existing rows predate the fixes.
 
 ## Behavioral stream: recorded design (not yet implemented)
 
-### Architecture decision (recorded; ratify before implementing)
+### Architecture decision (recorded; implementation pending)
 
 **PostHog, deliberate capture only** — no autocapture, no session replay.
 `posthog-js` for UI-only events; server-side capture via plain HTTP `/capture` with
@@ -271,7 +271,7 @@ per-page events.
 |---|---|---|---|
 | `app_session_started` | `entry_route`, `days_since_last_session` | first page view after ≥30 min idle (threshold to revisit with data) | — |
 | `next_move_viewed` | `recommendation_id`, `rank`, `kind`, `available_minutes` | NextMove card renders (**the missing impression**) | `app_session_started` |
-| `recommendation_followed` / `recommendation_ignored` | `recommendation_id`, `rank` | migrates here from domain stream (B1) | `next_move_viewed` same id |
+| `recommendation_followed` / `recommendation_ignored` | `recommendation_id`, `rank` | moved out of the domain vocabulary by B1; capture lands with this layer | `next_move_viewed` same id |
 | `task_checked` | `task_type`, `source_surface`, `overdue` | task toggle | — |
 | `task_dismissed` | `task_type`, `source_surface` | system-task dismissal (`deleteTask` soft delete) | — |
 | `record_event_opened` / `record_event_submitted` | `event_type?` on submit | Record Event modal | opened → submitted |
@@ -345,13 +345,12 @@ page_viewed(/learn/[kcId]) → absorb_stage_reached(1) → prereq_gate_decided
 Invariant: stage monotonic within a visit; stage 4 without 2–3 legal only when
 `weak_count = 0`.
 
-### Open questions (decide before implementing)
+### Decisions and remaining questions
 
-- **B1** — Narrowing `EVENT_TYPES`: migrate `recommendation_followed/ignored` to the
-  behavioral stream AND prune the 11 dead types (D8 verdict) in one vocabulary change
-  to `POST /api/v1/events`. Acceptable v1 change (none were mastery-bearing; the 11
-  have zero rows) or additivity violation per `docs/api.md`? Disposition of existing
-  `recommendation_*` rows needed.
+- **B1 — DECIDED and implemented.** `recommendation_followed/ignored` moved to the
+  behavioral vocabulary and the 11 dead types were pruned from `POST /api/v1/events`
+  in one ratified v1 narrowing. Production had zero rows for all 13 names, so there
+  were no historical recommendation rows to backfill or retain.
 - **B2** — `app_session_started` idle threshold: 30 min is the default; the
   15/25/50-minute budget concept suggests shorter — revisit after two weeks of
   `page_viewed` data.
@@ -360,9 +359,7 @@ Invariant: stage monotonic within a visit; stage 4 without 2–3 legal only when
 
 ## TODO
 
-- Ratify B1 (vocabulary narrowing: `recommendation_*` migration + D8 prune), then
-  execute it as one change.
-- Implement the behavioral layer (PostHog decision above) once ratified.
+- Implement the behavioral layer (PostHog decision above).
 - Fix the remaining domain-stream debt: D5 (idempotency keys), D6 (ratings in the
   completion request), D12 (server-side discard semantics).
 - After implementation, add the analysis conventions here (source filters, seed/dev

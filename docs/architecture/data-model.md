@@ -223,16 +223,18 @@ history.
 - `id` (text, pk)
 - `user_id` → `users.id`, **ON DELETE CASCADE**
 - `ts` (integer) — when the event occurred (may differ from `created_at`)
-- `type` (text, free string — see `src/lib/schemas/events.ts::EVENT_ROLE_FLAGS`
-  for evidence plus context-only activity families). Only role-flagged
-  evidence is folded; context events never change mastery or KC freshness.
+- `type` (text, free string in storage; writes are narrowed by
+  `src/lib/schemas/events.ts::EVENT_ROLE_FLAGS` to durable learner-domain facts).
+  Product-usage telemetry belongs to the separate behavioral stream. Only
+  role-flagged evidence is folded; durable context facts never change mastery or
+  KC freshness.
 - `is_instructional` (integer/boolean, default `false`) — derived server-side from `type`, not client-settable
 - `is_assessment` (integer/boolean, default `false`) — same
 - `kc_id` → `kcs.id`, nullable, **ON DELETE SET NULL**
 - `course_id` → `courses.id`, nullable, **ON DELETE SET NULL** — nullable (not "always present" as a prior draft claimed); course-scoped events without a course context can exist
 - `session_id` (text, nullable) — **not a real foreign key.** It's a plain text column with no `.references()` in `schema.ts` and no FK constraint in the migration, despite conceptually pointing at `study_sessions.id`.
 - `payload` (text, JSON mode, default `'{}'`) — event-specific data; see `mastery.ts::eventSuccess` for the fields the fold actually reads (`correct`, `correctness`, `score`, `self_rating`)
-- `source` (text enum: `manual | session | tutor | seed`)
+- `source` (text enum: `manual | session | tutor | seed | system`)
 - `created_at`
 
 **No `updated_at` column** — a manual event edit (`PATCH /events/:id`) updates fields in place with no separate edited-at stamp. Indexes: `events_kc_id_idx` on (`kc_id`), `events_user_ts_idx` on (`user_id`, `ts`).

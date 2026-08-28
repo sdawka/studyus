@@ -40,10 +40,10 @@ priorities are listed here and detailed in their owning docs.
    post-onboarding map maintenance are implemented. Next add durable R2
    ingestion. Full status:
    `docs/product/onboarding.md`.
-2. **Complete activity-stream instrumentation** — the widened event taxonomy is
-   present, but task/course/session/settings mutations do not all append their
-   canonical context events yet. The full catalog, defect list (D1–D11), and the
-   designed-but-unimplemented behavioral analytics layer now live in
+2. **Implement the behavioral analytics stream** — the D1 event vocabulary has
+   been narrowed back to durable learner-domain facts. Product usage (task,
+   recommendation, course, session, and settings interactions) belongs in the
+   designed-but-unimplemented PostHog layer recorded in
    `docs/architecture/event-catalog.md`.
 3. **Expose the coach/orchestrator** — four domain engines and the per-learner
    Durable Object foundation exist. The web tutor now projects authoritative
@@ -179,14 +179,12 @@ Clerk now owns passwords, verification, reset, and sessions. PBKDF2/legacy
 session code is retained only to import old accounts. Role-based authorization
 for future instructor/institutional surfaces remains deferred.
 
-### Complete Activity Stream
+### Behavioral Activity Stream
 
-The context-only event types are defined, but most originating actions are not
-wired. Recommendation follow/ignore is now wired from Global Next Move. Add
-idempotent events for task complete/dismiss, course add/archive, session
-schedule/reschedule, settings changes, coach sessions, reflections, and
-digests. `correction_accepted` is the reference implementation.
-Do this before relying on coach digests or recommendation-followed metrics.
+Implement the deliberate-capture PostHog layer in the event catalog. Keep UI
+telemetry out of D1 `events`; add typed, privacy-safe capture for the approved
+behavioral vocabulary and its impressions/denominators before relying on coach
+digests or recommendation-followed metrics.
 
 ## Mastery Inference
 

@@ -87,10 +87,9 @@ function statusFor(mastery: number, hasEvents: boolean): KcStatus {
 }
 
 export function foldMastery(events: FoldEvent[], now: number = Date.now()): MasteryResult {
-  // The activity stream also holds triage/admin/coach context. Only learning
-  // evidence may establish freshness or contribute to mastery; otherwise an
-  // unrelated action (for example accepting a correction) could defer a KC's
-  // review forever.
+  // The domain stream also holds a small number of durable context facts. Only
+  // learning evidence may establish freshness or contribute to mastery; product
+  // usage belongs in the separate behavioral stream.
   const evidenceEvents = events.filter((event) => event.isInstructional || event.isAssessment);
 
   if (evidenceEvents.length === 0) {
