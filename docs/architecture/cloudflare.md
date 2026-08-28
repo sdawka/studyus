@@ -69,7 +69,7 @@ the repo root); identifiers are placeholders:
   "vars": {
     "OPENROUTER_MODEL": "openrouter/auto",
     "AI_FEATURES_ENABLED": "true",
-    "ANALYTICS_ENABLED": "false",
+    "ANALYTICS_ENABLED": "true",
     "POSTHOG_HOST": "https://us.i.posthog.com"
   },
   "observability": {
@@ -95,10 +95,9 @@ for isolated staging secrets). AI uses `OPENROUTER_API_KEY` plus the non-secret
 `ANALYTICS_EXCLUDED_USER_IDS` list of local `users.id` values, and the
 non-secret `ANALYTICS_ENABLED` switch. Missing or invalid configuration is a
 no-op. Never put a token, Clerk id, email address, or name in committed config.
-Both checked-in environments currently set `ANALYTICS_ENABLED=false`; implemented
-emitters do not imply enabled production capture. Enabling delivery requires an
-explicit operational decision to change that gate and provision the environment's
-`POSTHOG_PROJECT_TOKEN` secret.
+Both checked-in environments set `ANALYTICS_ENABLED=true`. Delivery still fails closed
+unless that environment has a `POSTHOG_PROJECT_TOKEN`; tokens and developer-user
+exclusions are provisioned as uncommitted environment secrets.
 
 ## Accessing Bindings in Code
 

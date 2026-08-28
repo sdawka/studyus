@@ -1,6 +1,6 @@
 OPENROUTER_API_KEY=
-# Optional behavioral analytics. Keep ANALYTICS_ENABLED=false in wrangler.jsonc
-# until a PostHog project token has been provisioned and the rollout is ratified.
+# Behavioral analytics is enabled in wrangler.jsonc. Local delivery still requires
+# a PostHog project token and the developer-user exclusion below.
 POSTHOG_PROJECT_TOKEN=
 # Comma-separated local users.id values; never Clerk ids or email addresses.
 ANALYTICS_EXCLUDED_USER_IDS=
