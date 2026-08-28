@@ -12,6 +12,8 @@ describe('learning-surface component wiring', () => {
     expect(studyFlowSource).toContain('installPageExitAbandonment(practiceAnalytics.abandon)');
     expect(studyFlowSource).toContain("practiceAnalytics.enterStage('reflection')");
     expect(studyFlowSource).toContain('practiceAnalytics.terminal()');
+    expect(studyFlowSource).toContain('practiceAnalytics.abandonOnDiscard(resumeVisitStartedAt || Date.now())');
+    expect(studyFlowSource).not.toContain('started_at: openSession.startedAt');
     expect(studyFlowSource.indexOf('practiceAnalytics.start({')).toBeGreaterThan(studyFlowSource.indexOf("step = 'running'"));
     expect(studyFlowSource).toContain("intendedType !== 'quick_quiz'");
   });
@@ -29,6 +31,7 @@ describe('learning-surface component wiring', () => {
     expect(absorbFlowSource).toContain('onMount(() => absorbAnalytics.reached(1))');
     expect(absorbFlowSource).toContain("absorbAnalytics.decided('verify', ids.length)");
     expect(absorbFlowSource).toContain("absorbAnalytics.decided('continue_anyway', weakCount)");
+    expect(absorbFlowSource).not.toContain("if (weakCount > 0) absorbAnalytics.decided('continue_anyway', weakCount)");
     expect(absorbFlowSource).toContain('absorbAnalytics.reached(4)');
   });
 

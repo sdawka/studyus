@@ -3,11 +3,18 @@ import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../src/db/client';
 import { demoFunnelEvents } from '../src/db/schema';
-import { buildDemoFunnelBatch } from '../src/lib/analytics/demo';
+import {
+  buildDemoFunnelBatch,
+  buildDemoFunnelEventBatch,
+  ensureDemoTrialSession,
+} from '../src/lib/analytics/demo';
 import { queueBehavioralEvents } from '../src/lib/analytics/server';
+import { DEMO_STORAGE_KEY } from '../src/lib/demo/store';
 import { demoFunnelBatchSchema } from '../src/lib/schemas/onboarding';
 import { demoRowsToBehavioralEvents, insertDemoFunnelBatch } from '../src/lib/services/demoFunnel';
 import * as demoEventsRoute from '../src/pages/api/public/demo-events';
+import publicTrialSource from '../src/components/demo/PublicTrial.svelte?raw';
+import marketingLayoutSource from '../src/layouts/MarketingLayout.astro?raw';
 
 const db = getDb(env.DB);
 const anonymousId = '11111111-1111-4111-8111-111111111111';
@@ -21,7 +28,8 @@ function storage() {
   return {
     getItem: (key: string) => values.get(key) ?? null,
     setItem: (key: string, value: string) => values.set(key, value),
-  } as Pick<Storage, 'getItem' | 'setItem'>;
+    removeItem: (key: string) => values.delete(key),
+  } as Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 }
 
 function body() {
@@ -63,6 +71,38 @@ describe('public demo analytics correlation', () => {
       { name: 'landing_try_clicked', trial_session_id: trialSessionId },
       { storage: shared, surface: '/try', now: occurredAt, secure: false, write_cookie: vi.fn(), dnt: true },
     )).toBeUndefined();
+  });
+
+  it('persists one trial id before CTA navigation and does not synthesize clicks on /try mount', () => {
+    const shared = storage();
+    const trialId = ensureDemoTrialSession(shared, occurredAt);
+    expect(trialId).toMatch(/^[0-9a-f-]{36}$/i);
+    expect(JSON.parse(shared.getItem(DEMO_STORAGE_KEY)!).draft_id).toBe(trialId);
+    expect(ensureDemoTrialSession(shared, occurredAt + 1)).toBe(trialId);
+
+    expect(marketingLayoutSource).toContain("document.querySelectorAll<HTMLAnchorElement>('a[href=\"/try\"]')");
+    expect(marketingLayoutSource).toContain('void trackLandingTryClick()');
+    expect(publicTrialSource).not.toContain("void track('landing_try_clicked')");
+  });
+
+  it('keeps adjacent trial transitions in one explicitly ordered batch', () => {
+    const ids = [anonymousId, appSessionId, eventId, '55555555-5555-4555-8555-555555555555'];
+    const batch = buildDemoFunnelEventBatch([
+      { name: 'scenario_started', trial_session_id: trialSessionId, scenario_id: 'overloaded' },
+      { name: 'scenario_completed', trial_session_id: trialSessionId, scenario_id: 'overloaded' },
+    ], {
+      storage: storage(),
+      surface: '/try',
+      now: occurredAt,
+      create_id: () => ids.shift()!,
+      secure: true,
+      write_cookie: vi.fn(),
+      dnt: false,
+    });
+
+    expect(batch?.events.map((event) => event.name)).toEqual(['scenario_started', 'scenario_completed']);
+    expect(batch?.events.map((event) => event.occurred_at)).toEqual([occurredAt, occurredAt + 1]);
+    expect(new Set(batch?.events.map((event) => event.event_id)).size).toBe(2);
   });
 
   it('returns only actual D1 inserts for one-time PostHog mirroring', async () => {

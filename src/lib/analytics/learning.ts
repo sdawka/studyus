@@ -40,17 +40,23 @@ type PracticeStart = {
 
 export function createPracticeAnalytics(capture: LearningCapture, now: () => number = Date.now) {
   let active: { startedAt: number; stage: PracticeStage } | undefined;
+  let inactiveDiscardRecorded = false;
+
+  function captureAbandonment(startedAt: number, stage: PracticeStage): void {
+    capture({ name: 'practice_abandoned', elapsed_ms: boundedDuration(startedAt, now()), stage });
+  }
 
   function abandon(): void {
     if (!active) return;
     const current = active;
     active = undefined;
-    capture({ name: 'practice_abandoned', elapsed_ms: boundedDuration(current.startedAt, now()), stage: current.stage });
+    captureAbandonment(current.startedAt, current.stage);
   }
 
   return {
     start(input: PracticeStart): void {
       if (active) return;
+      inactiveDiscardRecorded = false;
       capture({
         name: 'practice_started',
         course_id: input.course_id,
@@ -64,6 +70,15 @@ export function createPracticeAnalytics(capture: LearningCapture, now: () => num
     },
     terminal(): void {
       active = undefined;
+    },
+    abandonOnDiscard(visitStartedAt: number): void {
+      if (active) {
+        abandon();
+        return;
+      }
+      if (inactiveDiscardRecorded) return;
+      inactiveDiscardRecorded = true;
+      captureAbandonment(visitStartedAt, 'setup');
     },
     abandon,
   };

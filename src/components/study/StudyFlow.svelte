@@ -88,6 +88,7 @@
   let timerHandle: ReturnType<typeof setInterval> | null = null;
 
   let discarding = $state(false);
+  let resumeVisitStartedAt = $state(0);
   let error = $state<string | null>(null);
 
   type Kc = { id: string; name: string };
@@ -107,6 +108,7 @@
   }
 
   onMount(() => {
+    resumeVisitStartedAt = Date.now();
     const cleanupAbandonment = installPageExitAbandonment(practiceAnalytics.abandon);
     return () => {
       stopTimer();
@@ -156,7 +158,6 @@
         course_id: selectedCourse.id,
         intended_event_type: openSession.intendedEventType,
         ...(selectedRitual ? { ritual_id: selectedRitual.id } : {}),
-        started_at: openSession.startedAt,
       });
     }
   }
@@ -175,7 +176,7 @@
         error = result.error;
         return;
       }
-      practiceAnalytics.terminal();
+      practiceAnalytics.abandonOnDiscard(resumeVisitStartedAt || Date.now());
       step = 'course';
     } finally {
       discarding = false;

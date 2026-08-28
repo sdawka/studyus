@@ -99,4 +99,27 @@ describe('Next Move analytics ordering', () => {
       { name: 'recommendation_followed', recommendation_id: moveA.action_id, rank: 1 },
     ]);
   });
+
+  it('allows one terminal per visible interaction and resets after a rotation away and back', () => {
+    const captured: BehavioralEventInput[] = [];
+    const analytics = createNextMoveAnalytics((event) => captured.push(event));
+
+    analytics.viewed(moveA, 1, 25);
+    analytics.followed(moveA, 1, 25);
+    analytics.followed(moveA, 1, 25);
+    analytics.ignored(moveA, 1, 25);
+    analytics.viewed(moveB, 2, 25);
+    analytics.ignored(moveB, 2, 25);
+    analytics.viewed(moveA, 1, 25);
+    analytics.followed(moveA, 1, 25);
+
+    expect(captured.map((event) => event.name)).toEqual([
+      'next_move_viewed',
+      'recommendation_followed',
+      'next_move_viewed',
+      'recommendation_ignored',
+      'next_move_viewed',
+      'recommendation_followed',
+    ]);
+  });
 });
