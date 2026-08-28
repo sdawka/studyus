@@ -188,7 +188,7 @@ export function currentAnalyticsSurface(): string | undefined {
   return bootstrap?.surface;
 }
 
-export function setAnalyticsOptOut(optOut: boolean): void {
+export async function setAnalyticsOptOut(optOut: boolean): Promise<void> {
   if (bootstrap) bootstrap = { ...bootstrap, analytics_opt_out: optOut };
   if (optOut) {
     pendingCaptures = [];
@@ -197,9 +197,9 @@ export function setAnalyticsOptOut(optOut: boolean): void {
     instance = undefined;
     session = undefined;
     clearAnalyticsState(browserStorage(), location.protocol === 'https:', writeCookie);
-  } else if (bootstrap) {
-    void initializeAnalytics(bootstrap);
+    return;
   }
+  if (bootstrap) await initializeAnalytics(bootstrap);
 }
 
 export function resetAnalytics(): void {

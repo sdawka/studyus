@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { setAnalyticsOptOut } from '../../lib/analytics/client';
+  import { captureBehavioralEvent, setAnalyticsOptOut } from '../../lib/analytics/client';
   import { pushToast } from '../../lib/stores/toast';
 
   let { optedOut }: { optedOut: boolean } = $props();
@@ -19,7 +19,14 @@
         body: JSON.stringify({ settings: { analytics_opt_out: !nextEnabled } }),
       });
       if (!response.ok) throw new Error('settings update failed');
-      setAnalyticsOptOut(!nextEnabled);
+      try {
+        await setAnalyticsOptOut(!nextEnabled);
+        // Opt-out clears capture state and deliberately emits nothing. A
+        // successful opt-in reinitializes first, then records only the key.
+        if (nextEnabled) captureBehavioralEvent({ name: 'settings_changed', keys: ['analytics_opt_out'] });
+      } catch {
+        // The privacy setting is already persisted; analytics stays best-effort.
+      }
     } catch {
       enabled = previous;
       pushToast('Could not save analytics privacy setting', 'error');

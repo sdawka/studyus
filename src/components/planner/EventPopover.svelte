@@ -282,7 +282,10 @@
         `/api/v1/class-sessions/${item.id}`,
         {
           method: 'PATCH',
-          headers: { 'content-type': 'application/json' },
+          headers: {
+            'content-type': 'application/json',
+            'X-Studyus-Analytics-Surface': '/planner',
+          },
           body: JSON.stringify({ status: next }),
         },
         'Could not update attendance.',

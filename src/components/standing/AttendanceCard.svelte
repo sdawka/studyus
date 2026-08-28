@@ -134,7 +134,10 @@
       // reverts identically, so there's nothing left for a catch to do.
       const result = await apiFetch(`/api/v1/class-sessions/${session.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Studyus-Analytics-Surface': '/standing',
+        },
         body: JSON.stringify({ status }),
       });
       if (!result.ok) {
