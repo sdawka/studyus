@@ -20,8 +20,9 @@ There are **two event streams**, and they must stay separate:
   a pure order-insensitive function of the full per-KC event set.
 - **Behavioral stream** — product usage telemetry (page views, impressions,
   abandonment). Never write this into the `events` table. As of 2026-08-28 it is
-  **designed but not implemented** (PostHog, deliberate capture, `users.id` as
-  distinct_id, no PII, no free text) — full design in `event-catalog.md`.
+  partially implemented (PostHog, deliberate capture, `users.id` as distinct_id,
+  no PII, no free text): page/app-session lifecycle and Next Move are live; the full
+  design and remaining emitters are in `event-catalog.md`.
 
 ## Where the truth lives
 

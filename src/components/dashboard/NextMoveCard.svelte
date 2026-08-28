@@ -1,5 +1,8 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { apiFetch } from '../../lib/apiClient';
+  import { captureBehavioralEvent } from '../../lib/analytics/client';
+  import { createNextMoveAnalytics } from '../../lib/analytics/daily';
   import type { AvailableMinutes, NextMove, NextMoveResponse } from '../../lib/schemas/nextMove';
 
   interface Props {
@@ -18,6 +21,11 @@
     ...response.alternatives,
   ]);
   let move = $derived(moves[activeIndex] ?? null);
+  const analytics = createNextMoveAnalytics(captureBehavioralEvent);
+
+  onMount(() => {
+    if (move) analytics.viewed(move, activeIndex + 1, selectedMinutes);
+  });
 
   async function chooseMinutes(minutes: AvailableMinutes) {
     if (minutes === selectedMinutes || loading) return;
@@ -36,11 +44,21 @@
     response = result.data;
     selectedMinutes = minutes;
     activeIndex = 0;
+    const firstMove = result.data.recommendation ?? result.data.alternatives[0] ?? null;
+    if (firstMove) analytics.viewed(firstMove, 1, minutes);
   }
 
   function showAnother() {
     if (!move || moves.length < 2) return;
-    activeIndex = (activeIndex + 1) % moves.length;
+    analytics.ignored(move, activeIndex + 1, selectedMinutes);
+    const nextIndex = (activeIndex + 1) % moves.length;
+    activeIndex = nextIndex;
+    analytics.viewed(moves[nextIndex]!, nextIndex + 1, selectedMinutes);
+  }
+
+  function followMove() {
+    if (!move) return;
+    analytics.followed(move, activeIndex + 1, selectedMinutes);
   }
 
   function methodLabel(item: NextMove): string {
@@ -92,7 +110,7 @@
       </details>
 
       <div class="actions">
-        <a class="btn btn-primary" href={move.action_href}>{methodLabel(move)} →</a>
+        <a class="btn btn-primary" href={move.action_href} onclick={followMove}>{methodLabel(move)} →</a>
         {#if moves.length > 1}
           <button type="button" class="btn btn-secondary" onclick={showAnother}>Show another</button>
         {/if}

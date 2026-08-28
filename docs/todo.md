@@ -40,10 +40,10 @@ priorities are listed here and detailed in their owning docs.
    post-onboarding map maintenance are implemented. Next add durable R2
    ingestion. Full status:
    `docs/product/onboarding.md`.
-2. **Implement the behavioral analytics stream** — the D1 event vocabulary has
-   been narrowed back to durable learner-domain facts. Product usage (task,
-   recommendation, course, session, and settings interactions) belongs in the
-   designed-but-unimplemented PostHog layer recorded in
+2. **Complete the behavioral analytics stream** — the D1 event vocabulary has
+   been narrowed back to durable learner-domain facts. The deliberate PostHog
+   foundation plus page/app-session and Next Move emitters are implemented; task,
+   course, study-session, and settings interactions remain in
    `docs/architecture/event-catalog.md`.
 3. **Expose the coach/orchestrator** — four domain engines and the per-learner
    Durable Object foundation exist. The web tutor now projects authoritative
@@ -183,10 +183,10 @@ for future instructor/institutional surfaces remains deferred.
 
 ### Behavioral Activity Stream
 
-Implement the deliberate-capture PostHog layer in the event catalog. Keep UI
-telemetry out of D1 `events`; add typed, privacy-safe capture for the approved
-behavioral vocabulary and its impressions/denominators before relying on coach
-digests or recommendation-followed metrics.
+Complete the deliberate-capture PostHog layer in the event catalog. The privacy-safe
+wrapper and daily-loop page/app-session/Next Move emitters are implemented. Keep UI
+telemetry out of D1 `events`; add the remaining approved product emitters and their
+impressions/denominators before relying on coach digests or broader funnels.
 
 ## Mastery Inference
 

@@ -37,6 +37,21 @@ describe('analytics session state', () => {
     expect(next).toMatchObject({ anonymous_id: 'anon-1', session_id: 'session-2', is_new_session: true, days_since_last_session: 2 });
   });
 
+  it('drops a corrupted raw-URL referrer while preserving otherwise valid session state', () => {
+    const storage = new MemoryStorage();
+    storage.setItem('studyus.analytics.anonymous_id', 'anon-1');
+    storage.setItem('studyus.analytics.session', JSON.stringify({
+      session_id: 'session-1',
+      last_activity_at: 1_000,
+      last_session_started_at: 1_000,
+      previous_surface: '/courses/private?token=secret',
+    }));
+
+    const session = resolveAnalyticsSession(storage, '/dashboard', 2_000, ids('unused'));
+    expect(session).toMatchObject({ session_id: 'session-1', is_new_session: false });
+    expect(session.previous_surface).toBeUndefined();
+  });
+
   it('uses SameSite cookies for request correlation and clears owned state', () => {
     const storage = new MemoryStorage();
     const session = resolveAnalyticsSession(storage, '/dashboard', 1_000, ids('anon-1', 'session-1'));
