@@ -17,6 +17,12 @@ This is idempotent and preserves the local ID. A Clerk account without that
 external ID lazily provisions a new local learner row. Phone/OAuth-only Clerk
 accounts receive a non-routable local email until a verified email is present.
 
+The bridge returns `{ user, wasCreated }`; middleware queues `signup_completed`
+only when `wasCreated` is true. Its method is reduced to
+`oauth | phone | email | unknown`, its identity is the local `users.id`, and it
+never sends a Clerk id, provider name, email, or profile value. A valid opaque
+trial-handoff cookie contributes only `trial_session_id` for the anonymous join.
+
 If a legacy row is already linked to a different Clerk account, the request
 returns `409 identity_conflict`; do not overwrite the binding manually.
 

@@ -16,6 +16,7 @@
     proposalFromTemplate,
   } from '../../lib/demo/catalog';
   import type { DemoScenarioId } from '../../lib/schemas/onboarding';
+  import { trackDemoFunnelEvent } from '../../lib/analytics/demo';
 
   interface Props { initialMode?: 'setup' | 'demo' }
   const { initialMode = 'setup' }: Props = $props();
@@ -90,16 +91,7 @@
     extra: { step?: 'context' | 'preferences' | 'course'; scenario_id?: DemoScenarioId } = {},
   ) {
     const current = demoDraft.get();
-    try {
-      await fetch('/api/public/demo-events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ events: [{ session_id: current.draft_id, event_id: crypto.randomUUID(), name, occurred_at: Date.now(), ...extra }] }),
-        keepalive: true,
-      });
-    } catch {
-      // Telemetry is deliberately best-effort; it never blocks the demo.
-    }
+    await trackDemoFunnelEvent({ name, trial_session_id: current.draft_id, ...extra }, '/try');
   }
 
   function persist(patch: Parameters<typeof patchDemoDraft>[0]) {

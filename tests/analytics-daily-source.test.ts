@@ -10,6 +10,15 @@ describe('daily analytics emitter wiring', () => {
     expect(bootstrapSource).toContain('if (!mayCapture(config))');
   });
 
+  it('bootstraps only anonymous loads and preserves authenticated PostHog identity state', () => {
+    expect(bootstrapSource).toContain(
+      'bootstrap: config.user_id ? undefined : analyticsIdentityBootstrap(session.anonymous_id)',
+    );
+    expect(bootstrapSource).toContain(
+      'posthog.identify(config.user_id, analyticsPersonProperties(config.trial_session_id))',
+    );
+  });
+
   it('limits Next Move terminals to their intended controls', () => {
     expect(nextMoveSource).toContain('analytics.viewed(move, activeIndex + 1, selectedMinutes)');
     expect(nextMoveSource).toContain('analytics.ignored(move, activeIndex + 1, selectedMinutes)');

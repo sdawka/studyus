@@ -4,6 +4,8 @@
   import { clearDemoDraft, demoDraft, initializeDemoStore, patchDemoDraft, realDemoImport } from '../../lib/demo/store';
   import { DEMO_CATALOG_META, MCGILL_TERMS, demoCourseCatalog, manualProposal, proposalFromExtractedText } from '../../lib/demo/catalog';
   import type { CourseSetupProposal } from '../../lib/schemas/onboarding';
+  import { trackDemoFunnelEvent } from '../../lib/analytics/demo';
+  import { summarizeOnboardingReview } from '../../lib/analytics/onboarding';
 
   let ready = $state(false);
   let phase = $state<'offer' | 'setup' | 'saving'>('setup');
@@ -22,6 +24,7 @@
   let depth = $state<'keep_up' | 'understand' | 'master'>('understand');
   let query = $state('');
   let selectedCourse = $state<CourseSetupProposal | null>(null);
+  let reviewBaseline = $state<CourseSetupProposal | null>(null);
   let manualCode = $state('');
   let manualTitle = $state('');
   let manualTopics = $state('');
@@ -69,16 +72,7 @@
 
   async function track(name: 'import_offered' | 'import_accepted' | 'import_declined' | 'onboarding_completed') {
     const current = demoDraft.get();
-    try {
-      await fetch('/api/public/demo-events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ events: [{ session_id: current.draft_id, event_id: crypto.randomUUID(), name, occurred_at: Date.now() }] }),
-        keepalive: true,
-      });
-    } catch {
-      // Onboarding never waits on telemetry.
-    }
+    await trackDemoFunnelEvent({ name, trial_session_id: current.draft_id }, '/onboarding');
   }
 
   async function sendImport(acceptedHandoff = false) {
@@ -86,7 +80,14 @@
     error = null;
     if (acceptedHandoff) void track('import_accepted');
     try {
-      const response = await fetch('/api/v1/onboarding/import-demo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(realDemoImport()) });
+      const response = await fetch('/api/v1/onboarding/import-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...realDemoImport(),
+          review_metrics: summarizeOnboardingReview(reviewBaseline, selectedCourse),
+        }),
+      });
       const payload = await response.json() as { data?: { complete: boolean; course_slug: string | null }; error?: { message: string } };
       if (!response.ok || !payload.data) throw new Error(payload.error?.message ?? 'Could not import this setup.');
       if (!payload.data.complete || !payload.data.course_slug) {
@@ -107,6 +108,7 @@
     void track('import_declined');
     clearDemoDraft();
     selectedCourse = null;
+    reviewBaseline = null;
     acceptedHandoff = false;
     phase = 'setup';
   }
@@ -123,9 +125,11 @@
     status = 'Loading the reviewed course map…';
     try {
       selectedCourse = await loadTemplate(slug);
+      reviewBaseline = structuredClone(selectedCourse);
       status = `${selectedCourse.branches.reduce((sum, branch) => sum + branch.kcs.length, 0)} KCs ready to review.`;
     } catch (cause) {
       selectedCourse = null;
+      reviewBaseline = null;
       status = cause instanceof Error ? cause.message : 'Could not load this reviewed course.';
     } finally {
       loadingTemplate = false;
@@ -152,6 +156,7 @@
     const course = importableCourses[0];
     if (course?.template_id) await chooseTemplate(course.template_id);
     else selectedCourse = course ? structuredClone(course) : null;
+    reviewBaseline = selectedCourse ? structuredClone(selectedCourse) : null;
     phase = 'setup';
   }
 
@@ -162,6 +167,7 @@
       return;
     }
     selectedCourse = manualProposal(manualCode, manualTitle, topics);
+    reviewBaseline = structuredClone(selectedCourse);
     status = `${topics.length} KCs ready to review.`;
   }
 
@@ -186,6 +192,7 @@
         text = pages.join('\n');
       } else throw new Error('Use PDF, DOCX, text, or Markdown.');
       selectedCourse = proposalFromExtractedText(file.name, text);
+      reviewBaseline = structuredClone(selectedCourse);
       status = `Suggested ${selectedCourse.branches[0].kcs.length} KCs from ${file.name}. Raw file data was not retained.`;
     } catch (cause) {
       status = cause instanceof Error ? cause.message : 'Could not extract this file. Use manual entry instead.';

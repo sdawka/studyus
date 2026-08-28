@@ -3,9 +3,10 @@
 /// <reference path="../worker-configuration.d.ts" />
 
 type User = typeof import('./db/schema').users.$inferSelect;
+type AstroCloudflareRuntime = import('@astrojs/cloudflare').Runtime;
 
 declare namespace App {
-  interface Locals {
+  interface Locals extends AstroCloudflareRuntime {
     user: User | null;
   }
 }

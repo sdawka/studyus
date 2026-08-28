@@ -19,10 +19,12 @@ There are **two event streams**, and they must stay separate:
   mastery in the same atomic `db.batch`). The fold: `src/lib/services/mastery.ts`,
   a pure order-insensitive function of the full per-KC event set.
 - **Behavioral stream** — product usage telemetry (page views, impressions,
-  abandonment). Never write this into the `events` table. As of 2026-08-28 it is
-  partially implemented (PostHog, deliberate capture, `users.id` as distinct_id,
-  no PII, no free text): page/app-session lifecycle and Next Move are live; the full
-  design and remaining emitters are in `event-catalog.md`.
+  abandonment). Never write this into the `events` table. Its deliberate-capture
+  PostHog foundation, acquisition/activation slice, page/app-session lifecycle,
+  and Next Move emitters are implemented; later engagement, learning-surface, and
+  retention emitters remain staged. It uses `users.id` as the authenticated
+  distinct id and admits no PII or free text — full design and rollout status in
+  `event-catalog.md`.
 
 ## Where the truth lives
 

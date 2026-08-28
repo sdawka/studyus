@@ -3,11 +3,13 @@ export const ANALYTICS_ANONYMOUS_STORAGE_KEY = 'studyus.analytics.anonymous_id';
 export const ANALYTICS_SESSION_STORAGE_KEY = 'studyus.analytics.session';
 export const ANALYTICS_ANONYMOUS_COOKIE = 'studyus_anon_id';
 export const ANALYTICS_SESSION_COOKIE = 'studyus_session_id';
+export const ANALYTICS_TRIAL_HANDOFF_COOKIE = 'studyus_trial_handoff';
 
 const ANONYMOUS_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;
 const SESSION_MAX_AGE_SECONDS = ANALYTICS_IDLE_TIMEOUT_MS / 1000;
 const safeId = /^[A-Za-z0-9:_-]{1,160}$/;
 const safeRoutePattern = /^\/(?!\/)[^?#]{0,199}$/;
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type AnalyticsSessionState = {
   session_id: string;
@@ -99,6 +101,17 @@ function cookie(name: string, value: string, maxAge: number, secure: boolean): s
   return `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAge}; SameSite=Lax${secure ? '; Secure' : ''}`;
 }
 
+export function persistTrialHandoffCookie(trialSessionId: string, secure: boolean, write: (value: string) => void): boolean {
+  if (!uuid.test(trialSessionId)) return false;
+  write(cookie(ANALYTICS_TRIAL_HANDOFF_COOKIE, trialSessionId, 7 * 24 * 60 * 60, secure));
+  return true;
+}
+
+export function readTrialHandoff(cookieHeader: string | null): string | undefined {
+  const raw = readCookieValues(cookieHeader).get(ANALYTICS_TRIAL_HANDOFF_COOKIE);
+  return raw && uuid.test(raw) ? raw : undefined;
+}
+
 export function persistAnalyticsCookies(session: AnalyticsSession, secure: boolean, write: (value: string) => void): void {
   write(cookie(ANALYTICS_ANONYMOUS_COOKIE, session.anonymous_id, ANONYMOUS_MAX_AGE_SECONDS, secure));
   write(cookie(ANALYTICS_SESSION_COOKIE, session.session_id, SESSION_MAX_AGE_SECONDS, secure));
@@ -123,7 +136,15 @@ export function readAnalyticsCorrelation(cookieHeader: string | null): {
   anonymous_id?: string;
   session_id?: string;
 } {
-  const values = new Map(
+  const values = readCookieValues(cookieHeader);
+  return {
+    anonymous_id: readSafeId(values.get(ANALYTICS_ANONYMOUS_COOKIE)),
+    session_id: readSafeId(values.get(ANALYTICS_SESSION_COOKIE)),
+  };
+}
+
+function readCookieValues(cookieHeader: string | null): Map<string, string> {
+  return new Map(
     (cookieHeader ?? '')
       .split(';')
       .map((part) => part.trim().split('='))
@@ -136,8 +157,4 @@ export function readAnalyticsCorrelation(cookieHeader: string | null): {
         }
       }),
   );
-  return {
-    anonymous_id: readSafeId(values.get(ANALYTICS_ANONYMOUS_COOKIE)),
-    session_id: readSafeId(values.get(ANALYTICS_SESSION_COOKIE)),
-  };
 }

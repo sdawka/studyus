@@ -5,6 +5,9 @@ import { getDb } from './db/client';
 import { apiError } from './lib/api';
 import { ClerkIdentityConflictError, resolveLocalUser } from './lib/auth/local-user';
 import { canonicalRedirectUrl } from './lib/canonicalOrigin';
+import { resolveSignupMethod } from './lib/analytics/identity';
+import { queueBehavioralEvent } from './lib/analytics/server';
+import { readAnalyticsCorrelation, readTrialHandoff } from './lib/analytics/session';
 import { hasUsableCourse } from './lib/services/onboarding';
 
 const PUBLIC_PAGE_PATHS = new Set(['/', '/login', '/sign-in', '/sign-up', '/compare', '/how-it-works']);
@@ -62,13 +65,39 @@ const authenticatedRequest = clerkMiddleware(async (auth, context, next) => {
     try {
       const clerkUser = await clerkClient(context).users.getUser(clerkAuth.userId);
       const db = getDb(env.DB);
-      user = await resolveLocalUser(db, {
+      const resolution = await resolveLocalUser(db, {
         id: clerkUser.id,
         externalId: clerkUser.externalId,
         primaryEmailAddress: clerkUser.primaryEmailAddress?.emailAddress,
         firstName: clerkUser.firstName,
         lastName: clerkUser.lastName,
       });
+      user = resolution.user;
+      if (resolution.wasCreated) {
+        const correlation = readAnalyticsCorrelation(context.request.headers.get('cookie'));
+        if (correlation.session_id) {
+          const trialSessionId = readTrialHandoff(context.request.headers.get('cookie'));
+          queueBehavioralEvent({
+            env,
+            request: context.request,
+            execution: context.locals.cfContext,
+            user_id: user.id,
+            analytics_opt_out: false,
+          }, {
+            name: 'signup_completed',
+            user_id: user.id,
+            session_id: correlation.session_id,
+            surface: pathname.startsWith('/sign-up') ? '/sign-up/[...path]' : '/onboarding',
+            ts: Date.now(),
+            method: resolveSignupMethod({
+              external_account_count: clerkUser.externalAccounts.length,
+              has_phone: clerkUser.phoneNumbers.length > 0,
+              has_email: clerkUser.emailAddresses.length > 0,
+            }),
+            ...(trialSessionId ? { trial_session_id: trialSessionId } : {}),
+          });
+        }
+      }
     } catch (error) {
       if (error instanceof ClerkIdentityConflictError) {
         if (isApiPath(pathname)) return apiError('identity_conflict', error.message, 409);

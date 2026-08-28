@@ -1,43 +1,27 @@
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
-import { count, eq } from 'drizzle-orm';
 import { getDb } from '../../../db/client';
-import { demoFunnelEvents } from '../../../db/schema';
 import { apiOk } from '../../../lib/api';
 import { withServiceErrors } from '../../../lib/apiErrors';
+import { requestPrefersNoTracking } from '../../../lib/analytics/config';
+import { queueBehavioralEvents } from '../../../lib/analytics/server';
 import { demoFunnelBatchSchema } from '../../../lib/schemas/onboarding';
+import { demoRowsToBehavioralEvents, insertDemoFunnelBatch } from '../../../lib/services/demoFunnel';
 
-export const POST: APIRoute = async ({ request }) =>
+export const POST: APIRoute = async ({ request, locals }) =>
   withServiceErrors(async () => {
     const body = demoFunnelBatchSchema.parse(await request.json().catch(() => ({})));
-    const now = Date.now();
-    const recent = body.events
-      .filter((event) => Math.abs(now - event.occurred_at) <= 7 * 24 * 60 * 60 * 1000)
-      .map((event) => ({
-        id: event.event_id,
-        sessionId: event.session_id,
-        name: event.name,
-        step: event.step,
-        scenarioId: event.scenario_id,
-        occurredAt: event.occurred_at,
-        createdAt: now,
-      }));
-    const db = getDb(env.DB);
-    const sessions = [...new Set(recent.map((event) => event.sessionId))];
-    const existingCounts = new Map(
-      await Promise.all(
-        sessions.map(async (sessionId) => {
-          const [row] = await db.select({ total: count() }).from(demoFunnelEvents).where(eq(demoFunnelEvents.sessionId, sessionId));
-          return [sessionId, row?.total ?? 0] as const;
-        }),
-      ),
-    );
-    const rows = recent.filter((event) => {
-      const used = existingCounts.get(event.sessionId) ?? 0;
-      if (used >= 100) return false;
-      existingCounts.set(event.sessionId, used + 1);
-      return true;
-    });
-    if (rows.length) await db.insert(demoFunnelEvents).values(rows).onConflictDoNothing();
-    return apiOk({ accepted: rows.length });
+    if (requestPrefersNoTracking(request)) return apiOk({ accepted: 0 });
+    const result = await insertDemoFunnelBatch(getDb(env.DB), body);
+    const events = demoRowsToBehavioralEvents(result.inserted, body.app_session_id);
+    if (body.anonymous_id && events.length > 0) {
+      queueBehavioralEvents({
+        env,
+        request,
+        execution: locals.cfContext,
+        analytics_opt_out: false,
+        anonymous_id: body.anonymous_id,
+      }, events, { force_batch: true });
+    }
+    return apiOk({ accepted: result.accepted });
   });

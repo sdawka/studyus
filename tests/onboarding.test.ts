@@ -50,6 +50,7 @@ describe('onboarding import', () => {
     const result = await importDemoSetup(db, userId, input());
 
     expect(result).toMatchObject({ complete: true, has_usable_course: true, imported: true });
+    expect(result.behavioral).toMatchObject({ path: 'manual', course_count: 1, kc_count: 2 });
     expect(result.course_slug).toContain('chee-314');
     expect(await hasUsableCourse(db, userId)).toBe(true);
 
@@ -71,6 +72,7 @@ describe('onboarding import', () => {
 
     expect(first.imported).toBe(true);
     expect(second.imported).toBe(false);
+    expect(second.behavioral).toBeNull();
     expect(second.course_id).toBe(first.course_id);
     expect(await db.select().from(courses).where(eq(courses.userId, userId))).toHaveLength(1);
     expect(await db.select().from(onboardingImports).where(eq(onboardingImports.userId, userId))).toHaveLength(1);
@@ -102,6 +104,11 @@ describe('onboarding import', () => {
     });
 
     const result = await importDemoSetup(db, userId, input(proposal));
+    expect(result.behavioral).toMatchObject({
+      path: 'template',
+      template_id: 'chee-310-physical-chemistry-for-engineers',
+      course_count: 1,
+    });
     const [course] = await db.select().from(courses).where(eq(courses.id, result.course_id!));
     expect(course.templateId).toBe('chee-310-physical-chemistry-for-engineers');
     expect((await db.select().from(kcs).where(eq(kcs.courseId, course.id))).some((kc) => kc.name === 'Rate laws — renamed')).toBe(true);
