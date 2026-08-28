@@ -1,10 +1,8 @@
 <script lang="ts">
   // The /study "door": pick course → duration → type → timer → completion.
   // Session lifecycle goes through the sessions API (POST /sessions, PATCH
-  // /sessions/:id/complete); KC touches beyond what /complete supports
-  // (self-ratings) are recorded as extra self_assessment events via the
-  // events API — the sessions service only tags the auto-appended event
-  // with { session_id }, so a rating needs its own event to land in payload.
+  // /sessions/:id/complete). KC outcomes, including optional ratings, are
+  // one atomic terminal command; discard has its own evidence-free route.
   import { apiFetch } from '../../lib/apiClient';
 
   interface Course {
@@ -143,14 +141,13 @@
     discarding = true;
     error = null;
     try {
-      const res = await fetch(`/api/v1/sessions/${openSession.id}/complete`, {
+      const result = await apiFetch(`/api/v1/sessions/${openSession.id}/discard`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kc_ids_touched: [], reflection: 'Discarded — not counted.' }),
-      });
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}));
-        error = json?.error?.message ?? 'Failed to discard session';
+        body: JSON.stringify({ ended_at: new Date().toISOString() }),
+      }, 'Failed to discard session');
+      if (!result.ok) {
+        error = result.error;
         return;
       }
       step = 'course';
@@ -257,45 +254,34 @@
     error = null;
     try {
       const kcIds = [...touchedKcIds];
-      const res = await fetch(`/api/v1/sessions/${sessionId}/complete`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          kc_ids_touched: kcIds,
-          reflection: reflection.trim() || undefined,
-          ended_at: new Date().toISOString(),
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        error = json?.error?.message ?? 'Failed to complete session';
+      const completion = await apiFetch<{
+        events_appended: unknown[];
+        mastery_deltas: ResultView['masteryDeltas'];
+      }>(
+        `/api/v1/sessions/${sessionId}/complete`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            kc_outcomes: kcIds.map((kcId) => ({
+              kc_id: kcId,
+              ...(selfRatings[kcId] ? { self_rating: Number(selfRatings[kcId]) } : {}),
+            })),
+            reflection: reflection.trim() || undefined,
+            ended_at: new Date().toISOString(),
+          }),
+        },
+        'Failed to complete session',
+      );
+      if (!completion.ok) {
+        error = completion.error;
         return;
       }
 
-      const masteryDeltas: ResultView['masteryDeltas'] = [...(json.data.mastery_deltas ?? [])];
-      let eventsCreated = (json.data.events_appended ?? []).length;
-
-      for (const kcId of kcIds) {
-        const rating = selfRatings[kcId];
-        if (!rating) continue;
-        const eventRes = await fetch('/api/v1/events', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'self_assessment',
-            kc_id: kcId,
-            course_id: selectedCourse?.id,
-            payload: { self_rating: Number(rating) },
-          }),
-        });
-        const eventJson = await eventRes.json();
-        if (eventRes.ok) {
-          eventsCreated += 1;
-          masteryDeltas.push(...(eventJson.data.mastery_deltas ?? []));
-        }
-      }
-
-      result = { eventsCreated, masteryDeltas };
+      result = {
+        eventsCreated: completion.data.events_appended?.length ?? 0,
+        masteryDeltas: completion.data.mastery_deltas ?? [],
+      };
       step = 'done';
     } finally {
       completing = false;

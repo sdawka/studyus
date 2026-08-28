@@ -12,7 +12,7 @@ import { createCorrectionSchema } from '../src/lib/schemas/corrections';
 import { kcEventsQuerySchema } from '../src/lib/schemas/events';
 import { createNoteSchema, updateNoteSchema } from '../src/lib/schemas/notes';
 import { createQuickQuizSchema } from '../src/lib/schemas/quickQuiz';
-import { createStudySessionSchema } from '../src/lib/schemas/sessions';
+import { completeStudySessionSchema, createStudySessionSchema, discardStudySessionSchema } from '../src/lib/schemas/sessions';
 import { createTaskSchema, updateTaskSchema } from '../src/lib/schemas/tasks';
 import { createConversationSchema } from '../src/lib/schemas/tutor';
 import { GET as kcEventsRoute } from '../src/pages/api/v1/kcs/[id]/events';
@@ -76,6 +76,31 @@ describe('sessions — intended_event_type enum', () => {
     for (const type of ['practice_done', 'reading_done', 'retrieval_practice', 'video_watched']) {
       expect(() => createStudySessionSchema.parse({ intended_event_type: type })).not.toThrow();
     }
+  });
+});
+
+describe('sessions — terminal command schemas', () => {
+  const kcId = '00000000-0000-0000-0000-000000000001';
+
+  it('accepts canonical KC outcomes and legacy exact-empty completion', () => {
+    expect(completeStudySessionSchema.parse({ kc_outcomes: [{ kc_id: kcId, self_rating: 1 }] })).toEqual({
+      kc_outcomes: [{ kc_id: kcId, self_rating: 1 }],
+    });
+    expect(completeStudySessionSchema.parse({ kc_ids_touched: [] })).toEqual({ kc_ids_touched: [] });
+  });
+
+  it('rejects ambiguous, duplicate, and out-of-range outcomes', () => {
+    expect(() => completeStudySessionSchema.parse({ kc_outcomes: [], kc_ids_touched: [] })).toThrow();
+    expect(() => completeStudySessionSchema.parse({ kc_outcomes: [{ kc_id: kcId }, { kc_id: kcId }] })).toThrow();
+    expect(() => completeStudySessionSchema.parse({ kc_outcomes: [{ kc_id: kcId, self_rating: 0 }] })).toThrow();
+    expect(() => completeStudySessionSchema.parse({ kc_outcomes: [{ kc_id: kcId, self_rating: 6 }] })).toThrow();
+    expect(() => completeStudySessionSchema.parse({ kc_outcomes: [{ kc_id: kcId, self_rating: 2.5 }] })).toThrow();
+  });
+
+  it('keeps discard strict and evidence-free', () => {
+    expect(discardStudySessionSchema.parse({})).toEqual({});
+    expect(() => discardStudySessionSchema.parse({ kc_ids_touched: [] })).toThrow();
+    expect(() => discardStudySessionSchema.parse({ reflection: 'discard' })).toThrow();
   });
 });
 

@@ -232,12 +232,14 @@ history.
 - `is_assessment` (integer/boolean, default `false`) — same
 - `kc_id` → `kcs.id`, nullable, **ON DELETE SET NULL**
 - `course_id` → `courses.id`, nullable, **ON DELETE SET NULL** — nullable (not "always present" as a prior draft claimed); course-scoped events without a course context can exist
-- `session_id` (text, nullable) — **not a real foreign key.** It's a plain text column with no `.references()` in `schema.ts` and no FK constraint in the migration, despite conceptually pointing at `study_sessions.id`.
+- `session_id` (text, nullable) — indexed lineage for session-produced events. It is
+  intentionally not a foreign key, so deleting a session cannot erase or invalidate
+  durable learner evidence.
 - `payload` (text, JSON mode, default `'{}'`) — event-specific data; see `mastery.ts::eventSuccess` for the fields the fold actually reads (`correct`, `correctness`, `score`, `self_rating`)
 - `source` (text enum: `manual | session | tutor | seed | system`)
 - `created_at`
 
-**No `updated_at` column** — a manual event edit (`PATCH /events/:id`) updates fields in place with no separate edited-at stamp. Indexes: `events_kc_id_idx` on (`kc_id`), `events_user_ts_idx` on (`user_id`, `ts`).
+**No `updated_at` column** — a manual event edit (`PATCH /events/:id`) updates fields in place with no separate edited-at stamp. Indexes: `events_kc_id_idx` on (`kc_id`), `events_user_ts_idx` on (`user_id`, `ts`), `events_session_id_idx` on (`session_id`).
 
 ### assessments
 
@@ -345,7 +347,8 @@ Index: `task_courses_task_course_unique` (unique, on `task_id` + `course_id`) �
 - `id` (text, pk)
 - `user_id` → `users.id`, **ON DELETE CASCADE**
 - `course_id` → `courses.id`, nullable, **ON DELETE SET NULL**
-- `intended_event_type` (text) — free string; resolved to a real event type on completion, falling back to `practice_done` if unrecognized
+- `intended_event_type` (text) — new API writes are constrained to the domain event
+  vocabulary; completion retains a `practice_done` fallback for legacy stored rows
 - `planned_minutes` (integer, nullable)
 - `started_at` (integer) — **not nullable**; for a planned (not-yet-started) session created via `scheduled_at`, this is stamped with the same value so ordering/filtering by `started_at` still works
 - `ended_at` (integer, nullable)
@@ -362,7 +365,17 @@ Indexes: `study_sessions_user_scheduled_idx` on (`user_id`, `scheduled_at`), `st
 - `study_session_id` → `study_sessions.id`, **ON DELETE CASCADE** — the FK column is `study_session_id`, **not** `session_id`
 - `kc_id` → `kcs.id`, **ON DELETE CASCADE**
 
-No additional index beyond the implicit primary key.
+Unique index on (`study_session_id`, `kc_id`).
+
+### study_session_finalizations
+
+- `study_session_id` → `study_sessions.id`, primary key, **ON DELETE CASCADE**
+- `disposition` (`completed | discarded`)
+- `finalized_at` (integer)
+- `created_at`
+
+The primary key is the idempotency/concurrency guard for the one terminal command.
+It joins the session update, evidence append, and mastery recompute in one D1 batch.
 
 ### tutor_conversations
 
@@ -442,6 +455,7 @@ Every non-PK index currently in the schema:
 | `courses_slug_unique` | courses | slug | ✓ |
 | `events_kc_id_idx` | events | kc_id | |
 | `events_user_ts_idx` | events | user_id, ts | |
+| `events_session_id_idx` | events | session_id | |
 | `exercises_kc_slug_unique` | exercises | kc_id, slug | ✓ |
 | `exercises_kc_id_idx` | exercises | kc_id | |
 | `kcs_course_id_idx` | kcs | course_id | |
@@ -459,6 +473,7 @@ Every non-PK index currently in the schema:
 | `notifications_user_read_created_idx` | notifications | user_id, read_at, created_at | |
 | `study_sessions_user_scheduled_idx` | study_sessions | user_id, scheduled_at | |
 | `study_sessions_user_started_idx` | study_sessions | user_id, started_at | |
+| `session_kcs_session_kc_unique` | session_kcs | study_session_id, kc_id | ✓ |
 | `task_courses_task_course_unique` | task_courses | task_id, course_id | ✓ |
 | `tasks_dedupe_key_unique` | tasks | dedupe_key | ✓ |
 | `tasks_user_dismissed_due_idx` | tasks | user_id, dismissed_at, due_date | |
@@ -521,6 +536,7 @@ All FKs below are real SQL `FOREIGN KEY ... ON DELETE ...` constraints emitted i
 | resources.kc_id | kcs.id | set null |
 | study_sessions.user_id | users.id | cascade |
 | study_sessions.course_id | courses.id | set null |
+| study_session_finalizations.study_session_id | study_sessions.id | cascade |
 | session_kcs.study_session_id | study_sessions.id | cascade |
 | session_kcs.kc_id | kcs.id | cascade |
 | tutor_conversations.user_id | users.id | cascade |

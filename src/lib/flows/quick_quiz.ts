@@ -266,7 +266,8 @@ export async function generateQuickQuiz(db: Db, userId: string, input: CreateQui
     startedAt: Date.now(),
     reflection: JSON.stringify(blob),
   });
-  await db.insert(sessionKcs).values(targetKcs.map((k) => ({ id: crypto.randomUUID(), studySessionId: sessionId, kcId: k.id })));
+  const linkedKcIds = [...new Set(targetKcs.map((kc) => kc.id))];
+  await db.insert(sessionKcs).values(linkedKcIds.map((kcId) => ({ id: crypto.randomUUID(), studySessionId: sessionId, kcId })));
 
   return {
     id: sessionId,

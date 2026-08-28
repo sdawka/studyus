@@ -22,16 +22,40 @@ export const createStudySessionSchema = z.strictObject({
 });
 export type CreateStudySessionInput = z.infer<typeof createStudySessionSchema>;
 
-// Completing a session appends one dual-role `tutor_session`-shaped event
-// (matching intended_event_type) per touched KC via the events service.
-export const completeStudySessionSchema = z.strictObject({
-  ended_at: isoDatetimeSchema.optional(),
-  reflection: z.string().optional(),
-  kc_ids_touched: z.array(idSchema).optional(),
-  // Reschedule a still-planned session in the same call, if needed.
-  scheduled_at: isoDatetimeSchema.optional(),
+const sessionKcOutcomeSchema = z.strictObject({
+  kc_id: idSchema,
+  self_rating: z.number().int().min(1).max(5).optional(),
 });
+
+// `kc_outcomes` is the canonical completion shape. The legacy id-only list
+// remains accepted, but an explicit empty array now means exactly zero KCs;
+// only omission of both fields falls back to links stored at session start.
+export const completeStudySessionSchema = z
+  .strictObject({
+    ended_at: isoDatetimeSchema.optional(),
+    reflection: z.string().optional(),
+    kc_outcomes: z.array(sessionKcOutcomeSchema).optional(),
+    kc_ids_touched: z.array(idSchema).optional(),
+    // Reschedule a still-planned session in the same call, if needed.
+    scheduled_at: isoDatetimeSchema.optional(),
+  })
+  .superRefine((input, ctx) => {
+    if (input.kc_outcomes !== undefined && input.kc_ids_touched !== undefined) {
+      ctx.addIssue({ code: 'custom', message: 'Use either kc_outcomes or kc_ids_touched, not both' });
+    }
+    if (input.kc_outcomes) {
+      const ids = input.kc_outcomes.map((outcome) => outcome.kc_id);
+      if (new Set(ids).size !== ids.length) {
+        ctx.addIssue({ code: 'custom', path: ['kc_outcomes'], message: 'Each KC may appear only once' });
+      }
+    }
+  });
 export type CompleteStudySessionInput = z.infer<typeof completeStudySessionSchema>;
+
+export const discardStudySessionSchema = z.strictObject({
+  ended_at: isoDatetimeSchema.optional(),
+});
+export type DiscardStudySessionInput = z.infer<typeof discardStudySessionSchema>;
 
 // v1.6: reschedule a still-planned session (PATCH /sessions/:id, distinct
 // from PATCH /sessions/:id/complete above). services/sessions.ts::updateSession

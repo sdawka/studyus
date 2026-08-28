@@ -49,8 +49,8 @@ of them folds at the neutral `MASTERY_CONSTANTS.DEFAULT_AE_SUCCESS` (0.7, `maste
 | `quiz_taken` | –/AE | `assessments.ts:169-177` (grade fan-out per linked KC); manual modal | Grade entered on quiz assessment | `{score?, assessment_id}` | `score` |
 | `assignment_graded` | –/AE | `assessments.ts` (assignment/lab); manual modal | Grade entered | `{score?, assessment_id}` | `score` |
 | `exam_graded` | –/AE | `assessments.ts` (midterm/final); manual modal | Grade entered | `{score?, assessment_id}` | `score` |
-| `self_assessment` | –/AE | `StudyFlow.svelte:281-290` (per rated KC after session); manual modal | Student rates understanding 1–5 | `{self_rating}` | `self_rating` |
-| `practice_done` | IE/AE | `sessions.ts:124-130` (completion fallback type, one per touched KC) | `PATCH /sessions/:id/complete` | `{session_id}` — **no outcome** | nothing → 0.7 |
+| `self_assessment` | –/AE | Atomic session finalization for rated IE-only sessions; manual modal | Student rates understanding 1–5 | `{session_id?, self_rating}` | `self_rating` |
+| `practice_done` | IE/AE | Atomic session finalization, one per touched KC | `PATCH /sessions/:id/complete` | `{session_id, self_rating?}` | `self_rating` when supplied; otherwise 0.7 |
 | `retrieval_practice` | IE/AE | `quick_quiz.ts:317-327`, `exercise_attempt.ts:70-79`, `exercise.ts:218` (all source `'tutor'`); manual; sessions | Quiz/exercise graded; self-log | `{correct, session_id?/exercise_id?, channel}` | `correct` |
 | `placement_probe` / `diagnostic_probe` | –/AE | `domain/pedagogy/exercise.ts:218-235` `recordExerciseEvidence` only (caller-supplied `event_id` dedupe) | Agentic channel records probe outcome | `{correct, exercise_id, misconception_id, purpose, channel}` | `correct` |
 | `tutor_session` | IE/AE | `events.ts:102-167` `createRuntimeTutorSessionEvent` (ledger-idempotent); legacy `tutor/conversations.ts:309-317` | Tutor conversation ends | `{conversation_id, mode, final_rating?}` | `final_rating` |
@@ -98,16 +98,16 @@ names, so no data migration or backfill was needed.
 **Study session** (`StudyFlow.svelte`, `sessions.ts`):
 1. `POST /sessions {intended_event_type, planned_minutes, …}` — no event at scheduling.
 2. Optional `PATCH /sessions/:id` reschedule — rejected once completed (`sessions.ts:145`).
-3. `PATCH /sessions/:id/complete {kc_ids_touched}` → one event of the intended type per
-   touched KC (payload `{session_id}` only).
-4. Client then posts one `self_assessment` per rated KC — ratings ride separate events
-   *after* completion (`StudyFlow.svelte:278-293`). If these fire-and-forget POSTs
-   fail, ratings are silently lost and only the neutral practice event remains (D6).
-   Discard path: complete with empty `kc_ids_touched` → zero events — but only
-   because StudyFlow creates its sessions without `kc_ids`: an empty or omitted
-   `kc_ids_touched` falls back to the session's stored KC links
-   (`sessions.ts:116-118`), so "discarding" a KC-linked (e.g. planner-created)
-   session would still append one event per linked KC.
+3. `PATCH /sessions/:id/complete {kc_outcomes:[{kc_id,self_rating?}]}` commits the
+   terminal ledger, session row, KC links, all events, and one mastery update per KC
+   in one D1 batch. Assessment-capable intended events carry `self_rating` directly;
+   rated IE-only sessions add an atomic `self_assessment` beside the intended event.
+   Legacy `kc_ids_touched` remains accepted; explicit empty arrays mean zero events,
+   while omission alone falls back to stored links.
+4. `PATCH /sessions/:id/discard` records an explicit `discarded` terminal state and
+   never appends evidence, including for a session with stored KC links. The
+   `study_session_finalizations` primary key makes both terminal commands retry-safe;
+   the first disposition wins and the opposite command conflicts.
 
 **Quick quiz** (`quick_quiz.ts`): generate → sentinel session row → grade exactly once
 (`graded` flag) → `endedAt` + one `retrieval_practice{correct}` per KC. Never goes
@@ -155,7 +155,7 @@ middleware-enforced). Trial data never crosses into learner `events`.
 - Durable context facts (both role flags false) are filtered before folding
   (`mastery.ts:89-93`) — they can never move mastery or freshness.
 - Idempotency exists only where a ledger enforces it: tutor sessions (conversation
-  ledger), agentic evidence (caller `event_id`; same id with different type/kc → 409),
+  ledger), study-session completion/discard (session-finalization ledger), agentic evidence (caller `event_id`; same id with different type/kc → 409),
   class-session sweep (UNIQUE), demo funnel (event id). **Browser event POSTs (manual
   logs and self-assessments) have no idempotency key** —
   double-submit means double mastery evidence (D5).
@@ -189,9 +189,9 @@ Ordered by severity. D1–D4 and D7–D8 were fixed on 2026-08-28 (branch
   and the call site documents the exception.
 - **D5 — No idempotency key on browser event POSTs** (manual logs and
   self-assessments): retries and double-taps duplicate evidence.
-- **D6 — `practice_done` carries no outcome** and post-session `self_assessment`
-  POSTs are fire-and-forget: failed rating posts silently pull KCs toward the 0.7
-  neutral. Consider carrying ratings in the completion request itself.
+- **D6 — FIXED.** Completion now accepts per-KC ratings and commits them atomically
+  with the session, intended events, and mastery caches. StudyFlow no longer posts
+  follow-up `self_assessment` requests.
 - **D7 — FIXED. Boundary violations**: `recommendation_followed/ignored` were removed
   from the domain API and Next Move no longer writes UI telemetry to D1. Their
   behavioral names are reserved below; capture plus the missing impression denominator
@@ -215,11 +215,9 @@ Ordered by severity. D1–D4 and D7–D8 were fixed on 2026-08-28 (branch
 - **D11 — Post-signup funnel is invisible**: between `signup` and `course_added`
   nothing is recorded; onboarding drop-off cannot be measured (behavioral layer fixes
   this).
-- **D12 — `completeSession` discard footgun**: empty/omitted `kc_ids_touched` falls
-  back to the session's stored KC links (`sessions.ts:116-118`), so the client-side
-  "discard" convention (complete with empty list) only yields zero events for
-  sessions created without KC links — discarding a KC-linked session would still
-  append neutral evidence. Discard semantics should live server-side.
+- **D12 — FIXED.** Discard is an explicit server-side terminal command backed by the
+  finalization ledger and always yields zero evidence. Completion distinguishes
+  explicit empty KC arrays from omission.
 
 ---
 
@@ -360,7 +358,6 @@ Invariant: stage monotonic within a visit; stage 4 without 2–3 legal only when
 ## TODO
 
 - Implement the behavioral layer (PostHog decision above).
-- Fix the remaining domain-stream debt: D5 (idempotency keys), D6 (ratings in the
-  completion request), D12 (server-side discard semantics).
+- Fix the remaining domain-stream debt: D5 (idempotency keys for manual browser event posts).
 - After implementation, add the analysis conventions here (source filters, seed/dev
   exclusion, funnel queries).

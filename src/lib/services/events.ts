@@ -3,6 +3,7 @@
 // same db.batch as the event mutation, so the cache is never observably
 // stale relative to the log it's derived from.
 import { and, desc, eq, gte, inArray, lte, ne } from 'drizzle-orm';
+import type { BatchItem } from 'drizzle-orm/batch';
 import type { Db } from '../../db/client';
 import { events, kcs, runtimeTutorSessionEvents } from '../../db/schema';
 import type { CreateEventInput, EventSource, ListEventsQuery, UpdateEventInput } from '../schemas/events';
@@ -89,6 +90,72 @@ export async function createEvent(db: Db, userId: string, input: CreateEventWith
   }
 
   return { event: newEvent, masteryDeltas, wasCreated: true };
+}
+
+export type AtomicEventInput = CreateEventInput & {
+  event_id?: string;
+  session_id?: string;
+};
+
+/**
+ * Appends a related set of domain events together with caller-owned state
+ * transitions in one D1 batch. Every affected KC is folded exactly once with
+ * the complete new event set included. This is the composition boundary for
+ * study-session finalization: sessions owns its rows, while this service
+ * remains the sole writer of the events table and mastery cache.
+ */
+export async function appendEventsAtomically(
+  db: Db,
+  userId: string,
+  inputs: AtomicEventInput[],
+  source: EventSource,
+  companionStatements: BatchItem<'sqlite'>[],
+) {
+  for (const input of inputs) {
+    if (input.course_id) await requireOwnedCourse(db, userId, input.course_id);
+    if (input.kc_id) await requireOwnedKc(db, userId, input.kc_id);
+  }
+
+  const now = Date.now();
+  const newEvents: EventRow[] = inputs.map((input) => {
+    const { isInstructional, isAssessment } = EVENT_ROLE_FLAGS[input.type];
+    return {
+      id: input.event_id ?? crypto.randomUUID(),
+      userId,
+      ts: toEpochMs(input.ts, now),
+      type: input.type,
+      isInstructional,
+      isAssessment,
+      kcId: input.kc_id ?? null,
+      courseId: input.course_id ?? null,
+      sessionId: input.session_id ?? null,
+      payload: input.payload ?? {},
+      source,
+      createdAt: now,
+    };
+  });
+
+  const statements: BatchItem<'sqlite'>[] = [...companionStatements];
+  if (newEvents.length > 0) statements.push(db.insert(events).values(newEvents));
+
+  const masteryDeltas: MasteryDelta[] = [];
+  const kcIds = [...new Set(newEvents.flatMap((event) => (event.kcId ? [event.kcId] : [])))];
+  for (const kcId of kcIds) {
+    const existing = await db
+      .select({ ts: events.ts, isInstructional: events.isInstructional, isAssessment: events.isAssessment, payload: events.payload })
+      .from(events)
+      .where(eq(events.kcId, kcId));
+    const additions = newEvents.filter((event) => event.kcId === kcId);
+    const { updateStmt, delta } = await foldedKcUpdate(db, kcId, [...existing, ...additions]);
+    statements.push(updateStmt);
+    masteryDeltas.push(delta);
+  }
+
+  if (statements.length === 0) return { events: newEvents, masteryDeltas };
+  await withSpan('events.append_atomic', { event_count: newEvents.length, kc_count: kcIds.length }, () =>
+    db.batch(statements as [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]]),
+  );
+  return { events: newEvents, masteryDeltas };
 }
 
 /**
