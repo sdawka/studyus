@@ -3,6 +3,8 @@
   // server loaded both statuses already) + "mark internalized" mutation via
   // PATCH /api/v1/corrections/:id (docs/api.md v1.7).
   import { apiFetch } from '../../lib/apiClient';
+  import { captureBehavioralEvent } from '../../lib/analytics/client';
+  import { wholeDaysSince } from '../../lib/analytics/learning';
   import { pushToast } from '../../lib/stores/toast';
 
   export type Correction = {
@@ -55,6 +57,11 @@
       return;
     }
     corrections = corrections.map((c) => (c.id === id ? res.data : c));
+    captureBehavioralEvent({
+      name: 'correction_internalized',
+      correction_id: res.data.id,
+      days_since_accepted: wholeDaysSince(res.data.accepted_at),
+    });
     pushToast('Marked internalized.', 'success');
   }
 </script>

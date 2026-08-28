@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { captureBehavioralEvent } from '../../lib/analytics/client';
+  import { createQuizAnalytics, installPageExitAbandonment } from '../../lib/analytics/learning';
   import type { AvailableMinutes } from '../../lib/schemas/nextMove';
   type Course = { id: string; title: string };
   type Question = { index: number; kc_id: string; question: string; options: string[] };
@@ -35,8 +37,14 @@
   let score = $state(0);
   let masteryDeltas = $state<MasteryDelta[]>([]);
   let errorMessage = $state<string | null>(null);
+  const quizAnalytics = createQuizAnalytics(captureBehavioralEvent);
+
+  function answeredCount(): number {
+    return Object.keys(answers).length;
+  }
 
   async function startQuiz() {
+    quizAnalytics.abandon(answeredCount());
     stage = 'loading';
     errorMessage = null;
     try {
@@ -57,6 +65,7 @@
       current = 0;
       answers = {};
       stage = 'quiz';
+      quizAnalytics.start(questions.map((question) => question.kc_id), questions.length);
     } catch (err) {
       errorMessage = err instanceof Error ? err.message : 'Something went wrong.';
       stage = 'error';
@@ -87,6 +96,7 @@
       score = json.data.score;
       results = json.data.results;
       masteryDeltas = json.data.mastery_deltas;
+      quizAnalytics.terminal();
       stage = 'score';
     } catch (err) {
       errorMessage = err instanceof Error ? err.message : 'Something went wrong.';
@@ -95,6 +105,7 @@
   }
 
   function restart() {
+    quizAnalytics.abandon(answeredCount());
     stage = 'setup';
     quizId = null;
     questions = [];
@@ -102,6 +113,7 @@
 
   onMount(() => {
     if (autoStart) void startQuiz();
+    return installPageExitAbandonment(() => quizAnalytics.abandon(answeredCount()));
   });
 </script>
 

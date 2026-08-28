@@ -3,6 +3,8 @@
   import { extractModelSpec } from '../../lib/services/tutor/modelSpec';
   import { extractCorrectionProposal, type CorrectionProposal } from '../../lib/services/tutor/correctionSpec';
   import { apiFetch } from '../../lib/apiClient';
+  import { captureBehavioralEvent } from '../../lib/analytics/client';
+  import { createMisconceptionCardAnalytics } from '../../lib/analytics/learning';
   import {
     hydrateRuntimeConversation,
     refetchRuntimeConversation,
@@ -32,6 +34,7 @@
   } = $props();
 
   const conversationId = initialConversation.id;
+  const misconceptionAnalytics = createMisconceptionCardAnalytics(conversationId, captureBehavioralEvent);
   // Svelte components also execute during Astro SSR. Only hydrate the shared
   // module store in the browser so one request can never leak runtime state
   // into another user's server render.
@@ -68,6 +71,7 @@
   // Lazily fetched + cached for the life of this component: only needed when
   // a proposal actually carries a misconception_slug to resolve.
   let misconceptionsCache: { id: string; slug: string }[] | null = null;
+  let misconceptionsRequest: Promise<{ id: string; slug: string }[]> | null = null;
 
   onMount(() => startLearnerRuntimeSync(conversationId));
 
@@ -81,11 +85,27 @@
   async function resolveMisconceptionId(slug: string): Promise<string | undefined> {
     if (!kcId) return undefined;
     if (!misconceptionsCache) {
-      const res = await apiFetch<{ id: string; slug: string }[]>(`/api/v1/kcs/${kcId}/misconceptions`);
-      misconceptionsCache = res.ok ? res.data : [];
+      misconceptionsRequest ??= apiFetch<{ id: string; slug: string }[]>(`/api/v1/kcs/${kcId}/misconceptions`)
+        .then((res) => (res.ok ? res.data : []));
+      misconceptionsCache = await misconceptionsRequest;
+      misconceptionsRequest = null;
     }
     return misconceptionsCache.find((m) => m.slug === slug)?.id;
   }
+
+  async function recordCorrectionCardShown(messageId: string, proposal: CorrectionProposal) {
+    if (!proposal.misconception_slug) return;
+    const misconceptionId = await resolveMisconceptionId(proposal.misconception_slug);
+    if (misconceptionId && correctionState[messageId] !== 'dismissed') {
+      misconceptionAnalytics.shown(messageId, misconceptionId);
+    }
+  }
+
+  $effect(() => {
+    for (const [messageId, proposal] of Object.entries(correctionProposals)) {
+      if (correctionState[messageId] !== 'dismissed') void recordCorrectionCardShown(messageId, proposal);
+    }
+  });
 
   async function acceptCorrection(messageId: string) {
     const proposal = correctionProposals[messageId];
@@ -93,6 +113,7 @@
     correctionState = { ...correctionState, [messageId]: 'saving' };
 
     const misconceptionId = proposal.misconception_slug ? await resolveMisconceptionId(proposal.misconception_slug) : undefined;
+    if (misconceptionId) misconceptionAnalytics.shown(messageId, misconceptionId);
 
     const res = await apiFetch(
       '/api/v1/corrections',
@@ -116,11 +137,18 @@
       return;
     }
     correctionState = { ...correctionState, [messageId]: 'accepted' };
+    if (misconceptionId) misconceptionAnalytics.accepted(messageId, misconceptionId);
     pushToast('Added to your corrections ledger.', 'success');
   }
 
   function dismissCorrection(messageId: string) {
+    const proposal = correctionProposals[messageId];
     correctionState = { ...correctionState, [messageId]: 'dismissed' };
+    if (proposal?.misconception_slug) {
+      void resolveMisconceptionId(proposal.misconception_slug).then((misconceptionId) => {
+        if (misconceptionId) misconceptionAnalytics.dismissed(messageId, misconceptionId);
+      });
+    }
   }
 
   async function send() {

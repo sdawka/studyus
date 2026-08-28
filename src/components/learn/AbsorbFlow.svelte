@@ -3,7 +3,10 @@
   // prereq map -> verify (weak prereqs only) -> interest ordering -> absorb
   // chat. Server-rendered initial graph comes in as props; everything after
   // that is client state (apiFetch round-trips for verify/refetch/create).
+  import { onMount } from 'svelte';
   import { apiFetch } from '../../lib/apiClient';
+  import { captureBehavioralEvent } from '../../lib/analytics/client';
+  import { createAbsorbAnalytics } from '../../lib/analytics/learning';
   import type { RuntimeConversation, RuntimeConversationSummary } from '../../lib/stores/learnerRuntime';
   import { pushToast } from '../../lib/stores/toast';
   import PrereqGraph from './PrereqGraph.svelte';
@@ -33,6 +36,9 @@
 
   let conversation = $state<RuntimeConversation | null>(null);
   let creatingConversation = $state(false);
+  const absorbAnalytics = createAbsorbAnalytics(kcId, captureBehavioralEvent);
+
+  onMount(() => absorbAnalytics.reached(1));
 
   async function refetchGraph() {
     const res = await apiFetch<KcGraph>(`/api/v1/kcs/${kcId}/graph`, {}, "Couldn't refresh prerequisite readiness.");
@@ -46,8 +52,10 @@
   }
 
   function handleVerify(ids: string[]) {
+    absorbAnalytics.decided('verify', ids.length);
     verifyIds = ids;
     stage = 'verify';
+    absorbAnalytics.reached(2);
   }
 
   async function handleVerifyDone() {
@@ -65,7 +73,10 @@
       );
       return;
     }
+    const weakCount = prereqs.filter((prereq) => !prereq.ready).length;
+    if (weakCount > 0) absorbAnalytics.decided('continue_anyway', weakCount);
     stage = 'rank';
+    absorbAnalytics.reached(3);
     // No prereqs to rank at all (leaf KC) — the ranking screen would be
     // empty, so skip straight to starting the conversation.
     if (prereqs.length === 0) startAbsorbConversation([kcId]);
@@ -93,6 +104,7 @@
     }
     conversation = { ...res.data, messages: [] };
     stage = 'chat';
+    absorbAnalytics.reached(4);
   }
 </script>
 
