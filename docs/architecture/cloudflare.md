@@ -59,7 +59,9 @@ All bindings, database config, and environment variables go here. This is the **
   ],
   "vars": {
     "OPENROUTER_MODEL": "openrouter/auto",
-    "AI_FEATURES_ENABLED": "true"
+    "AI_FEATURES_ENABLED": "true",
+    "ANALYTICS_ENABLED": "false",
+    "POSTHOG_HOST": "https://us.i.posthog.com"
   },
   "observability": {
     "traces": {
@@ -75,7 +77,13 @@ staging deploys with `--env staging`. Secrets are never declared through a
 fictional `env_secrets` key: each environment receives them through Wrangler's
 secret commands.
 
-**Secrets and gate**: Store API keys via `wrangler secret put OPENROUTER_API_KEY` (add `--env staging` for an isolated staging secret). Reference it only server-side via `env.OPENROUTER_API_KEY`. `AI_FEATURES_ENABLED` is the non-secret deployment policy switch. The application enables AI only when the switch is exactly `true` and the secret is non-blank; it exposes the resulting safe status at `GET /api/v1/capabilities`, never the credential.
+**Secrets and gates**: Store API keys via Wrangler secrets (add `--env staging`
+for isolated staging secrets). AI uses `OPENROUTER_API_KEY` plus the non-secret
+`AI_FEATURES_ENABLED` policy switch. Behavioral analytics uses
+`POSTHOG_PROJECT_TOKEN`, an optional comma-separated
+`ANALYTICS_EXCLUDED_USER_IDS` list of local `users.id` values, and the
+non-secret `ANALYTICS_ENABLED` switch. Missing or invalid configuration is a
+no-op. Never put a token, Clerk id, email address, or name in committed config.
 
 ## Accessing Bindings in Code
 
@@ -99,20 +107,9 @@ const uploadsBucket = env.UPLOADS;
 const apiKey = env.OPENROUTER_API_KEY;
 ```
 
-Or, if you're in a context where `env` is not available (older Astro APIs), use the context object:
-
-```javascript
-import type { APIRoute } from 'astro';
-
-export const POST: APIRoute = async ({ locals, request }) => {
-  const env = locals.runtime.env; // ✅ Use Astro's runtime context
-
-  // or in middleware:
-  // const env = Astro.locals.runtime.env;
-};
-```
-
-**Pattern**: For new code, use `import { env } from 'cloudflare:workers'` directly. For Astro pages that need `locals`, Astro automatically populates `Astro.locals.runtime.env` before route handlers run, so you can use either pattern.
+**Pattern**: Use `import { env } from 'cloudflare:workers'` for bindings. Adapter
+v14 does not expose `locals.runtime.env`; its request-lifecycle local is the
+`cfContext` described below.
 
 ### ExecutionContext
 
@@ -165,6 +162,8 @@ Create a `.dev.vars` file in the root:
 
 ```
 OPENROUTER_API_KEY=sk-or-v1-...
+POSTHOG_PROJECT_TOKEN=phc_...
+ANALYTICS_EXCLUDED_USER_IDS=<local-users.id>
 ```
 
 These are loaded by wrangler during dev and are *not* committed. Use `.dev.vars.example` as a template.

@@ -1,3 +1,8 @@
 OPENROUTER_API_KEY=
+# Optional behavioral analytics. Keep ANALYTICS_ENABLED=false in wrangler.jsonc
+# until a PostHog project token has been provisioned and the rollout is ratified.
+POSTHOG_PROJECT_TOKEN=
+# Comma-separated local users.id values; never Clerk ids or email addresses.
+ANALYTICS_EXCLUDED_USER_IDS=
 SEED_USER_EMAIL=student@example.com
 SEED_USER_PASSWORD=studyus

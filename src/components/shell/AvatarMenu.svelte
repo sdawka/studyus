@@ -3,6 +3,7 @@
   import { isMobile } from '../../lib/stores/viewport';
   import { togglePopover } from '../../lib/stores/ui';
   import Sheet from './Sheet.svelte';
+  import { resetAnalytics } from '../../lib/analytics/client';
 
   interface Props {
     open: boolean;
@@ -23,6 +24,7 @@
   };
 
   function logout() {
+    resetAnalytics();
     const clerk = (window as ClerkWindow).Clerk;
     if (clerk) {
       clerk.signOut({ redirectUrl: '/sign-in' });

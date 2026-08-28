@@ -14,6 +14,7 @@ export const DEFAULT_SETTINGS: ResolvedSettings = {
   theme: 'compass',
   scheme: 'light',
   sidebar_collapsed: false,
+  analytics_opt_out: false,
   learning_preferences: {
     weekly_hours: 7,
     guidance: 'balanced',

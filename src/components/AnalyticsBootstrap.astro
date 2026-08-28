@@ -1,0 +1,33 @@
+---
+import { env } from 'cloudflare:workers';
+import { resolveAnalyticsConfig } from '../lib/analytics/config';
+
+interface Props {
+  userId?: string;
+  analyticsOptOut?: boolean;
+}
+
+const { userId, analyticsOptOut = false } = Astro.props;
+const config = resolveAnalyticsConfig(env);
+const browserConfig = {
+  enabled: config.enabled,
+  host: config.host,
+  token: config.token,
+  user_id: userId,
+  analytics_opt_out: analyticsOptOut,
+  excluded: Boolean(userId && config.excluded_user_ids.has(userId)),
+  surface: Astro.routePattern,
+};
+const serialized = JSON.stringify(browserConfig).replaceAll('<', '\\u003c');
+---
+
+<script is:inline id="studyus-analytics-config" type="application/json" set:html={serialized}></script>
+<script>
+  import { initializeAnalytics, type BrowserAnalyticsBootstrap } from '../lib/analytics/client';
+
+  const element = document.getElementById('studyus-analytics-config');
+  if (element?.textContent) {
+    const config = JSON.parse(element.textContent) as BrowserAnalyticsBootstrap;
+    void initializeAnalytics(config);
+  }
+</script>

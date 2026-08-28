@@ -8,6 +8,7 @@ import '../styles/themes/campus.css';
 import '../styles/base.css';
 import ThemeScript from '../components/shell/ThemeScript.astro';
 import { SignIn } from '@clerk/astro/components';
+import AnalyticsBootstrap from '../components/AnalyticsBootstrap.astro';
 
 if (Astro.locals.user) {
   return Astro.redirect('/dashboard');
@@ -132,5 +133,6 @@ if (Astro.locals.user) {
       <p class="sub">Sign in to pick up where you left off.</p>
       <SignIn routing="path" path="/login" signUpUrl="/sign-up" fallbackRedirectUrl="/dashboard" />
     </div>
+    <AnalyticsBootstrap />
   </body>
 </html>
