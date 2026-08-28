@@ -40,7 +40,9 @@ priorities are listed here and detailed in their owning docs.
    `docs/product/onboarding.md`.
 2. **Complete activity-stream instrumentation** — the widened event taxonomy is
    present, but task/course/session/settings mutations do not all append their
-   canonical context events yet.
+   canonical context events yet. The full catalog, defect list (D1–D11), and the
+   designed-but-unimplemented behavioral analytics layer now live in
+   `docs/architecture/event-catalog.md`.
 3. **Expose the coach/orchestrator** — four domain engines and the per-learner
    Durable Object foundation exist. The web tutor now projects authoritative
    DO conversation/session/alarm state into Nanostores and reconciles streams,
