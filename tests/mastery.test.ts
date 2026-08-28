@@ -9,6 +9,17 @@ describe('foldMastery', () => {
     expect(foldMastery([], NOW)).toEqual({ mastery: 0, status: 'not-started', lastEventAt: null });
   });
 
+  it('reads tutor final_rating as the 1-5 self-report it is, not the neutral default', () => {
+    const at = NOW - 1 * DAY_MS;
+    const rated = foldMastery([{ ts: at, isInstructional: true, isAssessment: true, payload: { final_rating: 5 } }], NOW);
+    const selfRated = foldMastery([{ ts: at, isInstructional: true, isAssessment: true, payload: { self_rating: 5 } }], NOW);
+    expect(rated.mastery).toBe(selfRated.mastery);
+
+    const low = foldMastery([{ ts: at, isInstructional: true, isAssessment: true, payload: { final_rating: 1 } }], NOW);
+    const neutral = foldMastery([{ ts: at, isInstructional: true, isAssessment: true, payload: {} }], NOW);
+    expect(low.mastery).toBeLessThan(neutral.mastery);
+  });
+
   it('rises with recent AE successes', () => {
     const events = [
       { ts: NOW - 1 * DAY_MS, isInstructional: false, isAssessment: true, payload: { correct: true } },
@@ -81,7 +92,7 @@ describe('foldMastery', () => {
     expect(result.mastery).toBeGreaterThan(80);
   });
 
-  it('ignores context-only activity for mastery and freshness', () => {
+  it('ignores durable context facts for mastery and freshness', () => {
     const evidenceAt = NOW - 20 * DAY_MS;
     const result = foldMastery(
       [

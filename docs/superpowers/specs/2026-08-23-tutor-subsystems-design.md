@@ -41,9 +41,10 @@ Rejected: B (everything-an-agent — agentifying deterministic folds adds latenc
   remain extensions of their existing engines rather than new agent logic.
 - **Global knowledge-map gating — TODO:** cross-course prerequisite gates remain
   partial until the global catalog and one-hop frontier gate are completed.
-- **Activity-event contract — required for every implemented learner action:** a
-  specialised action must append its canonical evidence or context event before
-  reporting success. Tests must cover happy paths, boundary/retry/cancellation
+- **Durable-action contract — required for every implemented learner action:** a
+  specialised action must commit its canonical domain fact or state transition before
+  reporting success. Observational UI telemetry belongs to the separate behavioral
+  stream and must not gate the action. Tests must cover happy paths, boundary/retry/cancellation
   behaviour, invalid and cross-tenant input, and event ordering/idempotency;
   any AI generation or streaming is mocked. Persisting a generated bank item is
   the named content-state exception in invariant 1, so it creates no synthetic
@@ -53,11 +54,19 @@ Rejected: B (everything-an-agent — agentifying deterministic folds adds latenc
 
 `user_misconceptions` — the one new table. Per (user, misconception): `status ∈ suspected → confirmed → correcting → internalized`, plus `evidence_event_id`s and timestamps. Written by the exercise engine's diagnostic purpose (and by accepting a tutor `correction_proposal`); the existing `user_corrections` ledger becomes transitions within this lifecycle rather than a parallel store. Rendered on the traversed map as per-KC pins.
 
-## Event stream widening
+## Two-stream event boundary (supersedes the original widening proposal)
 
-The event log grows from learning evidence only (the 12 types in `src/lib/schemas/events.ts`) into the **complete activity stream**. New evidence types: `placement_probe`, `diagnostic_probe` (both assessment-role). New **context-only families** (both role flags false, so the fold ignores them arithmetically): **triage** (`task_completed`, `task_dismissed`, `correction_accepted`, `correction_dismissed`, `recommendation_followed`, `recommendation_ignored`), **admin** (`course_added`, `course_archived`, `plan_committed`, `session_scheduled`, `session_rescheduled`, `settings_changed`), **coach** (`coach_session`, `reflection_captured`, `digest_sent`). Triage events feed the coach's model of which advice lands; admin events give digests an honest timeline.
+The original version of this design proposed making D1 `events` a complete activity
+stream. B1 (2026-08-28) rejected that widening in favor of a simpler boundary:
+durable learner-domain facts stay in D1; observational product usage goes to the
+separate behavioral stream. `placement_probe` and `diagnostic_probe` remain assessment
+evidence. `correction_accepted` and `course_added` remain durable context facts. The 11
+unwired placeholders were pruned, and recommendation follow/ignore moved to the
+behavioral vocabulary.
 
-**Fold guard (required)**: idle-decay's `lastEventAt` must read evidence events only — a context event must never reset a KC's freshness. The canonical rendered taxonomy lives in `docs/index.html`.
+**Fold guard (required)**: idle-decay's `lastEventAt` reads role-flagged evidence only;
+a durable context fact must never reset a KC's freshness. The canonical operational
+taxonomy lives in `docs/architecture/event-catalog.md`.
 
 ## Coaching stance
 
@@ -73,11 +82,11 @@ The orchestrator — and by extension every surface it conducts — carries an a
 6. **Star, not web** — only the orchestrator composes engines; peer-to-peer calls forbidden.
 7. **Modes before functions** — a new capability joins an existing engine as a mode when it shares that engine's reads and writes; it becomes a new engine only when its I/O contract genuinely differs.
 8. **Coach, don't rescue** — every surface narrates why, prompts reflection, attributes struggle to strategy; no guilt framing, ever.
-9. **Evidence moves mastery, context never does** — one activity stream, but only role-flagged evidence reaches the fold, and idle decay counts evidence events only.
+9. **Evidence moves mastery, behavior never enters the log** — only role-flagged domain evidence reaches the fold; durable context facts are excluded and UI telemetry uses the behavioral stream.
 
 ## Suggested build order (to be planned via writing-plans)
 
-1. Learner Profile facade + misconception lifecycle table + event-stream widening (new types, context families, fold guard) — unblocks everything.
+1. Learner Profile facade + misconception lifecycle table + two-stream event boundary and fold guard — landed foundation that unblocks everything.
 2. Exercise engine: practice-mode difficulty selection first (no LLM needed) → assessment unification over quick_quiz → diagnostic purpose (split out of absorb) → placement mode.
 3. Admin engine: review-queue upgrade → digests/notifications → curriculum planning.
 4. Instruction engine: reframe the built chat tutor as `socratic` mode → `analogy_example` + `prereq_gap_filler` → `spoonfeed`.

@@ -92,7 +92,7 @@ export async function createEvent(db: Db, userId: string, input: CreateEventWith
 }
 
 /**
- * Persist the one context event associated with a Durable Object tutor
+ * Persist the one terminal domain event associated with a Durable Object tutor
  * conversation. The unique conversation ledger and D1 batch make the event,
  * mastery cache update, and idempotency record one atomic D1 operation.
  *

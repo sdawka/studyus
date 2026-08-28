@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
-import { calendarConnections, calendarOutbox, courses, studySessions, users } from '../src/db/schema';
+import { branches, calendarConnections, calendarOutbox, courses, events, kcs, studySessions, users } from '../src/db/schema';
 import { completeSession, createSession, deleteSession, listSessions, updateSession } from '../src/lib/services/sessions';
 import { ConflictError, NotFoundError } from '../src/lib/services/util';
 
@@ -97,6 +97,20 @@ describe('sessions.completeSession', () => {
 
     const rows = await db.select().from(studySessions).where(eq(studySessions.id, session.id)).limit(1);
     expect(rows[0].scheduledAt).toBe(Date.parse(rescheduledIso));
+  });
+
+  it("appends completion events with source 'session', not user-editable 'manual'", async () => {
+    const branchId = crypto.randomUUID();
+    const kcId = crypto.randomUUID();
+    await db.insert(branches).values({ id: branchId, courseId, name: 'Branch' });
+    await db.insert(kcs).values({ id: kcId, branchId, courseId, name: 'KC' });
+
+    const session = await createSession(db, userId, { intended_event_type: 'practice_done', course_id: courseId });
+    await completeSession(db, userId, session.id, { kc_ids_touched: [kcId] });
+
+    const appended = await db.select().from(events).where(eq(events.userId, userId));
+    expect(appended).toHaveLength(1);
+    expect(appended[0]).toMatchObject({ type: 'practice_done', kcId, source: 'session' });
   });
 });
 

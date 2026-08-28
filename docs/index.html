@@ -402,8 +402,8 @@ footer.colophon {
   </div>
   <div class="cards">
     <div class="card s-built is-ledger">
-      <div class="card-head"><h4>Event log</h4><span class="chip partial">Partial</span></div>
-      <p>Append-only activity stream — <code>events</code>. Today it holds only the 12 learning-evidence types; this design widens it with context families (triage, admin, coach). Full taxonomy below.</p>
+      <div class="card-head"><h4>Domain event log</h4><span class="chip built">Built</span></div>
+      <p>Append-only durable learner-domain facts — <code>events</code>. Product-usage observation belongs to a separate behavioral stream; role flags select the evidence that reaches mastery.</p>
       <div class="io"><code>events</code> · role flags <code>is_instructional</code> / <code>is_assessment</code></div>
     </div>
     <div class="card s-built">
@@ -474,7 +474,7 @@ footer.colophon {
           <td class="who">Orchestrator</td>
           <td>profile facade</td>
           <td class="n"><span class="n">nothing — it only composes</span></td>
-          <td><code>coach_session</code> · <code>reflection_captured</code></td>
+          <td class="n"><span class="n">— until the coach ships</span></td>
         </tr>
         <tr>
           <td class="who">Instruction</td>
@@ -492,7 +492,7 @@ footer.colophon {
           <td class="who">Admin</td>
           <td>facade · <code>assessments</code> · <code>class_sessions</code> · <code>study_sessions</code> · <code>tasks</code></td>
           <td class="w"><code>tasks</code> <span class="n">(source: system)</span> · <code>study_sessions</code> <span class="n">(planned)</span> · <code>notifications</code></td>
-          <td><code>plan_committed</code> · <code>session_scheduled</code> · <code>digest_sent</code></td>
+          <td class="n"><span class="n"><code>course_added</code> from onboarding only</span></td>
         </tr>
         <tr>
           <td class="who">Profile facade</td>
@@ -507,12 +507,12 @@ footer.colophon {
 
 <!-- ============ event taxonomy ============ -->
 <section class="section" aria-label="Event taxonomy">
-  <h2>The event log, in full</h2>
-  <p class="lede">The log widens from learning evidence only into the <strong>complete activity stream</strong> — everything the learner does lands here, but only evidence moves mastery. Role flags (<code>is_instructional</code> / <code>is_assessment</code>) already make the fold ignore context events arithmetically; the one new guard is that <strong>idle-decay's <code>lastEventAt</code> must read evidence events only</strong>, so checking off a task never fakes freshness.</p>
+  <h2>The domain event log, in full</h2>
+  <p class="lede">The log contains <strong>durable learner-domain facts</strong>, not a transcript of product usage. Role flags (<code>is_instructional</code> / <code>is_assessment</code>) select the evidence that moves mastery; the two durable context facts are excluded. Clicks, impressions, abandonment, and similar observation belong to the separate behavioral stream.</p>
   <div class="evt-legend">
     <span class="legend-title">Types</span>
     <span class="evt">existing</span>
-    <span class="evt is-new">new in this design</span>
+    <span class="evt is-new">durable context (excluded from fold)</span>
   </div>
   <div class="evt-grid">
     <div class="evt-family evidence">
@@ -526,7 +526,7 @@ footer.colophon {
       <h4>Evidence · assessment</h4>
       <span class="evt-role">is_assessment — feeds the mastery fold</span>
       <div class="evt-list">
-        <span class="evt">quiz_taken</span><span class="evt">assignment_graded</span><span class="evt">exam_graded</span><span class="evt">self_assessment</span><span class="evt is-new">placement_probe</span><span class="evt is-new">diagnostic_probe</span>
+        <span class="evt">quiz_taken</span><span class="evt">assignment_graded</span><span class="evt">exam_graded</span><span class="evt">self_assessment</span><span class="evt">placement_probe</span><span class="evt">diagnostic_probe</span>
       </div>
     </div>
     <div class="evt-family evidence">
@@ -537,28 +537,12 @@ footer.colophon {
       </div>
     </div>
     <div class="evt-family context">
-      <h4>Triage · context-only</h4>
-      <span class="evt-role">no flags — the fold never sees these</span>
+      <h4>Durable context facts</h4>
+      <span class="evt-role">no flags — excluded from the fold</span>
       <div class="evt-list">
-        <span class="evt is-new">task_completed</span><span class="evt is-new">task_dismissed</span><span class="evt is-new">correction_accepted</span><span class="evt is-new">correction_dismissed</span><span class="evt is-new">recommendation_followed</span><span class="evt is-new">recommendation_ignored</span>
+        <span class="evt is-new">correction_accepted</span><span class="evt is-new">course_added</span>
       </div>
-      <p class="evt-note">What the learner chose to act on. Feeds the coach's model of what advice lands — not mastery.</p>
-    </div>
-    <div class="evt-family context">
-      <h4>Admin · context-only</h4>
-      <span class="evt-role">no flags</span>
-      <div class="evt-list">
-        <span class="evt is-new">course_added</span><span class="evt is-new">course_archived</span><span class="evt is-new">plan_committed</span><span class="evt is-new">session_scheduled</span><span class="evt is-new">session_rescheduled</span><span class="evt is-new">settings_changed</span>
-      </div>
-      <p class="evt-note">Life admin around learning. Gives the digest and the coach an honest activity timeline.</p>
-    </div>
-    <div class="evt-family context">
-      <h4>Coach · context-only</h4>
-      <span class="evt-role">no flags</span>
-      <div class="evt-list">
-        <span class="evt is-new">coach_session</span><span class="evt is-new">reflection_captured</span><span class="evt is-new">digest_sent</span>
-      </div>
-      <p class="evt-note">The orchestrator's own trail — which arcs ran, what was reflected, what was sent where.</p>
+      <p class="evt-note">Canonical business transitions, not UI observation. They cannot move mastery or freshness.</p>
     </div>
   </div>
 </section>
@@ -575,7 +559,7 @@ footer.colophon {
     <div class="step"><span class="who">Orchestrator <span class="dim">→</span> Exercise</span><span class="what"><em>practice:</em> items at difficulty ≈ mastery</span></div>
     <div class="step"><span class="who">Exercise <span class="dim">→</span> Student</span><span class="what">exercises</span></div>
     <div class="step"><span class="who">Student <span class="dim">→</span> Exercise</span><span class="what">answers</span></div>
-    <div class="step is-write"><span class="who">Exercise <span class="dim">→</span> Event log</span><span class="what">dual-role <code>practice_done</code> events</span></div>
+    <div class="step is-write"><span class="who">Exercise <span class="dim">→</span> Event log</span><span class="what">dual-role <code>retrieval_practice</code> events</span></div>
     <div class="step"><span class="who">Exercise <span class="dim">→</span> Orchestrator</span><span class="what">1 KC shaky in a suspicious way</span></div>
     <div class="step"><span class="who">Orchestrator <span class="dim">→</span> Exercise</span><span class="what"><em>diagnostic:</em> probe seeded misconceptions</span></div>
     <div class="step is-write"><span class="who">Exercise <span class="dim">→</span> Event log</span><span class="what"><code>diagnostic_probe</code> event + lifecycle row <em>(suspected)</em></span></div>
@@ -583,7 +567,7 @@ footer.colophon {
     <div class="step"><span class="who">Instruction <span class="dim">→</span> Student</span><span class="what">teaching, anchored in a strong KC</span></div>
     <div class="step is-write"><span class="who">Instruction <span class="dim">→</span> Event log</span><span class="what">instructional <code>tutor_session</code> event</span></div>
     <div class="step"><span class="who">Event log <span class="dim">→</span> Facade</span><span class="what">re-fold mastery; decay resets <em>(evidence events only)</em></span></div>
-    <div class="step is-write"><span class="who">Orchestrator <span class="dim">→</span> Event log</span><span class="what"><code>coach_session</code> + <code>reflection_captured</code></span></div>
+    <div class="step"><span class="who">Orchestrator</span><span class="what">session close is not a domain event until the coach ships</span></div>
     <div class="step"><span class="who">Orchestrator <span class="dim">→</span> Student</span><span class="what">recap — why these steps, what unlocked, one reflection prompt</span></div>
   </div>
 </section>
@@ -593,7 +577,7 @@ footer.colophon {
   <h2>Invariants the chart encodes</h2>
   <div class="inv-grid">
     <div class="inv"><b>Events are the only writer</b><span>No pedagogy engine touches mastery columns; they append events and the fold re-derives. Exceptions are named in the matrix: lifecycle rows and generated items (exercise), conversations (instruction), tasks/sessions/notifications (admin).</span></div>
-    <div class="inv"><b>Evidence moves mastery, context never does</b><span>The full activity stream lives in one log, but only role-flagged evidence reaches the fold — and idle decay counts evidence events only.</span></div>
+    <div class="inv"><b>Evidence moves mastery; behavior stays separate</b><span>Only role-flagged domain evidence reaches the fold. Durable context facts are excluded, and product-usage telemetry never enters the D1 log.</span></div>
     <div class="inv"><b>Derived beats persisted</b><span>Frontier, freshness, traversed overlays: computed at read. Only the event log and the misconception lifecycle earn persistence.</span></div>
     <div class="inv"><b>State math is never agentic</b><span>Planes 1–2 are deterministic libraries. LLMs live in Plane 3 and above, where nondeterminism is the point.</span></div>
     <div class="inv"><b>One read surface</b><span>Engines read the Learner Profile facade, not raw tables — so the facade can evolve (caching, closure tables) without touching every caller.</span></div>

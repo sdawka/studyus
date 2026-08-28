@@ -66,13 +66,16 @@ function recencyWeight(ts: number, now: number, halfLifeMs: number): number {
 
 /** Reads a [0,1] success signal from an AE event's payload. Falls back to a
  *  neutral default when the payload carries no explicit outcome (e.g. a
- *  bare `quiz_taken` with no score attached yet). */
+ *  bare `quiz_taken` with no score attached yet). `correctness` has no
+ *  emitter yet — reserved for graders that produce a continuous [0,1]. */
 function eventSuccess(payload: unknown): number {
   const p = (payload ?? {}) as Record<string, unknown>;
   if (typeof p.correct === 'boolean') return p.correct ? 1 : 0;
   if (typeof p.correctness === 'number') return clamp01(p.correctness);
   if (typeof p.score === 'number') return clamp01(p.score / 100);
   if (typeof p.self_rating === 'number') return clamp01(p.self_rating / 5);
+  // Tutor sessions record the learner's closing 1-5 rating as `final_rating`.
+  if (typeof p.final_rating === 'number') return clamp01(p.final_rating / 5);
   return MASTERY_CONSTANTS.DEFAULT_AE_SUCCESS;
 }
 
@@ -84,10 +87,9 @@ function statusFor(mastery: number, hasEvents: boolean): KcStatus {
 }
 
 export function foldMastery(events: FoldEvent[], now: number = Date.now()): MasteryResult {
-  // The activity stream also holds triage/admin/coach context. Only learning
-  // evidence may establish freshness or contribute to mastery; otherwise an
-  // unrelated action (for example accepting a correction) could defer a KC's
-  // review forever.
+  // The domain stream also holds a small number of durable context facts. Only
+  // learning evidence may establish freshness or contribute to mastery; product
+  // usage belongs in the separate behavioral stream.
   const evidenceEvents = events.filter((event) => event.isInstructional || event.isAssessment);
 
   if (evidenceEvents.length === 0) {

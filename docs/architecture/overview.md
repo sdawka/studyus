@@ -24,7 +24,7 @@ Mastery truth comes from the event log. `kcs.mastery`, `kcs.status`, and `kcs.la
 - Events carry dual-role flags (`is_instructional`, `is_assessment`) not a category enum.
 - Editable manual events, delete-only system-generated events (with confirmation).
 - Every event write triggers a mastery re-fold for affected KCs.
-- **The fold is pure**: given a list of role-flagged evidence events, compute score/status deterministically; context-only activity events never affect score or freshness. `events-and-mastery.md` and `mastery.ts::MASTERY_CONSTANTS` are authoritative.
+- **The fold is pure**: given the domain log, select role-flagged evidence and compute score/status deterministically; durable context facts never affect score or freshness, and product-usage telemetry lives in a separate behavioral stream. `events-and-mastery.md` and `mastery.ts::MASTERY_CONSTANTS` are authoritative.
 - `assessment_kcs.qmatrix_version` is currently a write-only audit/version field; the fold does not consume it.
 
 ### Webapp + Frozen API

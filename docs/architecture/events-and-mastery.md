@@ -161,9 +161,8 @@ The 15/25/50-minute choice determines action shape rather than changing the
 score. A ready/review KC with enough active authored MCQs launches an exact-KC
 3/5/8-question Quick Quiz; otherwise it launches the existing guided Understand
 flow with the time budget included in tutor context. Following or cycling past
-a recommendation appends `recommendation_followed` or
-`recommendation_ignored`. Both are context-only event types, so the mastery fold
-ignores them arithmetically and they do not refresh `kcs.last_event_at`.
+a recommendation is behavioral telemetry, outside the learner-domain event log.
+It cannot move mastery or refresh `kcs.last_event_at`.
 
 ## Capabilities: Competencies and Meta-Skills (v1.9)
 
