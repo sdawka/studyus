@@ -35,11 +35,12 @@ describe('learning-surface component wiring', () => {
     expect(absorbFlowSource).toContain('absorbAnalytics.reached(4)');
   });
 
-  it('orders known-misconception impressions before maintained card actions without tutor lifecycle capture', () => {
+  it('orders known-misconception actions and delegates tutor lifecycle capture to its isolated helper', () => {
     expect(scaffoldChatSource).toContain('misconceptionAnalytics.shown(messageId, misconceptionId)');
     expect(scaffoldChatSource).toContain('misconceptionAnalytics.accepted(messageId, misconceptionId)');
     expect(scaffoldChatSource).toContain('misconceptionAnalytics.dismissed(messageId, misconceptionId)');
-    expect(scaffoldChatSource).not.toContain("name: 'tutor_opened'");
+    expect(scaffoldChatSource).toContain('tutorAnalytics.opened(conversationId');
+    expect(scaffoldChatSource).toContain("'X-StudyUs-Tutor-Surface': tutorSurfaceForEntry(entry)");
     expect(scaffoldChatSource).not.toContain("name: 'tutor_message_sent'");
     expect(scaffoldChatSource).not.toContain("name: 'tutor_abandoned'");
   });

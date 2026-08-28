@@ -5,6 +5,8 @@
   import { apiFetch } from '../../lib/apiClient';
   import { captureBehavioralEvent } from '../../lib/analytics/client';
   import { createMisconceptionCardAnalytics } from '../../lib/analytics/learning';
+  import { createTutorOpenedAnalytics, tutorSurfaceForEntry, type TutorEntry } from '../../lib/analytics/tutor';
+  import { TUTOR_MODES, type TutorMode } from '../../lib/schemas/tutor';
   import {
     hydrateRuntimeConversation,
     refetchRuntimeConversation,
@@ -26,15 +28,18 @@
     kcId,
     aiEnabled,
     aiUnavailableReason,
+    entry,
   }: {
     initialConversation: RuntimeConversation;
     kcId?: string;
     aiEnabled: boolean;
     aiUnavailableReason: 'disabled' | 'provider_not_configured' | null;
+    entry: TutorEntry;
   } = $props();
 
   const conversationId = initialConversation.id;
   const misconceptionAnalytics = createMisconceptionCardAnalytics(conversationId, captureBehavioralEvent);
+  const tutorAnalytics = createTutorOpenedAnalytics(captureBehavioralEvent);
   // Svelte components also execute during Astro SSR. Only hydrate the shared
   // module store in the browser so one request can never leak runtime state
   // into another user's server render.
@@ -73,7 +78,12 @@
   let misconceptionsCache: { id: string; slug: string }[] | null = null;
   let misconceptionsRequest: Promise<{ id: string; slug: string }[]> | null = null;
 
-  onMount(() => startLearnerRuntimeSync(conversationId));
+  onMount(() => {
+    if (kcId && TUTOR_MODES.includes(initialConversation.mode as TutorMode)) {
+      tutorAnalytics.opened(conversationId, initialConversation.mode as TutorMode, kcId, entry);
+    }
+    return startLearnerRuntimeSync(conversationId);
+  });
 
   function stripFences(text: string): string {
     // Global flag: an absorb-mode turn may carry both an interactive_model
@@ -166,7 +176,7 @@
     try {
       const res = await fetch(`/api/v1/tutor/conversations/${conversationId}/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-StudyUs-Tutor-Surface': tutorSurfaceForEntry(entry) },
         body: JSON.stringify({ content }),
       });
 

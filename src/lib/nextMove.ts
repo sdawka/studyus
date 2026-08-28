@@ -161,6 +161,7 @@ function toMove(candidate: Candidate, minutes: AvailableMinutes, now: number): N
     actionHref = `/study/quiz?${params.toString()}`;
   } else {
     params.set('minutes', String(minutes));
+    params.set('entry', 'next_move');
     actionHref = `/learn/${candidate.kc.id}?${params.toString()}`;
   }
 

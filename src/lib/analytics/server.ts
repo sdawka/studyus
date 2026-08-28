@@ -12,6 +12,11 @@ export type AnalyticsTransportOptions = {
   warn?: (message: string, details: { event_count: number; reason: string }) => void;
 };
 
+export type AwaitedAnalyticsTransportOptions = AnalyticsTransportOptions & {
+  /** Stable PostHog ingestion identity used by retrying internal producers. */
+  insert_id: string;
+};
+
 export type ServerAnalyticsContext = Omit<AnalyticsGateInput, 'request' | 'analytics_opt_out'> & {
   env: AnalyticsEnvironment;
   execution: AnalyticsWaitUntil;
@@ -25,7 +30,7 @@ function ingestionUrl(host: string, path: '/i/v0/e/' | '/batch/'): string {
   return new URL(path, `${host}/`).toString();
 }
 
-function wireEvent(event: BehavioralEvent, anonymousId: string | undefined) {
+function wireEvent(event: BehavioralEvent, anonymousId: string | undefined, insertId?: string) {
   const { name, ts, user_id, ...properties } = event;
   const distinctId = user_id ?? anonymousId;
   if (!distinctId) return undefined;
@@ -33,6 +38,7 @@ function wireEvent(event: BehavioralEvent, anonymousId: string | undefined) {
     event: name,
     properties: {
       distinct_id: distinctId,
+      ...(insertId ? { $insert_id: insertId } : {}),
       ...properties,
       ...(user_id ? { user_id } : { $process_person_profile: false }),
     },
@@ -46,11 +52,12 @@ async function deliver(
   events: BehavioralEvent[],
   anonymousId: string | undefined,
   options: AnalyticsTransportOptions,
+  insertId?: string,
 ): Promise<void> {
   const fetcher = options.fetcher ?? fetch;
   const single = events.length === 1 && !options.force_batch;
   const wires = events
-    .map((event) => wireEvent(event, anonymousId))
+    .map((event) => wireEvent(event, anonymousId, insertId))
     .filter((wire): wire is NonNullable<typeof wire> => Boolean(wire));
   if (wires.length !== events.length) return;
   const first = wires[0];
@@ -69,6 +76,32 @@ async function deliver(
   });
   if (!response.ok) throw new Error(`PostHog ingestion returned ${response.status}`);
   await response.body?.cancel();
+}
+
+/**
+ * Awaited transport for retrying internal runtimes such as Durable Object
+ * alarms. Unlike the request-path queue, failures deliberately propagate so
+ * the platform can retry with the same insert id.
+ */
+export async function deliverBehavioralEventAwaited(
+  context: Omit<ServerAnalyticsContext, 'execution' | 'request'> & { request?: Request },
+  input: unknown,
+  options: AwaitedAnalyticsTransportOptions,
+): Promise<boolean> {
+  const config = resolveAnalyticsConfig(context.env);
+  if (!analyticsGate(config, context) || !config.host || !config.token) return false;
+  const parsed = behavioralEventSchema.safeParse(input);
+  if (!parsed.success) {
+    (options.warn ?? console.warn)('Behavioral analytics event rejected', { event_count: 1, reason: 'schema_rejected' });
+    return false;
+  }
+  const event = parsed.data;
+  if (event.user_id && config.excluded_user_ids.has(event.user_id)) return false;
+  if (context.user_id && event.user_id && event.user_id !== context.user_id) return false;
+  const anonymousId = context.anonymous_id;
+  if (!event.user_id && !anonymousId) return false;
+  await deliver(config.host, config.token, [event], anonymousId, options, options.insert_id);
+  return true;
 }
 
 function safeReason(error: unknown): string {

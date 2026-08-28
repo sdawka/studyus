@@ -73,7 +73,7 @@ const historyEvents = [...recentEvents].reverse();
     {kc.description && <p class="description">{kc.description}</p>}
     {kc.practiceNotes && <p class="practice-notes"><strong>Practice notes:</strong> {kc.practiceNotes}</p>}
     <div class="action-row">
-      <a class="tutor-btn" href={`/tutor/${kc.id}`}>Tutor me</a>
+      <a class="tutor-btn" href={`/tutor/${kc.id}?entry=course`}>Tutor me</a>
       <a class="understand-btn" href={`/learn/${kc.id}`}>Understand</a>
     </div>
   </header>

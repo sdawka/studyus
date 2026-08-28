@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { analyticsGate, resolveAnalyticsConfig } from '../src/lib/analytics/config';
-import { queueBehavioralEvent, queueBehavioralEvents } from '../src/lib/analytics/server';
+import { deliverBehavioralEventAwaited, queueBehavioralEvent, queueBehavioralEvents } from '../src/lib/analytics/server';
 
 const enabledEnv = {
   ANALYTICS_ENABLED: 'true',
@@ -27,6 +27,29 @@ describe('analytics gates', () => {
 });
 
 describe('Worker analytics transport', () => {
+  it('awaits retrying internal delivery with a stable PostHog insert id', async () => {
+    let body: Record<string, unknown> | undefined;
+    await expect(deliverBehavioralEventAwaited(
+      { env: enabledEnv, user_id: 'user-1', analytics_opt_out: false },
+      { name: 'tutor_abandoned', ...base, conversation_id: 'conversation-1', turn_count: 2, elapsed_ms: 1_800_000 },
+      {
+        insert_id: 'tutor-abandoned:conversation-1:message-2',
+        fetcher: async (_input, init) => {
+          body = JSON.parse(String(init?.body));
+          return new Response(null, { status: 200 });
+        },
+      },
+    )).resolves.toBe(true);
+    expect(body?.properties).toMatchObject({
+      distinct_id: 'user-1',
+      $insert_id: 'tutor-abandoned:conversation-1:message-2',
+      conversation_id: 'conversation-1',
+      turn_count: 2,
+      elapsed_ms: 1_800_000,
+    });
+    expect(JSON.stringify(body)).not.toMatch(/content|message_text|answer|note|email|name/);
+  });
+
   it('queues bounded single-event delivery on waitUntil', async () => {
     const requests: { url: string; init?: RequestInit }[] = [];
     const promises: Promise<unknown>[] = [];

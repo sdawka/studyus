@@ -1,6 +1,11 @@
 import { DurableObject } from 'cloudflare:workers';
 import { relayAsSSE, streamChatCompletion, type ChatMessage } from '../services/tutor/openrouter';
 import { requireAiFeature } from '../ai/capabilities';
+import { deliverBehavioralEventAwaited } from '../analytics/server';
+import { resolveSettings } from '../services/user';
+
+export const TUTOR_ABANDONMENT_IDLE_MS = 30 * 60 * 1000;
+export const TUTOR_ABANDONMENT_IN_FLIGHT_RETRY_MS = 60 * 1000;
 
 /**
  * A learner is the tenancy boundary for state that needs strict ordering. The
@@ -105,7 +110,25 @@ export type AppendLearnerMessageInput = {
   content: string;
 };
 
-export type StreamLearnerReplyInput = AppendLearnerMessageInput & {
+export type TutorTurnAnalyticsCorrelation = {
+  sessionId: string;
+  surface: '/learn/[kcId]' | '/tutor/[kcId]';
+};
+
+export type AcceptLearnerTutorTurnInput = AppendLearnerMessageInput & {
+  analytics?: TutorTurnAnalyticsCorrelation;
+};
+
+export type AcceptedLearnerTutorTurn = {
+  turnId: string;
+  messageId: string;
+  acceptedAt: number;
+  turnIndex: number;
+};
+
+export type StreamLearnerReplyInput = {
+  conversationId: string;
+  turnId: string;
   /** A trusted domain/pedagogy adapter constructs this; it is never client input. */
   systemPrompt: string;
   /** The runtime-owned policy cap. It is never accepted from a client. */
@@ -141,7 +164,10 @@ export class LearnerAgentConflictError extends Error {
   }
 }
 
-type LearnerAgentEnv = Pick<Cloudflare.Env, 'AI_FEATURES_ENABLED' | 'OPENROUTER_API_KEY' | 'OPENROUTER_MODEL'>;
+type LearnerAgentEnv = Pick<
+  Cloudflare.Env,
+  'AI_FEATURES_ENABLED' | 'OPENROUTER_API_KEY' | 'OPENROUTER_MODEL' | 'DB' | 'ANALYTICS_ENABLED' | 'POSTHOG_HOST' | 'POSTHOG_PROJECT_TOKEN' | 'ANALYTICS_EXCLUDED_USER_IDS'
+>;
 
 type ConversationRow = {
   id: string;
@@ -182,6 +208,15 @@ type AlarmRow = {
   status: LearnerScheduledAlarm['status'];
   created_at: number;
   fired_at: number | null;
+};
+type TutorAbandonmentRow = {
+  conversation_id: string;
+  session_id: string;
+  surface: TutorTurnAnalyticsCorrelation['surface'];
+  last_user_turn_at: number;
+  turn_count: number;
+  scheduled_at: number;
+  insert_id: string;
 };
 
 function asJsonValue(value: unknown, fallback: JsonValue = {}): JsonValue {
@@ -331,6 +366,21 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
         INSERT INTO _learner_agent_schema_migrations (id, applied_at) VALUES (1, ?);
       `, Date.now());
     }
+    if (version < 2) {
+      this.ctx.storage.sql.exec(`
+        CREATE TABLE tutor_abandonment_alarms (
+          conversation_id TEXT PRIMARY KEY REFERENCES conversations(id) ON DELETE CASCADE,
+          session_id TEXT NOT NULL,
+          surface TEXT NOT NULL CHECK (surface IN ('/learn/[kcId]', '/tutor/[kcId]')),
+          last_user_turn_at INTEGER NOT NULL,
+          turn_count INTEGER NOT NULL,
+          scheduled_at INTEGER NOT NULL,
+          insert_id TEXT NOT NULL
+        );
+        CREATE INDEX tutor_abandonment_alarms_next ON tutor_abandonment_alarms(scheduled_at);
+        INSERT INTO _learner_agent_schema_migrations (id, applied_at) VALUES (2, ?);
+      `, Date.now());
+    }
   }
 
   /** Bind the immutable local learner ID to this deterministically named object. */
@@ -430,13 +480,56 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
     return toMessage(message);
   }
 
+  async acceptTutorTurn(input: AcceptLearnerTutorTurnInput): Promise<AcceptedLearnerTutorTurn> {
+    this.requireLearnerId();
+    const conversation = this.requireConversation(input.conversationId);
+    this.assertCanAppend(conversation, input.content);
+    if (input.analytics) this.assertTutorAnalyticsCorrelation(input.analytics);
+    requireAiFeature(this.env, 'tutor');
+    const turnId = crypto.randomUUID();
+    const message = this.insertMessage(input.conversationId, 'user', input.content);
+    this.ctx.storage.sql.exec('UPDATE conversations SET active_turn_id = ? WHERE id = ?', turnId, input.conversationId);
+    const turnIndex = this.ctx.storage.sql
+      .exec<{ count: number }>("SELECT COUNT(*) AS count FROM messages WHERE conversation_id = ? AND role = 'user'", input.conversationId)
+      .one().count;
+
+    if (input.analytics) {
+      this.ctx.storage.sql.exec(
+        `INSERT INTO tutor_abandonment_alarms
+          (conversation_id, session_id, surface, last_user_turn_at, turn_count, scheduled_at, insert_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(conversation_id) DO UPDATE SET
+           session_id = excluded.session_id,
+           surface = excluded.surface,
+           last_user_turn_at = excluded.last_user_turn_at,
+           turn_count = excluded.turn_count,
+           scheduled_at = excluded.scheduled_at,
+           insert_id = excluded.insert_id`,
+        input.conversationId,
+        input.analytics.sessionId,
+        input.analytics.surface,
+        message.created_at,
+        turnIndex,
+        message.created_at + TUTOR_ABANDONMENT_IDLE_MS,
+        `tutor-abandoned:${input.conversationId}:${message.id}`,
+      );
+      await this.rescheduleNextAlarm();
+    }
+
+    return { turnId, messageId: message.id, acceptedAt: message.created_at, turnIndex };
+  }
+
   async endConversation(conversationId: string): Promise<LearnerConversation> {
     this.requireLearnerId();
     const conversation = this.requireConversation(conversationId);
     if (conversation.active_turn_id) throw new LearnerAgentConflictError('The conversation has a streaming reply in progress');
-    if (conversation.status === 'ended') return toConversation(conversation);
+    if (conversation.status === 'ended') {
+      await this.cancelTutorAbandonment(conversationId);
+      return toConversation(conversation);
+    }
     const endedAt = Date.now();
     this.ctx.storage.sql.exec("UPDATE conversations SET status = 'ended', ended_at = ? WHERE id = ?", endedAt, conversationId);
+    await this.cancelTutorAbandonment(conversationId);
     return { ...toConversation(conversation), status: 'ended', endedAt };
   }
 
@@ -598,12 +691,18 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
   /** Fetch is intentionally reserved for response streaming; use RPC for every other command. */
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
-    if (request.method !== 'POST' || url.pathname !== '/stream') return Response.json({ error: 'not_found' }, { status: 404 });
+    if (request.method !== 'POST' || (url.pathname !== '/accept' && url.pathname !== '/stream')) {
+      return Response.json({ error: 'not_found' }, { status: 404 });
+    }
     try {
+      if (url.pathname === '/accept') {
+        const input = await request.json<AcceptLearnerTutorTurnInput>();
+        return Response.json(await this.acceptTutorTurn(input));
+      }
       const input = await request.json<StreamLearnerReplyInput>();
       this.requireLearnerId();
       assertNonBlank(input.conversationId, 'conversationId', 200);
-      assertNonBlank(input.content, 'content');
+      assertNonBlank(input.turnId, 'turnId', 200);
       assertNonBlank(input.systemPrompt, 'systemPrompt', 24_000);
       if (!Number.isInteger(input.messageCap) || input.messageCap < 2 || input.messageCap > 200) {
         throw new TypeError('messageCap must be an integer between 2 and 200');
@@ -625,16 +724,16 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
       now,
       now,
     );
+    await this.deliverDueTutorAbandonments(now);
     await this.rescheduleNextAlarm();
   }
 
   private async streamReply(input: StreamLearnerReplyInput): Promise<ReadableStream<Uint8Array>> {
     const conversation = this.requireConversation(input.conversationId);
-    this.assertCanAppend(conversation, input.content);
+    if (conversation.status !== 'active') throw new LearnerAgentConflictError('The conversation has ended');
+    if (conversation.active_turn_id !== input.turnId) throw new LearnerAgentConflictError('The accepted tutor turn is no longer active');
     requireAiFeature(this.env, 'tutor');
-    const turnId = crypto.randomUUID();
-    this.insertMessage(input.conversationId, 'user', input.content);
-    this.ctx.storage.sql.exec('UPDATE conversations SET active_turn_id = ? WHERE id = ?', turnId, input.conversationId);
+    const turnId = input.turnId;
 
     const existingMessages = this.ctx.storage.sql
       .exec<MessageRow>('SELECT id, conversation_id, role, content, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at, id', input.conversationId)
@@ -663,6 +762,8 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
             Date.now(),
             input.conversationId,
           );
+          this.ctx.storage.sql.exec('DELETE FROM tutor_abandonment_alarms WHERE conversation_id = ?', input.conversationId);
+          this.ctx.waitUntil(this.rescheduleNextAlarm());
         }
       }
     };
@@ -720,6 +821,14 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
     if (conversation.active_turn_id) throw new LearnerAgentConflictError('The conversation already has a streaming reply in progress');
   }
 
+  private assertTutorAnalyticsCorrelation(correlation: TutorTurnAnalyticsCorrelation): void {
+    assertNonBlank(correlation.sessionId, 'analytics sessionId', 160);
+    if (!/^[A-Za-z0-9:_-]+$/.test(correlation.sessionId)) throw new TypeError('analytics sessionId is invalid');
+    if (correlation.surface !== '/learn/[kcId]' && correlation.surface !== '/tutor/[kcId]') {
+      throw new TypeError('analytics surface is invalid');
+    }
+  }
+
   private insertMessage(conversationId: string, role: LearnerTutorMessage['role'], content: string): MessageRow {
     // Transcript ordering is part of the learner runtime contract. Millisecond
     // clocks can collide for the user/assistant pair, so advance monotonically
@@ -734,9 +843,81 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
   }
 
   private nextScheduledAlarmAt(): number | null {
-    return this.ctx.storage.sql
+    const generic = this.ctx.storage.sql
       .exec<{ scheduled_at: number | null }>("SELECT MIN(scheduled_at) AS scheduled_at FROM scheduled_alarms WHERE status = 'scheduled'")
       .toArray()[0]?.scheduled_at ?? null;
+    const tutor = this.ctx.storage.sql
+      .exec<{ scheduled_at: number | null }>('SELECT MIN(scheduled_at) AS scheduled_at FROM tutor_abandonment_alarms')
+      .toArray()[0]?.scheduled_at ?? null;
+    if (generic === null) return tutor;
+    if (tutor === null) return generic;
+    return Math.min(generic, tutor);
+  }
+
+  private async cancelTutorAbandonment(conversationId: string): Promise<void> {
+    this.ctx.storage.sql.exec('DELETE FROM tutor_abandonment_alarms WHERE conversation_id = ?', conversationId);
+    await this.rescheduleNextAlarm();
+  }
+
+  /**
+   * Deliver only the explicitly authorized inactivity fields. Transcript text,
+   * names, notes, and answers never enter this table or transport payload.
+   */
+  private async deliverDueTutorAbandonments(now: number): Promise<void> {
+    const learnerId = this.requireLearnerId();
+    const due = this.ctx.storage.sql
+      .exec<TutorAbandonmentRow>(
+        'SELECT conversation_id, session_id, surface, last_user_turn_at, turn_count, scheduled_at, insert_id FROM tutor_abandonment_alarms WHERE scheduled_at <= ? ORDER BY scheduled_at, conversation_id',
+        now,
+      )
+      .toArray();
+    for (const pending of due) {
+      const conversation = this.ctx.storage.sql
+        .exec<ConversationRow>('SELECT id, kc_id, mode, details_json, status, active_turn_id, created_at, ended_at FROM conversations WHERE id = ?', pending.conversation_id)
+        .toArray()[0];
+      if (!conversation || conversation.status !== 'active' || now - pending.last_user_turn_at < TUTOR_ABANDONMENT_IDLE_MS) {
+        this.ctx.storage.sql.exec('DELETE FROM tutor_abandonment_alarms WHERE conversation_id = ?', pending.conversation_id);
+        continue;
+      }
+      if (conversation.active_turn_id) {
+        this.ctx.storage.sql.exec(
+          'UPDATE tutor_abandonment_alarms SET scheduled_at = ? WHERE conversation_id = ?',
+          now + TUTOR_ABANDONMENT_IN_FLIGHT_RETRY_MS,
+          pending.conversation_id,
+        );
+        continue;
+      }
+
+      const user = await this.env.DB.prepare('SELECT settings FROM users WHERE id = ? LIMIT 1')
+        .bind(learnerId)
+        .first<{ settings: string | Record<string, unknown> }>();
+      let rawSettings: unknown = user?.settings;
+      if (typeof rawSettings === 'string') {
+        try {
+          rawSettings = JSON.parse(rawSettings);
+        } catch {
+          rawSettings = {};
+        }
+      }
+      const analyticsOptOut = !user || resolveSettings(rawSettings).analytics_opt_out;
+      await deliverBehavioralEventAwaited(
+        { env: this.env, user_id: learnerId, analytics_opt_out: analyticsOptOut },
+        {
+          name: 'tutor_abandoned',
+          user_id: learnerId,
+          session_id: pending.session_id,
+          surface: pending.surface,
+          ts: now,
+          conversation_id: pending.conversation_id,
+          turn_count: Math.min(100_000, Math.max(0, pending.turn_count)),
+          elapsed_ms: Math.min(86_400_000, Math.max(0, now - conversation.created_at)),
+        },
+        { insert_id: pending.insert_id },
+      );
+      // Transport failures throw before deletion, so the platform retries the
+      // same insert id. Config/privacy rejection is a terminal no-op.
+      this.ctx.storage.sql.exec('DELETE FROM tutor_abandonment_alarms WHERE conversation_id = ?', pending.conversation_id);
+    }
   }
 
   private async rescheduleNextAlarm(): Promise<void> {
@@ -768,6 +949,14 @@ export async function getLearnerAgentForUser(
 /** Build the internal request used by a protected Worker route to relay SSE. */
 export function createLearnerReplyStreamRequest(input: StreamLearnerReplyInput): Request {
   return new Request('https://learner-agent.internal/stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+export function createLearnerTutorTurnAcceptanceRequest(input: AcceptLearnerTutorTurnInput): Request {
+  return new Request('https://learner-agent.internal/accept', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),

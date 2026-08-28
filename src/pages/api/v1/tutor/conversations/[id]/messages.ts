@@ -11,13 +11,21 @@ import { serviceErrorResponse } from '../../../../../../lib/apiErrors';
 import { postMessageSchema } from '../../../../../../lib/schemas/tutor';
 import { ConversationCapReachedError } from '../../../../../../lib/services/tutor/conversations';
 import { streamRuntimeTutorReply } from '../../../../../../lib/runtime/tutorRuntime';
+import { resolveSettings } from '../../../../../../lib/services/user';
 
 export const POST: APIRoute = async ({ params, request, locals }) => {
   try {
     const body = await request.json().catch(() => ({}));
     const input = postMessageSchema.parse(body);
     const db = getDb(env.DB);
-    const stream = await streamRuntimeTutorReply(db, env, locals.user!.id, params.id!, input.content);
+    const requestedSurface = request.headers.get('X-StudyUs-Tutor-Surface');
+    const surface = requestedSurface === '/learn/[kcId]' ? requestedSurface : '/tutor/[kcId]';
+    const stream = await streamRuntimeTutorReply(db, env, locals.user!.id, params.id!, input.content, {
+      request,
+      execution: locals.cfContext,
+      analyticsOptOut: resolveSettings(locals.user!.settings).analytics_opt_out,
+      surface,
+    });
     return new Response(stream, {
       status: 200,
       headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' },
