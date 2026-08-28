@@ -360,6 +360,28 @@ export const events = sqliteTable(
   ],
 );
 
+// Browser event POSTs use a tenant-scoped request key rather than the event
+// primary key. Keeping this as a separate ledger preserves the key after a
+// manually logged event is deleted: ON DELETE SET NULL turns that row into a
+// tombstone, so an ambiguous late retry cannot recreate deliberately removed
+// mastery evidence.
+export const eventIdempotencyKeys = sqliteTable(
+  'event_idempotency_keys',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    idempotencyKey: text('idempotency_key').notNull(),
+    requestFingerprint: text('request_fingerprint').notNull(),
+    eventId: text('event_id').references(() => events.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.idempotencyKey] }),
+    uniqueIndex('event_idempotency_keys_event_id_unique').on(table.eventId),
+  ],
+);
+
 // Durable Object transcripts are intentionally not mirrored into D1. This
 // compact ledger makes their single D1-side session event idempotent across
 // stream retries and explicit end requests.

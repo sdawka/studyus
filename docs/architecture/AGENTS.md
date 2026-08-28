@@ -50,7 +50,10 @@ There are **two event streams**, and they must stay separate:
 5. Tutor sessions are exactly-once per conversation via the
    `runtime_tutor_session_events` ledger, and the DO commits its `ended` state before
    the D1 event exists.
-6. Analysis must filter `source = 'seed'` and the developer's own user id.
+6. Keyed browser event POSTs atomically insert `event_idempotency_keys` beside the
+   event and mastery update. Never move that ledger write outside the event batch;
+   its nullable event FK is a deliberate delete tombstone.
+7. Analysis must filter `source = 'seed'` and the developer's own user id.
 
 ## Conventions
 

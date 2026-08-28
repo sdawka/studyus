@@ -1,6 +1,6 @@
 # studyus Data Model
 
-**Re-derived from `src/db/schema.ts`; current through 2026-08-24.** The repository now contains the v2.0 baseline plus additive migrations for misconception lifecycle, Clerk identity bridging, correction provenance, and runtime tutor events. ADR-003's pre-v0.1 single-baseline preference is therefore historical policy, not the current filesystem shape.
+**Re-derived from `src/db/schema.ts`; current through 2026-08-28.** The repository contains the v2.0 baseline plus additive migrations through `0011_event_idempotency_keys.sql`. ADR-003's pre-v0.1 single-baseline preference is therefore historical policy, not the current filesystem shape.
 
 **Glossary note**: "capability" means two different things in this codebase, deliberately not unified. The `capabilities` table (below) is a **domain noun** — a competency a learner is building. Elsewhere (`docs/architecture/overview.md`, `agentic-channels.md`), "capability" was used loosely to mean *a pure service function* — those two docs were reworded to say "service function" instead once the domain table landed, to kill the collision at the source rather than footnote around it. Column names below are the actual snake_case DB names; `src/db/schema.ts` uses camelCase Drizzle field names that map onto them (e.g. `userId` → `user_id`). Every table's primary key is `id` (text, UUID from `crypto.randomUUID()`) unless noted otherwise; every table has `created_at` (integer epoch ms) unless noted.
 
@@ -241,6 +241,21 @@ history.
 
 **No `updated_at` column** — a manual event edit (`PATCH /events/:id`) updates fields in place with no separate edited-at stamp. Indexes: `events_kc_id_idx` on (`kc_id`), `events_user_ts_idx` on (`user_id`, `ts`), `events_session_id_idx` on (`session_id`).
 
+### event_idempotency_keys
+
+Tenant-scoped ledger for keyed browser `POST /events` requests. The row is inserted
+in the same D1 batch as the event and mastery-cache update.
+
+- `user_id` → `users.id`, **ON DELETE CASCADE**
+- `idempotency_key` (text, normalized lowercase UUID)
+- `request_fingerprint` (text, SHA-256 of the canonical v1 event request)
+- `event_id` → `events.id`, nullable, **ON DELETE SET NULL** — `null` is a durable
+  tombstone preventing a late retry from recreating a manually deleted event
+- `created_at`
+
+Primary key: (`user_id`, `idempotency_key`). Unique index:
+`event_idempotency_keys_event_id_unique` on (`event_id`).
+
 ### assessments
 
 - `id` (text, pk)
@@ -456,6 +471,7 @@ Every non-PK index currently in the schema:
 | `events_kc_id_idx` | events | kc_id | |
 | `events_user_ts_idx` | events | user_id, ts | |
 | `events_session_id_idx` | events | session_id | |
+| `event_idempotency_keys_event_id_unique` | event_idempotency_keys | event_id | ✓ |
 | `exercises_kc_slug_unique` | exercises | kc_id, slug | ✓ |
 | `exercises_kc_id_idx` | exercises | kc_id | |
 | `kcs_course_id_idx` | kcs | course_id | |
@@ -513,6 +529,8 @@ All FKs below are real SQL `FOREIGN KEY ... ON DELETE ...` constraints emitted i
 | events.kc_id | kcs.id | set null |
 | events.course_id | courses.id | set null |
 | events.session_id | *(none — plain text column, not a real FK)* | — |
+| event_idempotency_keys.user_id | users.id | cascade |
+| event_idempotency_keys.event_id | events.id | set null |
 | assessments.course_id | courses.id | cascade |
 | assessment_kcs.assessment_id | assessments.id | cascade |
 | assessment_kcs.kc_id | kcs.id | cascade |

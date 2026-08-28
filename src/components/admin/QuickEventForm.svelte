@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { apiFetch } from '../../lib/apiClient';
+  import { postManualEvent, type EventPostAttempt } from '../../lib/eventPostClient';
 
   interface CourseOption {
     id: string;
@@ -24,6 +24,7 @@
   let submitting = $state(false);
   let message = $state<string | null>(null);
   let error = $state<string | null>(null);
+  let pendingEventAttempt = $state<EventPostAttempt | null>(null);
 
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
@@ -31,11 +32,13 @@
     error = null;
     message = null;
     try {
-      const result = await apiFetch(
-        '/api/v1/events',
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, course_id: courseId || undefined }) },
+      const posted = await postManualEvent(
+        { type, course_id: courseId || undefined },
+        pendingEventAttempt,
         'Could not log that event.',
       );
+      pendingEventAttempt = posted.pendingAttempt;
+      const { result } = posted;
       if (!result.ok) {
         error = result.error;
         return;

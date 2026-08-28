@@ -5,6 +5,7 @@
   // keyboard shortcut), so it can be one island among several popovers
   // instead of mounting its own always-present button.
   import { apiFetch } from '../../lib/apiClient';
+  import { postManualEvent, type EventPostAttempt } from '../../lib/eventPostClient';
   import { courseContext } from '../../lib/stores/courseContext';
   import { portalToBody } from '../../lib/actions/portal';
   import { scrollLock } from '../../lib/actions/scrollLock';
@@ -86,6 +87,7 @@
   let submitting = $state(false);
   let submitError = $state<string | null>(null);
   let confirmation = $state<string | null>(null);
+  let pendingEventAttempt = $state<EventPostAttempt | null>(null);
 
   function nowLocal(): string {
     const d = new Date();
@@ -162,6 +164,7 @@
     scoreValue = '';
     note = '';
     submitError = null;
+    pendingEventAttempt = null;
   }
 
   function pickType(type: EventType) {
@@ -200,11 +203,9 @@
       if (selectedCourseId) body.course_id = selectedCourseId;
       if (selectedKcId) body.kc_id = selectedKcId;
 
-      const result = await apiFetch(
-        '/api/v1/events',
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
-        'Failed to log event',
-      );
+      const posted = await postManualEvent(body, pendingEventAttempt, 'Failed to log event');
+      pendingEventAttempt = posted.pendingAttempt;
+      const { result } = posted;
       if (!result.ok) {
         submitError = result.error;
         return;
