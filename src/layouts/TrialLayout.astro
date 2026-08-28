@@ -2,11 +2,14 @@
 import '@fontsource-variable/fraunces';
 import '@fontsource-variable/nunito';
 import '../styles/marketing-rd.css';
+import AnalyticsBootstrap from '../components/AnalyticsBootstrap.astro';
+import { resolveSettings } from '../lib/services/user';
 
 interface Props {
   title?: string;
 }
 const { title = 'Try studyus in two minutes' } = Astro.props;
+const settings = resolveSettings(Astro.locals.user?.settings);
 ---
 <!doctype html>
 <html lang="en">
@@ -17,7 +20,10 @@ const { title = 'Try studyus in two minutes' } = Astro.props;
     <meta name="description" content="Set up a semester and explore how studyus handles real student situations—no account required." />
     <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   </head>
-  <body><slot /></body>
+  <body>
+    <slot />
+    <AnalyticsBootstrap userId={Astro.locals.user?.id} analyticsOptOut={settings.analytics_opt_out} />
+  </body>
 </html>
 
 <style is:global>

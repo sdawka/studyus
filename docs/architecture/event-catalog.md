@@ -4,8 +4,9 @@
 whole codebase. B1's vocabulary narrowing is implemented: recommendation interactions
 and 11 dead placeholders are no longer accepted by the domain API. The **domain
 stream** sections describe what is implemented today (file:line cited). The
-**behavioral stream** section is recorded design — approved vocabulary and orderings,
-not yet implemented. `events-and-mastery.md` stays the theory doc (KLI, the fold); this
+**behavioral stream** section is approved vocabulary and ordering; its privacy,
+schema, session, and transport foundation is implemented, while product emitters
+remain pending. `events-and-mastery.md` stays the theory doc (KLI, the fold); this
 doc is the operational catalog: every event, who emits it, what it carries, and what
 order things are expected to arrive in.
 
@@ -221,13 +222,13 @@ Ordered by severity. D1–D4 and D7–D8 were fixed on 2026-08-28 (branch
 
 ---
 
-## Behavioral stream: recorded design (not yet implemented)
+## Behavioral stream: recorded design (foundation implemented; emitters pending)
 
-### Architecture decision (recorded; implementation pending)
+### Architecture decision (foundation implemented; instrumentation pending)
 
 **PostHog, deliberate capture only** — no autocapture, no session replay.
-`posthog-js` for UI-only events; server-side capture via plain HTTP `/capture` with
-`ctx.waitUntil` for server-truth events (the Node SDK's batching doesn't fit the
+`posthog-js` for UI-only events; server-side capture via plain HTTP `/i/v0/e/`
+(single) and `/batch/` with `ctx.waitUntil` for server-truth events (the Node SDK's batching doesn't fit the
 Workers lifecycle). `demo_funnel_events` D1 stays as-is (mirror-forward to PostHog,
 no backfill). Rejected: a D1 `behavioral_events` table (recreates the analysis layer
 from scratch, unbounded hot table beside learner reads) and Workers Analytics Engine
@@ -357,7 +358,9 @@ Invariant: stage monotonic within a visit; stage 4 without 2–3 legal only when
 
 ## TODO
 
-- Implement the behavioral layer (PostHog decision above).
+- Wire the approved product-specific behavioral emitters onto the implemented
+  schema/session/privacy/transport foundation, including the `demo_funnel_events`
+  mirror-forward.
 - Fix the remaining domain-stream debt: D5 (idempotency keys for manual browser event posts).
 - After implementation, add the analysis conventions here (source filters, seed/dev
   exclusion, funnel queries).

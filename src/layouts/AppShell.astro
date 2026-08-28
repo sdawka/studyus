@@ -14,6 +14,7 @@ import AddCourseModal from '../components/shell/AddCourseModal.svelte';
 import BottomNav from '../components/shell/BottomNav.astro';
 import Toast from '../components/shell/Toast.svelte';
 import CalendarActivitySync from '../components/shell/CalendarActivitySync.svelte';
+import AnalyticsBootstrap from '../components/AnalyticsBootstrap.astro';
 import { resolveSettings } from '../lib/services/user';
 
 interface Props {
@@ -71,6 +72,7 @@ const sidebarAttr = settings.sidebar_collapsed ? 'collapsed' : undefined;
          under the sticky header instead of covering the viewport. See
          docs/design/mobile-shell.md for the full writeup. -->
     <slot name="overlay" />
+    <AnalyticsBootstrap userId={Astro.locals.user!.id} analyticsOptOut={settings.analytics_opt_out} />
     <!-- The TEMPORARY docs annotation overlay used to mount here as a
          flag-guarded `client:idle` island. It does not any more: Astro
          registers `client:*` islands at build-analysis time, so the guard

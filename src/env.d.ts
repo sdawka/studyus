@@ -1,4 +1,5 @@
 /// <reference types="astro/client" />
+/// <reference types="@astrojs/cloudflare" />
 /// <reference path="../worker-configuration.d.ts" />
 
 type User = typeof import('./db/schema').users.$inferSelect;
@@ -12,12 +13,14 @@ declare namespace App {
 // D1Database, R2Bucket, and the `Cloudflare.Env`/`Env` globals used by
 // `import { env } from 'cloudflare:workers'` come from worker-configuration.d.ts
 // (regenerate with `npx wrangler types` after changing wrangler.jsonc bindings).
-// OPENROUTER_API_KEY is an optional secret (wrangler secret put / .dev.vars),
-// not a `vars` entry, so wrangler's generator doesn't know about it. AI paths
-// must go through the capability gate before reading it.
+// Optional secrets (`wrangler secret put` / .dev.vars) are not `vars` entries,
+// so Wrangler's generator does not know about them. Their consumers must pass
+// the relevant capability/config gate before reading them.
 declare namespace Cloudflare {
   interface Env {
     OPENROUTER_API_KEY?: string;
+    POSTHOG_PROJECT_TOKEN?: string;
+    ANALYTICS_EXCLUDED_USER_IDS?: string;
     CLERK_SECRET_KEY: string;
   }
 }

@@ -24,6 +24,7 @@ export const settingsSchema = z.strictObject({
   theme: z.enum(['compass', 'focus', 'campus']).optional(),
   scheme: z.enum(['light', 'dark', 'system']).optional(),
   sidebar_collapsed: z.boolean().optional(),
+  analytics_opt_out: z.boolean().optional(),
   task_generators: taskGeneratorsSchema.optional(),
   learning_preferences: z
     .strictObject({

@@ -3,6 +3,7 @@ import AppShell from '../layouts/AppShell.astro';
 import AppearanceSettings from '../components/settings/AppearanceSettings.svelte';
 import TaskGeneratorSettings from '../components/settings/TaskGeneratorSettings.svelte';
 import CalendarIntegrationSettings from '../components/settings/CalendarIntegrationSettings.svelte';
+import AnalyticsPrivacySettings from '../components/settings/AnalyticsPrivacySettings.svelte';
 import { resolveSettings } from '../lib/services/user';
 
 const user = Astro.locals.user!;
@@ -10,6 +11,11 @@ const settings = resolveSettings(user.settings);
 ---
 <AppShell title="Settings">
   <h1>Settings</h1>
+
+  <section class="card settings-section">
+    <div class="card-head"><h2>Privacy</h2></div>
+    <AnalyticsPrivacySettings client:load optedOut={settings.analytics_opt_out} />
+  </section>
 
   <section class="card settings-section">
     <div class="card-head"><h2>Calendar</h2></div>
@@ -58,6 +64,7 @@ const settings = resolveSettings(user.settings);
 <script>
   import { apiFetch } from '../lib/apiClient';
   import { pushToast } from '../lib/stores/toast';
+  import { resetAnalytics } from '../lib/analytics/client';
 
   const form = document.getElementById('profile-form') as HTMLFormElement | null;
   form?.addEventListener('submit', async (e) => {
@@ -92,6 +99,7 @@ const settings = resolveSettings(user.settings);
   }
 
   document.getElementById('logout-btn')?.addEventListener('click', () => {
+    resetAnalytics();
     const clerk = (window as Window & {
       Clerk?: { signOut: (options?: { redirectUrl?: string }) => Promise<void> | void };
     }).Clerk;

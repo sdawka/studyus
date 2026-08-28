@@ -46,6 +46,7 @@
     "mammoth": "^1.12.1",
     "nanostores": "^1.4.2",
     "pdfjs-dist": "^6.2.108",
+    "posthog-js": "^1.422.5",
     "svelte": "~5.56.0",
     "zod": "^4.0.0"
   },

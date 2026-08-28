@@ -34,7 +34,9 @@
   },
   "vars": {
     "OPENROUTER_MODEL": "openrouter/auto",
-    "AI_FEATURES_ENABLED": "true"
+    "AI_FEATURES_ENABLED": "true",
+    "ANALYTICS_ENABLED": "false",
+    "POSTHOG_HOST": "https://us.i.posthog.com"
   },
   "observability": {
     "traces": {
@@ -77,7 +79,9 @@
       },
       "vars": {
         "OPENROUTER_MODEL": "openrouter/auto",
-        "AI_FEATURES_ENABLED": "false"
+        "AI_FEATURES_ENABLED": "false",
+        "ANALYTICS_ENABLED": "false",
+        "POSTHOG_HOST": "https://us.i.posthog.com"
       },
       "observability": {
         "traces": {

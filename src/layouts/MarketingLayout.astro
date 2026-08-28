@@ -3,6 +3,8 @@ import '@fontsource-variable/fraunces';
 import '@fontsource-variable/nunito';
 import '../styles/marketing.css';
 import '../styles/marketing-rd.css';
+import AnalyticsBootstrap from '../components/AnalyticsBootstrap.astro';
+import { resolveSettings } from '../lib/services/user';
 
 interface Props {
   title: string;
@@ -11,6 +13,7 @@ interface Props {
 const { title, description } = Astro.props;
 const isCompare = Astro.url.pathname.startsWith('/compare');
 const isHowItWorks = Astro.url.pathname.startsWith('/how-it-works');
+const settings = resolveSettings(Astro.locals.user?.settings);
 ---
 <!doctype html>
 <html lang="en">
@@ -20,6 +23,8 @@ const isHowItWorks = Astro.url.pathname.startsWith('/how-it-works');
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+    <AnalyticsBootstrap userId={Astro.locals.user?.id} analyticsOptOut={settings.analytics_opt_out} />
+
     <script>
       // Marks JS availability so .reveal's hidden initial state only ever
       // applies when the observer below is guaranteed to run.
