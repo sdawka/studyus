@@ -7,9 +7,9 @@ stream** sections describe what is implemented today (file:line cited). The
 **behavioral stream** has its privacy, schema, session, transport, and product
 instrumentation implemented for 45 of 46 approved names. `resource_saved` is the sole
 reserved implement-or-prune decision. “Live” below means an emitter path is
-implemented and reachable; checked-in `ANALYTICS_ENABLED` remains `false`, so no
-environment begins delivery without an explicit operational gate and project-token
-decision. `events-and-mastery.md` stays the theory doc (KLI, the fold); this doc is the
+implemented and reachable. Checked-in `ANALYTICS_ENABLED` is `true` for production
+and staging; delivery additionally requires that environment's PostHog project token.
+`events-and-mastery.md` stays the theory doc (KLI, the fold); this doc is the
 operational catalog: every event, who emits it, what it carries, and what order things
 are expected to arrive in.
 
@@ -266,9 +266,9 @@ request/DNT header, so it re-reads the learner's current analytics opt-out befor
 delivery.
 
 **Operational state:** checked-in production and staging vars both set
-`ANALYTICS_ENABLED=false`, and no token is committed. These emitters therefore do not
-start production capture by merging code; enabling an environment requires the
-deliberate gate plus secret-provisioning decision described in `cloudflare.md`.
+`ANALYTICS_ENABLED=true`. Tokens and developer-user exclusions remain uncommitted
+per-environment secrets. Missing secrets still fail closed, and the DNT, opt-out, and
+server-side exclusion gates remain authoritative as described in `cloudflare.md`.
 
 **Acquisition/activation implementation (2026-08-28):** public demo clients
 reuse the foundation's device/app-session state and do not call D1 under DNT.

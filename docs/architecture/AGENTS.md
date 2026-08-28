@@ -22,8 +22,8 @@ There are **two event streams**, and they must stay separate:
   abandonment). Never write this into the `events` table. Its deliberate-capture
   PostHog emitter paths are implemented for 45 of 46 approved names across
   acquisition, activation, engagement, learning, and retention. Checked-in
-  `ANALYTICS_ENABLED` remains `false`; implementation status must not be mistaken for
-  enabled production delivery. `resource_saved` is the sole reserved
+  `ANALYTICS_ENABLED` is `true` for production and staging; delivery still requires
+  each environment's PostHog token. `resource_saved` is the sole reserved
   implement-or-prune decision. It uses `users.id` as the authenticated distinct id and
   admits no PII or free text — full design and rollout status in `event-catalog.md`;
   exhaustive classification lives in `src/lib/analytics/coverage.ts`.

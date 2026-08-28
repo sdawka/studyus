@@ -42,8 +42,8 @@ priorities are listed here and detailed in their owning docs.
    `docs/product/onboarding.md`.
 2. **Close the behavioral analytics catalog** — the D1 event vocabulary has been
    narrowed back to durable learner-domain facts, and deliberate PostHog emitter paths
-   are implemented for 45 of 46 approved behavioral names. Checked-in delivery remains
-   disabled pending an explicit operational gate/token decision. The only vocabulary
+   are implemented for 45 of 46 approved behavioral names and operationally enabled
+   behind the token, DNT, opt-out, and developer-exclusion gates. The only vocabulary
    decision left is to implement a real save-an-existing-resource-to-course action for
    `resource_saved`, or prune that name. Reporting conventions and dashboards remain
    separate follow-up work; see `docs/architecture/event-catalog.md`.
@@ -324,9 +324,9 @@ onboarding requirement in place of a real course.
 
 ### Learning Analytics Dashboard
 
-**Current**: Learner profile (mastery, streaks) plus implemented behavioral emitter
-paths for 45 of 46 cataloged events (checked-in delivery is disabled), but no reporting
-UI, trends, or cohort comparisons.
+**Current**: Learner profile (mastery, streaks) plus operational deliberate behavioral
+capture for 45 of 46 cataloged events, but no reporting UI, trends, or cohort
+comparisons.
 
 **Post-v1**:
 - Time spent per KC (heatmap by week).
