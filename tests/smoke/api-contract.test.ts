@@ -31,6 +31,7 @@ import * as resourcesDetailRoutes from '../../src/pages/api/v1/resources/[id]';
 import * as sessionsIndexRoutes from '../../src/pages/api/v1/sessions/index';
 import * as sessionsDetailRoutes from '../../src/pages/api/v1/sessions/[id]';
 import * as sessionsCompleteRoutes from '../../src/pages/api/v1/sessions/[id]/complete';
+import * as sessionsDiscardRoutes from '../../src/pages/api/v1/sessions/[id]/discard';
 import * as gradesRoutes from '../../src/pages/api/v1/grades/summary';
 import * as calendarRoutes from '../../src/pages/api/v1/calendar/index';
 import * as profileRoutes from '../../src/pages/api/v1/profile/index';
@@ -776,6 +777,29 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
       expect(body.data.events_appended).toHaveLength(1);
       expect(body.data.events_appended[0].kc_id).toBe(fixture.kcId);
       expect(Array.isArray(body.data.mastery_deltas)).toBe(true);
+    });
+
+    it('PATCH /sessions/:id/discard explicitly finalizes a linked session with zero evidence', async () => {
+      const createReq = new Request('http://local.test/api/v1', {
+        method: 'POST',
+        body: JSON.stringify({ course_id: fixture.courseId, intended_event_type: 'practice_done', kc_ids: [fixture.kcId] }),
+      });
+      const createRes = await sessionsIndexRoutes.POST(astroContext({
+        request: createReq,
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      const sessionId = ((await createRes.json()) as any).data.id;
+
+      const discardRes = await sessionsDiscardRoutes.PATCH(astroContext({
+        params: { id: sessionId },
+        request: new Request('http://local.test/api/v1', { method: 'PATCH', body: '{}' }),
+        locals: { user: { id: fixture.userId } },
+      }) as any);
+      expect(discardRes.status).toBe(200);
+      const body = (await discardRes.json()) as any;
+      expect(body.data).toMatchObject({ id: sessionId, disposition: 'discarded', already_finalized: false });
+      expect(body.data.events_appended).toEqual([]);
+      expect(body.data.mastery_deltas).toEqual([]);
     });
   });
 

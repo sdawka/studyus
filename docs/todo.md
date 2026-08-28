@@ -151,7 +151,9 @@ Found during the mobile-shell verification pass (M3), not fixed there because th
 
 Flagged during the T6 `apiFetch` consolidation's verification pass, not fixed there because each is a behavior change, not a like-for-like refactor:
 
-- **Unhandled-rejection risk at two un-migrated fetch call sites**: `src/components/study/StudyFlow.svelte`'s `discardSession` and `submitCompletion`, and `src/components/events/EventTimeline.svelte`'s `saveEdit` and `remove`, each wrap their `fetch` call in `try { ... } finally { ... }` with no `catch` clause — a network-level throw (offline, backend redeploying) is an unhandled promise rejection with zero user-visible feedback, unlike every other call site (now on `apiFetch`, which catches and surfaces `NETWORK_ERROR_MESSAGE`). Left alone because migrating them to `apiFetch` would newly surface errors that previously failed silently — desired, but a deliberate future change, not this pass's scope.
+- **Unhandled-rejection risk at remaining EventTimeline calls**: StudyFlow's completion
+  and discard paths now use `apiFetch`; `src/components/events/EventTimeline.svelte`'s
+  `saveEdit` and `remove` still use raw `fetch` with no catch and remain deferred.
 - **`GradeTable`'s private `formatDue` vs. `plannerDates.formatDueDate`**: `src/components/admin/GradeTable.svelte`'s `formatDue(ms: number | null)` renders the same string (`toLocaleDateString` with `{month:'short',day:'numeric',year:'numeric'}`, "No due date" fallback) as `formatDueDate(iso: string | null)` in `src/lib/plannerDates.ts`, but the two take different input shapes — `GradeTable`'s `Assessment.dueDate` is an epoch-ms number, while `formatDueDate`'s only caller (`AssessmentsCard`) passes an ISO string — and their null-checks diverge (`ms === null` vs. `!iso`, which would treat an epoch-0 timestamp differently). Not a byte-identical swap without either widening the shared helper's signature (which changes its falsy-check semantics) or converting at the call site, so it's booked here rather than merged speculatively.
 
 ### Verification-Pass Deferrals (2026-08-19, v1.9 wave)

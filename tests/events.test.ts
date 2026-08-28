@@ -2,8 +2,8 @@ import { env } from 'cloudflare:test';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
-import { branches, courses, kcs, users } from '../src/db/schema';
-import { createEvent, deleteEvent, listEvents } from '../src/lib/services/events';
+import { branches, courses, events, kcs, studySessionFinalizations, studySessions, users } from '../src/db/schema';
+import { appendEventsAtomically, createEvent, deleteEvent, listEvents } from '../src/lib/services/events';
 
 const db = getDb(env.DB);
 
@@ -41,6 +41,35 @@ describe('events service', () => {
     const kcRows = await db.select().from(kcs).where(eq(kcs.id, kcId)).limit(1);
     expect(kcRows[0].mastery).toBe(masteryDeltas[0].new_mastery);
     expect(kcRows[0].status).not.toBe('not-started');
+  });
+
+  it('rolls event and mastery writes back when a companion statement fails', async () => {
+    const sessionId = crypto.randomUUID();
+    await db.insert(studySessions).values({ id: sessionId, userId, courseId, intendedEventType: 'practice_done', startedAt: Date.now() });
+    await db.insert(studySessionFinalizations).values({
+      studySessionId: sessionId,
+      disposition: 'completed',
+      finalizedAt: Date.now(),
+      createdAt: Date.now(),
+    });
+
+    await expect(appendEventsAtomically(db, userId, [{
+      type: 'practice_done',
+      kc_id: kcId,
+      course_id: courseId,
+      session_id: sessionId,
+      payload: { session_id: sessionId, self_rating: 5 },
+    }], 'session', [
+      db.insert(studySessionFinalizations).values({
+        studySessionId: sessionId,
+        disposition: 'completed',
+        finalizedAt: Date.now(),
+        createdAt: Date.now(),
+      }),
+    ])).rejects.toThrow();
+
+    expect(await db.select().from(events).where(eq(events.sessionId, sessionId))).toHaveLength(0);
+    expect((await db.select().from(kcs).where(eq(kcs.id, kcId)))[0]).toMatchObject({ mastery: 0, status: 'not-started' });
   });
 
   it('a kc-less event does not require or touch a KC cache', async () => {

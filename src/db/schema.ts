@@ -356,6 +356,7 @@ export const events = sqliteTable(
   (table) => [
     index('events_kc_id_idx').on(table.kcId),
     index('events_user_ts_idx').on(table.userId, table.ts),
+    index('events_session_id_idx').on(table.sessionId),
   ],
 );
 
@@ -672,14 +673,30 @@ export const studySessions = sqliteTable(
   ],
 );
 
-export const sessionKcs = sqliteTable('session_kcs', {
-  id: id(),
+export const sessionKcs = sqliteTable(
+  'session_kcs',
+  {
+    id: id(),
+    studySessionId: text('study_session_id')
+      .notNull()
+      .references(() => studySessions.id, { onDelete: 'cascade' }),
+    kcId: text('kc_id')
+      .notNull()
+      .references(() => kcs.id, { onDelete: 'cascade' }),
+  },
+  (table) => [uniqueIndex('session_kcs_session_kc_unique').on(table.studySessionId, table.kcId)],
+);
+
+// One terminal command per ordinary study session. The primary key is the
+// concurrency guard: completion/discard and every event/mastery consequence
+// join the same D1 batch, so a losing finalization race rolls back wholesale.
+export const studySessionFinalizations = sqliteTable('study_session_finalizations', {
   studySessionId: text('study_session_id')
-    .notNull()
+    .primaryKey()
     .references(() => studySessions.id, { onDelete: 'cascade' }),
-  kcId: text('kc_id')
-    .notNull()
-    .references(() => kcs.id, { onDelete: 'cascade' }),
+  disposition: text('disposition', { enum: ['completed', 'discarded'] }).notNull(),
+  finalizedAt: integer('finalized_at').notNull(),
+  createdAt: createdAt(),
 });
 
 // ---------------------------------------------------------------------------

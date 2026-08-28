@@ -257,10 +257,39 @@ Matches draft. `GET` streams the object body with the stored `Content-Type` and 
 ## Study Sessions
 
 ### GET|POST /sessions
-Matches draft. `intended_event_type` is a free string; on completion it's resolved to one of the 12 event types if it matches exactly, otherwise falls back to `practice_done` (dual-role) so a completed session always registers as some evidence of study even if the client sent an unrecognized label.
+`intended_event_type` is constrained to the domain event vocabulary. `POST` validates,
+deduplicates, and atomically inserts optional `kc_ids`; a course-scoped session only
+accepts active caller-owned KCs from that course. `GET` adds
+`disposition: null|"completed"|"discarded"`.
 
 ### PATCH /sessions/:id/complete
-Matches draft. `kc_ids_touched` defaults to whatever KCs were linked at session creation (`session_kcs`) if omitted. Appends one event per touched KC via the events service.
+Canonical body:
+```json
+{
+  "ended_at": "ISO?",
+  "reflection": "string?",
+  "scheduled_at": "ISO?",
+  "kc_outcomes": [{ "kc_id": "uuid", "self_rating": "integer 1-5?" }]
+}
+```
+Legacy `kc_ids_touched: uuid[]` remains accepted but is mutually exclusive with
+`kc_outcomes`. An explicitly present empty array means zero events; only omission of
+both fields falls back to `session_kcs`. The terminal ledger, session update, missing
+KC links, event appends, and one mastery recompute per KC commit in one D1 batch.
+Assessment-capable intended events carry `self_rating` directly; a rated
+instructional-only event gets an atomic `self_assessment` companion.
+
+Response remains additive:
+`{ id, disposition:"completed", ended_at, events_appended, mastery_deltas, already_finalized }`.
+A same-terminal retry returns the canonical events with empty deltas and
+`already_finalized:true`; a prior discard returns 409.
+
+### PATCH /sessions/:id/discard
+Strict body `{ ended_at?: ISO }`. Records `disposition:"discarded"` and never appends
+evidence, even when the session has stored KC links. Same-terminal retries are 200
+and idempotent; completion-after-discard/discard-after-completion returns 409.
+Quick-quiz sentinel rows reject both ordinary terminal routes and remain owned by
+the quiz grading endpoint.
 
 ---
 
