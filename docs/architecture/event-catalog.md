@@ -4,12 +4,14 @@
 whole codebase. B1's vocabulary narrowing is implemented: recommendation interactions
 and 11 dead placeholders are no longer accepted by the domain API. The **domain
 stream** sections describe what is implemented today (file:line cited). The
-**behavioral stream** section is approved vocabulary and ordering; its privacy,
-schema, session, and transport foundation is implemented. The daily-loop page,
-app-session, and Next Move emitters are also implemented; the remaining product
-emitters are pending. `events-and-mastery.md` stays the theory doc (KLI, the fold); this
-doc is the operational catalog: every event, who emits it, what it carries, and what
-order things are expected to arrive in.
+**behavioral stream** has its privacy, schema, session, transport, and product
+instrumentation implemented for 45 of 46 approved names. `resource_saved` is the sole
+reserved implement-or-prune decision. “Live” below means an emitter path is
+implemented and reachable; checked-in `ANALYTICS_ENABLED` remains `false`, so no
+environment begins delivery without an explicit operational gate and project-token
+decision. `events-and-mastery.md` stays the theory doc (KLI, the fold); this doc is the
+operational catalog: every event, who emits it, what it carries, and what order things
+are expected to arrive in.
 
 ## The two streams
 
@@ -20,8 +22,9 @@ studyus has (and must keep) two separate event streams:
    `src/lib/services/events.ts`, folded into mastery by `src/lib/services/mastery.ts`.
    This contains durable learner-domain facts; role flags identify the evidence subset.
 2. **Behavioral stream** — product usage telemetry. The anonymous trial funnel remains
-   in `demo_funnel_events`; authenticated deliberate capture now covers page/app-session
-   lifecycle and the Next Move recommendation loop. The full vocabulary is below.
+   in `demo_funnel_events` and is mirror-forwarded to PostHog; deliberate capture spans
+   acquisition, activation, engagement, learning, and retention. The full vocabulary
+   and its one reserved decision are below.
 
 **Boundary rule**: durable facts that define the learner model or a canonical business
 transition belong in the **domain stream**; observational product usage belongs in the
@@ -76,8 +79,9 @@ names, so no data migration or backfill was needed.
 - **`demo_funnel_events`** — anonymous public-trial funnel, 11 allow-listed names
   (`src/lib/schemas/onboarding.ts:121-133`), written by
   `POST /api/public/demo-events` (7-day window, ≤100/session, idempotent by event id).
-  Completely separate table; pollution-safe by construction. Ends at
-  `onboarding_completed` — nothing behavioral is recorded for authenticated users.
+  Completely separate table; pollution-safe by construction. Its legacy sequence ends
+  at `onboarding_completed`; newly inserted rows are also mirror-forwarded to PostHog,
+  while authenticated activation has its own three-event server-truth sequence.
 - **`class_sessions`** — attendance is **status rows, not events** (deliberate, v1.3,
   `classSessions.ts:1-11`). Initial status seeds once from same-day
   `lecture_attended/missed` events; thereafter PATCH-only, and marking attendance does
@@ -86,9 +90,11 @@ names, so no data migration or backfill was needed.
 - **`studySessions` quick-quiz sentinel** — quick quizzes are session rows with a
   sentinel `intendedEventType` and quiz JSON in `reflection`
   (`quick_quiz.ts:260-268`). Session-level analytics must filter the sentinel.
-- **Tutor Durable Object SQLite** — conversations/turns/alarms live in the DO
-  (`learnerAgent.ts:19-51,283-326`) and surface into D1 only as the single terminal
-  `tutor_session` event. Abandoned (never-ended) conversations leave no D1 trace.
+- **Tutor Durable Object SQLite** — conversations, turns, and multiplexed alarms live
+  in the DO. Only an ended conversation surfaces into D1 as the terminal
+  `tutor_session` domain event. A separate 30-minute inactivity alarm can emit the
+  nonterminal `tutor_abandoned` behavioral signal; it does not end the conversation,
+  and a later learner turn may schedule another inactivity episode.
 - **`scripts/seed.ts`** writes real `events` rows with `source:'seed'` — every
   analysis must filter `source != 'seed'` (and exclude the developer's own user id).
 
@@ -217,14 +223,14 @@ Ordered by severity. D1–D4 and D7–D8 were fixed on 2026-08-28 (branch
   domain event when the coach ships (ledger-idempotent, like `tutor_session`).
   Executed as one vocabulary-narrowing change bundled with B1 after a clean production
   D1 pre-check; the v1 contract narrowing is recorded in `docs/api.md`.
-- **D9 — Attendance undercount**: the primary attendance path records no event; only
-  the secondary manual-modal path feeds the fold.
-- **D10 — Calendar sync leaves no trace**: sync outcomes and schedule disruptions
-  produce no domain event — the exact trigger signal the roadmap's Replanning loop
-  needs.
-- **D11 — Post-signup funnel is invisible**: between `signup` and `course_added`
-  nothing is recorded; onboarding drop-off cannot be measured (behavioral layer fixes
-  this).
+- **D9 — Domain attendance undercount remains by design.** Attendance status does not
+  feed mastery unless separately logged as a domain event. Behavioral
+  `attendance_toggled` is live on both maintained controls for product analysis.
+- **D10 — Replanning history remains absent from the domain model.** Behavioral
+  calendar connection start/outcome events are live, but schedule disruptions still
+  need the roadmap's durable D1 schedule-change log.
+- **D11 — FIXED in the behavioral stream.** A new local signup plus the ordered
+  onboarding path/review/completion sequence makes post-signup drop-off measurable.
 - **D12 — FIXED.** Discard is an explicit server-side terminal command backed by the
   finalization ledger and always yields zero evidence. Completion distinguishes
   explicit empty KC arrays from omission.
@@ -233,12 +239,14 @@ Ordered by severity. D1–D4 and D7–D8 were fixed on 2026-08-28 (branch
 
 ## Behavioral stream: implementation catalog
 
-### Architecture decision (foundation, acquisition/activation, and daily loop implemented)
+### Architecture decision (45 of 46 approved emitter paths implemented)
 
 **PostHog, deliberate capture only** — no autocapture, no session replay.
 `posthog-js` for UI-only events; server-side capture via plain HTTP `/i/v0/e/`
-(single) and `/batch/` with `ctx.waitUntil` for server-truth events (the Node SDK's batching doesn't fit the
-Workers lifecycle). `demo_funnel_events` D1 stays as-is and newly inserted rows are
+(single) and `/batch/` with `Astro.locals.cfContext.waitUntil()` for request-path
+server-truth events (the Node SDK's batching doesn't fit the Workers lifecycle). The
+tutor DO alarm awaits its bounded delivery so Cloudflare can retry failures with the
+same stable insert id. `demo_funnel_events` D1 stays as-is and newly inserted rows are
 mirror-forwarded once through `/batch/`; replays and historical rows are not
 forwarded. Rejected: a D1 `behavioral_events` table (recreates the analysis layer
 from scratch, unbounded hot table beside learner reads) and Workers Analytics Engine
@@ -251,9 +259,18 @@ as a property so trial D1 rows stay joinable offline. Property values restricted
 ids, enums, counts, durations — no free text (tutor messages, notes, quiz answers),
 enforced by a shared Zod property schema per event, mirroring the `EVENT_TYPES`
 discipline. Honor a `settings.analytics_opt_out` flag before every capture; exclude
-the developer's own user id server-side.
+the developer's own user id server-side. Browser capture and request-path server
+capture also honor DNT; the public demo client suppresses the D1 request itself.
+Disabled or missing configuration is always a no-op. The DO alarm has no originating
+request/DNT header, so it re-reads the learner's current analytics opt-out before
+delivery.
 
-**Implemented acquisition/activation slice (2026-08-28):** public demo clients
+**Operational state:** checked-in production and staging vars both set
+`ANALYTICS_ENABLED=false`, and no token is committed. These emitters therefore do not
+start production capture by merging code; enabling an environment requires the
+deliberate gate plus secret-provisioning decision described in `cloudflare.md`.
+
+**Acquisition/activation implementation (2026-08-28):** public demo clients
 reuse the foundation's device/app-session state and do not call D1 under DNT.
 The Clerk bridge exposes creation truth, so `signup_completed` fires only for a
 new local row with a coarse method. Browser identify starts from that same
@@ -263,16 +280,31 @@ three activation events together in canonical order. Counts/path/duration are
 structural; filenames, course/KC names, Clerk identifiers, and provider values
 never enter the behavioral stream.
 
-### Canonical behavioral events (~30; snake_case past-tense, matching domain style)
+### Canonical behavioral events (46; snake_case past-tense, matching domain style)
 
 Base properties on every event: `user_id` (post-auth), `session_id` (client app
 session), `surface` (route pattern), `ts`. One parameterized `page_viewed`, never
 per-page events.
 
-**Acquisition** (pre-auth; the 11 existing `DEMO_FUNNEL_EVENTS` keep their names):
+Coverage is enforced exhaustively by `src/lib/analytics/coverage.ts`: 45 names are
+classified live (`product_ui`, `api_only`, or `system`) with named emitter ownership;
+`resource_saved` alone is reserved. The registry is a catalog/classification boundary,
+not proof of runtime reachability, so focused emitter tests remain required.
+
+**Acquisition / trial-handoff funnel** (the 11 existing `DEMO_FUNNEL_EVENTS` keep
+their names; the final four occur on authenticated onboarding while retaining the
+opaque `trial_session_id`):
 
 | event | properties | fired when | must follow |
 |---|---|---|---|
+| `landing_try_clicked` | `trial_session_id` | an actual `/try` CTA is activated on a marketing route | `page_viewed` on that marketing route |
+| `setup_step_completed` / `setup_step_skipped` | `trial_session_id`, `step: context\|preferences\|course` | each public-trial setup step completes or is skipped/simulated | — |
+| `demo_entered` | `trial_session_id` | the interactive trial surface is entered | setup transitions when setup was shown |
+| `scenario_started` / `scenario_completed` | `trial_session_id`, `scenario_id` | a trial scenario transition runs | `demo_entered`; started → completed |
+| `signup_clicked` | `trial_session_id` | the public trial's signup CTA is activated | `demo_entered` |
+| `import_offered` | `trial_session_id` | authenticated onboarding presents a usable trial handoff | `signup_completed` for that handoff |
+| `import_accepted` / `import_declined` | `trial_session_id` | the learner chooses how to handle the offered trial draft | `import_offered` |
+| `onboarding_completed` | `trial_session_id` | authenticated onboarding succeeds (legacy funnel close) | accepted/declined import when offered |
 | `page_viewed` | `route` (pattern), `referrer_route` | any route render | — |
 | `signup_completed` | `method`, `trial_session_id?` | Clerk sign-up bridged to local user | `signup_clicked` when from trial |
 
@@ -293,34 +325,34 @@ per-page events.
 | `recommendation_followed` / `recommendation_ignored` | `recommendation_id`, `rank` | Next Move primary action / “Show another”; moved out of the domain vocabulary by B1 | `next_move_viewed` same id |
 | `task_checked` | `task_type`, `source_surface`, `overdue` | task toggle | — |
 | `task_dismissed` | `task_type`, `source_surface` | system-task dismissal (`deleteTask` soft delete) | — |
-| `record_event_opened` / `record_event_submitted` | `event_type?` on submit | Record Event modal | opened → submitted |
+| `record_event_opened` / `record_event_submitted` | `event_type` on submit | maintained Record Event controls | opened → submitted |
 | `notification_opened` | `notification_type` | bell item clicked | — |
 | `resource_opened` | `resource_id`, `origin: feed\|course\|shared` | resource card opened | — |
-| `resource_saved` | `resource_id`, `course_id` | saved to course | `resource_opened` |
+| `resource_saved` | `resource_id`, `course_id` | **RESERVED**: no maintained save-to-course action; implement that transition or prune the name | `resource_opened` |
 
 **Learning-surface usage** (context only; mastery truth stays in the domain stream):
 
 | event | properties | fired when | must follow |
 |---|---|---|---|
-| `practice_started` | `course_id`, `intended_event_type`, `ritual_id?` | StudyFlow begins | — |
-| `practice_abandoned` | `elapsed_ms`, `stage` | left before completion | `practice_started` |
+| `practice_started` | `course_id`, `intended_event_type`, `ritual_id?` | StudyFlow creates or validly resumes a session | — |
+| `practice_abandoned` | `elapsed_ms`, `stage` | page exit or explicit discard before completion, including resumed visits | `practice_started` in-session; a resumed setup discard may stand alone |
 | `quiz_started` / `quiz_abandoned` | `kc_ids`, `question_count` / `answered_count` | QuickQuiz lifecycle | started → abandoned |
 | `tutor_opened` | `conversation_id`, `mode`, `kc_id`, `entry` | conversation created/reopened | — |
 | `tutor_message_sent` | `conversation_id`, `turn_index` | each learner message | `tutor_opened` |
-| `tutor_abandoned` | `conversation_id`, `turn_count`, `elapsed_ms` | ≥30 min inactivity without end (server sweep — home TBD, B3) | `tutor_message_sent` |
+| `tutor_abandoned` | `conversation_id`, `turn_count`, `elapsed_ms` | ≥30 min inactivity while still active (learner DO alarm; resumable and nonterminal) | `tutor_message_sent` |
 | `absorb_stage_reached` | `kc_id`, `stage: 1..4` | each stage entry in `/learn/[kcId]` | monotonic per visit |
 | `prereq_gate_decided` | `kc_id`, `choice: verify\|continue_anyway`, `weak_count` | stage-1 decision | `absorb_stage_reached(1)` |
 | `misconception_card_shown` | `misconception_id`, `conversation_id` | inline card renders | `tutor_opened` |
 | `misconception_accepted` / `misconception_dismissed` | `misconception_id` | card action (accept also → corrections ledger, unchanged) | `misconception_card_shown` |
-| `attendance_toggled` | `course_id`, `status`, `sessions_behind` | AttendanceCard toggle | — |
+| `attendance_toggled` | `course_id`, `status`, `sessions_behind` | successful AttendanceCard or planner EventPopover toggle | — |
 
 **Retention signals**:
 
 | event | properties | fired when | must follow |
 |---|---|---|---|
-| `calendar_connect_started` / `calendar_connected` / `calendar_connect_failed` | `provider` | OAuth flow | started → terminal |
+| `calendar_connect_started` / `calendar_connected` / `calendar_connect_failed` | `provider` | one ordered server batch per attempt; start time is captured before the provider call and outcome time afterward | started → exactly one outcome |
 | `settings_changed` | `keys` (names only, never values) | settings save | — |
-| `course_archived` | `course_id`, `weeks_since_added` | course archive (`updateCourse`) | — |
+| `course_archived` | `course_id`, `weeks_since_added` | successful false→true course PATCH; **API-only**, with no maintained archive UI | — |
 | `correction_internalized` | `correction_id`, `days_since_accepted` | ledger action | — |
 
 Deliberately excluded: keystroke/scroll telemetry, tutor message content, quiz answer
@@ -328,20 +360,28 @@ content, any free text.
 
 ### Canonical funnels (drop-off = sequence stops; anomaly = out-of-order beyond 60s skew)
 
-**A. Trial → activation** (anonymous → identified; join via `trial_session_id`):
+**A. Entry → activation** (anonymous → identified; trial branch joins via
+`trial_session_id`):
 ```
-page_viewed(/) → landing_try_clicked → [setup_step_completed | setup_step_skipped]×3
-→ demo_entered → (scenario_started → scenario_completed)×0..9 → signup_clicked
-→ signup_completed → import_offered → (import_accepted | import_declined)
-→ onboarding_path_chosen → onboarding_map_reviewed → onboarding_completed_auth
+trial:  page_viewed(marketing route) → landing_try_clicked (actual /try CTA only)
+        → [setup_step_completed | setup_step_skipped]×3 → demo_entered
+        → (scenario_started → scenario_completed)×0..9 → signup_clicked
+        → signup_completed → import_offered → (import_accepted | import_declined)
+direct: page_viewed(/sign-up) → signup_completed
+
+either authenticated branch:
+onboarding_path_chosen → onboarding_map_reviewed → onboarding_completed_auth
+→ onboarding_completed (legacy demo-funnel close, best-effort browser request)
 ```
-Invariants: `import_offered` only with `trial_session_id`; exactly one
-`onboarding_path_chosen` per completion.
+Invariants: only a newly created local user emits `signup_completed`; the three
+authenticated activation events are one ordered server capture after a newly
+successful course commit, and replayed imports do not recapture them.
 
 **B. Daily study loop** (the retention heartbeat):
 ```
 app_session_started → page_viewed(/dashboard) → next_move_viewed
-→ ( recommendation_followed → practice_started → (domain append | practice_abandoned)
+→ ( recommendation_followed
+      → (quiz_started | page_viewed(/learn/[kcId]) → absorb_stage_reached(1))
   | recommendation_ignored → next_move_viewed(rank+1) … )
 ```
 Invariant: every followed/ignored has a same-`recommendation_id` impression earlier in
@@ -350,19 +390,24 @@ the session — this makes the currently-uncomputable follow rate computable.
 **C. Tutor loop**:
 ```
 tutor_opened → tutor_message_sent×n
-→ ( end → domain tutor_session event (existing) | tutor_abandoned )
+→ ( explicit/cap end → domain tutor_session event
+  | 30 min inactive → tutor_abandoned → [later tutor_message_sent …] )
 optionally interleaved: misconception_card_shown → (accepted | dismissed)
 ```
-Invariant: exactly one terminal per `conversation_id`.
+Invariant: the domain end is the only terminal. `tutor_abandoned` is a resumable
+inactivity episode, can recur after later learner turns, and carries no transcript or
+provider-error content.
 
 **D. Absorb loop**:
 ```
-page_viewed(/learn/[kcId]) → absorb_stage_reached(1) → prereq_gate_decided
-→ [quiz_started → …]? → absorb_stage_reached(3) → absorb_stage_reached(4)
-→ tutor_opened(mode: absorb)
+page_viewed(/learn/[kcId]) → absorb_stage_reached(1)
+→ ( prereq_gate_decided(verify, weak_count>0) → absorb_stage_reached(2)
+      → quiz_started → [quiz result | quiz_abandoned] → back to stage 1
+  | prereq_gate_decided(continue_anyway, weak_count≥0) → absorb_stage_reached(3)
+      → absorb_stage_reached(4) → tutor_opened(mode: absorb) )
 ```
-Invariant: stage monotonic within a visit; stage 4 without 2–3 legal only when
-`weak_count = 0`.
+Invariant: stage telemetry is monotonic within a mounted visit. The proceed path emits
+`continue_anyway` even when `weak_count = 0`; stage 2 occurs only on the verify branch.
 
 ### Decisions and remaining questions
 
@@ -373,14 +418,16 @@ Invariant: stage monotonic within a visit; stage 4 without 2–3 legal only when
 - **B2** — `app_session_started` idle threshold: 30 min is the default; the
   15/25/50-minute budget concept suggests shorter — revisit after two weeks of
   `page_viewed` data.
-- **B3** — `tutor_abandoned` sweep home: the existing 5-min cron or a DO alarm.
-- **B4** — Mobile shell: no mobile-specific events; `surface` + a viewport property.
+- **B3 — DECIDED and implemented.** `tutor_abandoned` is owned by the learner DO's
+  native alarm. The same alarm multiplexes tutor-inactivity and generic scheduled
+  deadlines; awaited bounded delivery plus a stable insert id provides retry safety.
+- **B4 — DECIDED and implemented.** There are no mobile-specific event names;
+  `surface` plus the optional coarse `viewport` property carries the distinction.
 
 ## TODO
 
-- Wire the remaining approved engagement, learning-surface, and retention
-  emitters onto the implemented foundation. Acquisition/activation and the
-  `demo_funnel_events` mirror-forward are complete; daily page/app-session
-  lifecycle and Next Move are also live.
-- After implementation, add the analysis conventions here (source filters, seed/dev
-  exclusion, funnel queries).
+- Decide `resource_saved`: implement a real save-an-existing-resource-to-course action
+  and emitter, or prune it from the approved taxonomy. Creating a new resource is not
+  that transition.
+- Add the analysis conventions here (source filters, seed/dev exclusion, funnel
+  queries).
