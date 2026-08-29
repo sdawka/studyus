@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { CalendarItem } from '../../lib/types/calendar';
-  import { hueFor } from '../../lib/courseHue';
+  import { courseForItem, hueForItem } from '../../lib/courseHue';
   import {
     addDays,
     addMinutes,
@@ -72,13 +72,6 @@
   const gutterPx = $derived(dayCount === 1 ? 44 : 56);
 
   const courseById = new Map(courses.map((c) => [c.id, c]));
-  function courseFor(item: CalendarItem) {
-    return item.course_id ? courseById.get(item.course_id) : undefined;
-  }
-  function hueForItem(item: CalendarItem): number {
-    const c = courseFor(item);
-    return c ? hueFor({ slug: c.slug, color: c.color === null ? null : String(c.color) }) : 220;
-  }
 
   const PX_PER_HOUR = $derived(compact ? 56 : 64);
   const HARD_FLOOR = 6;
@@ -486,7 +479,7 @@
             class:selected={selectedId === item.id}
             class:pill-done={item.type === 'task_due' && !isAttendClassPill(item) && item.details?.done === true}
             data-event-id={item.id}
-            style={`--course-h:${hueForItem(item)}`}
+            style={`--course-h:${hueForItem(item, courseById)}`}
             onclick={() => onSelect?.(item)}
             onmouseenter={(e) => hoverCard.onEnter(e, item)}
             onmouseleave={() => hoverCard.onLeave()}
@@ -552,7 +545,7 @@
               class:one-line={!twoLine}
               class:overlap={p.totalCols > 1}
               data-event-id={p.item.id}
-              style={`--course-h:${hueForItem(p.item)}; top:${top}px; height:${height}px; left:calc(${leftPct}% + 2px); width:calc(${widthPct}% - 4px);`}
+              style={`--course-h:${hueForItem(p.item, courseById)}; top:${top}px; height:${height}px; left:calc(${leftPct}% + 2px); width:calc(${widthPct}% - 4px);`}
               onclick={() => onSelect?.(p.item)}
               onmouseenter={(e) => hoverCard.onEnter(e, p.item)}
               onmouseleave={() => hoverCard.onLeave()}
@@ -580,7 +573,7 @@
 
 {#if hoverCard.item}
   {@const item = hoverCard.item}
-  <EventHoverCard {item} pos={hoverCard.pos} course={courseFor(item)} />
+  <EventHoverCard {item} pos={hoverCard.pos} course={courseForItem(item, courseById)} />
 {/if}
 
 <style>

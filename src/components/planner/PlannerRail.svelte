@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { CalendarItem } from '../../lib/types/calendar';
-  import { hueFor } from '../../lib/courseHue';
+  import { courseForItem, hueForItem } from '../../lib/courseHue';
   import { daysUntil, localDateKey, mondayOf, railDueLabel, startOfDay } from '../../lib/plannerDates';
   import TaskTypeIcon from '../tasks/TaskTypeIcon.svelte';
   import type { TaskType } from '../../lib/taskTypeMeta';
@@ -30,13 +30,6 @@
   } = $props();
 
   const courseById = new Map(courses.map((c) => [c.id, c]));
-  function courseFor(item: CalendarItem) {
-    return item.course_id ? courseById.get(item.course_id) : undefined;
-  }
-  function hueForItem(item: CalendarItem): number {
-    const c = courseFor(item);
-    return c ? hueFor({ slug: c.slug, color: c.color === null ? null : String(c.color) }) : 220;
-  }
 
   const today = $derived(startOfDay(new Date()));
 
@@ -86,8 +79,8 @@
       <ul class="rail-list">
         {#each overdue as item (item.id)}
           <li>
-            <button type="button" class="rail-item overdue" class:selected={selectedId === item.id} style={`--course-h:${hueForItem(item)}`} onclick={() => handleClick(item)}>
-              {#if courseFor(item)}<span class="chip rail-chip">{courseFor(item)?.code}</span>{/if}
+            <button type="button" class="rail-item overdue" class:selected={selectedId === item.id} style={`--course-h:${hueForItem(item, courseById)}`} onclick={() => handleClick(item)}>
+              {#if courseForItem(item, courseById)}<span class="chip rail-chip">{courseForItem(item, courseById)?.code}</span>{/if}
               {#if taskTypeFor(item)}<span class="rail-icon"><TaskTypeIcon type={taskTypeFor(item)} /></span>{/if}
               <span class="rail-title">{item.title}</span>
               <span class="rail-due">{dueLabel(item)}</span>
@@ -104,8 +97,8 @@
       <ul class="rail-list">
         {#each dueSoon as item (item.id)}
           <li>
-            <button type="button" class="rail-item" class:selected={selectedId === item.id} style={`--course-h:${hueForItem(item)}`} onclick={() => handleClick(item)}>
-              {#if courseFor(item)}<span class="chip rail-chip">{courseFor(item)?.code}</span>{/if}
+            <button type="button" class="rail-item" class:selected={selectedId === item.id} style={`--course-h:${hueForItem(item, courseById)}`} onclick={() => handleClick(item)}>
+              {#if courseForItem(item, courseById)}<span class="chip rail-chip">{courseForItem(item, courseById)?.code}</span>{/if}
               {#if taskTypeFor(item)}<span class="rail-icon"><TaskTypeIcon type={taskTypeFor(item)} /></span>{/if}
               <span class="rail-title">{item.title}</span>
               <span class="rail-due">{dueLabel(item)}</span>
@@ -122,8 +115,8 @@
       <ul class="rail-list">
         {#each thisWeek as item (item.id)}
           <li>
-            <button type="button" class="rail-item" class:selected={selectedId === item.id} style={`--course-h:${hueForItem(item)}`} onclick={() => handleClick(item)}>
-              {#if courseFor(item)}<span class="chip rail-chip">{courseFor(item)?.code}</span>{/if}
+            <button type="button" class="rail-item" class:selected={selectedId === item.id} style={`--course-h:${hueForItem(item, courseById)}`} onclick={() => handleClick(item)}>
+              {#if courseForItem(item, courseById)}<span class="chip rail-chip">{courseForItem(item, courseById)?.code}</span>{/if}
               {#if taskTypeFor(item)}<span class="rail-icon"><TaskTypeIcon type={taskTypeFor(item)} /></span>{/if}
               <span class="rail-title">{item.title}</span>
               <span class="rail-due">{dueLabel(item)}</span>

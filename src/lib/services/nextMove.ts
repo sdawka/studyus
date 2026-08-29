@@ -3,15 +3,10 @@ import type { Db } from '../../db/client';
 import { assessmentKcs, assessments, branches, courses, exercises, kcEdges, kcs } from '../../db/schema';
 import { rankNextMoves, NEXT_MOVE_ASSESSMENT_HORIZON_DAYS, type NextMoveAssessmentInput, type NextMoveKcInput } from '../nextMove';
 import type { AvailableMinutes } from '../schemas/nextMove';
+import { chunk } from './util';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const D1_MAX_BOUND_PARAMS = 100;
-
-function chunk<T>(items: T[], size: number): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
-  return out;
-}
 
 export async function getNextMove(
   db: Db,

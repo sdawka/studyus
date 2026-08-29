@@ -92,3 +92,10 @@ export const exerciseFileSchema = z
     });
   });
 export type ExerciseFile = z.infer<typeof exerciseFileSchema>;
+
+/** Maps an authored Exercise to the kind-specific fields stored in exercises.details. */
+export function exerciseDetails(exercise: Exercise): Record<string, unknown> {
+  if (exercise.kind === 'mcq') return { options: exercise.options, correct_index: exercise.correct_index, explanation: exercise.explanation };
+  if (exercise.kind === 'numeric') return { answer: exercise.answer, solution: exercise.solution };
+  return { solution: exercise.solution };
+}

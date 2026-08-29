@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { CalendarItem } from '../../lib/types/calendar';
-  import { hueFor } from '../../lib/courseHue';
+  import { courseForItem, hueForItem } from '../../lib/courseHue';
 
   interface CourseInfo {
     code: string;
@@ -32,15 +32,8 @@
     if (!d) return false;
     return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
   }
-  function courseFor(item: CalendarItem): CourseInfo | undefined {
-    return item.course_id ? courseById.get(item.course_id) : undefined;
-  }
-  function hueForItem(item: CalendarItem): number {
-    const c = courseFor(item);
-    return c ? hueFor({ slug: c.slug, color: c.color === null ? null : String(c.color) }) : 220;
-  }
   function labelFor(item: CalendarItem): string {
-    const code = courseFor(item)?.code;
+    const code = courseForItem(item, courseById)?.code;
     return code ? `${code} ${item.title}` : item.title;
   }
 
@@ -87,7 +80,7 @@
             class="chip-evt"
             class:selected={selectedId === item.id}
             data-event-id={item.id}
-            style={`--course-h:${hueForItem(item)}`}
+            style={`--course-h:${hueForItem(item, courseById)}`}
             title={labelFor(item)}
             onclick={() => onSelect?.(item)}
           >

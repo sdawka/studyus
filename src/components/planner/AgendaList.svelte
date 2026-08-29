@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { CalendarItem } from '../../lib/types/calendar';
-  import { hueFor } from '../../lib/courseHue';
+  import { courseForItem, hueForItem } from '../../lib/courseHue';
   import { addDays, calendarItemStartLabel, daysUntil, deadlineUrgency, isSameLocalDay, localDateKeyFromIso } from '../../lib/plannerDates';
 
   interface CourseInfo {
@@ -65,13 +65,6 @@
     el?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   });
 
-  function courseFor(item: CalendarItem): CourseInfo | undefined {
-    return item.course_id ? courseById.get(item.course_id) : undefined;
-  }
-  function hueForItem(item: CalendarItem): number {
-    const c = courseFor(item);
-    return c ? hueFor({ slug: c.slug, color: c.color === null ? null : String(c.color) }) : 220;
-  }
   function timeLabel(item: CalendarItem): string | null {
     if (item.all_day) return null;
     // calendarItemStartLabel, not a raw `new Date(item.date)` — a
@@ -90,11 +83,11 @@
     {#each group.items as item (item.id)}
       {@const days = daysUntil(item.date)}
       {@const u = deadlineUrgency(days)}
-      {@const code = courseFor(item)?.code}
+      {@const code = courseForItem(item, courseById)?.code}
       {@const time = timeLabel(item)}
       <li>
         <button type="button" class="agenda-row" class:selected={selectedId === item.id} data-event-id={item.id} onclick={() => onSelect?.(item)}>
-          <span class="dot" style={`--course-h:${hueForItem(item)}`}></span>
+          <span class="dot" style={`--course-h:${hueForItem(item, courseById)}`}></span>
           <span class="agenda-body">
             <span class="agenda-title">{item.title}</span>
             <span class="agenda-meta"

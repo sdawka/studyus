@@ -7,7 +7,7 @@ import type { Db } from '../../db/client';
 import { branches, courses, kcEdges, kcs } from '../../db/schema';
 import type { FrontierByCourse, FrontierResponse } from '../schemas/zpd';
 import { computeReadiness, selectFrontier, type ZpdKc } from '../zpd';
-import { requireOwnedCourse } from './util';
+import { chunk, requireOwnedCourse } from './util';
 
 // D1's bound-parameter cap is 100 per query — a whole-profile scope (all of
 // a user's non-archived courses' KCs, e.g. 147 across the 9 seeded courses)
@@ -16,12 +16,6 @@ import { requireOwnedCourse } from './util';
 // stays on a single course's KCs (well under the cap), so only this one
 // needed it.
 const D1_MAX_BOUND_PARAMS = 100;
-
-function chunk<T>(items: T[], size: number): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
-  return out;
-}
 
 /** kcId -> its prereqKcId list, restricted to `kcId in scopeIds`. */
 async function loadPrereqsOf(db: Db, scopeIds: string[]): Promise<Map<string, string[]>> {

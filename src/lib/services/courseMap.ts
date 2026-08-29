@@ -13,7 +13,7 @@ import {
   scaffolds,
   tasks,
 } from '../../db/schema';
-import type { Exercise } from '../content/exercises';
+import { exerciseDetails } from '../content/exercises';
 import { parseKcRef } from '../content/courseContent';
 import {
   getReviewedTemplate,
@@ -22,7 +22,7 @@ import {
   type TemplateBaseline,
 } from '../content/templateCatalog';
 import type { ApplyTemplateUpdatesInput, UpdateCourseMapInput } from '../schemas/courseMap';
-import { ConflictError, requireOwnedCourse } from './util';
+import { chunk, ConflictError, requireOwnedCourse } from './util';
 
 const PLACEHOLDER_KCS = new Set(['general', 'course topic', 'course foundations']);
 const D1_MAX_BOUND_PARAMS = 100;
@@ -31,20 +31,8 @@ type CourseRow = typeof courses.$inferSelect;
 type BranchRow = typeof branches.$inferSelect;
 type KcRow = typeof kcs.$inferSelect;
 
-function chunk<T>(items: T[], size: number): T[][] {
-  const out: T[][] = [];
-  for (let index = 0; index < items.length; index += size) out.push(items.slice(index, index + size));
-  return out;
-}
-
 async function runBatch(db: Db, statements: BatchItem<'sqlite'>[]) {
   if (statements.length) await db.batch(statements as [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]]);
-}
-
-function exerciseDetails(exercise: Exercise): Record<string, unknown> {
-  if (exercise.kind === 'mcq') return { options: exercise.options, correct_index: exercise.correct_index, explanation: exercise.explanation };
-  if (exercise.kind === 'numeric') return { answer: exercise.answer, solution: exercise.solution };
-  return { solution: exercise.solution };
 }
 
 function baselineFromCourse(course: CourseRow): TemplateBaseline | null {

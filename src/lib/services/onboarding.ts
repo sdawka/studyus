@@ -20,7 +20,7 @@ import {
 } from '../../db/schema';
 import { parseKcRef, type ContentAssessment } from '../content/courseContent';
 import { getAssessmentTemplateRef, getReviewedTemplate, getReviewedTemplateRevision, getTemplateBaseline } from '../content/templateCatalog';
-import type { Exercise } from '../content/exercises';
+import { exerciseDetails } from '../content/exercises';
 import type { CourseSetupProposal, DemoImportInput } from '../schemas/onboarding';
 import { ConflictError } from './util';
 import { resolveSettings } from './user';
@@ -77,12 +77,6 @@ function dateEpoch(value: string): number {
 function safeSlug(code: string, userId: string, draftId: string, index: number): string {
   const base = code.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'course';
   return `${base}-${userId.slice(0, 6)}-${draftId.slice(0, 6)}-${index + 1}`;
-}
-
-function exerciseDetails(exercise: Exercise): Record<string, unknown> {
-  if (exercise.kind === 'mcq') return { options: exercise.options, correct_index: exercise.correct_index, explanation: exercise.explanation };
-  if (exercise.kind === 'numeric') return { answer: exercise.answer, solution: exercise.solution };
-  return { solution: exercise.solution };
 }
 
 type SetupBranch = CourseSetupProposal['branches'][number];
