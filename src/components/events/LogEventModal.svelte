@@ -281,7 +281,7 @@
             <label>
               Knowledge component (optional)
               <select bind:value={selectedKcId}>
-                <option value="">No specific KC</option>
+                <option value="">No specific concept</option>
                 {#each kcs as kc (kc.id)}
                   <option value={kc.id}>{kc.name}</option>
                 {/each}

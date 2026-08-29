@@ -103,7 +103,7 @@
       <h3>{proposal.course.code} · {proposal.course.title}</h3>
       <p>Keep the map useful: rename, reorder, or remove material you will not study.</p>
     </div>
-    <span>{proposal.branches.filter((branch) => branch.included).flatMap((branch) => branch.kcs.filter((kc) => kc.included)).length} KCs included</span>
+    <span>{proposal.branches.filter((branch) => branch.included).flatMap((branch) => branch.kcs.filter((kc) => kc.included)).length} concepts included</span>
   </div>
 
   <div class="branches">

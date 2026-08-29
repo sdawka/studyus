@@ -126,7 +126,7 @@
     try {
       selectedCourse = await loadTemplate(slug);
       reviewBaseline = structuredClone(selectedCourse);
-      status = `${selectedCourse.branches.reduce((sum, branch) => sum + branch.kcs.length, 0)} KCs ready to review.`;
+      status = `${selectedCourse.branches.reduce((sum, branch) => sum + branch.kcs.length, 0)} concepts ready to review.`;
     } catch (cause) {
       selectedCourse = null;
       reviewBaseline = null;
@@ -168,7 +168,7 @@
     }
     selectedCourse = manualProposal(manualCode, manualTitle, topics);
     reviewBaseline = structuredClone(selectedCourse);
-    status = `${topics.length} KCs ready to review.`;
+    status = `${topics.length} concepts ready to review.`;
   }
 
   async function extractFile(file: File) {
@@ -193,7 +193,7 @@
       } else throw new Error('Use PDF, DOCX, text, or Markdown.');
       selectedCourse = proposalFromExtractedText(file.name, text);
       reviewBaseline = structuredClone(selectedCourse);
-      status = `Suggested ${selectedCourse.branches[0].kcs.length} KCs from ${file.name}. Raw file data was not retained.`;
+      status = `Suggested ${selectedCourse.branches[0].kcs.length} concepts from ${file.name}. Raw file data was not retained.`;
     } catch (cause) {
       status = cause instanceof Error ? cause.message : 'Could not extract this file. Use manual entry instead.';
     } finally { parsing = false; }
@@ -233,7 +233,7 @@
         <div><dt>Institution</dt><dd>{draft.context?.institution_name ?? 'Not provided'}</dd></div>
         <div><dt>Semester</dt><dd>{draft.context?.term_label ?? 'Not provided'}</dd></div>
         <div><dt>Preferences</dt><dd>{draft.preferences.weekly_hours} h/week · {draft.preferences.guidance.replaceAll('_', ' ')}</dd></div>
-        <div><dt>Courses</dt><dd>{importableCourses.length ? importableCourses.map((course) => `${course.course.code} (${course.branches.reduce((sum, branch) => sum + branch.kcs.length, 0)} KCs)`).join(', ') : 'No real course yet'}</dd></div>
+        <div><dt>Courses</dt><dd>{importableCourses.length ? importableCourses.map((course) => `${course.course.code} (${course.branches.reduce((sum, branch) => sum + branch.kcs.length, 0)} concepts)`).join(', ') : 'No real course yet'}</dd></div>
       </dl>
       {#if error}<p class="error" role="alert">{error}</p>{/if}
       <div class="actions"><button class="primary" type="button" onclick={beginImportReview}>Review and import</button><button class="secondary" type="button" onclick={startFresh}>Start fresh</button><a href="/try/app/today">Back to demo</a></div>

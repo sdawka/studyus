@@ -58,7 +58,7 @@
               <button
                 class="kc-link-btn"
                 onclick={() => addKcLink(kc.id)}
-                title="Link this KC"
+                title="Link this concept"
               >
                 {kc.name}
               </button>
