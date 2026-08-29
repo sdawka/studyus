@@ -92,7 +92,7 @@
       if (!response.ok || !payload.data) throw new Error(payload.error?.message ?? 'Could not import this setup.');
       if (!payload.data.complete || !payload.data.course_slug) {
         phase = 'setup';
-        error = 'Your profile was imported, but one real course with at least one knowledge component is still required.';
+        error = 'Your profile was imported, but one real course with at least one concept is still required.';
         return;
       }
       void track('onboarding_completed');
@@ -243,7 +243,7 @@
   {:else}
     <section class="card">
       <p class="eyebrow">Build a useful workspace</p><h1>Start with one real course.</h1>
-      <p>Your account opens only after that course has at least one reviewed knowledge component.</p>
+      <p>Your account opens only after that course has at least one reviewed concept.</p>
       {#if error}<p class="error" role="alert">{error}</p>{/if}
       <div class="section"><b>1</b><div><h2>University and semester</h2><p>This keeps weeks, exams, and plans honest.</p></div><div class="fields"><label>University<select bind:value={university}><option>McGill University</option><option>Other</option></select></label>{#if university === 'Other'}<label>University name<input bind:value={otherUniversity} /></label>{/if}<label>Program<input bind:value={program} disabled={university === 'McGill University'} /></label>{#if university === 'Other'}<label>Semester name<input bind:value={customTermLabel} /></label><label>Starts<input type="date" bind:value={customStartsOn} /></label><label>Ends<input type="date" bind:value={customEndsOn} /></label>{:else}<label>Semester<select bind:value={termIndex}>{#each MCGILL_TERMS as term, index}<option value={index}>{term.label}</option>{/each}</select></label>{/if}</div></div>
       <div class="section"><b>2</b><div><h2>Capacity and guidance</h2><p>Constraints the planner can use—no learning-style labels.</p></div><div class="fields prefs"><label>Weekly capacity <strong>{weeklyHours} hours</strong><input type="range" min="2" max="15" bind:value={weeklyHours} /></label><label>Guidance<select bind:value={guidance}><option value="self_directed">Let me explore</option><option value="balanced">Balanced</option><option value="tell_me_next">Tell me what is next</option></select></label><label>Goal<select bind:value={depth}><option value="keep_up">Keep up</option><option value="understand">Understand</option><option value="master">Master deeply</option></select></label></div></div>

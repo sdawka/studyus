@@ -279,7 +279,7 @@
 
           {#if selectedCourseId && kcs.length > 0}
             <label>
-              Knowledge component (optional)
+              Concept (optional)
               <select bind:value={selectedKcId}>
                 <option value="">No specific concept</option>
                 {#each kcs as kc (kc.id)}

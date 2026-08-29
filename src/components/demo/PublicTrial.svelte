@@ -144,7 +144,7 @@
       return;
     }
     persist({ courses: [manualProposal(manualCode, manualTitle, topics)], simulated: false });
-    parseMessage = `${topics.length} knowledge components ready to review.`;
+    parseMessage = `${topics.length} concepts ready to review.`;
   }
 
   async function extractFile(file: File) {
@@ -176,7 +176,7 @@
       }
       const proposal = proposalFromExtractedText(file.name, text);
       persist({ courses: [proposal], simulated: false });
-      parseMessage = `Found ${proposal.branches[0].kcs.length} suggested knowledge components. Raw file data stays in this tab only.`;
+      parseMessage = `Found ${proposal.branches[0].kcs.length} suggested concepts. Raw file data stays in this tab only.`;
     } catch (error) {
       parseMessage = error instanceof Error ? error.message : 'Could not read this file. Try manual entry instead.';
     } finally {

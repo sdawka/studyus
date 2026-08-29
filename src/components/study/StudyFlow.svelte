@@ -479,7 +479,7 @@
     <div class="card">
       <h2>Wrap up</h2>
       {#if branches.length > 0}
-        <p>Which knowledge components did you touch?</p>
+        <p>Which concepts did you touch?</p>
         {#each branches as branch (branch.id)}
           <div class="branch-group">
             <h3>{branch.name}</h3>
@@ -508,7 +508,7 @@
           </div>
         {/each}
       {:else}
-        <p class="muted">No knowledge components to pick from for this session.</p>
+        <p class="muted">No concepts to pick from for this session.</p>
       {/if}
 
       <label class="reflection">

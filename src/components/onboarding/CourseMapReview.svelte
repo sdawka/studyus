@@ -121,11 +121,11 @@
               <div class:excluded={!kc.included} class="kc-row">
                 <input class="check" aria-label={`Include ${kc.name}`} type="checkbox" checked={kc.included} disabled={kc.included && dependents.length > 0} onchange={() => toggleKc(kc)} />
                 <div>
-                  <input aria-label="Knowledge component name" value={kc.name} oninput={(event) => { kc.name = event.currentTarget.value; emit(); }} />
+                  <input aria-label="Concept name" value={kc.name} oninput={(event) => { kc.name = event.currentTarget.value; emit(); }} />
                   {#if kc.included && dependents.length}<small>Required by {dependents.map((dependent) => dependent.name).join(', ')}</small>{/if}
                 </div>
                 <span class="type">{kc.kc_type}</span>
-                <div class="reorder"><button type="button" aria-label="Move knowledge component up" disabled={kcIndex === 0} onclick={() => move(branch.kcs, kcIndex, -1, (item, order) => { item.sort_order = order; })}>↑</button><button type="button" aria-label="Move knowledge component down" disabled={kcIndex === branch.kcs.length - 1} onclick={() => move(branch.kcs, kcIndex, 1, (item, order) => { item.sort_order = order; })}>↓</button></div>
+                <div class="reorder"><button type="button" aria-label="Move concept up" disabled={kcIndex === 0} onclick={() => move(branch.kcs, kcIndex, -1, (item, order) => { item.sort_order = order; })}>↑</button><button type="button" aria-label="Move concept down" disabled={kcIndex === branch.kcs.length - 1} onclick={() => move(branch.kcs, kcIndex, 1, (item, order) => { item.sort_order = order; })}>↓</button></div>
               </div>
             {/each}
           </div>
