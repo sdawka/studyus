@@ -1,6 +1,6 @@
 import { apiFetch } from '../apiClient';
+import { CALENDAR_ACTIVITY_STALE_MS } from './domain';
 
-export const CALENDAR_ACTIVITY_STALE_MS = 15 * 60 * 1_000;
 const CALENDAR_ACTIVITY_LEASE_MS = 60 * 1_000;
 export const CALENDAR_ACTIVITY_RETRY_MS = 60 * 1_000;
 

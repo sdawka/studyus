@@ -62,7 +62,7 @@
         a.id === assessmentId ? { ...a, gradeReceived: updated.grade_received, gradeMax: updated.grade_max } : a,
       );
       const loggedEvent = Array.isArray(updated.mastery_deltas) && updated.mastery_deltas.length > 0;
-      feedback = { ...feedback, [assessmentId]: loggedEvent ? 'Saved — logged a grade event for linked KCs.' : 'Saved.' };
+      feedback = { ...feedback, [assessmentId]: loggedEvent ? 'Saved — logged a grade event for linked concepts.' : 'Saved.' };
     } finally {
       savingId = null;
     }
@@ -74,7 +74,7 @@
     <h2>{courseCode} — {courseTitle}</h2>
     <span class="standing">{weightedGrade !== null ? `${weightedGrade}%` : 'no grades yet'}</span>
   </div>
-  <p class="reminder">Entering a grade automatically logs an assessment event for any KCs linked to it.</p>
+  <p class="reminder">Entering a grade automatically logs an assessment event for any concepts linked to it.</p>
 
   {#if assessments.length === 0}
     <p class="muted">No assessments yet for this course.</p>

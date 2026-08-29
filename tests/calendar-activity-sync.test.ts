@@ -3,11 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../src/db/client';
 import { calendarConnections, calendarProviderCalendars, calendarSyncStates, users } from '../src/db/schema';
 import {
-  CALENDAR_ACTIVITY_STALE_MS,
   CALENDAR_ACTIVITY_RETRY_MS,
   startCalendarActivitySync,
   type CalendarActivityEnvironment,
-} from '../src/lib/calendar/activitySync';
+} from '../src/lib/calendar/activitySyncClient';
+import { CALENDAR_ACTIVITY_STALE_MS } from '../src/lib/calendar/domain';
 import { syncStaleUserCalendars } from '../src/lib/services/calendarActivitySync';
 
 const db = getDb(env.DB);

@@ -55,7 +55,7 @@
   <section class="section">
     <h2>Drill a concept</h2>
     {#if drillKcs.length === 0}
-      <p class="placeholder">No fact, association, concept, or rule KCs to drill yet.</p>
+      <p class="placeholder">Nothing to practice here yet.</p>
     {:else}
       <ul class="kc-list">
         {#each drillKcs as kc (kc.id)}

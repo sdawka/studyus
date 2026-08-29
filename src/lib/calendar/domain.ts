@@ -23,6 +23,9 @@ export type CalendarIdNamespace = (typeof CALENDAR_ID_NAMESPACES)[number];
 export type CalendarProvider = 'google' | 'microsoft' | 'apple' | 'ics';
 export type CalendarSyncPolicy = 'local-only' | 'read-only' | 'two-way';
 
+/** How long a provider calendar's sync can go without a refresh before it is stale. */
+export const CALENDAR_ACTIVITY_STALE_MS = 15 * 60 * 1_000;
+
 export type CalendarDateSpan = {
   kind: 'date';
   startDate: string;

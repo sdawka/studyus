@@ -53,7 +53,7 @@ function statusSummary(courseId: string): string {
   const parts = ['mastered', 'review', 'learning', 'not-started']
     .filter((s) => counts[s])
     .map((s) => `${counts[s]} ${s.replace('-', ' ')}`);
-  return parts.length ? parts.join(' · ') : 'No KCs yet';
+  return parts.length ? parts.join(' · ') : 'No concepts yet';
 }
 ---
 <AppShell title="Courses">

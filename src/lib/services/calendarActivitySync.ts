@@ -1,10 +1,9 @@
 import { and, eq, isNull, lt, or } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { calendarConnections, calendarProviderCalendars, calendarSyncStates } from '../../db/schema';
+import { CALENDAR_ACTIVITY_STALE_MS } from '../calendar/domain';
 import type { CalendarTokenBroker } from '../calendar/providers';
 import { syncProviderCalendar, type CalendarProviderRegistry } from './calendarSyncEngine';
-
-export const SERVER_CALENDAR_STALE_MS = 15 * 60 * 1_000;
 
 interface ActivitySyncDependencies {
   providers: CalendarProviderRegistry;
@@ -16,7 +15,7 @@ interface ActivitySyncDependencies {
 
 export async function syncStaleUserCalendars(db: Db, userId: string, dependencies: ActivitySyncDependencies) {
   const now = dependencies.now ?? Date.now();
-  const staleBefore = now - (dependencies.staleAfterMs ?? SERVER_CALENDAR_STALE_MS);
+  const staleBefore = now - (dependencies.staleAfterMs ?? CALENDAR_ACTIVITY_STALE_MS);
   const calendars = await db
     .select({ id: calendarProviderCalendars.id })
     .from(calendarProviderCalendars)

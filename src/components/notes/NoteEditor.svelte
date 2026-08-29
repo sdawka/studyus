@@ -236,7 +236,7 @@
               <button
                 class="btn-remove"
                 onclick={() => removeLink(idx)}
-                aria-label={`Remove link${link.course_id ? ` to course ${link.course_id}` : link.kc_id ? ` to KC ${link.kc_id}` : ''}`}
+                aria-label={`Remove link${link.course_id ? ` to course ${link.course_id}` : link.kc_id ? ` to concept ${link.kc_id}` : ''}`}
               >
                 <span aria-hidden="true">×</span>
               </button>

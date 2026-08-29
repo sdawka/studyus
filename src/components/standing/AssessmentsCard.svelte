@@ -226,7 +226,7 @@
         a.id === assessmentId ? { ...a, grade_received: updated.grade_received, grade_max: updated.grade_max } : a,
       );
       const logged = Array.isArray(updated.mastery_deltas) && updated.mastery_deltas.length > 0;
-      gradeFeedback = { ...gradeFeedback, [assessmentId]: logged ? 'Saved — logged an event for linked KCs.' : 'Saved.' };
+      gradeFeedback = { ...gradeFeedback, [assessmentId]: logged ? 'Saved — logged an event for linked concepts.' : 'Saved.' };
       onGraded?.();
     } finally {
       gradeSavingId = null;
@@ -305,7 +305,7 @@
   <div class="card-head">
     <h2 class="card-title">Assessments</h2>
   </div>
-  <p class="hint">Entering a grade automatically logs an event for any KCs linked to it. Only official assessments count toward your weighted grade.</p>
+  <p class="hint">Entering a grade automatically logs an assessment event for any concepts linked to it. Only official assessments count toward your weighted grade.</p>
   {#if officialAssessments.length === 0}
     <p class="empty">No official assessments yet.</p>
   {:else}

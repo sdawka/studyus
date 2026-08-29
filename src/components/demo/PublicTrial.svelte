@@ -41,8 +41,8 @@
     { id: 'false_fluency', eyebrow: 'Recognition is not recall', title: 'I reread it, but cannot solve it.', description: 'A tiny retrieval check replaces the comforting feeling of familiar notes with evidence.', action: 'Find the missing step', payoff: 'One hidden step surfaced. The plan now teaches the setup before another full problem.', mastery: 6, nextTitle: 'Choose a control volume', nextReason: 'Your algebra is fine; selecting and labeling the system is the step blocking the solution.', duration: '15 min', sessionSteps: ['Draw the system boundary', 'Label every flow', 'Set up one problem without notes'] },
     { id: 'prerequisite_gap', eyebrow: 'Find the blocker', title: 'This topic makes no sense.', description: 'The knowledge map looks backward before asking you to push harder on the target.', action: 'Trace the prerequisite', payoff: 'The blocker is the control-volume energy balance, so studyus moved there first.', mastery: 5, nextTitle: 'Control-volume energy balance', nextReason: 'This prerequisite is blocking Bernoulli applications; fixing it makes the target learnable.', duration: '20 min', sessionSteps: ['Review energy terms', 'Map terms to a diagram', 'Return to one Bernoulli case'] },
     { id: 'recurring_mistake', eyebrow: 'Fix the model', title: 'I keep making the same mistake.', description: 'Repeated errors become a specific misconception to correct and revisit.', action: 'Correct the misconception', payoff: 'Correction saved: pressure is not automatically constant along a streamline.', mastery: 5, nextTitle: 'Pressure along a streamline', nextReason: 'The same assumption caused two errors, so correcting the mental model has the highest payoff.', duration: '14 min', sessionSteps: ['Predict before calculating', 'Contrast two streamlines', 'Write the corrected rule'] },
-    { id: 'exam_close', eyebrow: 'Exam mode', title: 'My exam is close.', description: 'Practice narrows to assessed KCs with weak or stale evidence, then spreads them across the time left.', action: 'Build my exam plan', payoff: 'Four short sessions replace one vague “study fluids” block. Lowest-confidence KCs come first.', mastery: 7, nextTitle: 'Mixed fluid-mechanics retrieval', nextReason: 'The exam is close, so mixed recall now reveals more than another chapter reread.', duration: '30 min', sessionSteps: ['Answer five mixed prompts', 'Review only missed steps', 'Queue the weakest concept again'] },
-    { id: 'grade_landed', eyebrow: 'Use the signal', title: 'A grade just landed.', description: 'The grade updates standing and the KCs that assessment actually measured.', action: 'Use the grade to replan', payoff: 'Standing is now 76%. Momentum balance needs attention; dimensional analysis does not.', mastery: 4, standing: 4, nextTitle: 'Momentum balance correction', nextReason: 'The new grade points to this assessed skill—not the parts of the course you already know.', duration: '22 min', sessionSteps: ['Inspect the marked attempt', 'Correct the first wrong step', 'Retry a parallel problem'] },
+    { id: 'exam_close', eyebrow: 'Exam mode', title: 'My exam is close.', description: 'Practice narrows to assessed concepts with weak or stale evidence, then spreads them across the time left.', action: 'Build my exam plan', payoff: 'Four short sessions replace one vague “study fluids” block. Lowest-confidence concepts come first.', mastery: 7, nextTitle: 'Mixed fluid-mechanics retrieval', nextReason: 'The exam is close, so mixed recall now reveals more than another chapter reread.', duration: '30 min', sessionSteps: ['Answer five mixed prompts', 'Review only missed steps', 'Queue the weakest concept again'] },
+    { id: 'grade_landed', eyebrow: 'Use the signal', title: 'A grade just landed.', description: 'The grade updates standing and the concepts that assessment actually measured.', action: 'Use the grade to replan', payoff: 'Standing is now 76%. Momentum balance needs attention; dimensional analysis does not.', mastery: 4, standing: 4, nextTitle: 'Momentum balance correction', nextReason: 'The new grade points to this assessed skill—not the parts of the course you already know.', duration: '22 min', sessionSteps: ['Inspect the marked attempt', 'Correct the first wrong step', 'Retry a parallel problem'] },
     { id: 'week_disrupted', eyebrow: 'Plans should bend', title: 'My week blew up.', description: 'Reduce capacity and preserve the highest-value work without guilt mechanics.', action: 'Replan around my week', payoff: 'Two sessions moved, one low-value task dropped, and the exam-critical review stayed protected.', mastery: 1, nextTitle: 'Bernoulli quick check', nextReason: 'It preserves the exam-critical thread and fits the first real opening left this week.', duration: '15 min Friday', sessionSteps: ['Run a three-question check', 'Review only one weak step', 'Confirm the next available block'] },
   ];
 
@@ -144,7 +144,7 @@
       return;
     }
     persist({ courses: [manualProposal(manualCode, manualTitle, topics)], simulated: false });
-    parseMessage = `${topics.length} knowledge components ready to review.`;
+    parseMessage = `${topics.length} concepts ready to review.`;
   }
 
   async function extractFile(file: File) {
@@ -176,7 +176,7 @@
       }
       const proposal = proposalFromExtractedText(file.name, text);
       persist({ courses: [proposal], simulated: false });
-      parseMessage = `Found ${proposal.branches[0].kcs.length} suggested knowledge components. Raw file data stays in this tab only.`;
+      parseMessage = `Found ${proposal.branches[0].kcs.length} suggested concepts. Raw file data stays in this tab only.`;
     } catch (error) {
       parseMessage = error instanceof Error ? error.message : 'Could not read this file. Try manual entry instead.';
     } finally {
@@ -317,7 +317,7 @@
               <div class="course-results">
                 {#each filteredCourses as course}
                   <button type="button" class:selected={activeCourse?.template_id === course.slug} onclick={() => selectTemplate(course.slug)}>
-                    <strong>{course.code}</strong><span>{course.title}</span><small>{course.kc_count} suggested KCs</small>
+                    <strong>{course.code}</strong><span>{course.title}</span><small>{course.kc_count} suggested concepts</small>
                   </button>
                 {/each}
               </div>
@@ -332,7 +332,7 @@
             </section>
           </div>
           {#if activeCourse}
-            <div class="proposal-summary"><strong>{activeCourse.course.code} · {activeCourse.course.title}</strong><span>{activeCourse.branches.reduce((sum, branch) => sum + branch.kcs.length, 0)} KCs across {activeCourse.branches.length} modules</span><small>{activeCourse.source.kind === 'upload' ? `Structured locally from ${activeCourse.source.filename}` : activeCourse.source.kind}</small></div>
+            <div class="proposal-summary"><strong>{activeCourse.course.code} · {activeCourse.course.title}</strong><span>{activeCourse.branches.reduce((sum, branch) => sum + branch.kcs.length, 0)} concepts across {activeCourse.branches.length} modules</span><small>{activeCourse.source.kind === 'upload' ? `Structured locally from ${activeCourse.source.filename}` : activeCourse.source.kind}</small></div>
           {/if}
           <div class="actions split"><button class="secondary" type="button" onclick={() => enterDemo(true)}>Skip and simulate</button><button class="primary" type="button" disabled={!activeCourse} onclick={() => enterDemo(false)}>Open my preview</button></div>
         </div>
