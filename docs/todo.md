@@ -72,31 +72,41 @@ and must not be described as wholly deferred.
 ### Code-health backlog (2026-08-29 review)
 
 Findings from a modularity/copy review, each verified against the tree at
-`aac5451`. In-flight on `cleanup/kc-copy-and-calendar-naming`: student-facing
-"KC" wording and the calendar client/server naming collision. The rest:
+`aac5451`. Shipped in #19: student-facing "KC"/"knowledge component" wording
+(17 acronym + 9 spelled-out strings) and the calendar client/server naming
+collision. Shipped on `cleanup/api-error-wrapper-and-dedup`: the
+`withServiceErrors` rollout and three helper consolidations. The rest:
 
 - [ ] **`services/taskSweep.ts` is a god module** — 563 lines, one export
   (`sweepTasks`), ten internal collectors. Split each task family
   (`attend_class`, `prep_class`, `review_after_class`, `practice_kc`,
   `stale_kc`, `grade_entry`, `ritual_occurrence`) into its own module and leave
   `sweepTasks` as the orchestrator.
-- [ ] **Finish `withServiceErrors` adoption** — 51 of 66 API routes use the
-  wrapper; the 15 that don't hand-roll error shaping, including
-  `api/v1/auth/login.ts` and `api/v1/auth/logout.ts` where response consistency
-  matters most. Others: `calendar/sync.ts`, `capabilities/index.ts`,
-  `onboarding/index.ts`, `onboarding/templates/{index,[id]}.ts`,
-  `exercises/[id]/attempt.ts`, `flows/quick_quiz/**`, `calendar/connections/**`,
-  `calendar/feed/index.ts`, `calendar/feed/[token].ics.ts`.
+- [x] **`withServiceErrors` adoption** — done for the 12 routes that needed it
+  (4 hand-rolled try/catch, 8 unguarded awaits). The earlier note here claimed
+  all 15 non-adopters hand-rolled error shaping "including the auth routes where
+  it matters most" — that was wrong: `capabilities/index.ts`, `auth/login.ts`
+  and `auth/logout.ts` have zero `await` and return static responses, so there is
+  nothing to guard. `calendar/feed/[token].ics.ts` is also exempt: it serves
+  `text/calendar`, and the wrapper emits a JSON envelope a calendar client
+  cannot use. Wrapping any of these four would be cargo-cult consistency.
+- [ ] **`apiErrors.ts` is missing a tier of error types** — surfaced by the
+  rollout. Five thrown types have no entry in `serviceErrorResponse`, so each
+  route carries its own branch: `ExerciseAttemptMismatchError`,
+  `QuizGenerationError` (502), `QuizNotGradableError`,
+  `ProviderTokenUnavailableError` (409), and calendar's 502 connection
+  fallback. Decide whether these belong in the central mapping or are genuinely
+  route-local before the next route lands another one.
 - [ ] **Shared helpers exist but get reimplemented** — the recurring theme, and
   a discoverability problem rather than a missing-abstraction one:
-  - `chunk<T>()` copy-pasted in `services/{zpd,nextMove,courseMap}.ts`.
-  - `exerciseDetails()` byte-identical in `services/courseMap.ts:44` and
-    `services/onboarding.ts:82`.
-  - `courseFor()`/`hueForItem()` redefined in `planner/{CalendarGrid,WeekGrid,
-    PlannerRail,AgendaList}.svelte` and `dashboard/WeekView.svelte` on top of
-    the existing `lib/courseHue.ts`; add `courseForItem`/`hueForItem` there.
-  - 21 raw `.toLocaleDateString()` call sites against a `lib/plannerDates.ts`
-    that already exports 25 date helpers.
+  - [x] `chunk<T>()` — consolidated into `services/util.ts`.
+  - [x] `exerciseDetails()` — consolidated into `content/exercises.ts`.
+  - [x] `courseFor()`/`hueForItem()` — `courseForItem`/`hueForItem` added to the
+    existing `lib/courseHue.ts`; five local copies deleted.
+  - [ ] 21 raw `.toLocaleDateString()` call sites against a `lib/plannerDates.ts`
+    that already exports 25 date helpers. Left for its own pass: each site needs
+    a judgment call about which existing format variant it should use, so it is
+    not a mechanical substitution.
 - [ ] **Reorganize the calendar service layer** — 8 `services/calendar*.ts`
   files, 1644 lines, no clear seams, sitting alongside the separate
   `lib/calendar/` tree. Deliberately out of scope for the naming fix; needs its
