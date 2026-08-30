@@ -30,6 +30,18 @@ export class ConflictError extends Error {
   }
 }
 
+// Maps to the `invalid_input` error code at 400 (see apiErrors.ts) — the
+// submitted attempt shape does not match what the exercise expects. Lives here
+// rather than beside the grading flow so apiErrors.ts, which every route
+// imports, does not pull the flow and its exercise-bank dependency into every
+// route bundle.
+export class ExerciseAttemptMismatchError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ExerciseAttemptMismatchError';
+  }
+}
+
 /**
  * Runs `statements` as one atomic D1 batch, or does nothing when there are
  * none. Drizzle types `batch` as a non-empty tuple, so every caller would
