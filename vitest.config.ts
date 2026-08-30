@@ -48,6 +48,7 @@ export default defineConfig({
           name: 'dom',
           environment: 'happy-dom',
           include: ['tests/components/**/*.test.ts'],
+          setupFiles: ['./tests/components/setup.ts'],
         },
         // Components are authored with <script lang="ts">, so the compiler needs
         // the TS preprocessor Astro's integration normally supplies.
