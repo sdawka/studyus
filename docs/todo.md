@@ -82,27 +82,42 @@ collision. Shipped on `cleanup/api-error-wrapper-and-dedup`: the
   (`attend_class`, `prep_class`, `review_after_class`, `practice_kc`,
   `stale_kc`, `grade_entry`, `ritual_occurrence`) into its own module and leave
   `sweepTasks` as the orchestrator.
-- [x] **`withServiceErrors` adoption** — done for the 12 routes that needed it
-  (4 hand-rolled try/catch, 8 unguarded awaits). The earlier note here claimed
-  all 15 non-adopters hand-rolled error shaping "including the auth routes where
-  it matters most" — that was wrong: `capabilities/index.ts`, `auth/login.ts`
-  and `auth/logout.ts` have zero `await` and return static responses, so there is
-  nothing to guard. `calendar/feed/[token].ics.ts` is also exempt: it serves
-  `text/calendar`, and the wrapper emits a JSON envelope a calendar client
-  cannot use. Wrapping any of these four would be cargo-cult consistency.
+- [x] **`withServiceErrors` adoption** — done: 13 handlers across 11 route files
+  (4 had hand-rolled try/catch, the rest ran unguarded awaits).
+  `calendar/connections/index.ts` holds two of the 13, GET and POST.
+  Six handlers stay unwrapped on purpose, and the count is worth stating
+  precisely because "N of 66 routes comply" invites cargo-cult wrapping:
+  - `capabilities/index.ts`, `auth/login.ts`, `auth/logout.ts` and
+    `user/index.ts`'s GET have zero `await` and return static or
+    already-resolved data — nothing can throw. (`auth/login.ts` is a 410
+    retirement stub.) An earlier note here claimed all 15 non-adopters
+    hand-rolled error shaping "including the auth routes where it matters
+    most"; that was wrong.
+  - `calendar/feed/[token].ics.ts` serves `text/calendar` and
+    `tutor/conversations/[id]/messages.ts` streams SSE. Both would be handed a
+    JSON envelope their clients cannot parse; the SSE route already calls
+    `serviceErrorResponse` itself.
+  - Note `user/index.ts` is a *mixed* file — GET bare, PATCH wrapped. Auditing
+    adoption by filename (`grep -l withServiceErrors`) cannot see this; count
+    exported handlers, not files.
 - [ ] **`apiErrors.ts` is missing a tier of error types** — surfaced by the
   rollout. Five thrown types have no entry in `serviceErrorResponse`, so each
   route carries its own branch: `ExerciseAttemptMismatchError`,
   `QuizGenerationError` (502), `QuizNotGradableError`,
   `ProviderTokenUnavailableError` (409), and calendar's 502 connection
-  fallback. Decide whether these belong in the central mapping or are genuinely
-  route-local before the next route lands another one.
+  fallback. They sit in four route files, not three. Decide whether these belong
+  in the central mapping or are genuinely route-local before the next route
+  lands another one.
 - [ ] **Shared helpers exist but get reimplemented** — the recurring theme, and
   a discoverability problem rather than a missing-abstraction one:
   - [x] `chunk<T>()` — consolidated into `services/util.ts`.
   - [x] `exerciseDetails()` — consolidated into `content/exercises.ts`.
   - [x] `courseFor()`/`hueForItem()` — `courseForItem`/`hueForItem` added to the
     existing `lib/courseHue.ts`; five local copies deleted.
+  - [ ] The `db.batch(statements as [BatchItem<'sqlite'>, ...])` cast is repeated
+    verbatim at `services/courseMap.ts:35`, `calendarSync.ts:244` and `:317`,
+    `events.ts:292`, and `onboarding.ts:367`. `courseMap.ts` already wraps it as
+    a local `runBatch`; hoist that.
   - [ ] 21 raw `.toLocaleDateString()` call sites against a `lib/plannerDates.ts`
     that already exports 25 date helpers. Left for its own pass: each site needs
     a judgment call about which existing format variant it should use, so it is
