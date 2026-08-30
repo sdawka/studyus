@@ -23,24 +23,20 @@ import { getAssessmentTemplateRef, getReviewedTemplate, getReviewedTemplateRevis
 import { exerciseDetails } from '../content/exercises';
 import type { CourseSetupProposal, DemoImportInput } from '../schemas/onboarding';
 import { ConflictError, runBatch } from './util';
+import { hasUsableCourse, isPlaceholderKcName } from './usableCourse';
+// Re-exported because middleware.ts and the onboarding tests import it from
+// here; the implementation lives in the leaf module so courseMap and courses
+// can share it without importing this one.
+export { hasUsableCourse } from './usableCourse';
 import { resolveSettings } from './user';
 
-const PLACEHOLDER_KCS = new Set(['general', 'course topic', 'course foundations']);
+
 
 function meaningfulKcs(proposal: CourseSetupProposal) {
   return proposal.branches
     .filter((branch) => branch.included)
     .flatMap((branch) => branch.kcs.filter((kc) => kc.included))
-    .filter((kc) => !PLACEHOLDER_KCS.has(kc.name.trim().toLowerCase()));
-}
-
-export async function hasUsableCourse(db: Db, userId: string): Promise<boolean> {
-  const rows = await db.select({ id: courses.id }).from(courses).innerJoin(kcs, eq(kcs.courseId, courses.id)).innerJoin(branches, eq(kcs.branchId, branches.id))
-    .where(and(eq(courses.userId, userId), eq(courses.archived, false), eq(courses.setupState, 'active'), isNull(branches.archivedAt), isNull(kcs.archivedAt))).limit(20);
-  if (rows.length === 0) return false;
-  const names = await db.select({ name: kcs.name }).from(kcs).innerJoin(branches, eq(kcs.branchId, branches.id)).innerJoin(courses, eq(kcs.courseId, courses.id))
-    .where(and(eq(courses.userId, userId), eq(courses.archived, false), eq(courses.setupState, 'active'), isNull(branches.archivedAt), isNull(kcs.archivedAt))).limit(100);
-  return names.some((row) => !PLACEHOLDER_KCS.has(row.name.trim().toLowerCase()));
+    .filter((kc) => !isPlaceholderKcName(kc.name));
 }
 
 export async function getOnboardingState(db: Db, userId: string) {
@@ -245,7 +241,7 @@ export async function importDemoSetup(db: Db, userId: string, input: DemoImportI
 
     if (!reviewed) {
       proposal.branches.filter((branch) => branch.included).forEach((branch) => {
-        const branchKcs = branch.kcs.filter((kc) => kc.included && !PLACEHOLDER_KCS.has(kc.name.trim().toLowerCase()));
+        const branchKcs = branch.kcs.filter((kc) => kc.included && !isPlaceholderKcName(kc.name));
         if (branchKcs.length === 0) return;
         const branchId = crypto.randomUUID();
         statements.push(db.insert(branches).values({ id: branchId, courseId, name: branch.name, sortOrder: branch.sort_order, createdAt: now }));

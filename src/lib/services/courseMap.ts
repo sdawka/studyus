@@ -23,8 +23,9 @@ import {
 } from '../content/templateCatalog';
 import type { ApplyTemplateUpdatesInput, UpdateCourseMapInput } from '../schemas/courseMap';
 import { chunk, ConflictError, requireOwnedCourse, runBatch } from './util';
+import { isPlaceholderKcName } from './usableCourse';
 
-const PLACEHOLDER_KCS = new Set(['general', 'course topic', 'course foundations']);
+
 const D1_MAX_BOUND_PARAMS = 100;
 
 type CourseRow = typeof courses.$inferSelect;
@@ -213,7 +214,7 @@ export async function updateCourseMap(db: Db, userId: string, courseId: string, 
       throw new ConflictError('Archive dependent concepts before archiving one of their prerequisites.');
     }
   }
-  if (![...activeIds].some((id) => !PLACEHOLDER_KCS.has((namesById.get(id) ?? graph.nodes.find((row) => row.kc.id === id)?.kc.name ?? '').trim().toLowerCase()))) {
+  if (![...activeIds].some((id) => !isPlaceholderKcName(namesById.get(id) ?? graph.nodes.find((row) => row.kc.id === id)?.kc.name ?? ''))) {
     throw new ConflictError('Keep at least one meaningful active concept.');
   }
 
@@ -395,7 +396,7 @@ export async function applyTemplateUpdateActions(db: Db, userId: string, courseI
       if (graph.edges.some((edge) => edge.prereqKcId === kc.id && activeNodeIds.has(edge.kcId))) {
         throw new ConflictError('Archive dependent concepts before archiving this prerequisite.');
       }
-      const meaningfulRemaining = graph.nodes.filter((row) => row.kc.id !== kc.id && row.kc.archivedAt === null && row.branchArchivedAt === null && !PLACEHOLDER_KCS.has(row.kc.name.trim().toLowerCase()));
+      const meaningfulRemaining = graph.nodes.filter((row) => row.kc.id !== kc.id && row.kc.archivedAt === null && row.branchArchivedAt === null && !isPlaceholderKcName(row.kc.name));
       if (meaningfulRemaining.length === 0) throw new ConflictError('Keep at least one meaningful active concept.');
       statements.push(db.update(kcs).set({ archivedAt: now }).where(eq(kcs.id, kc.id)));
       statements.push(db.insert(courseTemplateDecisions).values({ id: crypto.randomUUID(), courseId, itemKind: 'kc', templateRef: action.template_ref, decision: 'dismissed', templateRevision: revision, createdAt: now, updatedAt: now }).onConflictDoUpdate({ target: [courseTemplateDecisions.courseId, courseTemplateDecisions.itemKind, courseTemplateDecisions.templateRef], set: { decision: 'dismissed', templateRevision: revision, updatedAt: now } }));
