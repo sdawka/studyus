@@ -3,7 +3,7 @@
 // stays consistent without repeating try/catch boilerplate per route.
 import { ZodError } from 'zod';
 import { apiError } from './api';
-import { NotFoundError, ForbiddenError, ConflictError } from './services/util';
+import { NotFoundError, ForbiddenError, ConflictError, ExerciseAttemptMismatchError } from './services/util';
 import { IdempotencyConflictError, NotManualEventError } from './services/events';
 import { AiFeatureUnavailableError } from './ai/capabilities';
 
@@ -13,6 +13,9 @@ export function serviceErrorResponse(err: unknown): Response {
   }
   if (err instanceof NotFoundError) {
     return apiError('not_found', err.message, 404);
+  }
+  if (err instanceof ExerciseAttemptMismatchError) {
+    return apiError('invalid_input', err.message, 400);
   }
   if (err instanceof NotManualEventError) {
     return apiError('not_manual_event', err.message, 400);

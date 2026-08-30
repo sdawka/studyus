@@ -22,7 +22,7 @@ import { parseKcRef, type ContentAssessment } from '../content/courseContent';
 import { getAssessmentTemplateRef, getReviewedTemplate, getReviewedTemplateRevision, getTemplateBaseline } from '../content/templateCatalog';
 import { exerciseDetails } from '../content/exercises';
 import type { CourseSetupProposal, DemoImportInput } from '../schemas/onboarding';
-import { ConflictError } from './util';
+import { ConflictError, runBatch } from './util';
 import { resolveSettings } from './user';
 
 const PLACEHOLDER_KCS = new Set(['general', 'course topic', 'course foundations']);
@@ -364,7 +364,7 @@ export async function importDemoSetup(db: Db, userId: string, input: DemoImportI
   if (createdCourseIds.length > 0) statements.push(db.insert(onboardingImports).values({
     id: crypto.randomUUID(), userId, sourceDraftId: input.draft_id, courseId: createdCourseIds[0], createdAt: now,
   }));
-  await db.batch(statements as [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]]);
+  await runBatch(db, statements);
 
   return {
     ...(await getOnboardingState(db, userId)),

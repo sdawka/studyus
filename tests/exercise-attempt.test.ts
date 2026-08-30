@@ -3,7 +3,8 @@ import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
 import { branches, courses, events, exercises, kcs, users } from '../src/db/schema';
-import { ExerciseAttemptMismatchError, gradeExerciseAttempt } from '../src/lib/flows/exercise_attempt';
+import { gradeExerciseAttempt } from '../src/lib/flows/exercise_attempt';
+import { ExerciseAttemptMismatchError } from '../src/lib/services/util';
 import { NotFoundError } from '../src/lib/services/util';
 
 const db = getDb(env.DB);

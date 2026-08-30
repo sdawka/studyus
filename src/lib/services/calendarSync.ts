@@ -10,6 +10,7 @@ import {
   calendarSyncStates,
   studySessions,
 } from '../../db/schema';
+import { runBatch } from './util';
 
 type Provider = 'google' | 'microsoft';
 type SyncMode = 'read' | 'controlled';
@@ -241,7 +242,7 @@ export async function applyProviderChange(
         );
       }
     }
-    await db.batch(statements as [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]]);
+    await runBatch(db, statements);
   } else {
     const start = dateValue(change.start);
     const end = dateValue(change.end);
@@ -314,7 +315,7 @@ export async function applyProviderChange(
         );
       }
     }
-    await db.batch(statements as [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]]);
+    await runBatch(db, statements);
   }
 
   const [event] = await db

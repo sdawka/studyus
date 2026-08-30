@@ -100,24 +100,33 @@ collision. Shipped on `cleanup/api-error-wrapper-and-dedup`: the
   - Note `user/index.ts` is a *mixed* file — GET bare, PATCH wrapped. Auditing
     adoption by filename (`grep -l withServiceErrors`) cannot see this; count
     exported handlers, not files.
-- [ ] **`apiErrors.ts` is missing a tier of error types** — surfaced by the
-  rollout. Five thrown types have no entry in `serviceErrorResponse`, so each
-  route carries its own branch: `ExerciseAttemptMismatchError`,
-  `QuizGenerationError` (502), `QuizNotGradableError`,
-  `ProviderTokenUnavailableError` (409), and calendar's 502 connection
-  fallback. They sit in four route files, not three. Decide whether these belong
-  in the central mapping or are genuinely route-local before the next route
-  lands another one.
+- [x] **`apiErrors.ts` error tiering** — decided. The criterion is the *code a
+  type emits*, not how often it is thrown (three centralized types —
+  `ForbiddenError`, `AiFeatureUnavailableError`, `NotManualEventError` — are
+  thrown exactly once each, so frequency was never the rule). A type that
+  resolves to a generic envelope code belongs in `serviceErrorResponse`; one
+  that emits a domain-specific code documented in `docs/api.md` stays with its
+  route. Only `ExerciseAttemptMismatchError` met the first test — it spent a
+  try/catch producing `invalid_input`/400, identical to the ZodError branch —
+  and is now centralized. `QuizGenerationError` (`quiz_generation_failed`/502),
+  `QuizNotGradableError` (`quiz_not_gradable`/400),
+  `ProviderTokenUnavailableError` (`calendar_permission_required`/409) and
+  calendar's `calendar_connection_failed`/502 stay route-local by that rule.
+  Note the class was moved to `services/util.ts`, not imported from
+  `lib/flows/`: `apiErrors.ts` is on every route's import path, so pulling a
+  flow into it would drag the exercise bank into every route bundle. Error-class
+  placement here is a bundling decision as much as a taxonomy one.
 - [ ] **Shared helpers exist but get reimplemented** — the recurring theme, and
   a discoverability problem rather than a missing-abstraction one:
   - [x] `chunk<T>()` — consolidated into `services/util.ts`.
   - [x] `exerciseDetails()` — consolidated into `content/exercises.ts`.
   - [x] `courseFor()`/`hueForItem()` — `courseForItem`/`hueForItem` added to the
     existing `lib/courseHue.ts`; five local copies deleted.
-  - [ ] The `db.batch(statements as [BatchItem<'sqlite'>, ...])` cast is repeated
-    verbatim at `services/courseMap.ts:35`, `calendarSync.ts:244` and `:317`,
-    `events.ts:292`, and `onboarding.ts:367`. `courseMap.ts` already wraps it as
-    a local `runBatch`; hoist that.
+  - [x] The `db.batch(statements as [BatchItem<'sqlite'>, ...])` cast —
+    `courseMap.ts`'s local `runBatch` hoisted to `services/util.ts`; all five
+    sites now call it and the cast exists once. The wrapper's empty check is a
+    no-op at the four adopting sites, which each already guarantee a non-empty
+    array, so this was a pure dedup.
   - [ ] 21 raw `.toLocaleDateString()` call sites against a `lib/plannerDates.ts`
     that already exports 25 date helpers. Left for its own pass: each site needs
     a judgment call about which existing format variant it should use, so it is
@@ -130,13 +139,16 @@ collision. Shipped on `cleanup/api-error-wrapper-and-dedup`: the
   handlers each re-rolling try/catch + toast + fetch) and
   `standing/AssessmentsCard.svelte:41-123` (21 `$state` vars spanning grading,
   add-form, edit-form, and KC fetch). Extract to `.svelte.ts` rune modules.
-- [ ] **Remaining copy fixes** — `TasksView.svelte:437` tab reads "Ta-Da";
-  `corrections.astro:31` opens with pedagogical framing ("Beliefs the tutor
-  flagged... until you mark them internalized"); `StudyFlow.svelte:532` shows
-  "Mastery 40% → 55%" with no referent; `dashboard.astro:154`/`:156` repeat "Add
-  your first course" as both heading and button; sign-up CTA is labelled "Create
-  a free account" in `HeroRD.astro:95` but "Create an account" in
-  `FinalCta.astro:66`.
+- [ ] **Remaining copy fixes** — `corrections.astro:31` opens with pedagogical
+  framing ("Beliefs the tutor flagged... until you mark them internalized");
+  `StudyFlow.svelte:532` shows "Mastery 40% → 55%" with no referent;
+  `dashboard.astro:154`/`:156` repeat "Add your first course" as both heading
+  and button; sign-up CTA is labelled "Create a free account" in
+  `HeroRD.astro:95` but "Create an account" in `FinalCta.astro:66`.
+  Not a copy fix: the `/tasks` "Ta-Da" tab is deliberate product vocabulary,
+  named in `docs/api.md` (the "Ta-Da" tab's data source) and in
+  `docs/product/student-lifecycle.md`'s prose and flowchart. A review pass
+  flagged it as unclear; it was checked against the docs and kept.
 
 
 Each deferred feature is prioritized and scoped to avoid scope creep during post-v1 development.

@@ -7,16 +7,10 @@ import type { Db } from '../../db/client';
 import type { ExerciseAttemptInput } from '../schemas/exercises';
 import { createEvent } from '../services/events';
 import { getExerciseWithAnswers, type ExerciseRow } from '../services/exercises';
+import { ExerciseAttemptMismatchError } from '../services/util';
 
 type McqDetails = { options: string[]; correct_index: number; explanation: string };
 type NumericDetails = { answer: { value: number; unit: string | null; tolerance_pct: number }; solution: string };
-
-export class ExerciseAttemptMismatchError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ExerciseAttemptMismatchError';
-  }
-}
 
 function gradeNumeric(row: ExerciseRow, input: Extract<ExerciseAttemptInput, { value: number }>) {
   const details = row.details as NumericDetails;
