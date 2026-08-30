@@ -274,8 +274,8 @@ describe('numeric input bindings: emptied fields mean empty, not zero', () => {
   });
 });
 
-describe('KNOWN BUG: gradeSavingId is a single id, not a set (claim #2)', () => {
-  it('starting a save on row B re-enables row A\'s Save button while A is still in flight', async () => {
+describe('in-flight saves are tracked per row (claim #2, fixed)', () => {
+  it('starting a save on row B leaves row A disabled while A is still in flight', async () => {
     render(AssessmentsCard, {
       props: {
         courseId: 'c1',
@@ -299,27 +299,26 @@ describe('KNOWN BUG: gradeSavingId is a single id, not a set (claim #2)', () => 
     await fireEvent.click(saveB);
     await tick();
 
-    // BUG: A's button is re-enabled even though A's PATCH never resolved.
-    expect((saveA as HTMLButtonElement).disabled).toBe(false);
-    expect(saveA.textContent).toContain('Save');
+    // FIXED: gradeSavingIds is a Set keyed by assessment id, so B starting does
+    // not release A. Previously A re-enabled here, allowing a duplicate PATCH.
+    expect((saveA as HTMLButtonElement).disabled).toBe(true);
+    expect(saveA.textContent).toContain('Saving…');
     expect((saveB as HTMLButtonElement).disabled).toBe(true);
 
-    // And because it's re-enabled, clicking it again fires a second
-    // concurrent PATCH for the same row.
-    const defA2 = deferred<ReturnType<typeof okResult<{ grade_received: number | null; grade_max: number | null }>>>();
-    mockApiFetch.mockReturnValueOnce(defA2.promise);
+    // Clicking A again while its request is still open sends nothing: the
+    // button is disabled, and saveGrade also returns early on a re-entrant
+    // call, so a dropped disabled attribute alone cannot cause a double PATCH.
     await fireEvent.click(saveA);
-    expect(mockApiFetch).toHaveBeenCalledTimes(3);
+    expect(mockApiFetch).toHaveBeenCalledTimes(2);
 
     defA.resolve(okResult({ grade_received: null, grade_max: null, mastery_deltas: [] }));
     defB.resolve(okResult({ grade_received: null, grade_max: null, mastery_deltas: [] }));
-    defA2.resolve(okResult({ grade_received: null, grade_max: null, mastery_deltas: [] }));
     await vi.waitFor(() => expect((saveA as HTMLButtonElement).disabled).toBe(false));
   });
 });
 
-describe('KNOWN BUG: add-form errors are swallowed when the form is hidden (claim #3)', () => {
-  it('opening Edit while an Add is in flight hides the form, and a subsequent add failure is never shown', async () => {
+describe('an add failure is surfaced even if the form was closed meanwhile (claim #3, fixed)', () => {
+  it('reopens the add form with the error and the retained draft when the add fails', async () => {
     render(AssessmentsCard, { props: { courseId: 'c1', assessments: [makeAssessment({ id: 'a1', title: 'Existing row' })] } });
     await fireEvent.click(screen.getByRole('button', { name: '+ Add assessment' }));
     await fireEvent.input(screen.getByPlaceholderText('Title'), { target: { value: 'New Quiz' } });
@@ -339,16 +338,18 @@ describe('KNOWN BUG: add-form errors are swallowed when the form is hidden (clai
     await tick();
     await tick();
 
-    // BUG: the error is set internally but nothing on screen shows it,
-    // because addError only renders inside the (now-closed) add form.
-    expect(screen.queryByText('Could not add assessment.')).toBeNull();
-    // And the failed add never got appended to the list either.
-    expect(screen.queryByText('New Quiz')).toBeNull();
+    // FIXED: the failure reopens the add form, so the error is on screen and
+    // the user's draft is still there to retry. Previously addError was set but
+    // rendered only inside the closed form, so the add failed silently.
+    expect(screen.getByText('Could not add assessment.')).toBeTruthy();
+    expect((screen.getByPlaceholderText('Title') as HTMLInputElement).value).toBe('New Quiz');
+    // The failed add is still not in the list.
+    expect(screen.queryByRole('cell', { name: 'New Quiz' })).toBeNull();
   });
 });
 
-describe('KNOWN BUG: a resolving save closes a different row\'s open edit form (claim #4)', () => {
-  it('finishing row A\'s edit-save yanks shut row B\'s unrelated, unsaved edit form', async () => {
+describe('an in-flight save never disturbs another row\'s edit form (claim #4, fixed)', () => {
+  it('finishing row A\'s edit-save leaves row B\'s unsaved edit form open and intact', async () => {
     render(AssessmentsCard, {
       props: {
         courseId: 'c1',
@@ -367,20 +368,21 @@ describe('KNOWN BUG: a resolving save closes a different row\'s open edit form (
     const editFormB = rowFor('Row B').nextElementSibling as HTMLElement;
     const titleB = within(editFormB).getByPlaceholderText('Title');
 
-    // BUG: B's brand-new form inherits the shared editSaving flag it never
-    // earned — its Save button is already disabled/"Saving…".
+    // FIXED: editSavingId is keyed to the row being saved, so B's fresh form is
+    // interactive rather than inheriting A's in-flight state.
     const saveB = within(editFormB).getByRole('button', { name: /sav/i }) as HTMLButtonElement;
-    expect(saveB.disabled).toBe(true);
-    expect(saveB.textContent).toContain('Saving…');
+    expect(saveB.disabled).toBe(false);
+    expect(saveB.textContent).toContain('Save');
 
     await fireEvent.input(titleB, { target: { value: 'Unsaved B edit' } });
 
     defEditA.resolve(okResult({ title: 'Row A', type: 'quiz', due_date: null, weight_pct: 10, kc_ids: [] }));
-    await vi.waitFor(() => expect(screen.queryByDisplayValue('Unsaved B edit')).toBeNull());
+    await tick();
+    await tick();
 
-    // BUG: B's draft is gone and its edit form is closed, with no save
-    // ever sent for B — B's row still shows its original title.
-    expect(screen.getByText('Row B')).toBeTruthy();
+    // FIXED: A resolving no longer calls closeEdit() on whatever form happens to
+    // be open — B's draft survives and B was never submitted.
+    expect(screen.getByDisplayValue('Unsaved B edit')).toBeTruthy();
     expect(mockApiFetch).toHaveBeenCalledTimes(1);
   });
 });

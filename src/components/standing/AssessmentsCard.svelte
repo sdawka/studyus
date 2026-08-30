@@ -45,9 +45,11 @@
       assessments.map((a) => [a.id, { received: a.grade_received?.toString() ?? '', max: a.grade_max?.toString() ?? '' }]),
     ),
   );
-  let gradeSavingId = $state<string | null>(null);
+  // Keyed by assessment id: several rows can be saving at once, and a scalar
+  // here re-enabled a row's Save button as soon as a *different* row started.
+  let gradeSavingIds = $state<ReadonlySet<string>>(new Set());
   let gradeFeedback = $state<Record<string, string>>({});
-  let practiceSavingId = $state<string | null>(null);
+  let practiceSavingIds = $state<ReadonlySet<string>>(new Set());
 
   const officialAssessments = $derived(assessments.filter((a) => a.kind !== 'practice'));
   const practiceAssessments = $derived(assessments.filter((a) => a.kind === 'practice'));
@@ -120,8 +122,19 @@
 
   let editingId = $state<string | null>(null);
   let editDraft = $state<{ title: string; type: string; due: string; weight: NumericFieldBinding; kcIds: Set<string> } | null>(null);
-  let editSaving = $state(false);
+  // The id being saved, not a boolean: the user can open another row's form
+  // while a save is in flight, and that row must not inherit this state.
+  let editSavingId = $state<string | null>(null);
   let editError = $state<string | null>(null);
+  // True only while the form currently on screen is the one saving.
+  const editBusy = $derived(editSavingId !== null && editSavingId === editingId);
+
+  function withId(ids: ReadonlySet<string>, id: string, present: boolean): ReadonlySet<string> {
+    const next = new Set(ids);
+    if (present) next.add(id);
+    else next.delete(id);
+    return next;
+  }
 
   function openEdit(a: Assessment) {
     addOpen = false;
@@ -153,8 +166,8 @@
 
   async function submitEdit(e: Event, a: Assessment) {
     e.preventDefault();
-    if (!editDraft || !editDraft.title.trim()) return;
-    editSaving = true;
+    if (!editDraft || !editDraft.title.trim() || editSavingId) return;
+    editSavingId = a.id;
     editError = null;
     try {
       const body: Record<string, unknown> = {
@@ -177,7 +190,9 @@
         'Network error.',
       );
       if (!result.ok) {
-        editError = result.error;
+        // The user may have switched to another row while this was in flight;
+        // only surface the error on the form that produced it.
+        if (editingId === a.id) editError = result.error;
         return;
       }
       const updated = result.data;
@@ -193,16 +208,16 @@
             }
           : row,
       );
-      closeEdit();
+      if (editingId === a.id) closeEdit();
     } finally {
-      editSaving = false;
+      editSavingId = null;
     }
   }
 
   async function saveGrade(assessmentId: string) {
     const draft = gradeDrafts[assessmentId];
-    if (!draft) return;
-    gradeSavingId = assessmentId;
+    if (!draft || gradeSavingIds.has(assessmentId)) return;
+    gradeSavingIds = withId(gradeSavingIds, assessmentId, true);
     gradeFeedback = { ...gradeFeedback, [assessmentId]: '' };
     try {
       const result = await apiFetch<{ grade_received: number | null; grade_max: number | null; mastery_deltas?: unknown[] }>(
@@ -230,7 +245,7 @@
       gradeFeedback = { ...gradeFeedback, [assessmentId]: logged ? 'Saved — logged an event for linked concepts.' : 'Saved.' };
       onGraded?.();
     } finally {
-      gradeSavingId = null;
+      gradeSavingIds = withId(gradeSavingIds, assessmentId, false);
     }
   }
 
@@ -238,7 +253,8 @@
   // completion mark is enough; a student who does want to log an actual
   // score can still edit the underlying assessment elsewhere.
   async function setPracticeDone(assessment: Assessment, done: boolean) {
-    practiceSavingId = assessment.id;
+    if (practiceSavingIds.has(assessment.id)) return;
+    practiceSavingIds = withId(practiceSavingIds, assessment.id, true);
     const prev = { grade_received: assessment.grade_received, grade_max: assessment.grade_max };
     const next = done
       ? { grade_received: assessment.grade_received ?? 100, grade_max: assessment.grade_max ?? 100 }
@@ -258,7 +274,7 @@
         onPracticeChange?.();
       }
     } finally {
-      practiceSavingId = null;
+      practiceSavingIds = withId(practiceSavingIds, assessment.id, false);
     }
   }
 
@@ -285,6 +301,11 @@
       );
       if (!result.ok) {
         addError = result.error;
+        // The error only renders inside the add form, and opening Edit closes
+        // that form. Reopen it so the failure is visible — the draft fields are
+        // untouched on failure, so the user's input is still there to retry.
+        addOpen = true;
+        closeEdit();
         return;
       }
       assessments = [...assessments, result.data];
@@ -326,8 +347,8 @@
               <td><input type="number" min="0" bind:value={gradeDrafts[a.id].received} class="grade-input num" /></td>
               <td><input type="number" min="0" bind:value={gradeDrafts[a.id].max} class="grade-input num" /></td>
               <td class="row-actions">
-                <button type="button" class="btn btn-secondary" onclick={() => saveGrade(a.id)} disabled={gradeSavingId === a.id}>
-                  {gradeSavingId === a.id ? 'Saving…' : 'Save'}
+                <button type="button" class="btn btn-secondary" onclick={() => saveGrade(a.id)} disabled={gradeSavingIds.has(a.id)}>
+                  {gradeSavingIds.has(a.id) ? 'Saving…' : 'Save'}
                 </button>
                 <button type="button" class="link-btn" onclick={() => (editingId === a.id ? closeEdit() : openEdit(a))}>
                   {editingId === a.id ? 'Close' : 'Edit'}
@@ -342,16 +363,16 @@
                 <td colspan="7">
                   <form class="edit-form" onsubmit={(e) => submitEdit(e, a)}>
                     <div class="add-row">
-                      <input type="text" placeholder="Title" bind:value={editDraft.title} disabled={editSaving} />
-                      <select bind:value={editDraft.type} disabled={editSaving}>
+                      <input type="text" placeholder="Title" bind:value={editDraft.title} disabled={editBusy} />
+                      <select bind:value={editDraft.type} disabled={editBusy}>
                         {#each ASSESSMENT_TYPES as t}
                           <option value={t}>{t}</option>
                         {/each}
                       </select>
                     </div>
                     <div class="add-row">
-                      <input type="number" min="0" max="100" placeholder="Weight %" bind:value={editDraft.weight} disabled={editSaving} class="weight-input" />
-                      <input type="date" bind:value={editDraft.due} disabled={editSaving} />
+                      <input type="number" min="0" max="100" placeholder="Weight %" bind:value={editDraft.weight} disabled={editBusy} class="weight-input" />
+                      <input type="date" bind:value={editDraft.due} disabled={editBusy} />
                     </div>
                     <div class="kc-section">
                       <p class="kicker">Concepts covered</p>
@@ -370,8 +391,8 @@
                       {/if}
                     </div>
                     <div class="add-row">
-                      <button type="submit" class="btn btn-primary" disabled={editSaving || !editDraft.title.trim()}>{editSaving ? 'Saving…' : 'Save'}</button>
-                      <button type="button" class="btn btn-secondary" disabled={editSaving} onclick={closeEdit}>Cancel</button>
+                      <button type="submit" class="btn btn-primary" disabled={editBusy || !editDraft.title.trim()}>{editBusy ? 'Saving…' : 'Save'}</button>
+                      <button type="button" class="btn btn-secondary" disabled={editBusy} onclick={closeEdit}>Cancel</button>
                     </div>
                     {#if editError}<p class="error">{editError}</p>{/if}
                   </form>
@@ -394,9 +415,9 @@
               <span class="practice-title">{p.title}</span>
               {#if p.grade_received !== null}
                 <span class="practice-score num">{p.grade_received}/{p.grade_max ?? 100}</span>
-                <button type="button" class="link-btn" disabled={practiceSavingId === p.id} onclick={() => setPracticeDone(p, false)}>Undo</button>
+                <button type="button" class="link-btn" disabled={practiceSavingIds.has(p.id)} onclick={() => setPracticeDone(p, false)}>Undo</button>
               {:else}
-                <button type="button" class="link-btn" disabled={practiceSavingId === p.id} onclick={() => setPracticeDone(p, true)}>Mark done</button>
+                <button type="button" class="link-btn" disabled={practiceSavingIds.has(p.id)} onclick={() => setPracticeDone(p, true)}>Mark done</button>
               {/if}
               <button type="button" class="link-btn" onclick={() => (editingId === p.id ? closeEdit() : openEdit(p))}>
                 {editingId === p.id ? 'Close' : 'Edit'}
@@ -405,13 +426,13 @@
             {#if editingId === p.id && editDraft}
               <form class="edit-form" onsubmit={(e) => submitEdit(e, p)}>
                 <div class="add-row">
-                  <input type="text" placeholder="Title" bind:value={editDraft.title} disabled={editSaving} />
-                  <select bind:value={editDraft.type} disabled={editSaving}>
+                  <input type="text" placeholder="Title" bind:value={editDraft.title} disabled={editBusy} />
+                  <select bind:value={editDraft.type} disabled={editBusy}>
                     {#each ASSESSMENT_TYPES as t}
                       <option value={t}>{t}</option>
                     {/each}
                   </select>
-                  <input type="date" bind:value={editDraft.due} disabled={editSaving} />
+                  <input type="date" bind:value={editDraft.due} disabled={editBusy} />
                 </div>
                 <div class="kc-section">
                   <p class="kicker">Concepts covered</p>
@@ -430,8 +451,8 @@
                   {/if}
                 </div>
                 <div class="add-row">
-                  <button type="submit" class="btn btn-primary" disabled={editSaving || !editDraft.title.trim()}>{editSaving ? 'Saving…' : 'Save'}</button>
-                  <button type="button" class="btn btn-secondary" disabled={editSaving} onclick={closeEdit}>Cancel</button>
+                  <button type="submit" class="btn btn-primary" disabled={editBusy || !editDraft.title.trim()}>{editBusy ? 'Saving…' : 'Save'}</button>
+                  <button type="button" class="btn btn-secondary" disabled={editBusy} onclick={closeEdit}>Cancel</button>
                 </div>
                 {#if editError}<p class="error">{editError}</p>{/if}
               </form>
