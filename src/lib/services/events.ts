@@ -10,7 +10,7 @@ import type { CreateEventInput, EventSource, ListEventsQuery, UpdateEventInput }
 import { EVENT_ROLE_FLAGS } from '../schemas/events';
 import { toEpochMs } from '../schemas/common';
 import { foldMastery } from './mastery';
-import { ConflictError, NotFoundError, requireOwnedCourse, requireOwnedKc } from './util';
+import { ConflictError, NotFoundError, requireOwnedCourse, requireOwnedKc, runBatch } from './util';
 import { withSpan } from '../tracing';
 
 type EventRow = typeof events.$inferSelect;
@@ -289,7 +289,7 @@ export async function appendEventsAtomically(
 
   if (statements.length === 0) return { events: newEvents, masteryDeltas };
   await withSpan('events.append_atomic', { event_count: newEvents.length, kc_count: kcIds.length }, () =>
-    db.batch(statements as [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]]),
+    runBatch(db, statements),
   );
   return { events: newEvents, masteryDeltas };
 }

@@ -22,7 +22,7 @@ import {
   type TemplateBaseline,
 } from '../content/templateCatalog';
 import type { ApplyTemplateUpdatesInput, UpdateCourseMapInput } from '../schemas/courseMap';
-import { chunk, ConflictError, requireOwnedCourse } from './util';
+import { chunk, ConflictError, requireOwnedCourse, runBatch } from './util';
 
 const PLACEHOLDER_KCS = new Set(['general', 'course topic', 'course foundations']);
 const D1_MAX_BOUND_PARAMS = 100;
@@ -30,10 +30,6 @@ const D1_MAX_BOUND_PARAMS = 100;
 type CourseRow = typeof courses.$inferSelect;
 type BranchRow = typeof branches.$inferSelect;
 type KcRow = typeof kcs.$inferSelect;
-
-async function runBatch(db: Db, statements: BatchItem<'sqlite'>[]) {
-  if (statements.length) await db.batch(statements as [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]]);
-}
 
 function baselineFromCourse(course: CourseRow): TemplateBaseline | null {
   const value = course.templateBaseline;
