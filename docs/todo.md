@@ -139,16 +139,23 @@ collision. Shipped on `cleanup/api-error-wrapper-and-dedup`: the
   handlers each re-rolling try/catch + toast + fetch) and
   `standing/AssessmentsCard.svelte:41-123` (21 `$state` vars spanning grading,
   add-form, edit-form, and KC fetch). Extract to `.svelte.ts` rune modules.
-- [ ] **Remaining copy fixes** — `corrections.astro:31` opens with pedagogical
-  framing ("Beliefs the tutor flagged... until you mark them internalized");
-  `StudyFlow.svelte:532` shows "Mastery 40% → 55%" with no referent;
-  `dashboard.astro:154`/`:156` repeat "Add your first course" as both heading
-  and button; sign-up CTA is labelled "Create a free account" in
-  `HeroRD.astro:95` but "Create an account" in `FinalCta.astro:66`.
+- [x] **Remaining copy fixes** — done. The corrections intro now leads with the
+  asset ("Things you used to believe and have corrected"), the framing
+  `docs/product/vision.md` and `user-journeys.md` specify and the previous
+  mechanism-first copy contradicted. The session-complete mastery list names
+  each concept, joining `mastery_deltas[].kc_id` against the KC names already in
+  `StudyFlow`'s state — no API change — and falling back to the old bare
+  "Mastery" label because that refetch is deliberately non-fatal. The dashboard
+  empty-state heading is "No courses yet" so it orients instead of repeating its
+  own button. The sign-up CTA reads "Create a free account" in both
+  `HeroRD.astro` and `FinalCta.astro`.
   Not a copy fix: the `/tasks` "Ta-Da" tab is deliberate product vocabulary,
   named in `docs/api.md` (the "Ta-Da" tab's data source) and in
   `docs/product/student-lifecycle.md`'s prose and flowchart. A review pass
-  flagged it as unclear; it was checked against the docs and kept.
+  flagged it as unclear; it was checked against the docs and kept. Check
+  `docs/product/` before treating a student-facing string as stray copy — the
+  review agents that surface these read only `src/`, so they cannot tell
+  established vocabulary from drift.
 
 
 Each deferred feature is prioritized and scoped to avoid scope creep during post-v1 development.
