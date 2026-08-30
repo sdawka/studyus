@@ -29,6 +29,13 @@ export class ConflictError extends Error {
   }
 }
 
+/** Splits `items` into batches of at most `size`, preserving order. */
+export function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
 /** Loads a course and throws NotFoundError unless it belongs to `userId`. */
 export async function requireOwnedCourse(db: Db, userId: string, courseId: string) {
   const rows = await db

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import { hueFor } from '../../lib/courseHue';
+  import { courseForItem, hueForItem } from '../../lib/courseHue';
   import WeekGrid from '../planner/WeekGrid.svelte';
   import EventPopover from '../planner/EventPopover.svelte';
   import CreateSessionPopover from '../planner/CreateSessionPopover.svelte';
@@ -22,6 +22,8 @@
     initialItems,
     courses,
   }: { initialItems: CalendarItem[]; courses: CourseInfo[] } = $props();
+
+  const courseById = new Map(courses.map((c) => [c.id, c]));
 
   const STORAGE_KEY = 'sb:weekview';
 
@@ -74,15 +76,8 @@
 
   const weekdayFmt = new Intl.DateTimeFormat(undefined, { weekday: 'short' });
 
-  function courseFor(item: CalendarItem): CourseInfo | undefined {
-    return item.course_id ? courses.find((c) => c.id === item.course_id) : undefined;
-  }
-  function hueForItem(item: CalendarItem): number {
-    const c = courseFor(item);
-    return c ? hueFor({ slug: c.slug, color: c.color !== null ? String(c.color) : null }) : 220;
-  }
   function shortTitle(item: CalendarItem): string {
-    const c = courseFor(item);
+    const c = courseForItem(item, courseById);
     return c ? `${c.code} · ${item.title}` : item.title;
   }
 
@@ -98,7 +93,7 @@
       // "CODE · Class: CODE" (or a bare "Class: …") truncates to nothing at
       // 7-column chip width — show status glyph + course code; the chip's
       // time slot and hue carry the rest. Full text stays in the tooltip.
-      const code = courseFor(item)?.code ?? item.title.replace(/^Class: /, '');
+      const code = courseForItem(item, courseById)?.code ?? item.title.replace(/^Class: /, '');
       const status = item.details?.status;
       const glyph = status === 'attended' ? '✓ ' : status === 'missed' ? '✗ ' : '';
       return `${glyph}${code}`;
@@ -249,7 +244,7 @@
                   class="chip-evt"
                   class:attend-chip={isAttendClassItem(item)}
                   class:selected={selectedItem?.id === item.id}
-                  style={`--course-h:${hueForItem(item)}`}
+                  style={`--course-h:${hueForItem(item, courseById)}`}
                   data-event-id={item.id}
                   onclick={() => selectItem(item)}
                   onmouseenter={(e) => chipHoverCard.onEnter(e, item)}
@@ -287,7 +282,7 @@
 
 {#if chipHoverCard.item}
   {@const hoverItem = chipHoverCard.item}
-  <EventHoverCard item={hoverItem} pos={chipHoverCard.pos} course={courseFor(hoverItem)} />
+  <EventHoverCard item={hoverItem} pos={chipHoverCard.pos} course={courseForItem(hoverItem, courseById)} />
 {/if}
 
 {#if showPopover && selectedItem && popoverAnchor}
@@ -297,7 +292,7 @@
   {#key selectedItem.id}
     <EventPopover
       item={selectedItem}
-      course={courseFor(selectedItem)}
+      course={courseForItem(selectedItem, courseById)}
       anchorRect={popoverAnchor}
       onClose={closePopover}
       onDeleted={() => void loadExpandedWeek(true)}
