@@ -94,6 +94,9 @@
   type Kc = { id: string; name: string };
   type Branch = { id: string; name: string; kcs: Kc[] };
   let branches = $state<Branch[]>([]);
+  // endSession refetches branches before the completion screen, but that call is
+  // non-fatal — fall back to a bare "Mastery" label when a name is missing.
+  let kcNameById = $derived(new Map(branches.flatMap((b) => b.kcs.map((kc) => [kc.id, kc.name] as const))));
   let touchedKcIds = $state<Set<string>>(new Set());
   let selfRatings = $state<Record<string, string>>({});
   let reflection = $state('');
@@ -529,7 +532,7 @@
       {#if result.masteryDeltas.length > 0}
         <ul class="deltas">
           {#each result.masteryDeltas as d, i (i)}
-            <li>Mastery {d.old_mastery}% → {d.new_mastery}%</li>
+            <li>{kcNameById.get(d.kc_id) ?? 'Mastery'} {d.old_mastery}% → {d.new_mastery}%</li>
           {/each}
         </ul>
       {/if}
