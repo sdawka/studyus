@@ -7,6 +7,7 @@
   import { apiFetch } from '../../lib/apiClient';
   import { scrollLock } from '../../lib/actions/scrollLock';
   import { focusTrap } from '../../lib/actions/focusTrap';
+  import { numericFieldValue, type NumericFieldBinding } from '../../lib/numericField';
 
   // Same spaced hue list the server cycles through for auto-assignment
   // (src/lib/services/courses.ts::COLOR_HUES), minus the trailing 45 —
@@ -17,7 +18,7 @@
   let code = $state('');
   let title = $state('');
   let term = $state('');
-  let credits = $state('');
+  let credits = $state<NumericFieldBinding>('');
   let instructor = $state('');
   let selectedHue = $state<number | null>(null);
   let existingTerms = $state<string[]>([]);
@@ -78,7 +79,8 @@
     try {
       const body: Record<string, unknown> = { code: code.trim(), title: title.trim() };
       if (term.trim()) body.term = term.trim();
-      if (credits.trim() !== '') body.credits = Number(credits);
+      const creditsValue = numericFieldValue(credits);
+      if (creditsValue !== null) body.credits = creditsValue;
       if (instructor.trim()) body.instructor = instructor.trim();
       if (selectedHue !== null) body.color_hue = selectedHue;
 

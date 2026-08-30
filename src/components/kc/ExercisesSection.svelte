@@ -4,6 +4,8 @@
   // answer-stripped list from GET /kcs/:id/exercises and grades attempts
   // through POST /exercises/:id/attempt — this component never sees a
   // correct_index/answer/solution until the server hands one back post-grade.
+  import { numericFieldValue, type NumericFieldBinding } from '../../lib/numericField';
+
   type McqDetails = { options: string[] };
   type NumericDetails = { unit: string | null };
   type WorkedDetails = { solution: string };
@@ -26,7 +28,7 @@
   let exercises = $state<Exercise[]>([]);
 
   type McqState = { kind: 'mcq'; selected: number | null; graded?: { correct: boolean; correct_index: number; explanation: string } };
-  type NumericState = { kind: 'numeric'; value: string; graded?: { correct: boolean; answer: { value: number; unit: string | null }; solution: string } };
+  type NumericState = { kind: 'numeric'; value: NumericFieldBinding; graded?: { correct: boolean; answer: { value: number; unit: string | null }; solution: string } };
   type WorkedState = { kind: 'worked'; revealed: boolean };
   type ItemState = (McqState | NumericState | WorkedState) & { submitting?: boolean; error?: string };
 
@@ -84,8 +86,8 @@
 
   async function submitNumeric(ex: Exercise) {
     const state = itemState[ex.id] as NumericState & { submitting?: boolean; error?: string };
-    const value = Number(state.value);
-    if (state.value.trim() === '' || Number.isNaN(value) || state.submitting) return;
+    const value = numericFieldValue(state.value);
+    if (value === null || state.submitting) return;
     state.submitting = true;
     state.error = undefined;
     try {

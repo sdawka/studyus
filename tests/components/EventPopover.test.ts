@@ -392,8 +392,8 @@ describe('handleTaskToggle', () => {
 
   it('hydrated store path: goes through toggleTask instead of a direct PATCH, and skips onTaskToggled a second time when the settled value matches the optimistic one', async () => {
     tasksByIdGetMock
-      .mockReturnValueOnce({ 'item-1': { id: 'item-1', completed: false } }) // truthy check
-      .mockReturnValueOnce({ 'item-1': { id: 'item-1', completed: true } }); // settled, matches optimistic
+      .mockReturnValueOnce({ 'item-1': { id: 'item-1', title: 'Task', courses: [], completed: false } }) // truthy check
+      .mockReturnValueOnce({ 'item-1': { id: 'item-1', title: 'Task', courses: [], completed: true } }); // settled, matches optimistic
     const { onTaskToggled } = renderPopover({ item: taskItem(false) });
     await fireEvent.click(screen.getByRole('checkbox'));
     await waitFor(() => expect(toggleTaskMock).toHaveBeenCalledWith('item-1'));
@@ -404,8 +404,8 @@ describe('handleTaskToggle', () => {
 
   it('DOUBLE-FIRE (pinned): hydrated store path fires onTaskToggled twice when the settled value differs from the optimistic guess (reconciliation)', async () => {
     tasksByIdGetMock
-      .mockReturnValueOnce({ 'item-1': { id: 'item-1', completed: false } }) // truthy check
-      .mockReturnValueOnce({ 'item-1': { id: 'item-1', completed: false } }); // settled: server rejected the flip
+      .mockReturnValueOnce({ 'item-1': { id: 'item-1', title: 'Task', courses: [], completed: false } }) // truthy check
+      .mockReturnValueOnce({ 'item-1': { id: 'item-1', title: 'Task', courses: [], completed: false } }); // settled: server rejected the flip
     const { onTaskToggled } = renderPopover({ item: taskItem(false) });
     const checkbox = screen.getByRole('checkbox') as HTMLInputElement;
     await fireEvent.click(checkbox);
@@ -416,7 +416,7 @@ describe('handleTaskToggle', () => {
   });
 
   it('BUG (pinned): the hydrated store path never fires an analytics event, even when checking a task (analytics only fires on the direct-PATCH fallback path)', async () => {
-    tasksByIdGetMock.mockReturnValue({ 'item-1': { id: 'item-1', completed: true } });
+    tasksByIdGetMock.mockReturnValue({ 'item-1': { id: 'item-1', title: 'Task', courses: [], completed: true } });
     currentAnalyticsSurfaceMock.mockReturnValue('/planner');
     renderPopover({ item: taskItem(false) });
     await fireEvent.click(screen.getByRole('checkbox'));

@@ -12,6 +12,7 @@
   import { apiFetch } from '../../lib/apiClient';
   import { formatDueDate } from '../../lib/plannerDates';
   import { courseContext } from '../../lib/stores/courseContext';
+  import { numericFieldValue, type NumericFieldBinding } from '../../lib/numericField';
 
   interface Assessment {
     id: string;
@@ -39,7 +40,7 @@
   let { courseId, assessments: initialAssessments, onGraded, onPracticeChange }: Props = $props();
 
   let assessments = $state(initialAssessments);
-  let gradeDrafts = $state<Record<string, { received: string; max: string }>>(
+  let gradeDrafts = $state<Record<string, { received: NumericFieldBinding; max: NumericFieldBinding }>>(
     Object.fromEntries(
       assessments.map((a) => [a.id, { received: a.grade_received?.toString() ?? '', max: a.grade_max?.toString() ?? '' }]),
     ),
@@ -55,7 +56,7 @@
   let draftTitle = $state('');
   let draftType = $state<string>('quiz');
   let draftKind = $state<'official' | 'practice'>('official');
-  let draftWeight = $state('');
+  let draftWeight = $state<NumericFieldBinding>('');
   let draftDue = $state('');
   let draftKcIds = $state<Set<string>>(new Set());
   let addSaving = $state(false);
@@ -118,7 +119,7 @@
   }
 
   let editingId = $state<string | null>(null);
-  let editDraft = $state<{ title: string; type: string; due: string; weight: string; kcIds: Set<string> } | null>(null);
+  let editDraft = $state<{ title: string; type: string; due: string; weight: NumericFieldBinding; kcIds: Set<string> } | null>(null);
   let editSaving = $state(false);
   let editError = $state<string | null>(null);
 
@@ -162,7 +163,7 @@
         due_date: editDraft.due ? new Date(`${editDraft.due}T12:00:00`).toISOString() : null,
         kc_ids: [...editDraft.kcIds],
       };
-      if (a.kind === 'official') body.weight_pct = editDraft.weight === '' ? null : Number(editDraft.weight);
+      if (a.kind === 'official') body.weight_pct = numericFieldValue(editDraft.weight);
       const result = await apiFetch<{
         title: string;
         type: string;
@@ -210,8 +211,8 @@
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            grade_received: draft.received === '' ? null : Number(draft.received),
-            grade_max: draft.max === '' ? null : Number(draft.max),
+            grade_received: numericFieldValue(draft.received),
+            grade_max: numericFieldValue(draft.max),
           }),
         },
         'Save failed',
@@ -272,7 +273,8 @@
         type: draftType,
         kind: draftKind,
       };
-      if (draftKind === 'official' && draftWeight !== '') body.weight_pct = Number(draftWeight);
+      const draftWeightValue = numericFieldValue(draftWeight);
+      if (draftKind === 'official' && draftWeightValue !== null) body.weight_pct = draftWeightValue;
       if (draftDue) body.due_date = new Date(`${draftDue}T12:00:00`).toISOString();
       if (draftKcIds.size > 0) body.kc_ids = [...draftKcIds];
       const result = await apiFetch<Assessment>(

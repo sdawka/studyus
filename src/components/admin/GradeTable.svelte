@@ -1,5 +1,6 @@
 <script lang="ts">
   import { apiFetch } from '../../lib/apiClient';
+  import { numericFieldValue, type NumericFieldBinding } from '../../lib/numericField';
 
   interface Assessment {
     id: string;
@@ -26,7 +27,7 @@
   } = $props();
 
   let assessments = $state<Assessment[]>(initialAssessments);
-  let drafts = $state<Record<string, { received: string; max: string }>>(
+  let drafts = $state<Record<string, { received: NumericFieldBinding; max: NumericFieldBinding }>>(
     Object.fromEntries(
       initialAssessments.map((a) => [a.id, { received: a.gradeReceived?.toString() ?? '', max: a.gradeMax?.toString() ?? '' }]),
     ),
@@ -46,8 +47,8 @@
     feedback = { ...feedback, [assessmentId]: '' };
     try {
       const body: Record<string, number | null> = {};
-      body.grade_received = draft.received === '' ? null : Number(draft.received);
-      body.grade_max = draft.max === '' ? null : Number(draft.max);
+      body.grade_received = numericFieldValue(draft.received);
+      body.grade_max = numericFieldValue(draft.max);
       const result = await apiFetch(
         `/api/v1/assessments/${assessmentId}`,
         { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },

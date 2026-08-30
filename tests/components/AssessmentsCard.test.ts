@@ -116,12 +116,11 @@ describe('rendering', () => {
 });
 
 describe('grade saving — ordinary behavior', () => {
-  // NOTE ON A BRIEF DISCREPANCY: the brief expected clearing both fields to
-  // send `null` for each (contrasted with an explicit "0" below, which sends
-  // 0). That is NOT what happens — see the "NEW FINDING" describe block
-  // further down for why, and for the corrected characterization. This test
-  // pins the real, verified behavior instead: clearing sends 0.
-  it('sends 0 (not null) for both fields when both grade inputs are cleared', async () => {
+  // FIXED (was: clearing sent 0). Svelte's numeric bind:value writes `null`,
+  // not '', so the old `=== ''` guard fell through to Number(null) === 0 and
+  // a cleared grade was saved as a real zero score. Reads now go through
+  // numericFieldValue, so clearing means clearing.
+  it('sends null for both fields when both grade inputs are cleared', async () => {
     render(AssessmentsCard, {
       props: { courseId: 'c1', assessments: [makeAssessment({ grade_received: 80, grade_max: 100 })] },
     });
@@ -129,10 +128,10 @@ describe('grade saving — ordinary behavior', () => {
     const [received, max] = within(row).getAllByRole('spinbutton');
     await fireEvent.input(received, { target: { value: '' } });
     await fireEvent.input(max, { target: { value: '' } });
-    mockApiFetch.mockResolvedValueOnce(okResult({ grade_received: 0, grade_max: 0, mastery_deltas: [] }));
+    mockApiFetch.mockResolvedValueOnce(okResult({ grade_received: null, grade_max: null, mastery_deltas: [] }));
     await fireEvent.click(within(row).getByRole('button', { name: 'Save' }));
     await screen.findByText('Saved.');
-    expect(requestBody(0)).toEqual({ grade_received: 0, grade_max: 0 });
+    expect(requestBody(0)).toEqual({ grade_received: null, grade_max: null });
   });
 
   it('sends 0 (not null) when the grade received field is explicitly "0"', async () => {
@@ -223,28 +222,18 @@ describe('KNOWN BUG: non-finite grade input silently clears an existing grade (c
   });
 });
 
-describe('NEW FINDING (not one of the seven listed claims): every `=== \'\'` empty-guard on a number input is dead code', () => {
-  // Discovered while writing these tests, verified against this project's
-  // actual Svelte/happy-dom runtime (not speculation): for an
-  // `<input type="number" bind:value>`, once the field has been edited via
-  // a real input event, an emptied field does NOT bind back to the string
-  // `''`. Svelte's numeric-binding transform sets the bound variable to the
-  // literal JS `null` instead. `Number(null)` is `0`, so every place in this
-  // component that guards on `draft.x === ''` to mean "field is empty, send
-  // null" silently falls through to `Number(null) = 0` instead. This is a
-  // more far-reaching bug than claim #1 (which only covers overflowing
-  // numerals) and it directly contradicts the brief's "ordinary edge case"
-  // claim that clearing a grade field sends null — verified above, it sends
-  // 0. The same mechanism also hits weight_pct in both the add and edit
-  // forms, pinned below.
+describe('numeric input bindings: emptied fields mean empty, not zero', () => {
+  // For an `<input type="number" bind:value>`, an emptied field does NOT bind
+  // back to the string ''. Svelte writes the literal JS `null`, and
+  // `Number(null)` is 0 — so the component's original `=== ''` guards fell
+  // through and saved a cleared grade or weight as a real zero. Reads now go
+  // through numericFieldValue (src/lib/numericField.ts), and the draft fields
+  // are typed NumericFieldBinding so a string method on one no longer compiles.
   //
-  // Caveat that matters for correct characterization: this only fires once
-  // an `input`/`change` event has actually touched the field. A field left
-  // completely untouched keeps whatever plain-JS string it was initialized
-  // to (e.g. draftWeight's `$state('')`), so `=== ''` still works for a
-  // pristine field — the guard only dies after an edit-then-clear cycle.
+  // A pristine, never-touched field still holds its seeded string, so the last
+  // test here covers that path separately.
 
-  it('leaving Weight % blank after typing into it sends weight_pct: 0 in an official add, instead of omitting the key', async () => {
+  it('leaving Weight % blank after typing into it omits weight_pct from an official add', async () => {
     render(AssessmentsCard, { props: { courseId: 'c1', assessments: [] } });
     await fireEvent.click(screen.getByRole('button', { name: '+ Add assessment' }));
     await fireEvent.input(screen.getByPlaceholderText('Title'), { target: { value: 'Weighted quiz' } });
@@ -255,10 +244,10 @@ describe('NEW FINDING (not one of the seven listed claims): every `=== \'\'` emp
     await fireEvent.click(screen.getByRole('button', { name: /^Add$/ }));
     await screen.findByText('Weighted quiz');
     const body = requestBody(0) as Record<string, unknown>;
-    expect(body.weight_pct).toBe(0);
+    expect('weight_pct' in body).toBe(false);
   });
 
-  it('clearing a previously-set Weight % in the edit form sends weight_pct: 0, not null', async () => {
+  it('clearing a previously-set Weight % in the edit form sends weight_pct: null', async () => {
     render(AssessmentsCard, {
       props: { courseId: 'c1', assessments: [makeAssessment({ id: 'a1', title: 'Weighted row', weight_pct: 10 })] },
     });
@@ -266,12 +255,11 @@ describe('NEW FINDING (not one of the seven listed claims): every `=== \'\'` emp
     const editForm = rowFor('Weighted row').nextElementSibling as HTMLElement;
     const weightInput = within(editForm).getByPlaceholderText('Weight %');
     await fireEvent.input(weightInput, { target: { value: '' } });
-    mockApiFetch.mockResolvedValueOnce(okResult({ title: 'Weighted row', type: 'quiz', due_date: null, weight_pct: 0, kc_ids: [] }));
+    mockApiFetch.mockResolvedValueOnce(okResult({ title: 'Weighted row', type: 'quiz', due_date: null, weight_pct: null, kc_ids: [] }));
     await fireEvent.click(within(editForm).getByRole('button', { name: /sav/i }));
     await vi.waitFor(() => expect(mockApiFetch).toHaveBeenCalledTimes(1));
     const body = requestBody(0) as Record<string, unknown>;
-    expect(body.weight_pct).toBe(0);
-    expect(body.weight_pct).not.toBeNull();
+    expect(body.weight_pct).toBeNull();
   });
 
   it('by contrast, a pristine (never-touched) Weight % field still omits the key on add — the guard only dies after an edit-then-clear cycle', async () => {
