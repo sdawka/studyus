@@ -71,8 +71,8 @@
     <div class="empty-state">
       <p class="empty-title">Nothing here yet</p>
       <p class="empty-body">
-        When an absorb session's tutor flags a wrong belief and you accept the correction, it lands
-        here — then resurfaces on a spaced schedule until you mark it internalized.
+        Corrections you accept during an absorb session land here, and resurface now and then
+        until you mark them internalized.
       </p>
     </div>
   {:else}
