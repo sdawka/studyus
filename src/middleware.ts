@@ -9,6 +9,7 @@ import { resolveSignupMethod } from './lib/analytics/identity';
 import { queueBehavioralEvent } from './lib/analytics/server';
 import { readAnalyticsCorrelation, readTrialHandoff } from './lib/analytics/session';
 import { hasUsableCourse } from './lib/services/onboarding';
+import { needsUsableCourseCheck, onboardingRedirect } from './lib/onboardingRoute';
 
 const PUBLIC_PAGE_PATHS = new Set(['/', '/login', '/sign-in', '/sign-up', '/compare', '/how-it-works']);
 
@@ -41,15 +42,6 @@ function isAuthIndependentPath(pathname: string): boolean {
   );
 }
 
-function isOnboardingAllowed(pathname: string): boolean {
-  return (
-    pathname === '/onboarding' ||
-    pathname.startsWith('/account') ||
-    pathname === '/settings' ||
-    pathname.startsWith('/sign-in') ||
-    pathname.startsWith('/sign-up')
-  );
-}
 
 /**
  * Clerk owns authentication; this middleware resolves that identity to the
@@ -114,9 +106,10 @@ const authenticatedRequest = clerkMiddleware(async (auth, context, next) => {
     return clerkAuth.redirectToSignIn({ returnBackUrl: context.url.href });
   }
 
-  if (user && !isApiPath(pathname) && !isPublicPage(pathname) && !isOnboardingAllowed(pathname)) {
+  if (user && !isApiPath(pathname) && !isPublicPage(pathname) && needsUsableCourseCheck(pathname)) {
     const usable = user.onboardedAt ? await hasUsableCourse(getDb(env.DB), user.id) : false;
-    if (!user.onboardedAt || !usable) return context.redirect('/onboarding');
+    const destination = onboardingRedirect(pathname, { onboarded: Boolean(user.onboardedAt), hasUsableCourse: usable });
+    if (destination) return context.redirect(destination);
   }
 
   return next();
