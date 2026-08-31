@@ -33,11 +33,11 @@ describe('reviewed onboarding template catalog', () => {
   });
 
   it('searches metadata and KC names without exposing authored answer data', () => {
-    const results = searchReviewedTemplates('fluid properties');
+    const { results } = searchReviewedTemplates('fluid properties');
     expect(results.map((course) => course.template_id)).toContain('chee-314-fluid-mechanics');
-    expect(searchReviewedTemplates('CHEE 314')[0]?.code).toBe('CHEE 314');
-    expect(searchReviewedTemplates('comp202')[0]?.template_id).toBe('mcgill-comp-202');
-    expect(searchReviewedTemplates('programming variables').map((course) => course.template_id)).toContain('mcgill-comp-202');
-    expect(searchReviewedTemplates('computer science', { level: 'graduate', limit: 25 }).every((course) => course.levels?.includes('graduate') || course.level === 'graduate')).toBe(true);
+    expect(searchReviewedTemplates('CHEE 314').results[0]?.code).toBe('CHEE 314');
+    expect(searchReviewedTemplates('comp202').results[0]?.template_id).toBe('mcgill-comp-202');
+    expect(searchReviewedTemplates('programming variables').results.map((course) => course.template_id)).toContain('mcgill-comp-202');
+    expect(searchReviewedTemplates('computer science', { level: 'graduate', limit: 25 }).results.every((course) => course.levels?.includes('graduate') || course.level === 'graduate')).toBe(true);
   });
 });

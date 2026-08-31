@@ -192,8 +192,22 @@ type SearchRow = {
   normalizedCode: string;
   compactCode: string;
   normalizedTitle: string;
+  /** Precomputed collation key; see codeSortKey. */
+  sortKey: string;
   authored: boolean;
 };
+
+/**
+ * A plain-comparable stand-in for localeCompare(numeric) on a course code.
+ *
+ * Ordering ~10,000 codes through Intl collation costs tens of milliseconds of
+ * worker CPU on every request. Zero-padding each digit run instead keeps
+ * "COMP 2" before "COMP 10" while reducing the comparison to a string compare,
+ * and the key is built once per isolate rather than once per comparison.
+ */
+function codeSortKey(code: string): string {
+  return code.toLowerCase().replace(/\d+/g, (digits) => digits.padStart(6, '0'));
+}
 
 function searchRow(
   summary: ReviewedTemplateSummary,
@@ -218,6 +232,7 @@ function searchRow(
     normalizedCode,
     compactCode: normalizedCode.replaceAll(' ', ''),
     normalizedTitle: normalizeSearchText(summary.title),
+    sortKey: codeSortKey(summary.code),
     authored,
   };
 }
@@ -257,22 +272,45 @@ const catalogSearchRows = (rawMcGillCatalog.courses as RawCatalogCourse[]).map((
 ));
 const templateSearchRows = [...authoredSearchRows, ...catalogSearchRows];
 
+export type TemplateSearchResult = {
+  /** The ranked window, bounded by options.limit. */
+  results: ReviewedTemplateSummary[];
+  /** Every match, so callers can report a count the window does not cap. */
+  total: number;
+  truncated: boolean;
+};
+
 /**
  * Search the reviewed catalog by code, title, aliases, department, or KC
  * names. Matching happens server-side so a large catalog does not need to be
  * downloaded in full just to populate onboarding search results.
+ *
+ * Returns the total alongside the window: a caller that only sees the window
+ * cannot tell 100 matches from 1,700, and the onboarding picker reports the
+ * count to the learner.
  */
-export function searchReviewedTemplates(query = '', options: { level?: CourseMeta['level']; limit?: number } = {}) {
+export function searchReviewedTemplates(
+  query = '',
+  options: { level?: CourseMeta['level']; limit?: number } = {},
+): TemplateSearchResult {
   const normalized = normalizeSearchText(query);
   const terms = normalized ? normalized.split(' ') : [];
   const matches = templateSearchRows
     .filter(({ summary }) => !options.level || summary.level === options.level || summary.levels?.includes(options.level))
     .filter(({ searchable, compactCode }) => !normalized
-      || terms.every((term) => searchable.includes(term) || compactCode.includes(term)))
-    .sort((a, b) => searchRank(b, normalized) - searchRank(a, normalized)
-      || a.summary.code.localeCompare(b.summary.code, undefined, { numeric: true, sensitivity: 'base' }))
-    .map(({ summary }) => summary);
-  return options.limit && options.limit > 0 ? matches.slice(0, options.limit) : matches;
+      || terms.every((term) => searchable.includes(term) || compactCode.includes(term)));
+
+  // Rank once per row rather than twice per comparison.
+  const ranked = matches
+    .map((row) => ({ row, rank: searchRank(row, normalized) }))
+    .sort((a, b) => b.rank - a.rank || (a.row.sortKey < b.row.sortKey ? -1 : a.row.sortKey > b.row.sortKey ? 1 : 0));
+
+  const limit = options.limit && options.limit > 0 ? options.limit : ranked.length;
+  return {
+    results: ranked.slice(0, limit).map(({ row }) => row.summary),
+    total: ranked.length,
+    truncated: ranked.length > limit,
+  };
 }
 
 function searchRank(row: SearchRow, query: string): number {
