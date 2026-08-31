@@ -20,7 +20,17 @@ export const GET: APIRoute = async ({ url }) =>
     );
     // `total` counts every match, not just the returned window, so the picker
     // can say how many courses matched instead of capping at the page size.
+    // `private`, because this is an authenticated endpoint: the body is the
+    // same for every learner, but a shared cache has no business storing a
+    // response that middleware gated on a Clerk session.
+    //
+    // The short window is deliberate. This previously carried
+    // `stale-while-revalidate=86400`, which let a browser serve a day-old
+    // answer instantly — so seeding the catalogue into D1 did not reach anyone
+    // who had searched in the preceding 24 hours. The catalogue is seeded, not
+    // migrated, so "the data just appeared" is a normal event here and the
+    // cache must not outlive it by much.
     return apiOk({ courses: results, total, truncated }, {
-      headers: { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=86400' },
+      headers: { 'Cache-Control': 'private, max-age=60' },
     });
   });

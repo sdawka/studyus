@@ -4,6 +4,7 @@ import { getDb } from '../src/db/client';
 import { createCourseSearchIndex, searchCourseCatalog } from '../src/lib/courseSearch';
 import { searchReviewedTemplates } from '../src/lib/content/templateCatalog';
 import { seedCatalogSample } from './setup/seed-catalog';
+import { GET as templatesRoute } from '../src/pages/api/v1/onboarding/templates/index';
 
 const db = getDb(env.DB);
 
@@ -76,5 +77,30 @@ describe('course codes sort numerically, not lexically', () => {
 
     expect(numbers.length).toBeGreaterThan(10);
     expect(numbers).toEqual([...numbers].sort((a, b) => a - b));
+  });
+});
+
+// The catalogue is seeded, not migrated, so "the rows just appeared" is a
+// normal event for this endpoint. It once sent
+// `public, max-age=300, stale-while-revalidate=86400`, which let a browser
+// serve a day-old answer instantly — seeding D1 in production then reached
+// nobody who had searched in the preceding 24 hours, with no error to show for
+// it. It is also an authenticated route, so `public` invited shared caches to
+// store a response the middleware had gated on a Clerk session.
+describe('template search caching does not outlive a reseed', () => {
+  it('is private and short-lived, with no stale-while-revalidate window', async () => {
+    const res = await templatesRoute({
+      url: new URL('http://local.test/api/v1/onboarding/templates?q=comp'),
+      locals: { user: { id: 'user_cache_probe' } },
+    } as any);
+
+    const cacheControl = res.headers.get('Cache-Control') ?? '';
+    expect(res.status).toBe(200);
+    expect(cacheControl).toContain('private');
+    expect(cacheControl).not.toContain('public');
+    expect(cacheControl).not.toContain('stale-while-revalidate');
+
+    const maxAge = Number(/max-age=(\d+)/.exec(cacheControl)?.[1] ?? NaN);
+    expect(maxAge).toBeLessThanOrEqual(300);
   });
 });
