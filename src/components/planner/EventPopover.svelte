@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CalendarItem } from '../../lib/types/calendar';
+  import type { CalendarItem, CalendarItemType } from '../../lib/types/calendar';
   import { apiFetch } from '../../lib/apiClient';
   import { captureBehavioralEvent, currentAnalyticsSurface } from '../../lib/analytics/client';
   import { taskCheckedEvent } from '../../lib/analytics/engagement';
@@ -61,20 +61,23 @@
 
   const hue = $derived(course ? hueFor({ slug: course.slug, color: course.color === null ? null : String(course.color) }) : 220);
 
-  const typeLabel = $derived.by(() => {
-    switch (item.type) {
-      case 'assessment_due':
-        return 'Assessment due';
-      case 'task_due':
-        return 'Task due';
-      case 'study_session':
-        return 'Study session';
-      case 'event_logged':
-        return 'Logged event';
-      case 'class_session':
-        return 'Class session';
-    }
-  });
+  // A Record rather than a switch: TypeScript fails the build when a new
+  // CalendarItemType is added without a label here, which a switch with no
+  // default silently allowed (external_event shipped with a blank pill).
+  const TYPE_LABELS: Record<CalendarItemType, string> = {
+    assessment_due: 'Assessment due',
+    task_due: 'Task due',
+    study_session: 'Study session',
+    event_logged: 'Logged event',
+    class_session: 'Class session',
+    external_event: 'Imported event',
+  };
+  const typeLabel = $derived(TYPE_LABELS[item.type]);
+
+  // all_day items have no meaningful clock time — the ISO date is a noon
+  // anchor, not an instant — so rendering a range would be a fabrication.
+  // AgendaList and dashboard/WeekView already suppress the time for these.
+  const whenLabel = $derived(item.all_day ? 'All day' : calendarItemTimeLabel(item));
 
   // Manual-source logged events can be deleted from here; seeded/session/tutor
   // events and deadlines cannot. study_session has its own DELETE endpoint
@@ -336,7 +339,7 @@
 </script>
 
 {#snippet body()}
-  <p class="pop-time num">{calendarItemTimeLabel(item)}</p>
+  <p class="pop-time num">{whenLabel}</p>
   <div class="pop-meta">
     {#if course}
       <span class="chip pop-chip">{course.code}</span>

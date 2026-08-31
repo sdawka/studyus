@@ -155,23 +155,29 @@ describe('type label per CalendarItemType', () => {
     expect(screen.getByText(label)).toBeTruthy();
   });
 
-  it('BUG (pinned): external_event renders a blank type pill because the typeLabel switch has no case for it', () => {
+  it('renders a real type pill for external_event rather than a blank one', () => {
     const { container } = renderPopover({ item: makeItem({ type: 'external_event' }) });
     for (const [, label] of cases) {
       expect(screen.queryByText(label)).toBeNull();
     }
     const pill = container.querySelector('.pill-idle');
     expect(pill).not.toBeNull();
-    expect(pill?.textContent).toBe('');
+    expect(pill?.textContent?.trim()).toBe('Imported event');
   });
 });
 
-describe('all_day is never read', () => {
-  it('BUG (pinned): an all_day:true item still renders a clock time instead of an "all day" label', () => {
+describe('all_day items', () => {
+  it('an all_day:true item renders an "All day" label instead of a clock time', () => {
     const item = makeItem({ type: 'assessment_due', all_day: true, date: '2026-08-20T15:00:00.000Z', end_date: null });
     renderPopover({ item });
-    const expectedLabel = calendarItemTimeLabel(item);
-    expect(screen.getByText(expectedLabel)).toBeTruthy();
+    expect(screen.getByText(/all day/i)).toBeTruthy();
+    expect(screen.queryByText(calendarItemTimeLabel(item))).toBeNull();
+  });
+
+  it('an all_day:false item still renders its clock time', () => {
+    const item = makeItem({ type: 'assessment_due', all_day: false, date: '2026-08-20T15:00:00.000Z', end_date: null });
+    renderPopover({ item });
+    expect(screen.getByText(calendarItemTimeLabel(item))).toBeTruthy();
     expect(screen.queryByText(/all day/i)).toBeNull();
   });
 });
