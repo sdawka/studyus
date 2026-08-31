@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# A new push supersedes the run in flight for the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # `wrangler types` regenerates the env bindings before astro check, so a
+      # binding added to wrangler.jsonc without matching code fails here.
+      - name: Types
+        run: npm run check:types
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # Guards the doc/annotation invariants. Its live half needs a running
+      # server and skips on its own; check:layout is excluded outright for the
+      # same reason, and belongs with the Playwright suite rather than here.
+      - name: Annotations
+        run: npm run check:annotations
