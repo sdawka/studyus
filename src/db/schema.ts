@@ -87,7 +87,8 @@ export const courses = sqliteTable(
     templateRevision: text('template_revision'),
     templateSyncedAt: integer('template_synced_at'),
     templateBaseline: text('template_baseline', { mode: 'json' }),
-    slug: text('slug').notNull().unique(),
+    // Unique per learner, not globally: see courses_user_slug_unique below.
+    slug: text('slug').notNull(),
     title: text('title').notNull(),
     // Holds fractional values despite the integer() declaration: the McGill
     // catalog has 678 courses at 0.25-17.33 credits, and SQLite's INTEGER
@@ -109,7 +110,15 @@ export const courses = sqliteTable(
     setupState: text('setup_state', { enum: ['draft', 'active'] }).notNull().default('active'),
     createdAt: createdAt(),
   },
-  (table) => [index('courses_user_template_idx').on(table.userId, table.templateId)],
+  (table) => [
+    index('courses_user_template_idx').on(table.userId, table.templateId),
+    // Course slugs were globally unique, so the second learner to add CS 101
+    // got /courses/cs-101-2 and the third got cs-101-3 — the suffix counted
+    // how many other accounts held that code, and course URLs depended on
+    // strangers' data. Scope it per user, matching kcs_course_slug_unique and
+    // capabilities_user_slug_unique. getCourseBySlug already filters by user.
+    uniqueIndex('courses_user_slug_unique').on(table.userId, table.slug),
+  ],
 );
 
 export const branches = sqliteTable('branches', {

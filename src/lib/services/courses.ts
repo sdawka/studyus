@@ -20,19 +20,40 @@ function slugify(code: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-// Collision suffixing: -2, -3, ... appended to the base slug. One LIKE query
-// fetches every slug that could collide, then the smallest free suffix is
-// picked in memory (cheaper than a query per candidate).
-async function uniqueSlug(db: Db, base: string): Promise<string> {
-  const rows = await db
-    .select({ slug: courses.slug })
-    .from(courses)
-    .where(like(courses.slug, `${base}%`));
-  const taken = new Set(rows.map((r) => r.slug));
+// Collision suffixing: -2, -3, ... appended to the base slug.
+function nextFreeSlug(taken: ReadonlySet<string>, base: string): string {
   if (!taken.has(base)) return base;
   let n = 2;
   while (taken.has(`${base}-${n}`)) n++;
   return `${base}-${n}`;
+}
+
+// Scoped to one learner. Slugs used to be globally unique, so the suffix
+// counted how many *other* accounts held the same course code — one learner's
+// URL depended on strangers' data. One LIKE query fetches every slug of theirs
+// that could collide, then the smallest free suffix is picked in memory.
+async function uniqueSlug(db: Db, userId: string, base: string): Promise<string> {
+  const rows = await db
+    .select({ slug: courses.slug })
+    .from(courses)
+    .where(and(eq(courses.userId, userId), like(courses.slug, `${base}%`)));
+  return nextFreeSlug(new Set(rows.map((r) => r.slug)), base);
+}
+
+/**
+ * A slug allocator for a caller creating several courses at once, which the
+ * per-call uniqueSlug cannot serve: those courses are not committed yet, so
+ * they are invisible to a query and would collide with each other. Reads the
+ * learner's slugs once, then reserves each name as it hands it out.
+ */
+export async function courseSlugAllocator(db: Db, userId: string): Promise<(code: string) => string> {
+  const rows = await db.select({ slug: courses.slug }).from(courses).where(eq(courses.userId, userId));
+  const taken = new Set(rows.map((row) => row.slug));
+  return (code: string) => {
+    const slug = nextFreeSlug(taken, slugify(code) || 'course');
+    taken.add(slug);
+    return slug;
+  };
 }
 
 // `courses.meetingDays` is a text column storing a JSON array of ISO weekday
@@ -156,7 +177,7 @@ export async function getCourseBySlug(db: Db, userId: string, slug: string) {
 // branch (sort_order 0) are inserted in one db.batch so a course never
 // exists without at least one branch.
 export async function createCourse(db: Db, userId: string, input: CreateCourseInput) {
-  const slug = await uniqueSlug(db, slugify(input.code));
+  const slug = await uniqueSlug(db, userId, slugify(input.code));
 
   let hue = input.color_hue;
   if (hue === undefined) {
