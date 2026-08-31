@@ -120,7 +120,10 @@
 
   bindPopoverDismiss({
     isOpen: () => true,
-    close: onClose,
+    // Called inside a closure, not passed by value: reading the prop at setup
+    // time would pin whichever function identity the parent happened to have
+    // on first render (state_referenced_locally).
+    close: () => onClose(),
     anchorEl: () => panelEl,
   });
 
@@ -269,6 +272,15 @@
   }
 
   // --- class_session quick actions (v1.6) -----------------------------------
+  // Both mutations below are last-request-wins. Nothing stops a second
+  // request starting before the first settles (the buttons only go disabled
+  // after a DOM flush), so a response that has been superseded must not roll
+  // back, raise an error, or clear the busy flag on behalf of the request
+  // that replaced it. Same fix as AssessmentsCard's in-flight-state-by-row
+  // change: stop keying in-flight identity with a shared scalar. There is
+  // only ever one class_session in a popover, so the identity that matters
+  // here is the request, not the row.
+  let statusSeq = 0;
   let statusUpdating = $state(false);
   let statusError = $state<string | null>(null);
 
@@ -276,6 +288,7 @@
     if (item.type !== 'class_session') return;
     const prevStatus = (item.details?.status as 'attended' | 'missed' | null | undefined) ?? null;
     if (prevStatus === next) return;
+    const seq = ++statusSeq;
     statusUpdating = true;
     statusError = null;
     item.details = { ...item.details, status: next };
@@ -299,25 +312,35 @@
         },
         'Could not update attendance.',
       );
+      if (seq !== statusSeq) return; // superseded by a later click
       if (!result.ok) {
         item.details = { ...item.details, status: prevStatus };
         onItemUpdated?.(item.id, { details: { status: prevStatus } });
         statusError = result.error;
       }
     } finally {
-      statusUpdating = false;
+      if (seq === statusSeq) statusUpdating = false;
     }
   }
 
-  let noteDraft = $state(typeof item.details?.note === 'string' ? (item.details.note as string) : '');
+  // The draft is an override, not a copy: `null` means "showing whatever is
+  // saved". Seeding $state from item.details.note instead forked the draft
+  // from the prop at init time (state_referenced_locally) and made a failed
+  // save overwrite text the user had typed while the request was in flight.
+  let noteDraft = $state<string | null>(null);
+  const savedNote = $derived(typeof item.details?.note === 'string' ? (item.details.note as string) : '');
+  const noteValue = $derived(noteDraft ?? savedNote);
+  const noteDirty = $derived(noteValue !== savedNote);
+  let noteSeq = 0;
   let savingNote = $state(false);
   let noteError = $state<string | null>(null);
-  const noteDirty = $derived(noteDraft !== (typeof item.details?.note === 'string' ? item.details.note : ''));
 
   async function saveNote() {
     if (item.type !== 'class_session') return;
     const prevNote: string | null = typeof item.details?.note === 'string' ? (item.details.note as string) : null;
-    const next = noteDraft.trim() ? noteDraft : null;
+    const draftAtSave = noteValue;
+    const next = draftAtSave.trim() ? draftAtSave : null;
+    const seq = ++noteSeq;
     savingNote = true;
     noteError = null;
     item.details = { ...item.details, note: next };
@@ -332,14 +355,20 @@
         },
         'Could not save note.',
       );
+      if (seq !== noteSeq) return; // superseded by a later save
       if (!result.ok) {
+        // Roll back the item, never the textarea — the draft is the user's
+        // unsaved work and is what they would retry with.
         item.details = { ...item.details, note: prevNote };
         onItemUpdated?.(item.id, { details: { note: prevNote } });
         noteError = result.error;
-        noteDraft = prevNote ?? '';
+        return;
       }
+      // Drop the override so the field tracks the saved value again, unless
+      // the user has typed since this save started.
+      if (noteDraft === draftAtSave) noteDraft = null;
     } finally {
-      savingNote = false;
+      if (seq === noteSeq) savingNote = false;
     }
   }
 </script>
@@ -398,7 +427,13 @@
     {#if statusError}<p class="pop-error">{statusError}</p>{/if}
     <label class="field">
       <span class="field-label">Note</span>
-      <textarea bind:value={noteDraft} rows="2" maxlength="2000" placeholder="Add a note…"></textarea>
+      <textarea
+        value={noteValue}
+        oninput={(e) => (noteDraft = e.currentTarget.value)}
+        rows="2"
+        maxlength="2000"
+        placeholder="Add a note…"
+      ></textarea>
     </label>
     <button type="button" class="btn btn-secondary" onclick={saveNote} disabled={savingNote || !noteDirty}>
       {savingNote ? 'Saving…' : 'Save note'}
