@@ -1,5 +1,6 @@
 <script lang="ts">
   import { apiFetch } from '../../lib/apiClient';
+  import { numericFieldValue, type NumericFieldBinding } from '../../lib/numericField';
 
   // Reusable event timeline island. Fetches from the events API and
   // self-refreshes after any mutation — no props out, no events emitted.
@@ -65,7 +66,7 @@
   let editingId = $state<string | null>(null);
   let editType = $state('');
   let editTs = $state('');
-  let editScore = $state('');
+  let editScore = $state<NumericFieldBinding>('');
   let editNote = $state('');
   let busyId = $state<string | null>(null);
 
@@ -116,7 +117,8 @@
     busyId = event.id;
     try {
       const payload: Record<string, unknown> = { ...event.payload };
-      if (editScore.trim() !== '') payload.score = Number(editScore);
+      const scoreValue = numericFieldValue(editScore);
+      if (scoreValue !== null) payload.score = scoreValue;
       else delete payload.score;
       if (editNote.trim() !== '') payload.note = editNote.trim();
       else delete payload.note;

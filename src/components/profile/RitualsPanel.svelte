@@ -16,6 +16,7 @@
   import { onMount } from 'svelte';
   import { apiFetch } from '../../lib/apiClient';
   import { pushToast } from '../../lib/stores/toast';
+  import { numericFieldValue, type NumericFieldBinding } from '../../lib/numericField';
   import type { RitualCadence, RitualKind, RitualResponse, RitualStepKind } from '../../lib/schemas/rituals';
 
   interface Props {
@@ -119,7 +120,7 @@
   let kind = $state<RitualKind>('recurring');
   let cadence = $state<Extract<RitualCadence, 'daily' | 'weekly'> | ''>('daily');
   let selectedWeekdays = $state<number[]>([]);
-  let steps = $state<{ kind: RitualStepKind; label: string; minutes: string }[]>([]);
+  let steps = $state<{ kind: RitualStepKind; label: string; minutes: NumericFieldBinding }[]>([]);
   let newStepKind = $state<RitualStepKind>('warmup');
   let saving = $state(false);
   let formError = $state<string | null>(null);
@@ -193,7 +194,7 @@
       body.steps = steps.map((s) => ({
         kind: s.kind,
         ...(s.label.trim() ? { label: s.label.trim() } : {}),
-        ...(s.minutes.trim() ? { minutes: Number(s.minutes) } : {}),
+        ...(numericFieldValue(s.minutes) !== null ? { minutes: numericFieldValue(s.minutes)! } : {}),
       }));
     }
 

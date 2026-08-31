@@ -5,6 +5,7 @@
   // one atomic terminal command; discard has its own evidence-free route.
   import { onMount } from 'svelte';
   import { apiFetch } from '../../lib/apiClient';
+  import { numericFieldValue, type NumericFieldBinding } from '../../lib/numericField';
   import { captureBehavioralEvent } from '../../lib/analytics/client';
   import { createPracticeAnalytics, installPageExitAbandonment } from '../../lib/analytics/learning';
   import { EVENT_TYPES, type EventType } from '../../lib/schemas/events';
@@ -75,7 +76,7 @@
 
   let selectedCourse = $state<Course | null>(preselected);
   let plannedMinutes = $state(25);
-  let customMinutes = $state('');
+  let customMinutes = $state<NumericFieldBinding>('');
   let intendedType = $state<StudyType['value'] | null>(null);
   let selectedRitual = $state<RitualOption | null>(null);
 
@@ -197,8 +198,8 @@
   }
 
   function useCustomMinutes() {
-    const n = Number(customMinutes);
-    if (n > 0) pickDuration(n);
+    const n = numericFieldValue(customMinutes);
+    if (n !== null && n > 0) pickDuration(n);
   }
 
   function pickType(type: StudyType['value']) {
