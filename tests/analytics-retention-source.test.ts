@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import attendanceCardSource from '../src/components/standing/AttendanceCard.svelte?raw';
-import eventPopoverSource from '../src/components/planner/EventPopover.svelte?raw';
+import classSessionActionsSource from '../src/components/planner/event-popover/ClassSessionActions.svelte?raw';
 import calendarSettingsSource from '../src/components/settings/CalendarIntegrationSettings.svelte?raw';
 import appearanceSettingsSource from '../src/components/settings/AppearanceSettings.svelte?raw';
 import privacySettingsSource from '../src/components/settings/AnalyticsPrivacySettings.svelte?raw';
@@ -13,9 +13,12 @@ import courseRouteSource from '../src/pages/api/v1/courses/[slug].ts?raw';
 describe('retention analytics wiring', () => {
   it('covers both maintained attendance controls at the successful mutation boundary', () => {
     expect(attendanceCardSource).toContain('/api/v1/class-sessions/${session.id}');
-    expect(eventPopoverSource).toContain('/api/v1/class-sessions/${item.id}');
+    expect(classSessionActionsSource).toContain('/api/v1/class-sessions/${item.id}');
     expect(attendanceCardSource).toContain("'X-Studyus-Analytics-Surface': '/standing'");
-    expect(eventPopoverSource).toContain("'X-Studyus-Analytics-Surface': '/planner'");
+    // The popover mounts on both /planner and /dashboard, so it reports the
+    // live surface instead of a literal — see EventPopover.test.ts.
+    expect(classSessionActionsSource).toContain('const surface = currentAnalyticsSurface()');
+    expect(classSessionActionsSource).toContain("{ 'X-Studyus-Analytics-Surface': surface }");
     expect(attendanceRouteSource.indexOf('updateClassSessionStatus(')).toBeLessThan(
       attendanceRouteSource.indexOf('attendanceToggledEvent('),
     );

@@ -67,6 +67,14 @@ function networkErr(error: string = NETWORK_ERROR_MESSAGE): ApiResult<never> {
   return { ok: false, error, reason: 'network' };
 }
 
+// Lets a resolved-but-not-yet-observed promise chain run to completion (plus
+// Svelte's own flush) without asserting on anything in particular — used to
+// prove that a late response does NOT change the DOM.
+async function flushMicrotasks() {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((res) => {
@@ -155,23 +163,29 @@ describe('type label per CalendarItemType', () => {
     expect(screen.getByText(label)).toBeTruthy();
   });
 
-  it('BUG (pinned): external_event renders a blank type pill because the typeLabel switch has no case for it', () => {
+  it('renders a real type pill for external_event rather than a blank one', () => {
     const { container } = renderPopover({ item: makeItem({ type: 'external_event' }) });
     for (const [, label] of cases) {
       expect(screen.queryByText(label)).toBeNull();
     }
     const pill = container.querySelector('.pill-idle');
     expect(pill).not.toBeNull();
-    expect(pill?.textContent).toBe('');
+    expect(pill?.textContent?.trim()).toBe('Imported event');
   });
 });
 
-describe('all_day is never read', () => {
-  it('BUG (pinned): an all_day:true item still renders a clock time instead of an "all day" label', () => {
+describe('all_day items', () => {
+  it('an all_day:true item renders an "All day" label instead of a clock time', () => {
     const item = makeItem({ type: 'assessment_due', all_day: true, date: '2026-08-20T15:00:00.000Z', end_date: null });
     renderPopover({ item });
-    const expectedLabel = calendarItemTimeLabel(item);
-    expect(screen.getByText(expectedLabel)).toBeTruthy();
+    expect(screen.getByText(/all day/i)).toBeTruthy();
+    expect(screen.queryByText(calendarItemTimeLabel(item))).toBeNull();
+  });
+
+  it('an all_day:false item still renders its clock time', () => {
+    const item = makeItem({ type: 'assessment_due', all_day: false, date: '2026-08-20T15:00:00.000Z', end_date: null });
+    renderPopover({ item });
+    expect(screen.getByText(calendarItemTimeLabel(item))).toBeTruthy();
     expect(screen.queryByText(/all day/i)).toBeNull();
   });
 });
@@ -573,7 +587,8 @@ describe('setClassStatus — class_session attendance', () => {
     return makeItem({ type: 'class_session', details: { status, note: null, source: 'seed', task_id: null, start_min: 540, end_min: 600 } });
   }
 
-  it('success: marks attended, sends the hardcoded /planner analytics-surface header, reports the patch', async () => {
+  it('success: marks attended, sends the current analytics surface as a header, reports the patch', async () => {
+    currentAnalyticsSurfaceMock.mockReturnValue('/planner');
     apiFetchMock.mockResolvedValueOnce(ok({}));
     const { onItemUpdated } = renderPopover({ item: classItem(null) });
     await fireEvent.click(screen.getByRole('button', { name: /attended/i }));
@@ -590,13 +605,24 @@ describe('setClassStatus — class_session attendance', () => {
     );
   });
 
-  it('BUG (pinned): sends the hardcoded X-Studyus-Analytics-Surface: /planner header even though this component also mounts from dashboard/WeekView', async () => {
+  it('reports the surface it is actually mounted on, not a hardcoded /planner', async () => {
+    currentAnalyticsSurfaceMock.mockReturnValue('/dashboard'); // simulates the WeekView mounting context
     apiFetchMock.mockResolvedValueOnce(ok({}));
-    renderPopover({ item: classItem(null), plannerLink: '/planner?event=item-1' }); // simulates the WeekView mounting context
+    renderPopover({ item: classItem(null), plannerLink: '/planner?event=item-1' });
     await fireEvent.click(screen.getByRole('button', { name: /missed/i }));
     await waitFor(() => expect(apiFetchMock).toHaveBeenCalled());
     const headers = (apiFetchMock.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
-    expect(headers['X-Studyus-Analytics-Surface']).toBe('/planner');
+    expect(headers['X-Studyus-Analytics-Surface']).toBe('/dashboard');
+  });
+
+  it('omits the surface header entirely when no analytics surface is known', async () => {
+    currentAnalyticsSurfaceMock.mockReturnValue(undefined);
+    apiFetchMock.mockResolvedValueOnce(ok({}));
+    renderPopover({ item: classItem(null) });
+    await fireEvent.click(screen.getByRole('button', { name: /missed/i }));
+    await waitFor(() => expect(apiFetchMock).toHaveBeenCalled());
+    const headers = (apiFetchMock.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
+    expect(headers).toEqual({ 'content-type': 'application/json' });
   });
 
   it('no-op guard: clicking the already-active status does nothing (no request, no callback)', async () => {
@@ -615,6 +641,7 @@ describe('setClassStatus — class_session attendance', () => {
   });
 
   it('clicking Clear sends status: null', async () => {
+    currentAnalyticsSurfaceMock.mockReturnValue('/planner');
     apiFetchMock.mockResolvedValueOnce(ok({}));
     const { onItemUpdated } = renderPopover({ item: classItem('attended') });
     await fireEvent.click(screen.getByRole('button', { name: /clear/i }));
@@ -683,6 +710,49 @@ describe('setClassStatus — class_session attendance', () => {
     await Promise.all([p1, p2]);
     expect(apiFetchMock).toHaveBeenCalledTimes(2);
   });
+
+  // Two concurrent status changes are reachable (the test above proves both
+  // requests fire). Whichever the user asked for LAST is the one the UI must
+  // end up reflecting, regardless of the order the responses come back in.
+  it('a superseded request that fails late does not roll back over the newer status', async () => {
+    const first = deferred<ApiResult<unknown>>();
+    const second = deferred<ApiResult<unknown>>();
+    apiFetchMock.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    const item = classItem(null);
+    const { onItemUpdated } = renderPopover({ item });
+    const attendedBtn = screen.getByRole('button', { name: /attended/i }) as HTMLButtonElement;
+    const missedBtn = screen.getByRole('button', { name: /missed/i }) as HTMLButtonElement;
+    await Promise.all([fireEvent.click(attendedBtn), fireEvent.click(missedBtn)]);
+    expect(apiFetchMock).toHaveBeenCalledTimes(2);
+    expect(onItemUpdated).toHaveBeenCalledTimes(2); // one optimistic call each
+
+    second.resolve(ok({})); // the newest request lands first, successfully
+    await waitFor(() => expect(missedBtn.disabled).toBe(false));
+
+    first.resolve(httpErr('Could not update attendance.')); // stale failure arrives late
+    await flushMicrotasks();
+
+    expect(onItemUpdated).toHaveBeenCalledTimes(2); // no rollback fired
+    expect(screen.queryByText('Could not update attendance.')).toBeNull();
+    expect(item.details.status).toBe('missed'); // still what the user last asked for
+  });
+
+  it('a superseded request settling does not clear the in-flight flag the newer request owns', async () => {
+    const first = deferred<ApiResult<unknown>>();
+    const second = deferred<ApiResult<unknown>>();
+    apiFetchMock.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    renderPopover({ item: classItem(null) });
+    const attendedBtn = screen.getByRole('button', { name: /attended/i }) as HTMLButtonElement;
+    const missedBtn = screen.getByRole('button', { name: /missed/i }) as HTMLButtonElement;
+    await Promise.all([fireEvent.click(attendedBtn), fireEvent.click(missedBtn)]);
+
+    first.resolve(ok({})); // the superseded request settles first
+    await flushMicrotasks();
+    expect(missedBtn.disabled).toBe(true); // still busy: the newer request is in flight
+
+    second.resolve(ok({}));
+    await waitFor(() => expect(missedBtn.disabled).toBe(false));
+  });
 });
 
 describe('saveNote — class_session note', () => {
@@ -733,6 +803,9 @@ describe('saveNote — class_session note', () => {
     await waitFor(() => expect(screen.getByText('Could not save note.')).toBeTruthy());
     expect(onItemUpdated).toHaveBeenNthCalledWith(1, 'item-1', { details: { note: 'edited' } });
     expect(onItemUpdated).toHaveBeenNthCalledWith(2, 'item-1', { details: { note: 'original' } });
+    // The draft survives the failure so the save can be retried without retyping.
+    expect(textarea.value).toBe('edited');
+    expect((screen.getByRole('button', { name: 'Save note' }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it('network failure shows the generic message, distinct from the HTTP-failure text', async () => {
@@ -744,7 +817,7 @@ describe('saveNote — class_session note', () => {
     await waitFor(() => expect(screen.getByText(NETWORK_ERROR_MESSAGE)).toBeTruthy());
   });
 
-  it('DATA LOSS (pinned): a failed save overwrites noteDraft with the rolled-back value, discarding whatever the user typed in the meantime', async () => {
+  it('a failed save keeps whatever the user typed while the request was in flight', async () => {
     const { promise, resolve } = deferred<ApiResult<unknown>>();
     apiFetchMock.mockReturnValueOnce(promise);
     renderPopover({ item: classItemWithNote('original') });
@@ -755,9 +828,31 @@ describe('saveNote — class_session note', () => {
     await fireEvent.input(textarea, { target: { value: 'first edit, plus more the user typed while saving' } });
     resolve(httpErr('Could not save note.'));
     await waitFor(() => expect(screen.getByText('Could not save note.')).toBeTruthy());
-    // The in-flight edits are gone — overwritten by the rollback to the
-    // pre-save value, not preserved.
-    expect(textarea.value).toBe('original');
+    // The rollback restores details.note, not the textarea: the user's live
+    // edits survive so the save can simply be retried.
+    expect(textarea.value).toBe('first edit, plus more the user typed while saving');
+  });
+
+  it('a stale save response cannot roll back or error over a newer save that succeeded', async () => {
+    const first = deferred<ApiResult<unknown>>();
+    const second = deferred<ApiResult<unknown>>();
+    apiFetchMock.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    const item = classItemWithNote('original');
+    const { onItemUpdated } = renderPopover({ item });
+    const textarea = screen.getByLabelText('Note') as HTMLTextAreaElement;
+    await fireEvent.input(textarea, { target: { value: 'edited' } });
+    const button = screen.getByRole('button', { name: 'Save note' });
+    await Promise.all([fireEvent.click(button), fireEvent.click(button)]);
+    expect(apiFetchMock).toHaveBeenCalledTimes(2);
+
+    second.resolve(ok({})); // newest lands first
+    await flushMicrotasks();
+    first.resolve(httpErr('Could not save note.')); // stale failure arrives late
+    await flushMicrotasks();
+
+    expect(screen.queryByText('Could not save note.')).toBeNull();
+    expect(onItemUpdated).toHaveBeenCalledTimes(2); // two optimistic calls, no rollback
+    expect(item.details.note).toBe('edited'); // not reverted to 'original'
   });
 
   it('in-flight flag disables the Save button and changes its label', async () => {
