@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import analyticsClientSource from '../src/lib/analytics/client.ts?raw';
 import taskStoreSource from '../src/lib/stores/tasks.ts?raw';
-import plannerSource from '../src/components/planner/EventPopover.svelte?raw';
+import plannerSource from '../src/components/planner/event-popover/TaskDueToggle.svelte?raw';
 import modalSource from '../src/components/events/LogEventModal.svelte?raw';
 import quickEventSource from '../src/components/admin/QuickEventForm.svelte?raw';
 import notificationsSource from '../src/components/shell/NotificationsBell.svelte?raw';

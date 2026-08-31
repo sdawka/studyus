@@ -164,6 +164,9 @@ src/
     onboarding/                           # OnboardingFlow.svelte
     planner/                              # PlannerView, WeekGrid, CalendarGrid, AgendaList, EventPopover,
                                            #   CreateSessionPopover, PlannerRail
+      event-popover/                      #   EventPopover's parts: EventSummary (read-only), TaskDueToggle,
+                                           #   SessionReschedule, ClassSessionActions, EventActions (links +
+                                           #   delete). One mutation each; only the shell writes to `item`.
     settings/                             # AppearanceSettings.svelte, TaskGeneratorSettings.svelte
     shell/                                # AddCourseModal, AvatarMenu, BottomNav (mobile tab bar),
                                            #   CourseContextSetter, Header, HeaderActions, Icon, NotificationsBell,

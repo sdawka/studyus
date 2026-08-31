@@ -135,10 +135,15 @@ collision. Shipped on `cleanup/api-error-wrapper-and-dedup`: the
   files, 1644 lines, no clear seams, sitting alongside the separate
   `lib/calendar/` tree. Deliberately out of scope for the naming fix; needs its
   own pass.
-- [ ] **Decompose two components** — `planner/EventPopover.svelte:124-350` (five
-  handlers each re-rolling try/catch + toast + fetch) and
-  `standing/AssessmentsCard.svelte:41-123` (21 `$state` vars spanning grading,
-  add-form, edit-form, and KC fetch). Extract to `.svelte.ts` rune modules.
+- [ ] **Decompose two components** — `standing/AssessmentsCard.svelte:41-123`
+  (21 `$state` vars spanning grading, add-form, edit-form, and KC fetch) still
+  needs its pass. `planner/EventPopover.svelte` is **done**: split into
+  `planner/event-popover/` (EventSummary, TaskDueToggle, SessionReschedule,
+  ClassSessionActions, EventActions), with the shell keeping the props/events
+  contract, the presentation, and the only writes to `item`. Split into
+  components rather than `.svelte.ts` rune modules as originally sketched —
+  each handler owns markup as well as state, so a module would have left the
+  two halves apart.
 - [x] **Remaining copy fixes** — done. The corrections intro now leads with the
   asset ("Things you used to believe and have corrected"), the framing
   `docs/product/vision.md` and `user-journeys.md` specify and the previous
