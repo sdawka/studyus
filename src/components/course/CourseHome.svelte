@@ -14,6 +14,7 @@
   import { apiFetch } from '../../lib/apiClient';
   import { hydrateTasks, type ApiTask } from '../../lib/stores/tasks';
   import type { UnderstandNextKc } from '../../lib/understandNext';
+  import type { Assessment } from '../../lib/assessments';
   import CourseTasks from './CourseTasks.svelte';
   import UnderstandNext from './UnderstandNext.svelte';
   import UpNextCard from './UpNextCard.svelte';
@@ -28,17 +29,6 @@
     id: string;
     name: string;
     kcs: UnderstandNextKc[];
-  }
-  interface Assessment {
-    id: string;
-    title: string;
-    type: string;
-    kind: 'official' | 'practice';
-    due_date: string | null;
-    weight_pct: number | null;
-    grade_received: number | null;
-    grade_max: number | null;
-    kc_ids: string[];
   }
   interface EventRow {
     id: string;
@@ -104,8 +94,8 @@
 
   // After an inline grade save: refresh the weighted grade AND this island's
   // assessments copy, so Standing's "N of M graded" and Coming up stay in
-  // step. Safe to swap the prop under AssessmentsCard — it copies
-  // `assessments` into its own $state once at mount and never re-reads it.
+  // step. AssessmentsCard renders from this prop rather than a copy forked at
+  // mount, so the refreshed array supersedes whatever it was showing.
   async function refetchAfterGrade() {
     const [gradesResult, assessmentsResult] = await Promise.all([
       apiFetch<{ by_course: { course_id: string; weighted_grade: number | null }[] }>(`/api/v1/grades/summary`),

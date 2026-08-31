@@ -4,32 +4,25 @@
   // practice rows are a quieter group below with no weight column, since
   // they don't count toward anything. Kept in one card because they're the
   // same underlying list a student manages, just visually distinct.
-  const ASSESSMENT_TYPES = ['quiz', 'assignment', 'midterm', 'final', 'lab'] as const;
-
-  // v1.4: Q-matrix linking moves into this card as a "Concepts covered"
-  // chip-picker in both add and edit forms — see courseKcs below for the
-  // lazy-fetch source.
+  //
+  // This file is the card's coordinator, and holds the three things the pieces
+  // below it cannot each hold separately: the list of rows, the one open edit
+  // session, and the one add session. Everything that talks to /api/v1 lives
+  // here too, so the child components stay views over state plus callbacks.
   import { apiFetch } from '../../lib/apiClient';
-  import { formatDueDate } from '../../lib/plannerDates';
-  import { courseContext } from '../../lib/stores/courseContext';
-  import { numericFieldValue, type NumericFieldBinding } from '../../lib/numericField';
-
-  interface Assessment {
-    id: string;
-    title: string;
-    type: string;
-    kind: 'official' | 'practice';
-    due_date: string | null;
-    weight_pct: number | null;
-    grade_received: number | null;
-    grade_max: number | null;
-    kc_ids: string[];
-  }
-
-  interface Kc {
-    id: string;
-    name: string;
-  }
+  import { numericFieldValue } from '../../lib/numericField';
+  import {
+    emptyAddDraft,
+    type AddAssessmentDraft,
+    type Assessment,
+    type AssessmentFormDraft,
+    type EditSession,
+    type GradeEntry,
+  } from '../../lib/assessments';
+  import { CourseKcsSource } from '../../lib/courseKcs.svelte';
+  import OfficialAssessmentsTable from './OfficialAssessmentsTable.svelte';
+  import PracticeAssessmentsList from './PracticeAssessmentsList.svelte';
+  import AddAssessmentForm from './AddAssessmentForm.svelte';
 
   interface Props {
     courseId: string;
@@ -37,97 +30,39 @@
     onGraded?: () => void;
     onPracticeChange?: () => void;
   }
-  let { courseId, assessments: initialAssessments, onGraded, onPracticeChange }: Props = $props();
+  let { courseId, assessments: serverAssessments, onGraded, onPracticeChange }: Props = $props();
 
-  let assessments = $state(initialAssessments);
-  let gradeDrafts = $state<Record<string, { received: NumericFieldBinding; max: NumericFieldBinding }>>(
-    Object.fromEntries(
-      assessments.map((a) => [a.id, { received: a.grade_received?.toString() ?? '', max: a.grade_max?.toString() ?? '' }]),
-    ),
-  );
-  // Keyed by assessment id: several rows can be saving at once, and a scalar
-  // here re-enabled a row's Save button as soon as a *different* row started.
-  let gradeSavingIds = $state<ReadonlySet<string>>(new Set());
-  let gradeFeedback = $state<Record<string, string>>({});
-  let practiceSavingIds = $state<ReadonlySet<string>>(new Set());
+  // The prop is the source of truth, not a seed. CourseHome refetches the
+  // course's assessments and re-passes them after every grade save, and that
+  // refresh has to win — a `$state` copy forked at mount silently ignored it.
+  //
+  // Local mutations (add, edit, grade, practice toggle) are an optimistic
+  // overlay tagged with the prop array they were computed from, so the next
+  // array from the parent discards them rather than being discarded by them.
+  let overlay = $state.raw<{ base: Assessment[]; rows: Assessment[] } | null>(null);
+  const assessments = $derived(overlay !== null && overlay.base === serverAssessments ? overlay.rows : serverAssessments);
+
+  function setAssessments(rows: Assessment[]) {
+    overlay = { base: serverAssessments, rows };
+  }
+
+  function patchAssessment(id: string, patch: Partial<Assessment>) {
+    setAssessments(assessments.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+  }
 
   const officialAssessments = $derived(assessments.filter((a) => a.kind !== 'practice'));
   const practiceAssessments = $derived(assessments.filter((a) => a.kind === 'practice'));
 
-  let addOpen = $state(false);
-  let draftTitle = $state('');
-  let draftType = $state<string>('quiz');
-  let draftKind = $state<'official' | 'practice'>('official');
-  let draftWeight = $state<NumericFieldBinding>('');
-  let draftDue = $state('');
-  let draftKcIds = $state<Set<string>>(new Set());
-  let addSaving = $state(false);
-  let addError = $state<string | null>(null);
+  // v1.4: Q-matrix linking lives in this card as a "Concepts covered" chip
+  // picker in both the add and the edit form, over one shared source.
+  const kcSource = new CourseKcsSource(() => courseId);
 
-  // Concepts-covered picker: lazily fetched once (on first add-open or
-  // edit-open) and shared by both forms. `null` = not yet fetched;
-  // `[]` = fetched, course has no KCs. Reused across add/edit rather than
-  // re-fetched per form.
-  let courseKcs = $state<Kc[] | null>(null);
-  let kcsLoading = $state(false);
-  let kcsLoadError = $state<string | null>(null);
-
-  // Chosen source: `/api/v1/courses/:slug` (the same branches+kcs endpoint
-  // StandingTab already calls) via the slug already sitting in the
-  // courseContext store (set by CourseLayout's CourseContextSetter for this
-  // exact course) — no new endpoint, no new StandingTab prop. Falls back to
-  // an empty list (picker just shows nothing) if the context hasn't matched
-  // yet, which shouldn't happen in practice since this only fires on a user
-  // click well after mount.
-  async function ensureKcsLoaded() {
-    if (courseKcs !== null || kcsLoading) return;
-    kcsLoading = true;
-    kcsLoadError = null;
-    try {
-      const ctx = $courseContext;
-      const slug = ctx && ctx.id === courseId ? ctx.slug : null;
-      if (!slug) {
-        kcsLoadError = 'Could not resolve course.';
-        courseKcs = [];
-        return;
-      }
-      const result = await apiFetch<{ branches?: { kcs: Kc[] }[] }>(`/api/v1/courses/${slug}`, {}, 'Could not load concepts.', 'Network error.');
-      if (!result.ok) {
-        // A non-ok response always shows this fixed message (ignoring
-        // whatever the server said); only a true network failure shows its
-        // own message — matches the pre-apiFetch behavior here.
-        kcsLoadError = result.reason === 'network' ? result.error : 'Could not load concepts.';
-        courseKcs = [];
-        return;
-      }
-      const branches: { kcs: Kc[] }[] = result.data.branches ?? [];
-      courseKcs = branches.flatMap((b) => b.kcs.map((k) => ({ id: k.id, name: k.name })));
-    } finally {
-      kcsLoading = false;
-    }
-  }
-
-  function toggleDraftKc(id: string) {
-    const next = new Set(draftKcIds);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    draftKcIds = next;
-  }
-
-  function openAdd() {
-    closeEdit();
-    addOpen = true;
-    void ensureKcsLoaded();
-  }
-
-  let editingId = $state<string | null>(null);
-  let editDraft = $state<{ title: string; type: string; due: string; weight: NumericFieldBinding; kcIds: Set<string> } | null>(null);
-  // The id being saved, not a boolean: the user can open another row's form
-  // while a save is in flight, and that row must not inherit this state.
-  let editSavingId = $state<string | null>(null);
-  let editError = $state<string | null>(null);
-  // True only while the form currently on screen is the one saving.
-  const editBusy = $derived(editSavingId !== null && editSavingId === editingId);
+  // Both keyed by assessment id: several rows can be saving at once, and a
+  // scalar here re-enabled a row's Save button as soon as a *different* row
+  // started, and surfaced its errors on whichever row was on screen.
+  let gradeSavingIds = $state<ReadonlySet<string>>(new Set());
+  let gradeFeedback = $state<Record<string, string>>({});
+  let practiceSavingIds = $state<ReadonlySet<string>>(new Set());
 
   function withId(ids: ReadonlySet<string>, id: string, present: boolean): ReadonlySet<string> {
     const next = new Set(ids);
@@ -136,47 +71,94 @@
     return next;
   }
 
+  // --- the add session ------------------------------------------------------
+  // The draft outlives the form on purpose: Cancel only hides it, and reopening
+  // shows what was already typed. It is cleared on a successful add, and kept
+  // on a failure so the user can retry without retyping.
+  let addOpen = $state(false);
+  let addDraft = $state<AddAssessmentDraft>(emptyAddDraft());
+  let addSaving = $state(false);
+  let addError = $state<string | null>(null);
+
+  function openAdd() {
+    closeEdit();
+    addOpen = true;
+    kcSource.ensureLoaded();
+  }
+
+  async function submitAdd() {
+    if (!addDraft.title.trim()) return;
+    addSaving = true;
+    addError = null;
+    try {
+      const body: Record<string, unknown> = {
+        title: addDraft.title.trim(),
+        type: addDraft.type,
+        kind: addDraft.kind,
+      };
+      const weight = numericFieldValue(addDraft.weight);
+      if (addDraft.kind === 'official' && weight !== null) body.weight_pct = weight;
+      if (addDraft.due) body.due_date = new Date(`${addDraft.due}T12:00:00`).toISOString();
+      if (addDraft.kcIds.size > 0) body.kc_ids = [...addDraft.kcIds];
+      const result = await apiFetch<Assessment>(
+        `/api/v1/courses/${courseId}/assessments`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+        'Could not add assessment.',
+        'Network error.',
+      );
+      if (!result.ok) {
+        addError = result.error;
+        // The error only renders inside the add form, and opening Edit closes
+        // that form. Reopen it so the failure is visible — the draft fields are
+        // untouched on failure, so the user's input is still there to retry.
+        addOpen = true;
+        closeEdit();
+        return;
+      }
+      setAssessments([...assessments, result.data]);
+      if (addDraft.kind === 'practice') onPracticeChange?.();
+      addOpen = false;
+      addDraft = emptyAddDraft();
+    } finally {
+      addSaving = false;
+    }
+  }
+
+  // --- the edit session -----------------------------------------------------
+  // Only ever one row's form is open, whether that row is in the official table
+  // or the practice list, so the two render it from this one session. The
+  // fields being typed into belong to the form component; what is tracked here
+  // is which row is open and what its save is doing.
+  let editingId = $state<string | null>(null);
+  // The id being saved, not a boolean: the user can open another row's form
+  // while a save is in flight, and that row must not inherit this state.
+  let editSavingId = $state<string | null>(null);
+  let editError = $state<string | null>(null);
+
   function openEdit(a: Assessment) {
     addOpen = false;
     editingId = a.id;
-    editDraft = {
-      title: a.title,
-      type: a.type,
-      due: a.due_date ? a.due_date.slice(0, 10) : '',
-      weight: a.weight_pct !== null ? String(a.weight_pct) : '',
-      kcIds: new Set(a.kc_ids),
-    };
     editError = null;
-    void ensureKcsLoaded();
+    kcSource.ensureLoaded();
   }
 
   function closeEdit() {
     editingId = null;
-    editDraft = null;
     editError = null;
   }
 
-  function toggleEditKc(id: string) {
-    if (!editDraft) return;
-    const next = new Set(editDraft.kcIds);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    editDraft = { ...editDraft, kcIds: next };
-  }
-
-  async function submitEdit(e: Event, a: Assessment) {
-    e.preventDefault();
-    if (!editDraft || !editDraft.title.trim() || editSavingId) return;
+  async function submitEdit(a: Assessment, draft: AssessmentFormDraft) {
+    if (!draft.title.trim() || editSavingId) return;
     editSavingId = a.id;
     editError = null;
     try {
       const body: Record<string, unknown> = {
-        title: editDraft.title.trim(),
-        type: editDraft.type,
-        due_date: editDraft.due ? new Date(`${editDraft.due}T12:00:00`).toISOString() : null,
-        kc_ids: [...editDraft.kcIds],
+        title: draft.title.trim(),
+        type: draft.type,
+        due_date: draft.due ? new Date(`${draft.due}T12:00:00`).toISOString() : null,
+        kc_ids: [...draft.kcIds],
       };
-      if (a.kind === 'official') body.weight_pct = numericFieldValue(editDraft.weight);
+      if (a.kind === 'official') body.weight_pct = numericFieldValue(draft.weight);
       const result = await apiFetch<{
         title: string;
         type: string;
@@ -196,56 +178,71 @@
         return;
       }
       const updated = result.data;
-      assessments = assessments.map((row) =>
-        row.id === a.id
-          ? {
-              ...row,
-              title: updated.title,
-              type: updated.type,
-              due_date: updated.due_date,
-              weight_pct: updated.weight_pct,
-              kc_ids: updated.kc_ids,
-            }
-          : row,
-      );
+      patchAssessment(a.id, {
+        title: updated.title,
+        type: updated.type,
+        due_date: updated.due_date,
+        weight_pct: updated.weight_pct,
+        kc_ids: updated.kc_ids,
+      });
       if (editingId === a.id) closeEdit();
+      // Tell the parent, whichever form it came from: an official row's weight
+      // and concepts feed the weighted grade, a practice row's title and
+      // concepts feed the practice card. Neither used to be notified, so both
+      // views sat stale behind an edit that had already succeeded.
+      if (a.kind === 'practice') onPracticeChange?.();
+      else onGraded?.();
     } finally {
       editSavingId = null;
     }
   }
 
-  async function saveGrade(assessmentId: string) {
-    const draft = gradeDrafts[assessmentId];
-    if (!draft || gradeSavingIds.has(assessmentId)) return;
-    gradeSavingIds = withId(gradeSavingIds, assessmentId, true);
-    gradeFeedback = { ...gradeFeedback, [assessmentId]: '' };
+  const editSession: EditSession = {
+    get openId() {
+      return editingId;
+    },
+    // True only while the form currently on screen is the one saving.
+    get busy() {
+      return editSavingId !== null && editSavingId === editingId;
+    },
+    get error() {
+      return editError;
+    },
+    toggle: (a) => (editingId === a.id ? closeEdit() : openEdit(a)),
+    submit: submitEdit,
+    cancel: closeEdit,
+  };
+
+  // --- row-level saves ------------------------------------------------------
+  async function saveGrade(a: Assessment, entry: GradeEntry) {
+    if (gradeSavingIds.has(a.id)) return;
+    gradeSavingIds = withId(gradeSavingIds, a.id, true);
+    gradeFeedback = { ...gradeFeedback, [a.id]: '' };
     try {
       const result = await apiFetch<{ grade_received: number | null; grade_max: number | null; mastery_deltas?: unknown[] }>(
-        `/api/v1/assessments/${assessmentId}`,
+        `/api/v1/assessments/${a.id}`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            grade_received: numericFieldValue(draft.received),
-            grade_max: numericFieldValue(draft.max),
+            grade_received: numericFieldValue(entry.received),
+            grade_max: numericFieldValue(entry.max),
           }),
         },
         'Save failed',
         'Network error.',
       );
       if (!result.ok) {
-        gradeFeedback = { ...gradeFeedback, [assessmentId]: result.error };
+        gradeFeedback = { ...gradeFeedback, [a.id]: result.error };
         return;
       }
       const updated = result.data;
-      assessments = assessments.map((a) =>
-        a.id === assessmentId ? { ...a, grade_received: updated.grade_received, grade_max: updated.grade_max } : a,
-      );
+      patchAssessment(a.id, { grade_received: updated.grade_received, grade_max: updated.grade_max });
       const logged = Array.isArray(updated.mastery_deltas) && updated.mastery_deltas.length > 0;
-      gradeFeedback = { ...gradeFeedback, [assessmentId]: logged ? 'Saved — logged an event for linked concepts.' : 'Saved.' };
+      gradeFeedback = { ...gradeFeedback, [a.id]: logged ? 'Saved — logged an event for linked concepts.' : 'Saved.' };
       onGraded?.();
     } finally {
-      gradeSavingIds = withId(gradeSavingIds, assessmentId, false);
+      gradeSavingIds = withId(gradeSavingIds, a.id, false);
     }
   }
 
@@ -259,7 +256,7 @@
     const next = done
       ? { grade_received: assessment.grade_received ?? 100, grade_max: assessment.grade_max ?? 100 }
       : { grade_received: null, grade_max: assessment.grade_max };
-    assessments = assessments.map((a) => (a.id === assessment.id ? { ...a, ...next } : a));
+    patchAssessment(assessment.id, next);
     try {
       // Either failure mode (non-ok response or the request never landing)
       // reverts identically, so there's nothing left for a catch to do.
@@ -269,57 +266,12 @@
         body: JSON.stringify(next),
       });
       if (!result.ok) {
-        assessments = assessments.map((a) => (a.id === assessment.id ? { ...a, ...prev } : a));
+        patchAssessment(assessment.id, prev);
       } else {
         onPracticeChange?.();
       }
     } finally {
       practiceSavingIds = withId(practiceSavingIds, assessment.id, false);
-    }
-  }
-
-  async function submitAdd(e: Event) {
-    e.preventDefault();
-    if (!draftTitle.trim()) return;
-    addSaving = true;
-    addError = null;
-    try {
-      const body: Record<string, unknown> = {
-        title: draftTitle.trim(),
-        type: draftType,
-        kind: draftKind,
-      };
-      const draftWeightValue = numericFieldValue(draftWeight);
-      if (draftKind === 'official' && draftWeightValue !== null) body.weight_pct = draftWeightValue;
-      if (draftDue) body.due_date = new Date(`${draftDue}T12:00:00`).toISOString();
-      if (draftKcIds.size > 0) body.kc_ids = [...draftKcIds];
-      const result = await apiFetch<Assessment>(
-        `/api/v1/courses/${courseId}/assessments`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
-        'Could not add assessment.',
-        'Network error.',
-      );
-      if (!result.ok) {
-        addError = result.error;
-        // The error only renders inside the add form, and opening Edit closes
-        // that form. Reopen it so the failure is visible — the draft fields are
-        // untouched on failure, so the user's input is still there to retry.
-        addOpen = true;
-        closeEdit();
-        return;
-      }
-      assessments = [...assessments, result.data];
-      gradeDrafts = { ...gradeDrafts, [result.data.id]: { received: '', max: '' } };
-      if (draftKind === 'practice') onPracticeChange?.();
-      addOpen = false;
-      draftTitle = '';
-      draftType = 'quiz';
-      draftKind = 'official';
-      draftWeight = '';
-      draftDue = '';
-      draftKcIds = new Set();
-    } finally {
-      addSaving = false;
     }
   }
 </script>
@@ -332,180 +284,36 @@
   {#if officialAssessments.length === 0}
     <p class="empty">No official assessments yet.</p>
   {:else}
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Title</th><th>Type</th><th>Due</th><th>Weight</th><th>Grade</th><th>Out of</th><th></th></tr>
-        </thead>
-        <tbody>
-          {#each officialAssessments as a}
-            <tr>
-              <td>{a.title}</td>
-              <td class="capitalize">{a.type}</td>
-              <td>{formatDueDate(a.due_date)}</td>
-              <td class="num">{a.weight_pct !== null ? `${a.weight_pct}%` : '—'}</td>
-              <td><input type="number" min="0" bind:value={gradeDrafts[a.id].received} class="grade-input num" /></td>
-              <td><input type="number" min="0" bind:value={gradeDrafts[a.id].max} class="grade-input num" /></td>
-              <td class="row-actions">
-                <button type="button" class="btn btn-secondary" onclick={() => saveGrade(a.id)} disabled={gradeSavingIds.has(a.id)}>
-                  {gradeSavingIds.has(a.id) ? 'Saving…' : 'Save'}
-                </button>
-                <button type="button" class="link-btn" onclick={() => (editingId === a.id ? closeEdit() : openEdit(a))}>
-                  {editingId === a.id ? 'Close' : 'Edit'}
-                </button>
-              </td>
-            </tr>
-            {#if gradeFeedback[a.id]}
-              <tr class="feedback-row"><td colspan="7">{gradeFeedback[a.id]}</td></tr>
-            {/if}
-            {#if editingId === a.id && editDraft}
-              <tr class="edit-row">
-                <td colspan="7">
-                  <form class="edit-form" onsubmit={(e) => submitEdit(e, a)}>
-                    <div class="add-row">
-                      <input type="text" placeholder="Title" bind:value={editDraft.title} disabled={editBusy} />
-                      <select bind:value={editDraft.type} disabled={editBusy}>
-                        {#each ASSESSMENT_TYPES as t}
-                          <option value={t}>{t}</option>
-                        {/each}
-                      </select>
-                    </div>
-                    <div class="add-row">
-                      <input type="number" min="0" max="100" placeholder="Weight %" bind:value={editDraft.weight} disabled={editBusy} class="weight-input" />
-                      <input type="date" bind:value={editDraft.due} disabled={editBusy} />
-                    </div>
-                    <div class="kc-section">
-                      <p class="kicker">Concepts covered</p>
-                      {#if kcsLoading}
-                        <p class="kc-status">Loading concepts…</p>
-                      {:else if kcsLoadError}
-                        <p class="kc-status error">{kcsLoadError}</p>
-                      {:else if courseKcs && courseKcs.length === 0}
-                        <p class="kc-status">No concepts defined for this course yet.</p>
-                      {:else if courseKcs}
-                        <div class="kc-picker">
-                          {#each courseKcs as kc (kc.id)}
-                            <button type="button" class="chip" aria-pressed={editDraft.kcIds.has(kc.id)} onclick={() => toggleEditKc(kc.id)}>{kc.name}</button>
-                          {/each}
-                        </div>
-                      {/if}
-                    </div>
-                    <div class="add-row">
-                      <button type="submit" class="btn btn-primary" disabled={editBusy || !editDraft.title.trim()}>{editBusy ? 'Saving…' : 'Save'}</button>
-                      <button type="button" class="btn btn-secondary" disabled={editBusy} onclick={closeEdit}>Cancel</button>
-                    </div>
-                    {#if editError}<p class="error">{editError}</p>{/if}
-                  </form>
-                </td>
-              </tr>
-            {/if}
-          {/each}
-        </tbody>
-      </table>
-    </div>
+    <OfficialAssessmentsTable
+      rows={officialAssessments}
+      savingIds={gradeSavingIds}
+      feedback={gradeFeedback}
+      edit={editSession}
+      {kcSource}
+      onSaveGrade={saveGrade}
+    />
   {/if}
 
   {#if practiceAssessments.length > 0}
-    <div class="practice-group">
-      <p class="group-label kicker">Practice — doesn't count toward your grade</p>
-      <ul class="practice-list">
-        {#each practiceAssessments as p (p.id)}
-          <li>
-            <div class="practice-row">
-              <span class="practice-title">{p.title}</span>
-              {#if p.grade_received !== null}
-                <span class="practice-score num">{p.grade_received}/{p.grade_max ?? 100}</span>
-                <button type="button" class="link-btn" disabled={practiceSavingIds.has(p.id)} onclick={() => setPracticeDone(p, false)}>Undo</button>
-              {:else}
-                <button type="button" class="link-btn" disabled={practiceSavingIds.has(p.id)} onclick={() => setPracticeDone(p, true)}>Mark done</button>
-              {/if}
-              <button type="button" class="link-btn" onclick={() => (editingId === p.id ? closeEdit() : openEdit(p))}>
-                {editingId === p.id ? 'Close' : 'Edit'}
-              </button>
-            </div>
-            {#if editingId === p.id && editDraft}
-              <form class="edit-form" onsubmit={(e) => submitEdit(e, p)}>
-                <div class="add-row">
-                  <input type="text" placeholder="Title" bind:value={editDraft.title} disabled={editBusy} />
-                  <select bind:value={editDraft.type} disabled={editBusy}>
-                    {#each ASSESSMENT_TYPES as t}
-                      <option value={t}>{t}</option>
-                    {/each}
-                  </select>
-                  <input type="date" bind:value={editDraft.due} disabled={editBusy} />
-                </div>
-                <div class="kc-section">
-                  <p class="kicker">Concepts covered</p>
-                  {#if kcsLoading}
-                    <p class="kc-status">Loading concepts…</p>
-                  {:else if kcsLoadError}
-                    <p class="kc-status error">{kcsLoadError}</p>
-                  {:else if courseKcs && courseKcs.length === 0}
-                    <p class="kc-status">No concepts defined for this course yet.</p>
-                  {:else if courseKcs}
-                    <div class="kc-picker">
-                      {#each courseKcs as kc (kc.id)}
-                        <button type="button" class="chip" aria-pressed={editDraft.kcIds.has(kc.id)} onclick={() => toggleEditKc(kc.id)}>{kc.name}</button>
-                      {/each}
-                    </div>
-                  {/if}
-                </div>
-                <div class="add-row">
-                  <button type="submit" class="btn btn-primary" disabled={editBusy || !editDraft.title.trim()}>{editBusy ? 'Saving…' : 'Save'}</button>
-                  <button type="button" class="btn btn-secondary" disabled={editBusy} onclick={closeEdit}>Cancel</button>
-                </div>
-                {#if editError}<p class="error">{editError}</p>{/if}
-              </form>
-            {/if}
-          </li>
-        {/each}
-      </ul>
-    </div>
+    <PracticeAssessmentsList
+      rows={practiceAssessments}
+      savingIds={practiceSavingIds}
+      edit={editSession}
+      {kcSource}
+      onSetDone={setPracticeDone}
+    />
   {/if}
 
   <div class="card-footer">
     {#if addOpen}
-      <form class="add-form" onsubmit={submitAdd}>
-        <div class="add-row">
-          <input type="text" placeholder="Title" bind:value={draftTitle} disabled={addSaving} />
-          <select bind:value={draftType} disabled={addSaving}>
-            {#each ASSESSMENT_TYPES as t}
-              <option value={t}>{t}</option>
-            {/each}
-          </select>
-        </div>
-        <div class="add-row">
-          <div class="kind-toggle" role="group" aria-label="Counts toward grade">
-            <button type="button" class:active={draftKind === 'official'} onclick={() => (draftKind = 'official')}>Official</button>
-            <button type="button" class:active={draftKind === 'practice'} onclick={() => (draftKind = 'practice')}>Practice</button>
-          </div>
-          {#if draftKind === 'official'}
-            <input type="number" min="0" max="100" placeholder="Weight %" bind:value={draftWeight} disabled={addSaving} class="weight-input" />
-          {/if}
-          <input type="date" bind:value={draftDue} disabled={addSaving} />
-        </div>
-        <div class="kc-section">
-          <p class="kicker">Concepts covered</p>
-          {#if kcsLoading}
-            <p class="kc-status">Loading concepts…</p>
-          {:else if kcsLoadError}
-            <p class="kc-status error">{kcsLoadError}</p>
-          {:else if courseKcs && courseKcs.length === 0}
-            <p class="kc-status">No concepts defined for this course yet.</p>
-          {:else if courseKcs}
-            <div class="kc-picker">
-              {#each courseKcs as kc (kc.id)}
-                <button type="button" class="chip" aria-pressed={draftKcIds.has(kc.id)} onclick={() => toggleDraftKc(kc.id)}>{kc.name}</button>
-              {/each}
-            </div>
-          {/if}
-        </div>
-        <div class="add-row">
-          <button type="submit" class="btn btn-primary" disabled={addSaving || !draftTitle.trim()}>{addSaving ? 'Adding…' : 'Add'}</button>
-          <button type="button" class="btn btn-secondary" disabled={addSaving} onclick={() => (addOpen = false)}>Cancel</button>
-        </div>
-        {#if addError}<p class="error">{addError}</p>{/if}
-      </form>
+      <AddAssessmentForm
+        bind:draft={addDraft}
+        saving={addSaving}
+        error={addError}
+        {kcSource}
+        onSubmit={submitAdd}
+        onCancel={() => (addOpen = false)}
+      />
     {:else}
       <button type="button" class="link-btn add-btn" onclick={openAdd}>+ Add assessment</button>
     {/if}
@@ -514,137 +322,8 @@
 
 <style>
   .hint { color: var(--muted); font-size: 12.5px; margin: 0 0 var(--space-4); }
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-  th { text-align: left; padding: 6px 8px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid var(--hairline); }
-  td { padding: 8px; border-bottom: 1px solid var(--hairline); }
-  .capitalize { text-transform: capitalize; }
-  .grade-input { width: 4.5rem; padding: 5px 7px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); }
-  .row-actions { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
-  .feedback-row td { color: var(--good); font-size: 12px; padding-top: 0; }
-  .edit-row td { padding-top: var(--space-4); padding-bottom: var(--space-4); background: var(--hairline); }
-  .error { color: var(--danger); font-size: 12px; margin: 0; }
-
-  .edit-form { display: flex; flex-direction: column; gap: var(--space-2); }
-
-  .kc-section { display: flex; flex-direction: column; gap: 6px; }
-  .kc-picker {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    max-height: 140px;
-    overflow-y: auto;
-    padding: 2px;
-  }
-  .kc-status { font-size: 12px; color: var(--muted); margin: 0; }
-  .kc-status.error { color: var(--danger); }
-
-  .practice-group {
-    margin-top: var(--space-4);
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--hairline);
-  }
-  .group-label { margin: 0 0 var(--space-2); }
-  .practice-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-  .practice-list li { padding: 4px 0; }
-  .practice-list li > .edit-form { margin: 6px 0 4px; }
-  .practice-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    color: var(--muted);
-  }
-  .practice-title { flex: 1; min-width: 0; color: var(--text); }
-  .practice-score { color: var(--muted); }
-
   .card-footer { margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--hairline); }
   .link-btn { background: none; color: var(--accent); font-size: 12.5px; font-weight: 550; padding: 2px 0; }
   .link-btn:hover { text-decoration: underline; }
-  .link-btn:disabled { opacity: 0.5; pointer-events: none; }
   .add-btn { align-self: flex-start; }
-
-  .add-form { display: flex; flex-direction: column; gap: var(--space-2); }
-  .add-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .add-row input[type='text'] {
-    flex: 1;
-    min-width: 8rem;
-    padding: 6px 9px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-    background: var(--surface);
-    color: var(--text);
-  }
-  .add-row select,
-  .add-row input[type='date'] {
-    padding: 6px 8px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-size: 12.5px;
-    background: var(--surface);
-    color: var(--text);
-  }
-  .weight-input { width: 5.5rem; padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); }
-
-  .kind-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
-  .kind-toggle button {
-    padding: 5px 10px;
-    font-size: 12px;
-    font-weight: 550;
-    color: var(--muted);
-    border-right: 1px solid var(--border);
-  }
-  .kind-toggle button:last-child { border-right: none; }
-  .kind-toggle button.active { background: var(--accent); color: var(--accent-contrast); }
-
-  /* PHONE — main content-box ≤ 480px: remap each official-assessment row
-     from a table row into a 2-row card grid so it reads without horizontal
-     scrolling. Title gets its own full-width row; the other six <td>s
-     (type, due, weight, grade-received, grade-max, actions) auto-place
-     left-to-right into a 6-column second row — no named grid areas needed
-     since that's exactly their DOM order already. Feedback/edit rows are a
-     single colspan="7" <td>, so they just span the full row grid.
-     .table-wrap's overflow-x:auto (above) stays as a mid-width fallback. */
-  @container (max-width: 480px) {
-    thead { display: none; }
-
-    tbody tr {
-      display: grid;
-      grid-template-columns: auto auto auto 3.5rem 3.5rem 1fr;
-      column-gap: 6px;
-      row-gap: 6px;
-      align-items: center;
-      padding: 10px 2px;
-    }
-    tbody tr td {
-      padding: 2px 0;
-      border-bottom: none;
-    }
-
-    tbody tr:not(.feedback-row):not(.edit-row) td:first-child {
-      grid-column: 1 / -1;
-      font-weight: 550;
-    }
-    tbody tr:not(.feedback-row):not(.edit-row) td:nth-child(2),
-    tbody tr:not(.feedback-row):not(.edit-row) td:nth-child(3),
-    tbody tr:not(.feedback-row):not(.edit-row) td:nth-child(4) {
-      font-size: 11.5px;
-      color: var(--muted);
-    }
-    tbody tr.feedback-row td,
-    tbody tr.edit-row td {
-      grid-column: 1 / -1;
-    }
-
-    .grade-input { width: 3.5rem; height: 44px; box-sizing: border-box; padding: 0 7px; }
-    .row-actions { justify-self: end; }
-
-    /* Add/edit forms share `.add-row` — the title input takes its own
-       full line, letting type/date/weight wrap to the next. */
-    .add-row input[type='text'] {
-      flex: 1 1 100%;
-      min-width: 0;
-    }
-  }
 </style>

@@ -387,8 +387,8 @@ describe('an in-flight save never disturbs another row\'s edit form (claim #4, f
   });
 });
 
-describe('KNOWN BUG: the assessments prop is forked once, not kept in sync (claim #5)', () => {
-  it('a re-passed assessments prop with changed data never reaches the rendered list', async () => {
+describe('the assessments prop is the source of truth (claim #5, fixed)', () => {
+  it('a re-passed assessments prop with changed data reaches the rendered list', async () => {
     const { rerender } = render(AssessmentsCard, {
       props: { courseId: 'c1', assessments: [makeAssessment({ id: 'a1', title: 'Original title' })] },
     });
@@ -397,14 +397,32 @@ describe('KNOWN BUG: the assessments prop is forked once, not kept in sync (clai
     await rerender({ courseId: 'c1', assessments: [makeAssessment({ id: 'a1', title: 'Updated title' })] });
     await tick();
 
-    // BUG: the component keeps showing its own forked copy of the array.
-    expect(screen.getByText('Original title')).toBeTruthy();
-    expect(screen.queryByText('Updated title')).toBeNull();
+    // FIXED: the rendered list is derived from the prop. Local mutations are an
+    // optimistic overlay tagged with the array they were computed from, so a
+    // fresh array from the parent (CourseHome refetches after every grade save)
+    // supersedes them instead of being ignored.
+    expect(screen.getByText('Updated title')).toBeTruthy();
+    expect(screen.queryByText('Original title')).toBeNull();
+  });
+
+  it('keeps an optimistic local edit until the parent sends a new array', async () => {
+    const { rerender } = render(AssessmentsCard, {
+      props: { courseId: 'c1', assessments: [makeAssessment({ id: 'p1', title: 'Drill', kind: 'practice' })] },
+    });
+    mockApiFetch.mockResolvedValueOnce(okResult({}));
+    await fireEvent.click(screen.getByRole('button', { name: 'Mark done' }));
+    await screen.findByText('100/100');
+
+    // A new array from the parent replaces the overlay wholesale.
+    await rerender({ courseId: 'c1', assessments: [makeAssessment({ id: 'p1', title: 'Drill', kind: 'practice' })] });
+    await tick();
+    expect(screen.queryByText('100/100')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Mark done' })).toBeTruthy();
   });
 });
 
-describe('KNOWN BUG: a failed KC fetch never retries for the component\'s lifetime (claim #6)', () => {
-  it('closing and reopening the add form after a failed KC fetch does not fetch again, and the stale error persists', async () => {
+describe('a failed KC fetch is recoverable (claim #6, fixed)', () => {
+  it('offers an in-place Retry, and reopening the add form fetches again instead of showing a stale error', async () => {
     courseContext.set({ id: 'c1', slug: 'course-slug', code: 'C1', title: 'Course 1' });
     render(AssessmentsCard, { props: { courseId: 'c1', assessments: [] } });
 
@@ -413,14 +431,21 @@ describe('KNOWN BUG: a failed KC fetch never retries for the component\'s lifeti
     await screen.findByText('Network error.');
     expect(mockApiFetch).toHaveBeenCalledTimes(1);
 
-    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    await fireEvent.click(screen.getByRole('button', { name: '+ Add assessment' }));
-    await tick();
-
-    // BUG: courseKcs is [] (not null) after the failure, so the "not yet
-    // fetched" guard is satisfied and no retry is attempted, ever again.
-    expect(mockApiFetch).toHaveBeenCalledTimes(1);
+    // FIXED: the failure leaves the picker retryable rather than pinning it to
+    // an empty list forever, so there is a way out without a page reload.
+    mockApiFetch.mockResolvedValueOnce(networkError('Network error.'));
+    await fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await vi.waitFor(() => expect(mockApiFetch).toHaveBeenCalledTimes(2));
     expect(screen.getByText('Network error.')).toBeTruthy();
+
+    // Reopening the form retries too — the "already fetched" guard is no
+    // longer satisfied by a failure.
+    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    mockApiFetch.mockResolvedValueOnce(okResult({ branches: [{ kcs: [{ id: 'k1', name: 'Limits' }] }] }));
+    await fireEvent.click(screen.getByRole('button', { name: '+ Add assessment' }));
+    await screen.findByRole('button', { name: 'Limits' });
+    expect(mockApiFetch).toHaveBeenCalledTimes(3);
+    expect(screen.queryByText('Network error.')).toBeNull();
   });
 });
 
@@ -516,11 +541,23 @@ describe('callback contract', () => {
     await vi.waitFor(() => expect(onPracticeChange).toHaveBeenCalledTimes(1));
   });
 
-  it('fires neither onGraded nor onPracticeChange when an edit (weight/kc) save succeeds', async () => {
+  // FIXED (claim #8): a successful edit changes data the parent renders —
+  // weight_pct feeds the weighted grade, and a practice row's title/concepts
+  // feed the practice card — but submitEdit told nobody, so those views stayed
+  // stale until a full reload. Each kind now notifies its own callback.
+  it('fires onGraded when an official edit save succeeds, and onPracticeChange for a practice one', async () => {
     const onGraded = vi.fn();
     const onPracticeChange = vi.fn();
     render(AssessmentsCard, {
-      props: { courseId: 'c1', assessments: [makeAssessment({ id: 'a1', title: 'Weighted row' })], onGraded, onPracticeChange },
+      props: {
+        courseId: 'c1',
+        assessments: [
+          makeAssessment({ id: 'a1', title: 'Weighted row' }),
+          makeAssessment({ id: 'p1', title: 'Drill', kind: 'practice' }),
+        ],
+        onGraded,
+        onPracticeChange,
+      },
     });
     await fireEvent.click(within(rowFor('Weighted row')).getByRole('button', { name: 'Edit' }));
     const editForm = rowFor('Weighted row').nextElementSibling as HTMLElement;
@@ -528,7 +565,30 @@ describe('callback contract', () => {
     await fireEvent.input(weightInput, { target: { value: '25' } });
     mockApiFetch.mockResolvedValueOnce(okResult({ title: 'Weighted row', type: 'quiz', due_date: null, weight_pct: 25, kc_ids: [] }));
     await fireEvent.click(within(editForm).getByRole('button', { name: /sav/i }));
-    await vi.waitFor(() => expect(mockApiFetch).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(onGraded).toHaveBeenCalledTimes(1));
+    expect(onPracticeChange).not.toHaveBeenCalled();
+
+    const practiceRow = screen.getByText('Drill').closest('li') as HTMLElement;
+    await fireEvent.click(within(practiceRow).getByRole('button', { name: 'Edit' }));
+    const practiceForm = within(practiceRow).getByRole('button', { name: /^Save$/ }).closest('form') as HTMLElement;
+    await fireEvent.input(within(practiceForm).getByPlaceholderText('Title'), { target: { value: 'Drill v2' } });
+    mockApiFetch.mockResolvedValueOnce(okResult({ title: 'Drill v2', type: 'quiz', due_date: null, weight_pct: null, kc_ids: [] }));
+    await fireEvent.click(within(practiceForm).getByRole('button', { name: /^Save$/ }));
+    await vi.waitFor(() => expect(onPracticeChange).toHaveBeenCalledTimes(1));
+    expect(onGraded).toHaveBeenCalledTimes(1);
+  });
+
+  it('fires no callback when an edit save fails', async () => {
+    const onGraded = vi.fn();
+    const onPracticeChange = vi.fn();
+    render(AssessmentsCard, {
+      props: { courseId: 'c1', assessments: [makeAssessment({ id: 'a1', title: 'Weighted row' })], onGraded, onPracticeChange },
+    });
+    await fireEvent.click(within(rowFor('Weighted row')).getByRole('button', { name: 'Edit' }));
+    const editForm = rowFor('Weighted row').nextElementSibling as HTMLElement;
+    mockApiFetch.mockResolvedValueOnce(httpError('Could not save.'));
+    await fireEvent.click(within(editForm).getByRole('button', { name: /sav/i }));
+    await screen.findByText('Could not save.');
     expect(onGraded).not.toHaveBeenCalled();
     expect(onPracticeChange).not.toHaveBeenCalled();
   });
