@@ -281,13 +281,19 @@
     item.details = { ...item.details, status: next };
     onItemUpdated?.(item.id, { details: { status: next } });
     try {
+      // The route buckets attendance_toggled by this header. This popover
+      // mounts on more than one route (PlannerView on /planner, WeekView on
+      // /dashboard), so it reports the surface it is actually on rather than
+      // a hardcoded one; when analytics has not bootstrapped there is no
+      // honest answer, so the header is omitted and the route falls back.
+      const surface = currentAnalyticsSurface();
       const result = await apiFetch(
         `/api/v1/class-sessions/${item.id}`,
         {
           method: 'PATCH',
           headers: {
             'content-type': 'application/json',
-            'X-Studyus-Analytics-Surface': '/planner',
+            ...(surface ? { 'X-Studyus-Analytics-Surface': surface } : {}),
           },
           body: JSON.stringify({ status: next }),
         },

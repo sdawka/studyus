@@ -15,7 +15,10 @@ describe('retention analytics wiring', () => {
     expect(attendanceCardSource).toContain('/api/v1/class-sessions/${session.id}');
     expect(eventPopoverSource).toContain('/api/v1/class-sessions/${item.id}');
     expect(attendanceCardSource).toContain("'X-Studyus-Analytics-Surface': '/standing'");
-    expect(eventPopoverSource).toContain("'X-Studyus-Analytics-Surface': '/planner'");
+    // The popover mounts on both /planner and /dashboard, so it reports the
+    // live surface instead of a literal — see EventPopover.test.ts.
+    expect(eventPopoverSource).toContain('const surface = currentAnalyticsSurface()');
+    expect(eventPopoverSource).toContain("{ 'X-Studyus-Analytics-Surface': surface }");
     expect(attendanceRouteSource.indexOf('updateClassSessionStatus(')).toBeLessThan(
       attendanceRouteSource.indexOf('attendanceToggledEvent('),
     );

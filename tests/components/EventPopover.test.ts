@@ -579,7 +579,8 @@ describe('setClassStatus — class_session attendance', () => {
     return makeItem({ type: 'class_session', details: { status, note: null, source: 'seed', task_id: null, start_min: 540, end_min: 600 } });
   }
 
-  it('success: marks attended, sends the hardcoded /planner analytics-surface header, reports the patch', async () => {
+  it('success: marks attended, sends the current analytics surface as a header, reports the patch', async () => {
+    currentAnalyticsSurfaceMock.mockReturnValue('/planner');
     apiFetchMock.mockResolvedValueOnce(ok({}));
     const { onItemUpdated } = renderPopover({ item: classItem(null) });
     await fireEvent.click(screen.getByRole('button', { name: /attended/i }));
@@ -596,13 +597,24 @@ describe('setClassStatus — class_session attendance', () => {
     );
   });
 
-  it('BUG (pinned): sends the hardcoded X-Studyus-Analytics-Surface: /planner header even though this component also mounts from dashboard/WeekView', async () => {
+  it('reports the surface it is actually mounted on, not a hardcoded /planner', async () => {
+    currentAnalyticsSurfaceMock.mockReturnValue('/dashboard'); // simulates the WeekView mounting context
     apiFetchMock.mockResolvedValueOnce(ok({}));
-    renderPopover({ item: classItem(null), plannerLink: '/planner?event=item-1' }); // simulates the WeekView mounting context
+    renderPopover({ item: classItem(null), plannerLink: '/planner?event=item-1' });
     await fireEvent.click(screen.getByRole('button', { name: /missed/i }));
     await waitFor(() => expect(apiFetchMock).toHaveBeenCalled());
     const headers = (apiFetchMock.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
-    expect(headers['X-Studyus-Analytics-Surface']).toBe('/planner');
+    expect(headers['X-Studyus-Analytics-Surface']).toBe('/dashboard');
+  });
+
+  it('omits the surface header entirely when no analytics surface is known', async () => {
+    currentAnalyticsSurfaceMock.mockReturnValue(undefined);
+    apiFetchMock.mockResolvedValueOnce(ok({}));
+    renderPopover({ item: classItem(null) });
+    await fireEvent.click(screen.getByRole('button', { name: /missed/i }));
+    await waitFor(() => expect(apiFetchMock).toHaveBeenCalled());
+    const headers = (apiFetchMock.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
+    expect(headers).toEqual({ 'content-type': 'application/json' });
   });
 
   it('no-op guard: clicking the already-active status does nothing (no request, no callback)', async () => {
@@ -621,6 +633,7 @@ describe('setClassStatus — class_session attendance', () => {
   });
 
   it('clicking Clear sends status: null', async () => {
+    currentAnalyticsSurfaceMock.mockReturnValue('/planner');
     apiFetchMock.mockResolvedValueOnce(ok({}));
     const { onItemUpdated } = renderPopover({ item: classItem('attended') });
     await fireEvent.click(screen.getByRole('button', { name: /clear/i }));
