@@ -232,6 +232,11 @@ verify migrations as an explicit operation (`npm run db:migrate:remote`) before 
 release that depends on them. `npm run deploy:staging` builds with the staging flag and
 deploys with `--env staging`; neither command supplies a promotion or rollback policy.
 
+The McGill catalogue is data, not schema, so migrating is not enough: run
+`npm run db:seed:catalog:remote` as well when standing up an environment or rebuilding
+its database. Onboarding search reads `catalog_courses` directly, and an unseeded
+database degrades silently — it returns only the authored templates rather than erroring.
+
 ## Common Gotchas
 
 ### ❌ "Cannot find module 'cloudflare:workers'"
