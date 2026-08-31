@@ -421,8 +421,8 @@ describe('the assessments prop is the source of truth (claim #5, fixed)', () => 
   });
 });
 
-describe('KNOWN BUG: a failed KC fetch never retries for the component\'s lifetime (claim #6)', () => {
-  it('closing and reopening the add form after a failed KC fetch does not fetch again, and the stale error persists', async () => {
+describe('a failed KC fetch is recoverable (claim #6, fixed)', () => {
+  it('offers an in-place Retry, and reopening the add form fetches again instead of showing a stale error', async () => {
     courseContext.set({ id: 'c1', slug: 'course-slug', code: 'C1', title: 'Course 1' });
     render(AssessmentsCard, { props: { courseId: 'c1', assessments: [] } });
 
@@ -431,14 +431,21 @@ describe('KNOWN BUG: a failed KC fetch never retries for the component\'s lifeti
     await screen.findByText('Network error.');
     expect(mockApiFetch).toHaveBeenCalledTimes(1);
 
-    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    await fireEvent.click(screen.getByRole('button', { name: '+ Add assessment' }));
-    await tick();
-
-    // BUG: courseKcs is [] (not null) after the failure, so the "not yet
-    // fetched" guard is satisfied and no retry is attempted, ever again.
-    expect(mockApiFetch).toHaveBeenCalledTimes(1);
+    // FIXED: the failure leaves the picker retryable rather than pinning it to
+    // an empty list forever, so there is a way out without a page reload.
+    mockApiFetch.mockResolvedValueOnce(networkError('Network error.'));
+    await fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await vi.waitFor(() => expect(mockApiFetch).toHaveBeenCalledTimes(2));
     expect(screen.getByText('Network error.')).toBeTruthy();
+
+    // Reopening the form retries too — the "already fetched" guard is no
+    // longer satisfied by a failure.
+    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    mockApiFetch.mockResolvedValueOnce(okResult({ branches: [{ kcs: [{ id: 'k1', name: 'Limits' }] }] }));
+    await fireEvent.click(screen.getByRole('button', { name: '+ Add assessment' }));
+    await screen.findByRole('button', { name: 'Limits' });
+    expect(mockApiFetch).toHaveBeenCalledTimes(3);
+    expect(screen.queryByText('Network error.')).toBeNull();
   });
 });
 

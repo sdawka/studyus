@@ -99,10 +99,10 @@
   let addSaving = $state(false);
   let addError = $state<string | null>(null);
 
-  // Concepts-covered picker: lazily fetched once (on first add-open or
-  // edit-open) and shared by both forms. `null` = not yet fetched;
-  // `[]` = fetched, course has no KCs. Reused across add/edit rather than
-  // re-fetched per form.
+  // Concepts-covered picker: lazily fetched on first add-open or edit-open and
+  // shared by both forms rather than re-fetched per form. `null` = not loaded
+  // (never fetched, or the last attempt failed); `[]` = fetched, course has no
+  // KCs — the two render different messages.
   let courseKcs = $state<Kc[] | null>(null);
   let kcsLoading = $state(false);
   let kcsLoadError = $state<string | null>(null);
@@ -110,12 +110,16 @@
   // Chosen source: `/api/v1/courses/:slug` (the same branches+kcs endpoint
   // StandingTab already calls) via the slug already sitting in the
   // courseContext store (set by CourseLayout's CourseContextSetter for this
-  // exact course) — no new endpoint, no new StandingTab prop. Falls back to
-  // an empty list (picker just shows nothing) if the context hasn't matched
-  // yet, which shouldn't happen in practice since this only fires on a user
-  // click well after mount.
-  async function ensureKcsLoaded() {
-    if (courseKcs !== null || kcsLoading) return;
+  // exact course) — no new endpoint, no new StandingTab prop. An unmatched
+  // context is reported like any other failure (and is retryable), rather than
+  // silently presenting as "this course has no concepts".
+  //
+  // A failure leaves `courseKcs` null — "not loaded", which is exactly what it
+  // is. Parking [] there instead made the failure terminal: the not-yet-fetched
+  // guard below was permanently satisfied, so no reopen and no retry ever
+  // fetched again for the life of the component.
+  async function loadKcs() {
+    if (kcsLoading) return;
     kcsLoading = true;
     kcsLoadError = null;
     try {
@@ -123,7 +127,6 @@
       const slug = ctx && ctx.id === courseId ? ctx.slug : null;
       if (!slug) {
         kcsLoadError = 'Could not resolve course.';
-        courseKcs = [];
         return;
       }
       const result = await apiFetch<{ branches?: { kcs: Kc[] }[] }>(`/api/v1/courses/${slug}`, {}, 'Could not load concepts.', 'Network error.');
@@ -132,7 +135,6 @@
         // whatever the server said); only a true network failure shows its
         // own message — matches the pre-apiFetch behavior here.
         kcsLoadError = result.reason === 'network' ? result.error : 'Could not load concepts.';
-        courseKcs = [];
         return;
       }
       const branches: { kcs: Kc[] }[] = result.data.branches ?? [];
@@ -140,6 +142,15 @@
     } finally {
       kcsLoading = false;
     }
+  }
+
+  function ensureKcsLoaded() {
+    if (courseKcs !== null) return;
+    void loadKcs();
+  }
+
+  function retryKcs() {
+    void loadKcs();
   }
 
   function toggleDraftKc(id: string) {
@@ -152,7 +163,7 @@
   function openAdd() {
     closeEdit();
     addOpen = true;
-    void ensureKcsLoaded();
+    ensureKcsLoaded();
   }
 
   let editingId = $state<string | null>(null);
@@ -182,7 +193,7 @@
       kcIds: new Set(a.kc_ids),
     };
     editError = null;
-    void ensureKcsLoaded();
+    ensureKcsLoaded();
   }
 
   function closeEdit() {
@@ -408,7 +419,10 @@
                       {#if kcsLoading}
                         <p class="kc-status">Loading concepts…</p>
                       {:else if kcsLoadError}
-                        <p class="kc-status error">{kcsLoadError}</p>
+                        <div class="kc-status-row">
+                          <p class="kc-status error">{kcsLoadError}</p>
+                          <button type="button" class="link-btn" onclick={retryKcs}>Retry</button>
+                        </div>
                       {:else if courseKcs && courseKcs.length === 0}
                         <p class="kc-status">No concepts defined for this course yet.</p>
                       {:else if courseKcs}
@@ -468,7 +482,10 @@
                   {#if kcsLoading}
                     <p class="kc-status">Loading concepts…</p>
                   {:else if kcsLoadError}
-                    <p class="kc-status error">{kcsLoadError}</p>
+                    <div class="kc-status-row">
+                      <p class="kc-status error">{kcsLoadError}</p>
+                      <button type="button" class="link-btn" onclick={retryKcs}>Retry</button>
+                    </div>
                   {:else if courseKcs && courseKcs.length === 0}
                     <p class="kc-status">No concepts defined for this course yet.</p>
                   {:else if courseKcs}
@@ -518,7 +535,10 @@
           {#if kcsLoading}
             <p class="kc-status">Loading concepts…</p>
           {:else if kcsLoadError}
-            <p class="kc-status error">{kcsLoadError}</p>
+            <div class="kc-status-row">
+              <p class="kc-status error">{kcsLoadError}</p>
+              <button type="button" class="link-btn" onclick={retryKcs}>Retry</button>
+            </div>
           {:else if courseKcs && courseKcs.length === 0}
             <p class="kc-status">No concepts defined for this course yet.</p>
           {:else if courseKcs}
@@ -567,6 +587,7 @@
   }
   .kc-status { font-size: 12px; color: var(--muted); margin: 0; }
   .kc-status.error { color: var(--danger); }
+  .kc-status-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
   .practice-group {
     margin-top: var(--space-4);
