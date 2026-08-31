@@ -89,6 +89,10 @@ export const courses = sqliteTable(
     templateBaseline: text('template_baseline', { mode: 'json' }),
     slug: text('slug').notNull().unique(),
     title: text('title').notNull(),
+    // Holds fractional values despite the integer() declaration: the McGill
+    // catalog has 678 courses at 0.25-17.33 credits, and SQLite's INTEGER
+    // affinity stores a REAL unchanged when narrowing would lose precision.
+    // See the round-trip tests in tests/courses-create.test.ts.
     credits: integer('credits'),
     term: text('term'),
     termId: text('term_id').references(() => academicTerms.id, { onDelete: 'set null' }),
