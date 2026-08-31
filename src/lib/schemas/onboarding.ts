@@ -1,12 +1,17 @@
 import { z } from 'zod';
 
+// Several bounds below are reachable from the onboarding form, so a learner
+// reads the failure, not a developer. serviceErrorResponse joins issue messages
+// verbatim, and Zod's default text ("Too small: expected string to have >=2
+// characters") names no field and repeats once per issue — three identical
+// sentences for three different empty fields. Spell those out.
 export const kcTypeSchema = z.enum(['fact', 'association', 'concept', 'rule', 'principle']);
 
 export const courseSetupKcSchema = z.strictObject({
   client_id: z.string().uuid(),
   template_ref: z.string().trim().max(120).optional(),
   included: z.boolean().default(true),
-  name: z.string().trim().min(2).max(160),
+  name: z.string().trim().min(2, 'Each concept needs a name of at least 2 characters').max(160),
   kc_type: kcTypeSchema.default('concept'),
   description: z.string().trim().max(1200).optional(),
   sort_order: z.number().int().min(0).max(500).default(0),
@@ -18,7 +23,7 @@ export const courseSetupBranchSchema = z.strictObject({
   client_id: z.string().uuid(),
   template_ref: z.string().trim().max(120).optional(),
   included: z.boolean().default(true),
-  name: z.string().trim().min(2).max(120),
+  name: z.string().trim().min(2, 'Each section needs a name of at least 2 characters').max(120),
   sort_order: z.number().int().min(0).max(500),
   kcs: z.array(courseSetupKcSchema).max(100),
 });
@@ -47,8 +52,8 @@ export const courseSetupProposalSchema = z.strictObject({
   template_id: z.string().trim().max(120).optional(),
   template_revision: z.string().trim().max(80).optional(),
   course: z.strictObject({
-    code: z.string().trim().min(2).max(32),
-    title: z.string().trim().min(2).max(180),
+    code: z.string().trim().min(2, 'Course code needs at least 2 characters').max(32, 'Course code is too long (32 characters max)'),
+    title: z.string().trim().min(2, 'Course title needs at least 2 characters').max(180, 'Course title is too long (180 characters max)'),
     instructor: z.string().trim().max(120).optional(),
     // McGill includes fractional-credit graduate courses (commonly 1.5).
     credits: z.number().min(0).max(30).optional(),
@@ -71,9 +76,9 @@ export type LearningPreferences = z.infer<typeof learningPreferencesSchema>;
 
 export const learnerContextSchema = z
   .strictObject({
-    institution_name: z.string().trim().min(2).max(160),
-    program_name: z.string().trim().min(2).max(160).optional(),
-    term_label: z.string().trim().min(2).max(80),
+    institution_name: z.string().trim().min(2, 'University name needs at least 2 characters').max(160),
+    program_name: z.string().trim().min(2, 'Program needs at least 2 characters, or leave it blank').max(160).optional(),
+    term_label: z.string().trim().min(2, 'Semester name needs at least 2 characters').max(80),
     starts_on: z.string().date(),
     ends_on: z.string().date(),
     timezone: z.string().trim().min(1).max(80),

@@ -12,22 +12,11 @@
 import { and, eq, isNull, ne } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { branches, courses, kcs } from '../../db/schema';
+import { isPlaceholderKcName } from '../placeholderKc';
 
-/**
- * Concept names that a generated or stub course map uses as filler. A course
- * whose only concepts are these has not really been set up, so it does not
- * count toward "usable".
- */
-export const PLACEHOLDER_KC_NAMES: ReadonlySet<string> = new Set([
-  'general',
-  'course topic',
-  'course foundations',
-]);
-
-/** True when a concept name is filler rather than something the learner chose. */
-export function isPlaceholderKcName(name: string): boolean {
-  return PLACEHOLDER_KC_NAMES.has(name.trim().toLowerCase());
-}
+// Re-exported so server callers keep importing the rule from here, while the
+// onboarding form can import the browser-safe module directly.
+export { PLACEHOLDER_KC_NAMES, isPlaceholderKcName } from '../placeholderKc';
 
 /**
  * Whether `userId` has at least one active, non-archived course carrying a
