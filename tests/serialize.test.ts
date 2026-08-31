@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toApi } from '../src/lib/serialize';
 import { toEpochMs, toIso } from '../src/lib/schemas/common';
 
@@ -56,6 +56,34 @@ describe('toApi', () => {
     const out = toApi({ completedAt: null, dueDate: undefined }) as any;
     expect(out.completed_at).toBeNull();
     expect(out.due_date).toBeUndefined();
+  });
+
+  describe('a corrupt date-shaped value (NaN/Infinity)', () => {
+    let errorSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      errorSpy.mockRestore();
+    });
+
+    it('falls back to null instead of throwing and 500ing the whole payload', () => {
+      expect(() => toApi({ createdAt: NaN })).not.toThrow();
+      const out = toApi({ createdAt: NaN }) as any;
+      expect(out.created_at).toBeNull();
+    });
+
+    it('logs the offending field name and value rather than swallowing it silently', () => {
+      toApi({ dueDate: Infinity });
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('due_date'), Infinity);
+    });
+
+    it('does not log anything for an ordinary valid date value', () => {
+      toApi({ createdAt: 1700000000000 });
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
   });
 });
 

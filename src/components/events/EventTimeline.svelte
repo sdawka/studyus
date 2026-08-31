@@ -1,6 +1,7 @@
 <script lang="ts">
   import { apiFetch } from '../../lib/apiClient';
   import { numericFieldValue, type NumericFieldBinding } from '../../lib/numericField';
+  import { toSafeIsoString } from '../../lib/dateField';
 
   // Reusable event timeline island. Fetches from the events API and
   // self-refreshes after any mutation — no props out, no events emitted.
@@ -68,6 +69,11 @@
   let editTs = $state('');
   let editScore = $state<NumericFieldBinding>('');
   let editNote = $state('');
+  // Separate from loadError on purpose: loadError drives the top-level
+  // {#if}/{:else if} chain that swaps the whole list for a single message —
+  // setting it from inside the edit form would unmount the form itself and
+  // throw away whatever the user had typed. This renders inside the form.
+  let editError = $state<string | null>(null);
   let busyId = $state<string | null>(null);
 
   function fetchUrl(): string {
@@ -104,17 +110,23 @@
   function startEdit(event: ApiEvent) {
     editingId = event.id;
     editType = event.type;
-    editTs = new Date(event.ts).toISOString().slice(0, 16);
+    // event.ts is DB-sourced and normally always a valid instant, but guard
+    // rather than crash the click handler on a corrupt row — fall back to
+    // "now" so the field opens editable instead of stuck unset.
+    editTs = (toSafeIsoString(event.ts) ?? new Date().toISOString()).slice(0, 16);
     editScore = typeof event.payload?.score === 'number' ? String(event.payload.score) : '';
     editNote = typeof event.payload?.note === 'string' ? event.payload.note : '';
+    editError = null;
   }
 
   function cancelEdit() {
     editingId = null;
+    editError = null;
   }
 
   async function saveEdit(event: ApiEvent) {
     busyId = event.id;
+    editError = null;
     try {
       const payload: Record<string, unknown> = { ...event.payload };
       const scoreValue = numericFieldValue(editScore);
@@ -123,12 +135,25 @@
       if (editNote.trim() !== '') payload.note = editNote.trim();
       else delete payload.note;
 
+      // Required field — a cleared or otherwise unparseable datetime-local
+      // value must block the save with a message, not crash silently or
+      // send a garbage timestamp to the API. Uses editError (rendered inside
+      // the edit form itself), not loadError — loadError drives the
+      // top-level {#if}/{:else if} chain that swaps the whole list for a
+      // single message, which would unmount this form and lose the user's
+      // in-progress type/score/note along with it.
+      const ts = toSafeIsoString(editTs);
+      if (ts === null) {
+        editError = 'Enter a valid date and time before saving.';
+        return;
+      }
+
       const res = await fetch(`/api/v1/events/${event.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: editType,
-          ts: new Date(editTs).toISOString(),
+          ts,
           payload,
         }),
       });
@@ -184,6 +209,9 @@
               <input type="datetime-local" bind:value={editTs} />
               <input type="number" placeholder="Score %" bind:value={editScore} min="0" max="100" />
               <input type="text" placeholder="Note" bind:value={editNote} />
+              {#if editError}
+                <p class="error edit-error">{editError}</p>
+              {/if}
               <div class="edit-actions">
                 <button type="button" disabled={busyId === event.id} onclick={() => saveEdit(event)}>Save</button>
                 <button type="button" class="ghost" onclick={cancelEdit}>Cancel</button>
@@ -250,6 +278,7 @@
   .link.danger { color: var(--danger); }
   .link:disabled { opacity: 0.5; cursor: default; }
   .edit-form { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+  .edit-error { flex-basis: 100%; margin: 0; }
   .edit-form input, .edit-form select {
     padding: 0.35rem 0.5rem;
     border: 1px solid var(--border);

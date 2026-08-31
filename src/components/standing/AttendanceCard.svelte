@@ -4,6 +4,7 @@
   // button click. See docs/api.md "Class sessions" for the contract.
   import { apiFetch } from '../../lib/apiClient';
   import { formatShortDate, formatWeekdayAndDate } from '../../lib/plannerDates';
+  import { dateOnlyInputToIso } from '../../lib/dateField';
   import { refetchTasks } from '../../lib/stores/tasks';
 
   interface Props {
@@ -215,12 +216,17 @@
   async function submitAddClass(e: Event) {
     e.preventDefault();
     if (!addDate) return;
+    const isoDate = dateOnlyInputToIso(addDate);
+    if (isoDate === null) {
+      addError = 'Enter a valid date.';
+      return;
+    }
     addSaving = true;
     addError = null;
     try {
       const result = await apiFetch<ClassSession>(
         `/api/v1/courses/${courseId}/class-sessions`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: new Date(`${addDate}T12:00:00`).toISOString() }) },
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: isoDate }) },
         'Could not add class.',
         'Network error.',
       );

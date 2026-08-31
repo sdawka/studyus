@@ -2,6 +2,8 @@
 // timestamps) into the frozen API shape (snake_case keys, ISO datetime
 // strings) documented in docs/api.md. Every route wraps its `apiOk` payload
 // with `toApi` so this conversion happens in exactly one place.
+import { toSafeIsoString } from './dateField';
+
 const DATE_KEY_PATTERN = /(_at|_date)$/;
 
 // Bare-named epoch-ms fields that don't fit DATE_KEY_PATTERN's `_at`/`_date`
@@ -31,7 +33,16 @@ function transform(value: unknown): unknown {
       }
 
       if (typeof v === 'number' && (DATE_KEY_PATTERN.test(snakeKey) || snakeKey === 'ts' || snakeKey === 'date')) {
-        out[snakeKey] = new Date(v).toISOString();
+        // Every date-shaped column here is a NOT NULL epoch-ms integer the
+        // app itself wrote, so this is normally always a valid instant —
+        // but this one function sits behind every API route's response, so
+        // a single corrupt row (bad migration, manual DB edit) must not
+        // 500 the whole payload. Fall back to null rather than throw, but
+        // log it — a silently-nulled date is a real data-corruption signal
+        // that must not disappear along with the fallback.
+        const iso = toSafeIsoString(v);
+        if (iso === null) console.error(`toApi: invalid date value for "${snakeKey}":`, v);
+        out[snakeKey] = iso;
       } else if (v !== null && typeof v === 'object') {
         out[snakeKey] = transform(v);
       } else {
