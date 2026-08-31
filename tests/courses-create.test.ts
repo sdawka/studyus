@@ -91,3 +91,33 @@ describe('courses.listCourses archived filter', () => {
     expect(rows.map((c) => c.id)).toContain(archived.id);
   });
 });
+
+// The McGill catalog carries 678 fractional-credit courses (0.25 through 17.33),
+// and courseSetupProposalSchema now accepts them. The column is declared
+// integer('credits'), which would be a data-loss bug in a strictly typed
+// database — SQLite's INTEGER affinity only narrows a REAL when the conversion
+// is lossless, so the value survives. Pin that, because the declaration says
+// otherwise and the next reader will believe the declaration.
+describe('fractional credits survive the integer-affinity column', () => {
+  it('round-trips the values the catalog actually contains', async () => {
+    for (const credits of [1.5, 0.25, 17.33, 0.66]) {
+      const course = await createCourse(db, userId, { code: `CR ${credits}`, title: `Credits ${credits}`, credits });
+      expect(course.credits).toBe(credits);
+
+      const [stored] = await db.select().from(courses).where(eq(courses.id, course.id));
+      expect(stored.credits).toBe(credits);
+    }
+  });
+
+  it('keeps fractional precision through an update and a clear', async () => {
+    const course = await createCourse(db, userId, { code: 'CR UPD', title: 'Updatable', credits: 3 });
+
+    await updateCourse(db, userId, course.id, { credits: 1.33 });
+    const [updated] = await db.select().from(courses).where(eq(courses.id, course.id));
+    expect(updated.credits).toBe(1.33);
+
+    await updateCourse(db, userId, course.id, { credits: null });
+    const [cleared] = await db.select().from(courses).where(eq(courses.id, course.id));
+    expect(cleared.credits).toBeNull();
+  });
+});

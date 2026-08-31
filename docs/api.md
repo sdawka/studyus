@@ -77,9 +77,19 @@ in-term confirmed dates, then clones its graph, scaffolds, misconceptions,
 exercise bank, resources, and assessments. Rich authored answers and teaching
 bodies are not accepted from the browser.
 
-### GET /onboarding/templates
+### GET /onboarding/templates?q=&level=&limit=
 
-Lists browser-safe metadata for the reviewed course catalog.
+Searches browser-safe metadata for the course catalog: the authored reviewed
+templates plus the generated McGill catalogue outlines. Matches on code, title,
+subject, department, faculty, aliases, and **concept names**, so a learner can
+find a course by what it covers rather than only by its code.
+
+`q` is capped at 100 characters, `level` is `undergraduate` or `graduate`, and
+`limit` is clamped to 1..100 (default 50). Response:
+`{ "data": { "courses": [...], "total": n, "truncated": boolean } }` — `total`
+counts every match, not just the returned window, so clients report an honest
+count. Searching happens server-side; clients must not re-filter the results,
+which are already ranked.
 
 ### GET /onboarding/templates/:id
 

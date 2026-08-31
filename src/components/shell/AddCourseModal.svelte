@@ -133,7 +133,7 @@
         <div class="row">
           <label>
             Credits
-            <input type="number" bind:value={credits} min="0" step="1" />
+            <input type="number" bind:value={credits} min="0" step="any" />
           </label>
 
           <label>

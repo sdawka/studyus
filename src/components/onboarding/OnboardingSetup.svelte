@@ -32,16 +32,29 @@
   let parsing = $state(false);
   let loadingTemplate = $state(false);
   let acceptedHandoff = $state(false);
-  let templateOptions = $state<CourseSearchCourse[]>(demoCourseCatalog);
+  let serverCourses = $state<CourseSearchCourse[]>([]);
+  let serverTotal = $state(0);
+  let serverTruncated = $state(false);
+  // True while the bundled catalog is standing in for the API: before the query
+  // is long enough to search, or after a failed fetch.
+  let usingFallback = $state(true);
   let searchingCatalog = $state(false);
   let searchTimer: ReturnType<typeof setTimeout> | null = null;
   let searchRequest = 0;
   let searchController: AbortController | null = null;
 
   const importableCourses = $derived(draft.courses.filter((course) => course.source.kind !== 'simulated'));
-  const courseSearchIndex = $derived(createCourseSearchIndex(templateOptions));
-  const courseSearch = $derived(searchCourseCatalog(courseSearchIndex, query, 50));
-  const filteredCourses = $derived(courseSearch.results);
+
+  // The API searches ~10,000 courses across code, title, subject, department
+  // and concept names, then ranks them. Re-filtering that response here would
+  // silently drop every concept match, because this index cannot see concept
+  // names — the payload only carries kc_count. So server results render as
+  // sent, and local search is confined to the bundled fallback catalog.
+  const fallbackIndex = createCourseSearchIndex(demoCourseCatalog);
+  const fallbackSearch = $derived(searchCourseCatalog(fallbackIndex, query, 50));
+  const filteredCourses = $derived(usingFallback ? fallbackSearch.results : serverCourses);
+  const resultTotal = $derived(usingFallback ? fallbackSearch.total : serverTotal);
+  const resultTruncated = $derived(usingFallback ? fallbackSearch.truncated : serverTruncated);
   const termStart = $derived(university === 'Other' ? customStartsOn : MCGILL_TERMS[termIndex]?.starts_on ?? '');
   const termEnd = $derived(university === 'Other' ? customEndsOn : MCGILL_TERMS[termIndex]?.ends_on ?? '');
 
@@ -69,6 +82,14 @@
     searchController?.abort();
   });
 
+  type TemplateSearchPayload = {
+    data?: {
+      courses: Array<Omit<CourseSearchCourse, 'slug'> & { template_id: string; credits: number | null; kc_count: number }>;
+      total: number;
+      truncated: boolean;
+    };
+  };
+
   async function loadTemplateOptions(search = '') {
     const request = ++searchRequest;
     searchController?.abort();
@@ -78,14 +99,20 @@
       const params = new URLSearchParams({ limit: '100' });
       if (search.trim()) params.set('q', search);
       const response = await fetch(`/api/v1/onboarding/templates?${params}`, { signal: searchController.signal });
-      const payload = await response.json() as { data?: Array<Omit<CourseSearchCourse, 'slug'> & { template_id: string; credits: number | null; kc_count: number }> };
-      if (request === searchRequest && response.ok && payload.data) {
-        templateOptions = payload.data.map((course) => ({ ...course, slug: course.template_id, credits: course.credits ?? undefined }));
+      const payload = await response.json() as TemplateSearchPayload;
+      if (request !== searchRequest) return;
+      if (response.ok && payload.data) {
+        serverCourses = payload.data.courses.map((course) => ({ ...course, slug: course.template_id, credits: course.credits ?? undefined }));
+        serverTotal = payload.data.total;
+        serverTruncated = payload.data.truncated;
+        usingFallback = false;
+      } else {
+        usingFallback = true;
       }
     } catch (cause) {
       // The bundled lightweight catalog remains a resilient fallback.
       if (cause instanceof DOMException && cause.name === 'AbortError') return;
-      if (request === searchRequest) templateOptions = demoCourseCatalog;
+      if (request === searchRequest) usingFallback = true;
     } finally {
       if (request === searchRequest) searchingCatalog = false;
     }
@@ -96,7 +123,7 @@
     if (value.trim().length < 2) {
       searchRequest += 1;
       searchController?.abort();
-      templateOptions = demoCourseCatalog;
+      usingFallback = true;
       searchingCatalog = false;
       return;
     }
@@ -288,19 +315,19 @@
       <div class="section"><b>3</b><div><h2>Course and knowledge map</h2><p>Search McGill’s undergraduate and graduate catalog, enter topics, or extract suggestions locally.</p></div><div class="course-grid"><div>
         <label class="search-label" for="course-search">Search McGill courses</label>
         <input id="course-search" type="search" bind:value={query} placeholder="Code, title, subject, or concept" autocomplete="off" spellcheck="false" aria-controls="course-results" aria-describedby="course-search-count" oninput={(event) => scheduleTemplateSearch(event.currentTarget.value)} onkeydown={(event) => { if (event.key === 'Escape') { query = ''; scheduleTemplateSearch(''); } }} />
-        <p id="course-search-count" class="search-count" aria-live="polite">{#if searchingCatalog}Searching McGill’s catalog…{:else if courseSearch.total === 0}No McGill courses match{courseSearch.query ? ` “${courseSearch.query}”` : ''}. Try a code, title, subject, or concept.{:else}{courseSearch.total}{courseSearch.total === 100 ? '+' : ''} matching {courseSearch.total === 1 ? 'course' : 'courses'}{#if courseSearch.truncated} · Showing the first {filteredCourses.length}{/if}{/if}</p>
-        {#if courseSearch.total > 0}
+        <p id="course-search-count" class="search-count" aria-live="polite">{#if searchingCatalog}Searching McGill’s catalog…{:else if resultTotal === 0}No courses match{query.trim() ? ` “${query.trim()}”` : ''}.{:else}{resultTotal} matching {resultTotal === 1 ? 'course' : 'courses'}{#if resultTruncated} · showing the first {filteredCourses.length}{/if}{/if}</p>
+        {#if resultTotal > 0}
           <ul id="course-results" class="results" aria-label="McGill courses" aria-busy={loadingTemplate || searchingCatalog}>
             {#each filteredCourses as course, index (course.slug)}
               <li>
-                <button class:selected={selectedCourse?.template_id === course.slug} aria-pressed={selectedCourse?.template_id === course.slug} aria-posinset={index + 1} aria-setsize={courseSearch.total} disabled={loadingTemplate} type="button" onclick={() => chooseTemplate(course.slug)}>
-                  <strong>{course.code}</strong><span>{course.title}{#if subjectLabel(course)}<small class="subject">{subjectLabel(course)}</small>{/if}</span><small>{course.kc_count} KCs</small>
+                <button class:selected={selectedCourse?.template_id === course.slug} aria-pressed={selectedCourse?.template_id === course.slug} aria-posinset={index + 1} aria-setsize={resultTotal} disabled={loadingTemplate} type="button" onclick={() => chooseTemplate(course.slug)}>
+                  <strong>{course.code}</strong><span>{course.title}{#if subjectLabel(course)}<small class="subject">{subjectLabel(course)}</small>{/if}</span><small>{course.kc_count} concepts</small>
                 </button>
               </li>
             {/each}
           </ul>
-        {:else if !loadingTemplate}
-          <p class="empty-results" role="status">No course found. You can enter a course map manually or upload a syllabus.</p>
+        {:else if !searchingCatalog}
+          <p class="empty-results" role="status">Try a course code, title, subject, or a concept it covers — or enter a course map manually below.</p>
         {/if}
       </div><div><div class="manual"><input bind:value={manualCode} placeholder="Course code" /><input bind:value={manualTitle} placeholder="Course title" /></div><textarea bind:value={manualTopics} rows="4" placeholder="Topics, one per line"></textarea><button class="small" type="button" onclick={useManual}>Use manual map</button><label class="upload">{parsing ? 'Reading…' : 'Upload syllabus / lesson plan'}<input type="file" accept=".pdf,.docx,.txt,.md" onchange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void extractFile(file); }} /></label></div></div>{#if status}<p class="status" role="status">{status}</p>{/if}{#if selectedCourse}<CourseMapReview proposal={selectedCourse} {termStart} {termEnd} onchange={(proposal) => { selectedCourse = proposal; }} />{/if}</div>
       <div class="finish"><button class="primary" type="button" disabled={!reviewReady() || phase === 'saving' || loadingTemplate} onclick={finishFresh}>{phase === 'saving' ? 'Creating your workspace…' : 'Create course and enter studyus'}</button></div>
