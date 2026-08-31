@@ -19,6 +19,17 @@ export const CATALOG_SAMPLE_SIZE: number = fixture.courses.length;
 
 const BATCH_SIZE = 100;
 
+/**
+ * Call this with an explicit hook timeout — `beforeAll(() => seedCatalogSample(env.DB), 60_000)`.
+ *
+ * This does ~900 real batched D1 writes. Measured at 33ms locally, so the
+ * timeout is not load-bearing today; it is there because the cost is real I/O
+ * that scales with the machine and with the fixture's size, and because a hook
+ * timeout aborts the whole file without naming a test. Vitest's 10s default is
+ * an assertion about how long a hook *should* take, and it has nothing useful
+ * to say about batched writes. Raised per call site rather than globally so
+ * ordinary tests keep failing fast when they hang.
+ */
 export async function seedCatalogSample(db: D1Database): Promise<void> {
   const rows = (fixture.courses as RawCatalogCourse[]).map((course, index) => catalogCourseRow(course, index + 1));
   const course = db.prepare(

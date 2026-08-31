@@ -9,7 +9,7 @@ const db = getDb(env.DB);
 
 // The generated catalogue lives in D1; see tests/setup/seed-catalog.ts for why
 // this seeds a slice rather than all 9,994 rows.
-beforeAll(() => seedCatalogSample(env.DB));
+beforeAll(() => seedCatalogSample(env.DB), 60_000);
 
 // Concept search is the reason the catalog carries KC outlines at all: a learner
 // who cannot remember "COMP 202" can still find it by typing "programming

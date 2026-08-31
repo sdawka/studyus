@@ -10,7 +10,7 @@ const db = getDb(env.DB);
 // file gets its own database and the suite runs in ~30s, so this seeds a
 // deterministic slice of the real catalogue rather than all 9,994 rows — see
 // tests/setup/seed-catalog.ts.
-beforeAll(() => seedCatalogSample(env.DB));
+beforeAll(() => seedCatalogSample(env.DB), 60_000);
 
 describe('reviewed onboarding template catalog', () => {
   it('lists the authored catalog and returns only browser-safe review data', async () => {
