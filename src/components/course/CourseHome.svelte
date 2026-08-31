@@ -14,6 +14,7 @@
   import { apiFetch } from '../../lib/apiClient';
   import { hydrateTasks, type ApiTask } from '../../lib/stores/tasks';
   import type { UnderstandNextKc } from '../../lib/understandNext';
+  import type { Assessment } from '../../lib/assessments';
   import CourseTasks from './CourseTasks.svelte';
   import UnderstandNext from './UnderstandNext.svelte';
   import UpNextCard from './UpNextCard.svelte';
@@ -28,17 +29,6 @@
     id: string;
     name: string;
     kcs: UnderstandNextKc[];
-  }
-  interface Assessment {
-    id: string;
-    title: string;
-    type: string;
-    kind: 'official' | 'practice';
-    due_date: string | null;
-    weight_pct: number | null;
-    grade_received: number | null;
-    grade_max: number | null;
-    kc_ids: string[];
   }
   interface EventRow {
     id: string;

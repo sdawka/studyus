@@ -73,8 +73,8 @@ const courseOverviewComponents: Annotation[] = [
     actions: [
       'PATCH /api/v1/assessments/:id — grade entry, edit, and practice done/undo all funnel through this one endpoint with different bodies.',
       'POST /api/v1/courses/:id/assessments — add.',
-      'GET /api/v1/courses/:slug (via courseContext) — lazily fetches the KC picker\'s options once, shared by add and edit forms.',
-      'Saving a grade calls the parent island\'s onGraded callback, which refetches /api/v1/grades/summary and this course\'s assessments so Standing/Coming up stay in step.',
+      'GET /api/v1/courses/:slug (via courseContext) — lazily fetches the KC picker\'s options, shared by add and edit forms; a failed fetch is retryable (Retry, or reopening a form) rather than terminal.',
+      'Saving a grade, or saving an edit to an official assessment, calls the parent island\'s onGraded callback, which refetches /api/v1/grades/summary and this course\'s assessments so Standing/Coming up stay in step. Practice adds, done/undo and edits call onPracticeChange instead.',
     ],
     feedback: [
       'Saving a grade shows an inline per-row message: "Saved — logged an event for linked KCs." when the write produced mastery deltas, plain "Saved." otherwise.',
