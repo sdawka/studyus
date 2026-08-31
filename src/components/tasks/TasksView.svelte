@@ -16,6 +16,7 @@
   import TaskQuickActions from './TaskQuickActions.svelte';
   import { masonryItem } from '../../lib/actions/masonry';
   import { taskDepart } from '../../lib/completionMotion';
+  import { dateOnlyInputToIso } from '../../lib/dateField';
   import {
     addTask,
     bucketByDue,
@@ -295,13 +296,14 @@
   }
 
   // Local <input type=date> values are calendar days with no timezone of
-  // their own; anchoring at local noon (not local midnight) means a later
-  // reparse + setHours(0,0,0,0) in the browser's own timezone always lands
-  // back on this same calendar day (mirrors the backend's UTC-noon
-  // discipline for day-granular dates).
+  // their own; dateOnlyInputToIso anchors at local noon (not local midnight)
+  // so a later reparse + setHours(0,0,0,0) in the browser's own timezone
+  // always lands back on this same calendar day (mirrors the backend's
+  // UTC-noon discipline for day-granular dates). An empty or unparseable
+  // value maps to undefined — due_date is optional, so "can't parse it"
+  // degrades to "no due date" rather than crashing the add.
   function dateInputToIso(value: string): string | undefined {
-    if (!value) return undefined;
-    return new Date(`${value}T12:00:00`).toISOString();
+    return dateOnlyInputToIso(value) ?? undefined;
   }
 
   async function submitAdd(courseId: string | undefined) {

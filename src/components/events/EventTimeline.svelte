@@ -1,6 +1,7 @@
 <script lang="ts">
   import { apiFetch } from '../../lib/apiClient';
   import { numericFieldValue, type NumericFieldBinding } from '../../lib/numericField';
+  import { toSafeIsoString } from '../../lib/dateField';
 
   // Reusable event timeline island. Fetches from the events API and
   // self-refreshes after any mutation — no props out, no events emitted.
@@ -104,7 +105,10 @@
   function startEdit(event: ApiEvent) {
     editingId = event.id;
     editType = event.type;
-    editTs = new Date(event.ts).toISOString().slice(0, 16);
+    // event.ts is DB-sourced and normally always a valid instant, but guard
+    // rather than crash the click handler on a corrupt row — fall back to
+    // "now" so the field opens editable instead of stuck unset.
+    editTs = (toSafeIsoString(event.ts) ?? new Date().toISOString()).slice(0, 16);
     editScore = typeof event.payload?.score === 'number' ? String(event.payload.score) : '';
     editNote = typeof event.payload?.note === 'string' ? event.payload.note : '';
   }
@@ -123,12 +127,21 @@
       if (editNote.trim() !== '') payload.note = editNote.trim();
       else delete payload.note;
 
+      // Required field — a cleared or otherwise unparseable datetime-local
+      // value must block the save with a message, not crash silently or
+      // send a garbage timestamp to the API.
+      const ts = toSafeIsoString(editTs);
+      if (ts === null) {
+        loadError = 'Enter a valid date and time before saving.';
+        return;
+      }
+
       const res = await fetch(`/api/v1/events/${event.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: editType,
-          ts: new Date(editTs).toISOString(),
+          ts,
           payload,
         }),
       });

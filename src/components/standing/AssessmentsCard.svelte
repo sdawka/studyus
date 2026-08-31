@@ -11,6 +11,7 @@
   // here too, so the child components stay views over state plus callbacks.
   import { apiFetch } from '../../lib/apiClient';
   import { numericFieldValue } from '../../lib/numericField';
+  import { dateOnlyInputToIso } from '../../lib/dateField';
   import {
     emptyAddDraft,
     type AddAssessmentDraft,
@@ -98,7 +99,10 @@
       };
       const weight = numericFieldValue(addDraft.weight);
       if (addDraft.kind === 'official' && weight !== null) body.weight_pct = weight;
-      if (addDraft.due) body.due_date = new Date(`${addDraft.due}T12:00:00`).toISOString();
+      // An unparseable date degrades to "no due date", the same as an empty
+      // one — due_date is optional, so there is nothing to block the save on.
+      const addDueIso = dateOnlyInputToIso(addDraft.due);
+      if (addDueIso !== null) body.due_date = addDueIso;
       if (addDraft.kcIds.size > 0) body.kc_ids = [...addDraft.kcIds];
       const result = await apiFetch<Assessment>(
         `/api/v1/courses/${courseId}/assessments`,
@@ -155,7 +159,7 @@
       const body: Record<string, unknown> = {
         title: draft.title.trim(),
         type: draft.type,
-        due_date: draft.due ? new Date(`${draft.due}T12:00:00`).toISOString() : null,
+        due_date: dateOnlyInputToIso(draft.due),
         kc_ids: [...draft.kcIds],
       };
       if (a.kind === 'official') body.weight_pct = numericFieldValue(draft.weight);

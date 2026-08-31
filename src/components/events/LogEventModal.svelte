@@ -8,6 +8,7 @@
   import { captureBehavioralEvent } from '../../lib/analytics/client';
   import { createRecordEventAnalytics } from '../../lib/analytics/engagement';
   import { postManualEvent, type EventPostAttempt } from '../../lib/eventPostClient';
+  import { toSafeIsoString } from '../../lib/dateField';
   import { courseContext } from '../../lib/stores/courseContext';
   import { portalToBody } from '../../lib/actions/portal';
   import { scrollLock } from '../../lib/actions/scrollLock';
@@ -206,9 +207,18 @@
         else payload.score = Number(scoreValue);
       }
 
+      // Required field — the datetime-local input has `required`, but guard
+      // anyway rather than trust a native constraint that a corrupted value
+      // or programmatic submit could bypass.
+      const ts = toSafeIsoString(when);
+      if (ts === null) {
+        submitError = 'Enter a valid date and time.';
+        return;
+      }
+
       const body: Record<string, unknown> = {
         type: selectedType,
-        ts: new Date(when).toISOString(),
+        ts,
         payload,
       };
       if (selectedCourseId) body.course_id = selectedCourseId;
