@@ -1,4 +1,6 @@
 import type { APIRoute } from 'astro';
+import { env } from 'cloudflare:workers';
+import { getDb } from '../../../../../db/client';
 import { apiOk } from '../../../../../lib/api';
 import { withServiceErrors } from '../../../../../lib/apiErrors';
 import { searchReviewedTemplates } from '../../../../../lib/content/templateCatalog';
@@ -6,7 +8,8 @@ import { searchReviewedTemplates } from '../../../../../lib/content/templateCata
 export const GET: APIRoute = async ({ url }) =>
   withServiceErrors(async () => {
     const level = url.searchParams.get('level');
-    const { results, total, truncated } = searchReviewedTemplates(
+    const { results, total, truncated } = await searchReviewedTemplates(
+      getDb(env.DB),
       (url.searchParams.get('q') ?? '').slice(0, 100),
       {
         level: level === 'undergraduate' || level === 'graduate' ? level : undefined,

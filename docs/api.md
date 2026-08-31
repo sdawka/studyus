@@ -88,7 +88,10 @@ bodies are not accepted from the browser.
 Searches browser-safe metadata for the course catalog: the authored reviewed
 templates plus the generated McGill catalogue outlines. Matches on code, title,
 subject, department, faculty, aliases, and **concept names**, so a learner can
-find a course by what it covers rather than only by its code.
+find a course by what it covers rather than only by its code. The generated
+catalogue is searched in D1 through the FTS5 index `catalog_courses_fts`, so
+each term matches at a word prefix (`comp` finds `COMP`, `comp202` finds
+`COMP 202`); the nine authored templates are matched in memory and merged in.
 
 `q` is capped at 100 characters, `level` is `undergraduate` or `graduate`, and
 `limit` is clamped to 1..100 (default 50). Response:

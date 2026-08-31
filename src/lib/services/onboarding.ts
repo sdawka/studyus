@@ -19,7 +19,7 @@ import {
   users,
 } from '../../db/schema';
 import { parseKcRef, type ContentAssessment } from '../content/courseContent';
-import { getAssessmentTemplateRef, getReviewedTemplate, getReviewedTemplateRevision, getTemplateBaseline } from '../content/templateCatalog';
+import { getAssessmentTemplateRef, getReviewedTemplate, getReviewedTemplateRevision, templateBaseline, type ReviewedTemplate, type TemplateBaseline } from '../content/templateCatalog';
 import { exerciseDetails } from '../content/exercises';
 import type { CourseSetupProposal, DemoImportInput } from '../schemas/onboarding';
 import { ConflictError, runBatch } from './util';
@@ -74,16 +74,16 @@ function dateEpoch(value: string): number {
 type SetupBranch = CourseSetupProposal['branches'][number];
 type SetupKc = SetupBranch['kcs'][number];
 type ReviewedSelection = {
-  template: NonNullable<ReturnType<typeof getReviewedTemplate>>;
+  template: ReviewedTemplate;
   branchOverrides: Map<string, SetupBranch>;
   kcOverrides: Map<string, SetupKc>;
   selectedKcRefs: Set<string>;
   assessmentDates: Map<string, number | null>;
 };
 
-function reviewSelection(proposal: CourseSetupProposal, input: DemoImportInput): ReviewedSelection | null {
+async function reviewSelection(db: Db, proposal: CourseSetupProposal, input: DemoImportInput): Promise<ReviewedSelection | null> {
   if (!proposal.template_id) return null;
-  const template = getReviewedTemplate(proposal.template_id);
+  const template = await getReviewedTemplate(db, proposal.template_id);
   if (!template) throw new ConflictError('This reviewed course template is no longer available. Choose it again.');
 
   const branchOverrides = new Map<string, SetupBranch>();
@@ -184,11 +184,16 @@ export async function importDemoSetup(db: Db, userId: string, input: DemoImportI
   const hasMeaningfulProposal = realCourses.some((proposal) => meaningfulKcs(proposal).length > 0);
   const reviewedSelections = new Map<CourseSetupProposal, ReviewedSelection>();
   const reviewedRevisions = new Map<CourseSetupProposal, string>();
+  // Every template read happens here, before a single statement is built, so
+  // the statement-building pass below stays synchronous and runBatch keeps
+  // committing one atomic batch.
+  const reviewedBaselines = new Map<CourseSetupProposal, TemplateBaseline>();
   for (const proposal of realCourses) {
-    const reviewed = reviewSelection(proposal, input);
+    const reviewed = await reviewSelection(db, proposal, input);
     if (reviewed) {
       reviewedSelections.set(proposal, reviewed);
-      const revision = await getReviewedTemplateRevision(proposal.template_id!);
+      reviewedBaselines.set(proposal, templateBaseline(reviewed.template));
+      const revision = await getReviewedTemplateRevision(db, proposal.template_id!);
       if (revision) reviewedRevisions.set(proposal, revision);
     }
   }
@@ -242,7 +247,7 @@ export async function importDemoSetup(db: Db, userId: string, input: DemoImportI
     statements.push(db.insert(courses).values({
       id: courseId, userId, code: courseCode, templateId: proposal.template_id, slug: courseSlug,
       templateRevision: reviewedRevisions.get(proposal),
-      templateBaseline: proposal.template_id ? getTemplateBaseline(proposal.template_id) : null,
+      templateBaseline: reviewedBaselines.get(proposal) ?? null,
       templateSyncedAt: reviewed ? now : null,
       title: reviewed?.template.meta.title ?? proposal.course.title,
       credits: reviewed?.template.meta.credits ?? proposal.course.credits,
@@ -338,9 +343,13 @@ export async function importDemoSetup(db: Db, userId: string, input: DemoImportI
   // Reconcile reviewed prerequisite edges across every learner-owned template.
   // This also backfills a cross-course edge when its prerequisite course is
   // imported after the course that depends on it.
-  const ownedTemplateIds = new Set([...kcIdByTemplateKey.keys()].map((key) => key.slice(0, key.indexOf('#'))));
-  for (const templateId of ownedTemplateIds) {
-    const ownedTemplate = getReviewedTemplate(templateId);
+  const ownedTemplateIds = [...new Set([...kcIdByTemplateKey.keys()].map((key) => key.slice(0, key.indexOf('#'))))];
+  // Resolved up front rather than inside the loop: these are D1 reads now, and
+  // they must not interleave with the statement list that runBatch commits.
+  const ownedTemplates = await Promise.all(ownedTemplateIds.map(async (templateId) => (
+    [templateId, await getReviewedTemplate(db, templateId)] as const
+  )));
+  for (const [templateId, ownedTemplate] of ownedTemplates) {
     if (!ownedTemplate) continue;
     for (const branch of ownedTemplate.content.branches) {
       for (const kc of branch.kcs) {

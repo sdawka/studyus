@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { sqliteTable, text, integer, index, primaryKey, uniqueIndex, type AnySQLiteColumn } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, index, primaryKey, uniqueIndex, type AnySQLiteColumn } from 'drizzle-orm/sqlite-core';
 import { TASK_TYPES } from '../lib/schemas/tasks';
 
 // Convention: text ids via crypto.randomUUID(); integer timestamps in epoch ms.
@@ -1072,5 +1072,47 @@ export const calendarFeedCredentials = sqliteTable(
   (table) => [
     uniqueIndex('calendar_feed_credentials_user_unique').on(table.userId),
     uniqueIndex('calendar_feed_credentials_hash_unique').on(table.tokenHash),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// Generated course catalogue
+// ---------------------------------------------------------------------------
+
+// The ~10,000 generated McGill catalogue courses. They live in D1 rather than
+// the worker bundle: imported as JSON they became a 5 MB chunk that V8 parsed
+// as source at every isolate start. The nine authored templates
+// (courses/*/content.json) stay in the bundle — they carry scaffolds and
+// exercise banks and there are only nine of them.
+//
+// Seeded wholesale by scripts/seed-catalog.ts from courses/mcgill-catalog.json.
+// The companion FTS5 index `catalog_courses_fts` is not modelled here: drizzle
+// cannot express a virtual table, and search reaches it through raw SQL in
+// src/lib/content/templateCatalog.ts.
+export const catalogCourses = sqliteTable(
+  'catalog_courses',
+  {
+    // Plain INTEGER PRIMARY KEY, i.e. the rowid, so catalog_courses_fts can
+    // index by the same rowid and the join costs nothing.
+    id: integer('id').primaryKey(),
+    slug: text('slug').notNull(),
+    code: text('code').notNull(),
+    title: text('title').notNull(),
+    credits: real('credits'),
+    department: text('department').notNull(),
+    faculty: text('faculty').notNull(),
+    audience: text('audience', { enum: ['u', 'b', 'g'] }).notNull(),
+    kcs: text('kcs', { mode: 'json' }).notNull().$type<Array<[string, 'f' | 'a' | 'c' | 'r' | 'p']>>(),
+    // Denormalized so search results never have to ship the kcs blob.
+    kcCount: integer('kc_count').notNull(),
+    // Precomputed at seed time so search never normalizes at query time.
+    normalizedCode: text('normalized_code').notNull(),
+    compactCode: text('compact_code').notNull(),
+    normalizedTitle: text('normalized_title').notNull(),
+    sortKey: text('sort_key').notNull(),
+  },
+  (table) => [
+    uniqueIndex('catalog_courses_slug_unique').on(table.slug),
+    index('catalog_courses_audience_sort_idx').on(table.audience, table.sortKey),
   ],
 );

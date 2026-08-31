@@ -95,7 +95,7 @@ describe('onboarding import', () => {
   });
 
   it('atomically clones reviewed content while preserving learner edits and explicit unknown dates', async () => {
-    const proposal = proposalFromReviewedTemplate('chee-310-physical-chemistry-for-engineers')!;
+    const proposal = (await proposalFromReviewedTemplate(db, 'chee-310-physical-chemistry-for-engineers'))!;
     proposal.branches[0].name = 'My kinetics sequence';
     proposal.branches[0].sort_order = 9;
     proposal.branches[0].kcs[0].name = 'Rate laws — renamed';
@@ -123,7 +123,7 @@ describe('onboarding import', () => {
   });
 
   it('rejects unresolved dates, out-of-term dates, and excluded prerequisites before writing', async () => {
-    const unresolved = proposalFromReviewedTemplate('chee-310-physical-chemistry-for-engineers')!;
+    const unresolved = (await proposalFromReviewedTemplate(db, 'chee-310-physical-chemistry-for-engineers'))!;
     await expect(importDemoSetup(db, userId, input(unresolved))).rejects.toThrow('Confirm a date');
 
     unresolved.assessments.forEach((assessment) => {
