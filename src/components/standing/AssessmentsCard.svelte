@@ -37,14 +37,49 @@
     onGraded?: () => void;
     onPracticeChange?: () => void;
   }
-  let { courseId, assessments: initialAssessments, onGraded, onPracticeChange }: Props = $props();
+  let { courseId, assessments: serverAssessments, onGraded, onPracticeChange }: Props = $props();
 
-  let assessments = $state(initialAssessments);
-  let gradeDrafts = $state<Record<string, { received: NumericFieldBinding; max: NumericFieldBinding }>>(
-    Object.fromEntries(
-      assessments.map((a) => [a.id, { received: a.grade_received?.toString() ?? '', max: a.grade_max?.toString() ?? '' }]),
-    ),
-  );
+  // The prop is the source of truth, not a seed. CourseHome refetches the
+  // course's assessments and re-passes them after every grade save, and that
+  // refresh has to win — a `$state` copy forked at mount silently ignored it.
+  //
+  // Local mutations (add, edit, grade, practice toggle) are an optimistic
+  // overlay tagged with the prop array they were computed from, so the next
+  // array from the parent discards them rather than being discarded by them.
+  let overlay = $state.raw<{ base: Assessment[]; rows: Assessment[] } | null>(null);
+  const assessments = $derived(overlay !== null && overlay.base === serverAssessments ? overlay.rows : serverAssessments);
+
+  function setAssessments(rows: Assessment[]) {
+    overlay = { base: serverAssessments, rows };
+  }
+
+  function patchAssessment(id: string, patch: Partial<Assessment>) {
+    setAssessments(assessments.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+  }
+
+  // Grade entry is the one piece of genuinely local editable state here: it is
+  // the user's in-progress typing, seeded once from the row and owned by the
+  // input from then on. Instances are memoized per assessment id in a plain
+  // (non-reactive) Map, so a row that only appears later — added here, or
+  // arriving in a refreshed prop — still gets a draft on first render.
+  class GradeDraft {
+    received = $state<NumericFieldBinding>('');
+    max = $state<NumericFieldBinding>('');
+    constructor(a: Assessment) {
+      this.received = a.grade_received?.toString() ?? '';
+      this.max = a.grade_max?.toString() ?? '';
+    }
+  }
+  const gradeDrafts = new Map<string, GradeDraft>();
+  function gradeDraftFor(a: Assessment): GradeDraft {
+    let draft = gradeDrafts.get(a.id);
+    if (!draft) {
+      draft = new GradeDraft(a);
+      gradeDrafts.set(a.id, draft);
+    }
+    return draft;
+  }
+
   // Keyed by assessment id: several rows can be saving at once, and a scalar
   // here re-enabled a row's Save button as soon as a *different* row started.
   let gradeSavingIds = $state<ReadonlySet<string>>(new Set());
@@ -196,27 +231,23 @@
         return;
       }
       const updated = result.data;
-      assessments = assessments.map((row) =>
-        row.id === a.id
-          ? {
-              ...row,
-              title: updated.title,
-              type: updated.type,
-              due_date: updated.due_date,
-              weight_pct: updated.weight_pct,
-              kc_ids: updated.kc_ids,
-            }
-          : row,
-      );
+      patchAssessment(a.id, {
+        title: updated.title,
+        type: updated.type,
+        due_date: updated.due_date,
+        weight_pct: updated.weight_pct,
+        kc_ids: updated.kc_ids,
+      });
       if (editingId === a.id) closeEdit();
     } finally {
       editSavingId = null;
     }
   }
 
-  async function saveGrade(assessmentId: string) {
-    const draft = gradeDrafts[assessmentId];
-    if (!draft || gradeSavingIds.has(assessmentId)) return;
+  async function saveGrade(assessment: Assessment) {
+    const assessmentId = assessment.id;
+    if (gradeSavingIds.has(assessmentId)) return;
+    const draft = gradeDraftFor(assessment);
     gradeSavingIds = withId(gradeSavingIds, assessmentId, true);
     gradeFeedback = { ...gradeFeedback, [assessmentId]: '' };
     try {
@@ -238,9 +269,7 @@
         return;
       }
       const updated = result.data;
-      assessments = assessments.map((a) =>
-        a.id === assessmentId ? { ...a, grade_received: updated.grade_received, grade_max: updated.grade_max } : a,
-      );
+      patchAssessment(assessmentId, { grade_received: updated.grade_received, grade_max: updated.grade_max });
       const logged = Array.isArray(updated.mastery_deltas) && updated.mastery_deltas.length > 0;
       gradeFeedback = { ...gradeFeedback, [assessmentId]: logged ? 'Saved — logged an event for linked concepts.' : 'Saved.' };
       onGraded?.();
@@ -259,7 +288,7 @@
     const next = done
       ? { grade_received: assessment.grade_received ?? 100, grade_max: assessment.grade_max ?? 100 }
       : { grade_received: null, grade_max: assessment.grade_max };
-    assessments = assessments.map((a) => (a.id === assessment.id ? { ...a, ...next } : a));
+    patchAssessment(assessment.id, next);
     try {
       // Either failure mode (non-ok response or the request never landing)
       // reverts identically, so there's nothing left for a catch to do.
@@ -269,7 +298,7 @@
         body: JSON.stringify(next),
       });
       if (!result.ok) {
-        assessments = assessments.map((a) => (a.id === assessment.id ? { ...a, ...prev } : a));
+        patchAssessment(assessment.id, prev);
       } else {
         onPracticeChange?.();
       }
@@ -308,8 +337,7 @@
         closeEdit();
         return;
       }
-      assessments = [...assessments, result.data];
-      gradeDrafts = { ...gradeDrafts, [result.data.id]: { received: '', max: '' } };
+      setAssessments([...assessments, result.data]);
       if (draftKind === 'practice') onPracticeChange?.();
       addOpen = false;
       draftTitle = '';
@@ -338,16 +366,17 @@
           <tr><th>Title</th><th>Type</th><th>Due</th><th>Weight</th><th>Grade</th><th>Out of</th><th></th></tr>
         </thead>
         <tbody>
-          {#each officialAssessments as a}
+          {#each officialAssessments as a (a.id)}
+            {@const draft = gradeDraftFor(a)}
             <tr>
               <td>{a.title}</td>
               <td class="capitalize">{a.type}</td>
               <td>{formatDueDate(a.due_date)}</td>
               <td class="num">{a.weight_pct !== null ? `${a.weight_pct}%` : '—'}</td>
-              <td><input type="number" min="0" bind:value={gradeDrafts[a.id].received} class="grade-input num" /></td>
-              <td><input type="number" min="0" bind:value={gradeDrafts[a.id].max} class="grade-input num" /></td>
+              <td><input type="number" min="0" bind:value={draft.received} class="grade-input num" /></td>
+              <td><input type="number" min="0" bind:value={draft.max} class="grade-input num" /></td>
               <td class="row-actions">
-                <button type="button" class="btn btn-secondary" onclick={() => saveGrade(a.id)} disabled={gradeSavingIds.has(a.id)}>
+                <button type="button" class="btn btn-secondary" onclick={() => saveGrade(a)} disabled={gradeSavingIds.has(a.id)}>
                   {gradeSavingIds.has(a.id) ? 'Saving…' : 'Save'}
                 </button>
                 <button type="button" class="link-btn" onclick={() => (editingId === a.id ? closeEdit() : openEdit(a))}>

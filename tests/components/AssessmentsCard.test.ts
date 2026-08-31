@@ -387,8 +387,8 @@ describe('an in-flight save never disturbs another row\'s edit form (claim #4, f
   });
 });
 
-describe('KNOWN BUG: the assessments prop is forked once, not kept in sync (claim #5)', () => {
-  it('a re-passed assessments prop with changed data never reaches the rendered list', async () => {
+describe('the assessments prop is the source of truth (claim #5, fixed)', () => {
+  it('a re-passed assessments prop with changed data reaches the rendered list', async () => {
     const { rerender } = render(AssessmentsCard, {
       props: { courseId: 'c1', assessments: [makeAssessment({ id: 'a1', title: 'Original title' })] },
     });
@@ -397,9 +397,27 @@ describe('KNOWN BUG: the assessments prop is forked once, not kept in sync (clai
     await rerender({ courseId: 'c1', assessments: [makeAssessment({ id: 'a1', title: 'Updated title' })] });
     await tick();
 
-    // BUG: the component keeps showing its own forked copy of the array.
-    expect(screen.getByText('Original title')).toBeTruthy();
-    expect(screen.queryByText('Updated title')).toBeNull();
+    // FIXED: the rendered list is derived from the prop. Local mutations are an
+    // optimistic overlay tagged with the array they were computed from, so a
+    // fresh array from the parent (CourseHome refetches after every grade save)
+    // supersedes them instead of being ignored.
+    expect(screen.getByText('Updated title')).toBeTruthy();
+    expect(screen.queryByText('Original title')).toBeNull();
+  });
+
+  it('keeps an optimistic local edit until the parent sends a new array', async () => {
+    const { rerender } = render(AssessmentsCard, {
+      props: { courseId: 'c1', assessments: [makeAssessment({ id: 'p1', title: 'Drill', kind: 'practice' })] },
+    });
+    mockApiFetch.mockResolvedValueOnce(okResult({}));
+    await fireEvent.click(screen.getByRole('button', { name: 'Mark done' }));
+    await screen.findByText('100/100');
+
+    // A new array from the parent replaces the overlay wholesale.
+    await rerender({ courseId: 'c1', assessments: [makeAssessment({ id: 'p1', title: 'Drill', kind: 'practice' })] });
+    await tick();
+    expect(screen.queryByText('100/100')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Mark done' })).toBeTruthy();
   });
 });
 
