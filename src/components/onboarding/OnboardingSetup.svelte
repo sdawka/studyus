@@ -7,6 +7,8 @@
   import { trackDemoFunnelEvent } from '../../lib/analytics/demo';
   import { summarizeOnboardingReview } from '../../lib/analytics/onboarding';
   import { createCourseSearchIndex, searchCourseCatalog, type CourseSearchCourse } from '../../lib/courseSearch';
+  import { isPlaceholderKcName } from '../../lib/placeholderKc';
+  import { onboardingSetupProblems } from '../../lib/onboardingValidation';
 
   let ready = $state(false);
   let phase = $state<'offer' | 'setup' | 'saving'>('setup');
@@ -57,6 +59,26 @@
   const resultTruncated = $derived(usingFallback ? fallbackSearch.truncated : serverTruncated);
   const termStart = $derived(university === 'Other' ? customStartsOn : MCGILL_TERMS[termIndex]?.starts_on ?? '');
   const termEnd = $derived(university === 'Other' ? customEndsOn : MCGILL_TERMS[termIndex]?.ends_on ?? '');
+
+  // The server enforces a 2-character minimum on the course code and title, on
+  // the university, program and semester names, and rejects a course whose
+  // concepts are all filler. Those failures used to reach the learner as raw
+  // Zod text — "Too small: expected string to have >=2 characters", repeated
+  // once per bad field and naming none of them. Check the same rules here so
+  // the round-trip never happens, and say which field is wrong.
+  const setupProblems = $derived(onboardingSetupProblems({
+    university,
+    otherUniversity,
+    program,
+    customTermLabel,
+    termStart,
+    termEnd,
+    course: selectedCourse ? selectedCourse.course : null,
+    includedKcNames: selectedCourse
+      ? selectedCourse.branches.filter((branch) => branch.included)
+        .flatMap((branch) => branch.kcs.filter((kc) => kc.included).map((kc) => kc.name))
+      : [],
+  }));
 
   function reviewReady() {
     if (!selectedCourse) return false;
@@ -223,8 +245,17 @@
 
   function useManual() {
     const topics = manualTopics.split(/[\n,;]+/).map((topic) => topic.trim()).filter(Boolean);
-    if (!manualCode.trim() || !manualTitle.trim() || topics.length === 0) {
-      status = 'Enter a code, title, and at least one meaningful topic.';
+    // Mirrors courseSetupProposalSchema: 2 characters, not merely non-empty.
+    if (manualCode.trim().length < 2 || manualTitle.trim().length < 2) {
+      status = 'Enter a course code and title of at least 2 characters each.';
+      return;
+    }
+    if (topics.length === 0 || topics.some((topic) => topic.length < 2)) {
+      status = 'Enter at least one topic, each at least 2 characters.';
+      return;
+    }
+    if (topics.every((topic) => isPlaceholderKcName(topic))) {
+      status = 'Name what the course actually covers — “General” is too generic to plan from.';
       return;
     }
     selectedCourse = manualProposal(manualCode, manualTitle, topics);
@@ -330,11 +361,14 @@
           <p class="empty-results" role="status">Try a course code, title, subject, or a concept it covers — or enter a course map manually below.</p>
         {/if}
       </div><div><div class="manual"><input bind:value={manualCode} placeholder="Course code" /><input bind:value={manualTitle} placeholder="Course title" /></div><textarea bind:value={manualTopics} rows="4" placeholder="Topics, one per line"></textarea><button class="small" type="button" onclick={useManual}>Use manual map</button><label class="upload">{parsing ? 'Reading…' : 'Upload syllabus / lesson plan'}<input type="file" accept=".pdf,.docx,.txt,.md" onchange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void extractFile(file); }} /></label></div></div>{#if status}<p class="status" role="status">{status}</p>{/if}{#if selectedCourse}<CourseMapReview proposal={selectedCourse} {termStart} {termEnd} onchange={(proposal) => { selectedCourse = proposal; }} />{/if}</div>
-      <div class="finish"><button class="primary" type="button" disabled={!reviewReady() || phase === 'saving' || loadingTemplate} onclick={finishFresh}>{phase === 'saving' ? 'Creating your workspace…' : 'Create course and enter studyus'}</button></div>
+      {#if setupProblems.length > 0}
+        <ul class="problems" aria-live="polite">{#each setupProblems as problem}<li>{problem}</li>{/each}</ul>
+      {/if}
+      <div class="finish"><button class="primary" type="button" disabled={!reviewReady() || setupProblems.length > 0 || phase === 'saving' || loadingTemplate} onclick={finishFresh}>{phase === 'saving' ? 'Creating your workspace…' : 'Create course and enter studyus'}</button></div>
     </section>
   {/if}
 </main>
 
 <style>
-  :global(body){font-family:'Nunito Variable',system-ui,sans-serif;background:radial-gradient(circle at 10% 10%,#f0ddff,transparent 30%),radial-gradient(circle at 90% 20%,#ddf7e8,transparent 27%),#faf8fd;color:#2d2734}.page{min-height:100dvh;padding:22px clamp(16px,4vw,48px) 70px}.page>header{max-width:1060px;margin:auto;display:flex;justify-content:space-between}.page>header p{font-size:12px;color:#756b7d}.wordmark{font:800 24px 'Fraunces Variable',serif;text-decoration:none;color:#2d2734}.wordmark span{color:#ee456d}.card{max-width:1060px;margin:clamp(42px,7vh,78px) auto 0;background:#fffffff0;border:1px solid #e2dce6;border-radius:28px;padding:clamp(24px,5vw,54px);box-shadow:0 28px 80px #3f2c4c1f}.import-card{max-width:700px}.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:11px;font-weight:900;color:#833cc5}h1,h2{font-family:'Fraunces Variable',serif;margin:0;letter-spacing:-.025em}h1{font-size:clamp(38px,5vw,62px);line-height:1.04}.card>p,.section p{color:#716777}.import-card dl{display:grid;gap:7px;margin:25px 0}.import-card dl div{display:grid;grid-template-columns:120px 1fr;padding:11px;border-bottom:1px solid #ebe6ed}.import-card dt{font-size:12px;font-weight:900}.import-card dd{margin:0}.actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}.actions a{color:#7c3cb6;font-weight:800}.primary,.secondary,.small{border-radius:999px;padding:12px 19px;border:1px solid transparent;font-weight:900;cursor:pointer}.primary{background:#ee456d;color:#fff}.primary:disabled{opacity:.45}.secondary,.small{background:#fff;border-color:#d9d1de;color:#55485e}.section{display:grid;grid-template-columns:38px 1fr;gap:8px 14px;padding:27px 0;border-top:1px solid #e9e4ec}.section>b{width:34px;height:34px;border-radius:11px;background:#f0e5fb;color:#7d38ba;display:grid;place-items:center}.section h2{font-size:25px}.section p{margin:5px 0 17px}.fields,.course-grid{grid-column:2;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.prefs{grid-template-columns:1.3fr 1fr 1fr}label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:900;color:#6e6475}.search-label{margin-bottom:-4px}input,select,textarea{width:100%;padding:11px;border:1px solid #d9d2de;border-radius:12px;background:#fff;font:inherit;box-sizing:border-box}input[type=range]{padding:0;accent-color:#8a42c8}.search-count{font-size:12px;margin:8px 0;color:#716777}.results{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none;max-height:340px;overflow:auto;contain:content}.results li{margin:0}.results button{width:100%;display:grid;grid-template-columns:auto 1fr auto;gap:8px;text-align:left;border:1px solid #e1dbe5;background:#fff;border-radius:11px;padding:10px;cursor:pointer}.results button:disabled{cursor:wait}.results button.selected{border-color:#8a42c8;background:#f7f0fd}.results button span{min-width:0}.results button .subject{display:block;color:#716777;font-size:11px;font-weight:600;margin-top:2px}.empty-results{font-size:13px;color:#716777;border:1px dashed #c8b8d0;border-radius:11px;padding:12px;margin:8px 0}.manual{display:grid;grid-template-columns:1fr 1.5fr;gap:8px}.course-grid textarea{margin:8px 0}.upload{position:relative;text-align:center;padding:11px;border:1px dashed #a88cbd;border-radius:12px;margin-top:9px}.upload input{position:absolute;inset:0;opacity:0}.status,.error{grid-column:2;padding:11px;border-radius:11px;font-size:13px}.status{background:#ecf8f2;color:#246f55}.error{background:#ffe7ec;color:#982542}.review{grid-column:2;padding:15px;border-radius:14px;background:#f7f3f9}.review ul{columns:2}.finish{display:flex;justify-content:flex-end;margin-top:18px}@media(max-width:760px){.fields,.course-grid,.prefs{grid-template-columns:1fr}.review ul{columns:1}.card{border-radius:20px}.finish .primary{width:100%}}
+  :global(body){font-family:'Nunito Variable',system-ui,sans-serif;background:radial-gradient(circle at 10% 10%,#f0ddff,transparent 30%),radial-gradient(circle at 90% 20%,#ddf7e8,transparent 27%),#faf8fd;color:#2d2734}.page{min-height:100dvh;padding:22px clamp(16px,4vw,48px) 70px}.page>header{max-width:1060px;margin:auto;display:flex;justify-content:space-between}.page>header p{font-size:12px;color:#756b7d}.wordmark{font:800 24px 'Fraunces Variable',serif;text-decoration:none;color:#2d2734}.wordmark span{color:#ee456d}.card{max-width:1060px;margin:clamp(42px,7vh,78px) auto 0;background:#fffffff0;border:1px solid #e2dce6;border-radius:28px;padding:clamp(24px,5vw,54px);box-shadow:0 28px 80px #3f2c4c1f}.import-card{max-width:700px}.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:11px;font-weight:900;color:#833cc5}h1,h2{font-family:'Fraunces Variable',serif;margin:0;letter-spacing:-.025em}h1{font-size:clamp(38px,5vw,62px);line-height:1.04}.card>p,.section p{color:#716777}.import-card dl{display:grid;gap:7px;margin:25px 0}.import-card dl div{display:grid;grid-template-columns:120px 1fr;padding:11px;border-bottom:1px solid #ebe6ed}.import-card dt{font-size:12px;font-weight:900}.import-card dd{margin:0}.actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}.actions a{color:#7c3cb6;font-weight:800}.primary,.secondary,.small{border-radius:999px;padding:12px 19px;border:1px solid transparent;font-weight:900;cursor:pointer}.primary{background:#ee456d;color:#fff}.primary:disabled{opacity:.45}.secondary,.small{background:#fff;border-color:#d9d1de;color:#55485e}.section{display:grid;grid-template-columns:38px 1fr;gap:8px 14px;padding:27px 0;border-top:1px solid #e9e4ec}.section>b{width:34px;height:34px;border-radius:11px;background:#f0e5fb;color:#7d38ba;display:grid;place-items:center}.section h2{font-size:25px}.section p{margin:5px 0 17px}.fields,.course-grid{grid-column:2;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.prefs{grid-template-columns:1.3fr 1fr 1fr}label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:900;color:#6e6475}.search-label{margin-bottom:-4px}input,select,textarea{width:100%;padding:11px;border:1px solid #d9d2de;border-radius:12px;background:#fff;font:inherit;box-sizing:border-box}input[type=range]{padding:0;accent-color:#8a42c8}.search-count{font-size:12px;margin:8px 0;color:#716777}.results{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none;max-height:340px;overflow:auto;contain:content}.results li{margin:0}.results button{width:100%;display:grid;grid-template-columns:auto 1fr auto;gap:8px;text-align:left;border:1px solid #e1dbe5;background:#fff;border-radius:11px;padding:10px;cursor:pointer}.results button:disabled{cursor:wait}.results button.selected{border-color:#8a42c8;background:#f7f0fd}.results button span{min-width:0}.results button .subject{display:block;color:#716777;font-size:11px;font-weight:600;margin-top:2px}.empty-results{font-size:13px;color:#716777;border:1px dashed #c8b8d0;border-radius:11px;padding:12px;margin:8px 0}.manual{display:grid;grid-template-columns:1fr 1.5fr;gap:8px}.course-grid textarea{margin:8px 0}.upload{position:relative;text-align:center;padding:11px;border:1px dashed #a88cbd;border-radius:12px;margin-top:9px}.upload input{position:absolute;inset:0;opacity:0}.status,.error{grid-column:2;padding:11px;border-radius:11px;font-size:13px}.status{background:#ecf8f2;color:#246f55}.error{background:#ffe7ec;color:#982542}.problems{grid-column:2;margin:0;padding:11px 11px 11px 28px;border-radius:11px;font-size:13px;background:#fff6e6;color:#8a5a10}.problems li{margin:2px 0}.review{grid-column:2;padding:15px;border-radius:14px;background:#f7f3f9}.review ul{columns:2}.finish{display:flex;justify-content:flex-end;margin-top:18px}@media(max-width:760px){.fields,.course-grid,.prefs{grid-template-columns:1fr}.review ul{columns:1}.card{border-radius:20px}.finish .primary{width:100%}}
 </style>
