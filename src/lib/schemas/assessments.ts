@@ -1,13 +1,13 @@
 import { z } from 'zod';
 import { idSchema, isoDatetimeSchema } from './common';
+import { ASSESSMENT_KINDS, ASSESSMENT_TYPES } from '../assessments';
 
-export const ASSESSMENT_TYPES = ['quiz', 'assignment', 'midterm', 'final', 'lab'] as const;
-export type AssessmentType = (typeof ASSESSMENT_TYPES)[number];
-
-// v1.3.1: 'official' (default) counts toward the weighted grade; 'practice'
-// never does, even when graded — see services/grades.ts.
-export const ASSESSMENT_KINDS = ['official', 'practice'] as const;
-export type AssessmentKind = (typeof ASSESSMENT_KINDS)[number];
+// The type and kind vocabularies live in src/lib/assessments.ts — a leaf with
+// no runtime imports — so the browser islands that render assessments can have
+// them without pulling zod in with them. Re-exported here so server callers can
+// keep importing everything about assessments from the schema module.
+export { ASSESSMENT_TYPES, ASSESSMENT_KINDS } from '../assessments';
+export type { AssessmentType, AssessmentKind } from '../assessments';
 
 export const createAssessmentSchema = z.strictObject({
   title: z.string().min(1).max(300),

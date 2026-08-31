@@ -1,25 +1,34 @@
 // The client-side shape of an assessment as the course/standing islands render
 // it, plus the small vocabulary the add and edit forms share.
 //
-// Deliberately a zod-free copy of the type list in src/lib/schemas/assessments.ts:
-// that module builds zod schemas at import time, so importing it from a browser
-// island would ship zod to the client for the sake of five strings. The two
-// lists must stay in step; the server rejects anything else.
+// This module is the single definition of the assessment type and kind lists,
+// and it is a dependency-free leaf on purpose (its only import is erased at
+// build time): src/lib/schemas/assessments.ts imports the lists FROM here to
+// build its zod schemas, rather than the other way round. Depending the other
+// way would pull zod into every browser island that renders an assessment, and
+// duplicating the lists would leave two copies with nothing enforcing that they
+// agree. Same shape as src/lib/placeholderKc.ts, for the same reason.
 import type { NumericFieldBinding } from './numericField';
+
+export const ASSESSMENT_TYPES = ['quiz', 'assignment', 'midterm', 'final', 'lab'] as const;
+export type AssessmentType = (typeof ASSESSMENT_TYPES)[number];
+
+// v1.3.1: 'official' (default) counts toward the weighted grade; 'practice'
+// never does, even when graded — see services/grades.ts.
+export const ASSESSMENT_KINDS = ['official', 'practice'] as const;
+export type AssessmentKind = (typeof ASSESSMENT_KINDS)[number];
 
 export interface Assessment {
   id: string;
   title: string;
   type: string;
-  kind: 'official' | 'practice';
+  kind: AssessmentKind;
   due_date: string | null;
   weight_pct: number | null;
   grade_received: number | null;
   grade_max: number | null;
   kc_ids: string[];
 }
-
-export const ASSESSMENT_TYPES = ['quiz', 'assignment', 'midterm', 'final', 'lab'] as const;
 
 // What the add/edit forms hold while the user is typing: `due` is the
 // yyyy-mm-dd string an <input type="date"> binds ('' when unset), and `weight`
@@ -41,7 +50,7 @@ export interface GradeEntry {
 }
 
 export interface AddAssessmentDraft extends AssessmentFormDraft {
-  kind: 'official' | 'practice';
+  kind: AssessmentKind;
 }
 
 export function emptyAddDraft(): AddAssessmentDraft {
