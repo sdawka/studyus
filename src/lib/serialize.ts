@@ -37,8 +37,12 @@ function transform(value: unknown): unknown {
         // app itself wrote, so this is normally always a valid instant —
         // but this one function sits behind every API route's response, so
         // a single corrupt row (bad migration, manual DB edit) must not
-        // 500 the whole payload. Fall back to null rather than throw.
-        out[snakeKey] = toSafeIsoString(v);
+        // 500 the whole payload. Fall back to null rather than throw, but
+        // log it — a silently-nulled date is a real data-corruption signal
+        // that must not disappear along with the fallback.
+        const iso = toSafeIsoString(v);
+        if (iso === null) console.error(`toApi: invalid date value for "${snakeKey}":`, v);
+        out[snakeKey] = iso;
       } else if (v !== null && typeof v === 'object') {
         out[snakeKey] = transform(v);
       } else {

@@ -40,7 +40,7 @@ afterEach(() => {
 });
 
 describe('EventTimeline saveEdit: unguarded date parsing', () => {
-  it('shows a validation message and sends no request when the datetime field is cleared before saving', async () => {
+  it('shows a validation message INSIDE the still-mounted edit form, without losing the user\'s other in-progress edits', async () => {
     render(EventTimeline, { props: {} });
     await screen.findByText('Did reading');
 
@@ -48,13 +48,32 @@ describe('EventTimeline saveEdit: unguarded date parsing', () => {
     const dtInput = document.querySelector('input[type="datetime-local"]') as HTMLInputElement;
     expect(dtInput).toBeTruthy();
 
-    // Clearing the field is exactly what produced the crash: new Date('')
-    // is an Invalid Date and .toISOString() on it threw uncaught.
+    // Type into the note field first — this is the in-progress edit that a
+    // top-level loadError swap would silently destroy (the whole event list,
+    // edit form included, gets replaced by a single <p class="error"> line).
+    const noteInput = screen.getByPlaceholderText('Note') as HTMLInputElement;
+    await fireEvent.input(noteInput, { target: { value: 'Covered chapters 4-5' } });
+
+    // Clearing the datetime field is exactly what produced the crash:
+    // new Date('') is an Invalid Date and .toISOString() on it threw
+    // uncaught.
     await fireEvent.input(dtInput, { target: { value: '' } });
     await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await screen.findByText('Enter a valid date and time before saving.');
     expect(fetch).not.toHaveBeenCalled();
+
+    // The edit form must still be mounted, with the note the user already
+    // typed still there — a regression here would mean the validation
+    // message replaced the whole timeline (including this form) rather than
+    // rendering inside it.
+    expect(screen.getByPlaceholderText('Note')).toBeTruthy();
+    expect((screen.getByPlaceholderText('Note') as HTMLInputElement).value).toBe('Covered chapters 4-5');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
+    // The general "whole list replaced by one message" failure mode would
+    // also make the row's own content (and "No events logged yet.") vanish
+    // from view along with the form.
+    expect(screen.queryByText('No events logged yet.')).toBeNull();
   });
 
   it('still saves normally when the datetime field holds a real value', async () => {
