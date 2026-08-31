@@ -50,7 +50,8 @@ export const courseSetupProposalSchema = z.strictObject({
     code: z.string().trim().min(2).max(32),
     title: z.string().trim().min(2).max(180),
     instructor: z.string().trim().max(120).optional(),
-    credits: z.number().int().min(0).max(30).optional(),
+    // McGill includes fractional-credit graduate courses (commonly 1.5).
+    credits: z.number().min(0).max(30).optional(),
   }),
   branches: z.array(courseSetupBranchSchema).min(1).max(40),
   assessments: z.array(courseSetupAssessmentSchema).max(40).default([]),

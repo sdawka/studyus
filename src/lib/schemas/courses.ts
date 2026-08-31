@@ -12,7 +12,7 @@ export const createCourseSchema = z.strictObject({
   code: z.string().min(1).max(20),
   title: z.string().min(1).max(200),
   term: z.string().max(50).optional(),
-  credits: z.number().int().optional(),
+  credits: z.number().min(0).optional(),
   instructor: z.string().max(200).optional(),
   overview: z.string().max(5000).optional(),
   color_hue: z.number().int().min(0).max(360).optional(),
@@ -25,7 +25,7 @@ export type CreateCourseInput = z.infer<typeof createCourseSchema>;
 export const updateCourseSchema = z.strictObject({
   title: z.string().min(1).max(200).optional(),
   term: z.string().max(50).nullable().optional(),
-  credits: z.number().int().nullable().optional(),
+  credits: z.number().min(0).nullable().optional(),
   instructor: z.string().max(200).nullable().optional(),
   overview: z.string().max(5000).nullable().optional(),
   archived: z.boolean().optional(),

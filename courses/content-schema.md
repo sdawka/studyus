@@ -1,6 +1,6 @@
 # Course Content Schema (`courses/<slug>/content.json`) — v1
 
-**Frozen contract** between the content research agents, `scripts/seed.ts`, and the wave-2 absorb experience. Schema version `1`. Changes require regenerating all nine content files.
+**Frozen contract** between the content research agents, `scripts/seed.ts`, and the wave-2 absorb experience. Schema version `1`. Changes require regenerating every affected content file.
 
 ## Relationship to `courses.json`
 
@@ -63,7 +63,7 @@ Keep the branch structure from the existing course README / `courses.json` outli
 ```
 
 - **`kc_type` must be a deliberate KLI classification**, not a default. "Reynolds number definition" is a `fact`; "recognize laminar vs turbulent regimes" is a `concept`; "apply the mechanical energy balance to a pipe network" is a `rule`; "why viscous dissipation makes Bernoulli fail" is a `principle`. Where a README bullet conflates several of these, split it into multiple KCs.
-- **`prereqs`**: KC references. `#kc-slug` = same course; `other-course-slug#kc-slug` = cross-course (must be one of the nine seeded course slugs). Edges mean "should be understood before". Keep the graph a DAG — no cycles, including through cross-course edges. Reference only KCs that exist in some content.json; the seed warns and skips unresolvable references (e.g. concepts from non-seeded courses like CHEE 204 — leave those out or model the needed fragment as a KC in the most related seeded course only if truly load-bearing).
+- **`prereqs`**: KC references. `#kc-slug` = same course; `other-course-slug#kc-slug` = cross-course (must match a seeded course slug). Edges mean "should be understood before". Keep the graph a DAG — no cycles, including through cross-course edges. Reference only KCs that exist in some content.json; the seed warns and skips unresolvable references (e.g. concepts from non-seeded courses like CHEE 204 — leave those out or model the needed fragment as a KC in the most related seeded course only if truly load-bearing).
 - Target roughly **8–20 KCs per course** after splitting; every KC needs ≥1 scaffold and ≥1 resource at either KC or course level. Misconceptions: aim for the 2–5 best-documented per course's core KCs — quality over coverage; empty arrays are fine for peripheral KCs.
 
 ## Resource
