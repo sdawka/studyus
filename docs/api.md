@@ -68,7 +68,13 @@ bounded structural `review_metrics` counts (`renamed`, `reordered`, `excluded`).
 Proposals marked `source.kind = simulated` are ignored. A single idempotent D1
 batch creates the real term/course content and returns
 `{ complete, course_id, course_slug, imported }`; repeated learner/draft pairs
-return the existing result with `imported: false`.
+return the existing result with `imported: false`. That replay also covers two
+submits racing each other: both can pass the idempotency read before either
+commits, and because the batch is atomic the loser wrote nothing, so it returns
+the winner's result rather than the unique-constraint 500 it used to.
+
+`course_slug` is `slugify(code)` scoped to the learner (`chee-314`), so two
+learners importing the same course share a URL.
 
 Reviewed template proposals include stable branch/KC references, inclusion and
 ordering choices, prerequisite summaries, and assessment date decisions. The
@@ -473,7 +479,7 @@ Frozen route shapes (P2A owns the implementation):
 
 ### Courses — create/update
 
-- `POST /courses` — strict body `{ code, title, term?, credits?, instructor?, overview?, color_hue? }`. Server derives `slug = slugify(code)` with `-2`/`-3` collision suffixing, and auto-creates one "General" branch (`sort_order: 0`) in the same `db.batch`.
+- `POST /courses` — strict body `{ code, title, term?, credits?, instructor?, overview?, color_hue? }`. Server derives `slug = slugify(code)` with `-2`/`-3` collision suffixing **scoped to the learner** (`courses_user_slug_unique`), so another account holding the same course code never changes your slug; and auto-creates one "General" branch (`sort_order: 0`) in the same `db.batch`.
 - `PATCH /courses/:id` — same optional fields plus `archived`; **never** regenerates `slug`. Note the documented asymmetry: this lives in `[slug].ts` but treats the route param as an `id` for mutations (GET-by-slug, PATCH/DELETE-by-id).
 - `color_hue`: integer 0-360, OKLCH hue. Stored in the existing `courses.color` column (as text). Convention: components set `style="--course-h: N"` from it; `tokens.css` derives `--course`/`--course-ink`/`--course-soft` from theme-owned `--course-l/-c` knobs, so the same hue reads correctly in every theme × scheme. Courses seeded before this column was populated, or created without `color_hue`, fall back client-side to a stable hash of the slug (`src/lib/courseHue.ts::hashHue` — the single canonical implementation; all consumers import it, no inline copies) — never `null`-render a course tint.
 - `archived`: `listCourses(db, userId, opts)` defaults `includeArchived` to `false`, so an archived course drops out of the sidebar, dashboard, and every course picker (feed/notes/tasks/planner) automatically. The `/courses` index page is the one exception — it calls with `includeArchived: true` and renders archived courses in a collapsed `<details>` section below the active ones.

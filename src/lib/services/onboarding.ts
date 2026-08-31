@@ -23,6 +23,7 @@ import { getAssessmentTemplateRef, getReviewedTemplate, getReviewedTemplateRevis
 import { exerciseDetails } from '../content/exercises';
 import type { CourseSetupProposal, DemoImportInput } from '../schemas/onboarding';
 import { ConflictError, runBatch } from './util';
+import { courseSlugAllocator } from './courses';
 import { hasUsableCourse, isPlaceholderKcName } from './usableCourse';
 // Re-exported because middleware.ts and the onboarding tests import it from
 // here; the implementation lives in the leaf module so courseMap and courses
@@ -68,11 +69,6 @@ export async function getOnboardingState(db: Db, userId: string) {
 
 function dateEpoch(value: string): number {
   return Date.parse(`${value}T12:00:00.000Z`);
-}
-
-function safeSlug(code: string, userId: string, draftId: string, index: number): string {
-  const base = code.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'course';
-  return `${base}-${userId.slice(0, 6)}-${draftId.slice(0, 6)}-${index + 1}`;
 }
 
 type SetupBranch = CourseSetupProposal['branches'][number];
@@ -154,20 +150,31 @@ function selectedAssessmentKc(assessment: ContentAssessment, courseSlug: string,
     .filter((ref) => ref.courseSlug !== courseSlug || selectedKcRefs.has(ref.kcSlug)).map((ref) => ref.key);
 }
 
-export async function importDemoSetup(db: Db, userId: string, input: DemoImportInput) {
+/**
+ * The result of an import this draft already produced, or null if it has not.
+ *
+ * `imported: false` marks it as a replay rather than fresh work, so callers do
+ * not re-emit completion analytics for it.
+ */
+async function settledImport(db: Db, userId: string, draftId: string) {
   const prior = await db.select().from(onboardingImports)
-    .where(and(eq(onboardingImports.userId, userId), eq(onboardingImports.sourceDraftId, input.draft_id))).limit(1);
-  if (prior[0]) {
-    const existingCourse = prior[0].courseId
-      ? await db.select({ slug: courses.slug }).from(courses).where(eq(courses.id, prior[0].courseId)).limit(1) : [];
-    return {
-      ...(await getOnboardingState(db, userId)),
-      course_id: prior[0].courseId,
-      course_slug: existingCourse[0]?.slug ?? null,
-      imported: false,
-      behavioral: null,
-    };
-  }
+    .where(and(eq(onboardingImports.userId, userId), eq(onboardingImports.sourceDraftId, draftId))).limit(1);
+  if (!prior[0]) return null;
+
+  const existingCourse = prior[0].courseId
+    ? await db.select({ slug: courses.slug }).from(courses).where(eq(courses.id, prior[0].courseId)).limit(1) : [];
+  return {
+    ...(await getOnboardingState(db, userId)),
+    course_id: prior[0].courseId,
+    course_slug: existingCourse[0]?.slug ?? null,
+    imported: false,
+    behavioral: null,
+  };
+}
+
+export async function importDemoSetup(db: Db, userId: string, input: DemoImportInput) {
+  const prior = await settledImport(db, userId, input.draft_id);
+  if (prior) return prior;
 
   const userRows = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   const user = userRows[0];
@@ -217,13 +224,18 @@ export async function importDemoSetup(db: Db, userId: string, input: DemoImportI
   }).where(eq(users.id, userId)));
 
   const assessmentIdByTemplateRef = new Map<string, string>();
+  // Slugs used to embed the user id and draft id to dodge the global unique
+  // constraint, so every imported course got a URL like
+  // /courses/chee-314-a1b2c3-d4e5f6-1. Now that the constraint is per learner,
+  // the same allocator createCourse uses gives them /courses/chee-314.
+  const allocateSlug = await courseSlugAllocator(db, userId);
 
-  realCourses.forEach((proposal, courseIndex) => {
+  realCourses.forEach((proposal) => {
     if (meaningfulKcs(proposal).length === 0) return;
     const reviewed = reviewedSelections.get(proposal);
     const courseId = crypto.randomUUID();
     const courseCode = reviewed?.template.meta.code ?? proposal.course.code;
-    const courseSlug = safeSlug(courseCode, userId, input.draft_id, courseIndex);
+    const courseSlug = allocateSlug(courseCode);
     createdCourseIds.push(courseId);
     createdCourseSlugs.push(courseSlug);
     committedProposals.push(proposal);
@@ -360,7 +372,18 @@ export async function importDemoSetup(db: Db, userId: string, input: DemoImportI
   if (createdCourseIds.length > 0) statements.push(db.insert(onboardingImports).values({
     id: crypto.randomUUID(), userId, sourceDraftId: input.draft_id, courseId: createdCourseIds[0], createdAt: now,
   }));
-  await runBatch(db, statements);
+  try {
+    await runBatch(db, statements);
+  } catch (cause) {
+    // Two submits of the same draft (a double click, or a second tab) can both
+    // pass the idempotency check above before either has committed. The batch
+    // is atomic, so the loser wrote nothing and the winner's import is
+    // complete — the honest answer is the winner's result, not the 500 that a
+    // raw unique-constraint failure used to produce.
+    const settled = await settledImport(db, userId, input.draft_id);
+    if (!settled) throw cause;
+    return settled;
+  }
 
   return {
     ...(await getOnboardingState(db, userId)),
