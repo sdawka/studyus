@@ -250,6 +250,12 @@
         kc_ids: updated.kc_ids,
       });
       if (editingId === a.id) closeEdit();
+      // Tell the parent, whichever form it came from: an official row's weight
+      // and concepts feed the weighted grade, a practice row's title and
+      // concepts feed the practice card. Neither used to be notified, so both
+      // views sat stale behind an edit that had already succeeded.
+      if (a.kind === 'practice') onPracticeChange?.();
+      else onGraded?.();
     } finally {
       editSavingId = null;
     }

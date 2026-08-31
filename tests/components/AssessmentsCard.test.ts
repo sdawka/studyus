@@ -541,11 +541,23 @@ describe('callback contract', () => {
     await vi.waitFor(() => expect(onPracticeChange).toHaveBeenCalledTimes(1));
   });
 
-  it('fires neither onGraded nor onPracticeChange when an edit (weight/kc) save succeeds', async () => {
+  // FIXED (claim #8): a successful edit changes data the parent renders —
+  // weight_pct feeds the weighted grade, and a practice row's title/concepts
+  // feed the practice card — but submitEdit told nobody, so those views stayed
+  // stale until a full reload. Each kind now notifies its own callback.
+  it('fires onGraded when an official edit save succeeds, and onPracticeChange for a practice one', async () => {
     const onGraded = vi.fn();
     const onPracticeChange = vi.fn();
     render(AssessmentsCard, {
-      props: { courseId: 'c1', assessments: [makeAssessment({ id: 'a1', title: 'Weighted row' })], onGraded, onPracticeChange },
+      props: {
+        courseId: 'c1',
+        assessments: [
+          makeAssessment({ id: 'a1', title: 'Weighted row' }),
+          makeAssessment({ id: 'p1', title: 'Drill', kind: 'practice' }),
+        ],
+        onGraded,
+        onPracticeChange,
+      },
     });
     await fireEvent.click(within(rowFor('Weighted row')).getByRole('button', { name: 'Edit' }));
     const editForm = rowFor('Weighted row').nextElementSibling as HTMLElement;
@@ -553,7 +565,30 @@ describe('callback contract', () => {
     await fireEvent.input(weightInput, { target: { value: '25' } });
     mockApiFetch.mockResolvedValueOnce(okResult({ title: 'Weighted row', type: 'quiz', due_date: null, weight_pct: 25, kc_ids: [] }));
     await fireEvent.click(within(editForm).getByRole('button', { name: /sav/i }));
-    await vi.waitFor(() => expect(mockApiFetch).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(onGraded).toHaveBeenCalledTimes(1));
+    expect(onPracticeChange).not.toHaveBeenCalled();
+
+    const practiceRow = screen.getByText('Drill').closest('li') as HTMLElement;
+    await fireEvent.click(within(practiceRow).getByRole('button', { name: 'Edit' }));
+    const practiceForm = within(practiceRow).getByRole('button', { name: /^Save$/ }).closest('form') as HTMLElement;
+    await fireEvent.input(within(practiceForm).getByPlaceholderText('Title'), { target: { value: 'Drill v2' } });
+    mockApiFetch.mockResolvedValueOnce(okResult({ title: 'Drill v2', type: 'quiz', due_date: null, weight_pct: null, kc_ids: [] }));
+    await fireEvent.click(within(practiceForm).getByRole('button', { name: /^Save$/ }));
+    await vi.waitFor(() => expect(onPracticeChange).toHaveBeenCalledTimes(1));
+    expect(onGraded).toHaveBeenCalledTimes(1);
+  });
+
+  it('fires no callback when an edit save fails', async () => {
+    const onGraded = vi.fn();
+    const onPracticeChange = vi.fn();
+    render(AssessmentsCard, {
+      props: { courseId: 'c1', assessments: [makeAssessment({ id: 'a1', title: 'Weighted row' })], onGraded, onPracticeChange },
+    });
+    await fireEvent.click(within(rowFor('Weighted row')).getByRole('button', { name: 'Edit' }));
+    const editForm = rowFor('Weighted row').nextElementSibling as HTMLElement;
+    mockApiFetch.mockResolvedValueOnce(httpError('Could not save.'));
+    await fireEvent.click(within(editForm).getByRole('button', { name: /sav/i }));
+    await screen.findByText('Could not save.');
     expect(onGraded).not.toHaveBeenCalled();
     expect(onPracticeChange).not.toHaveBeenCalled();
   });
