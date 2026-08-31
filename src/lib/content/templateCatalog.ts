@@ -1,11 +1,30 @@
 // Server-side reviewed-course registry. Rich authored content stays behind the
 // API boundary; browser clients receive only the editable map/assessment
 // summary produced by proposalFromReviewedTemplate.
+//
+// Two populations live behind one interface. The nine *authored* templates come
+// from courses/*/content.json, carry scaffolds and exercise banks, and stay in
+// the worker bundle. The ~10,000 *generated* McGill catalogue courses live in
+// D1 (see migrations/0013_catalog_courses_in_d1.sql): imported as JSON they
+// became a 5 MB chunk that V8 parsed as source at every isolate start, a cost
+// the course-map path paid as much as onboarding. That is why every lookup here
+// takes a Db.
+import { sql } from 'drizzle-orm';
 import rawCourses from '../../../courses/courses.json';
-import rawMcGillCatalog from '../../../courses/mcgill-catalog.json';
+import type { Db } from '../../db/client';
 import { courseContentSchema, type CourseContent } from './courseContent';
 import { exerciseFileSchema, type ExerciseFile } from './exercises';
 import type { CourseSetupProposal } from '../schemas/onboarding';
+import {
+  catalogLevels,
+  catalogSourceUrl,
+  codeSortKey,
+  ftsMatchExpression,
+  normalizeSearchText,
+  KC_TYPE_BY_CODE,
+  type CatalogAudience,
+  type RawCatalogKc,
+} from './catalogRows';
 
 type CourseMeta = {
   code: string;
@@ -26,46 +45,8 @@ type CourseMeta = {
 
 type CatalogKc = { name: string; type: 'fact' | 'association' | 'concept' | 'rule' | 'principle' };
 type CatalogCourse = CourseMeta & { kcs: CatalogKc[] };
-type RawCatalogKc = [name: string, type: 'f' | 'a' | 'c' | 'r' | 'p'];
-type RawCatalogCourse = [
-  code: string,
-  title: string,
-  credits: number | null,
-  department: string,
-  faculty: string,
-  audience: 'u' | 'b' | 'g',
-  kcs: RawCatalogKc[],
-];
 
 const rawBySlug = new Map((rawCourses as CourseMeta[]).map((course) => [course.slug, course]));
-function catalogSlug(code: string): string {
-  return `mcgill-${code.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-}
-
-const catalogBySlug = new Map(
-  (rawMcGillCatalog.courses as RawCatalogCourse[]).map((course) => [catalogSlug(course[0]), course]),
-);
-
-function expandCatalogCourse(raw: RawCatalogCourse): CatalogCourse {
-  const [code, title, credits, department, faculty, audience, rawKcs] = raw;
-  const typeByCode = { f: 'fact', a: 'association', c: 'concept', r: 'rule', p: 'principle' } as const;
-  const levels: CourseMeta['levels'] = audience === 'b'
-    ? ['undergraduate', 'graduate']
-    : [audience === 'g' ? 'graduate' : 'undergraduate'];
-  const compact = code.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  return {
-    code,
-    slug: `mcgill-${compact}`,
-    title,
-    ...(credits === null ? {} : { credits }),
-    subject: code.split(' ')[0],
-    department,
-    faculty,
-    levels,
-    source: `https://coursecatalogue.mcgill.ca/courses/${compact}`,
-    kcs: rawKcs.map(([name, type]) => ({ name, type: typeByCode[type] })),
-  };
-}
 
 // Keep the catalog data-driven: every reviewed course is represented by a
 // courses/<slug>/content.json file, so adding a course never requires another
@@ -179,11 +160,74 @@ function summarizeTemplate({ meta, content }: ReviewedTemplate): {
   };
 }
 
-export function listReviewedTemplates() {
-  return [
-    ...[...templates.values()].map(summarizeTemplate),
-    ...catalogSearchRows.map(({ summary }) => summary),
-  ];
+// ---------------------------------------------------------------------------
+// Catalogue rows (D1)
+// ---------------------------------------------------------------------------
+
+/** The columns search needs. Deliberately excludes `kcs`, which is large. */
+type CatalogSummaryRow = {
+  slug: string;
+  code: string;
+  title: string;
+  credits: number | null;
+  department: string;
+  faculty: string;
+  audience: CatalogAudience;
+  kc_count: number;
+  sort_key: string;
+  match_rank: number;
+};
+
+type CatalogTemplateRow = CatalogSummaryRow & { kcs: string };
+
+const CATALOG_SUMMARY_COLUMNS = sql`c.slug, c.code, c.title, c.credits, c.department, c.faculty, c.audience, c.kc_count, c.sort_key`;
+
+function summarizeCatalogRow(row: CatalogSummaryRow): ReviewedTemplateSummary {
+  return {
+    template_id: row.slug,
+    code: row.code,
+    title: row.title,
+    credits: row.credits,
+    levels: catalogLevels(row.audience),
+    subject: row.code.split(' ')[0],
+    ...(row.department ? { department: row.department } : {}),
+    ...(row.faculty ? { faculty: row.faculty } : {}),
+    branch_count: 1,
+    kc_count: row.kc_count,
+    assessment_count: 0,
+  };
+}
+
+function expandCatalogRow(row: CatalogTemplateRow): CatalogCourse {
+  const kcs = (typeof row.kcs === 'string' ? JSON.parse(row.kcs) : row.kcs) as RawCatalogKc[];
+  return {
+    code: row.code,
+    slug: row.slug,
+    title: row.title,
+    ...(row.credits === null ? {} : { credits: row.credits }),
+    subject: row.code.split(' ')[0],
+    department: row.department,
+    faculty: row.faculty,
+    levels: catalogLevels(row.audience),
+    source: catalogSourceUrl(row.code),
+    kcs: kcs.map(([name, type]) => ({ name, type: KC_TYPE_BY_CODE[type] })),
+  };
+}
+
+/** `undefined` when unfiltered, so callers can drop the clause entirely. */
+function audienceClause(level: CourseMeta['level']) {
+  if (level === 'undergraduate') return sql`c.audience in ('u', 'b')`;
+  if (level === 'graduate') return sql`c.audience in ('g', 'b')`;
+  return undefined;
+}
+
+export function listReviewedTemplates(db: Db): Promise<ReviewedTemplateSummary[]> {
+  return db
+    .all<CatalogSummaryRow>(sql`select ${CATALOG_SUMMARY_COLUMNS}, 0 as match_rank from catalog_courses c order by c.sort_key asc`)
+    .then((rows) => [
+      ...[...templates.values()].map(summarizeTemplate),
+      ...rows.map(summarizeCatalogRow),
+    ]);
 }
 
 type SearchRow = {
@@ -196,18 +240,6 @@ type SearchRow = {
   sortKey: string;
   authored: boolean;
 };
-
-/**
- * A plain-comparable stand-in for localeCompare(numeric) on a course code.
- *
- * Ordering ~10,000 codes through Intl collation costs tens of milliseconds of
- * worker CPU on every request. Zero-padding each digit run instead keeps
- * "COMP 2" before "COMP 10" while reducing the comparison to a string compare,
- * and the key is built once per isolate rather than once per comparison.
- */
-function codeSortKey(code: string): string {
-  return code.toLowerCase().replace(/\d+/g, (digits) => digits.padStart(6, '0'));
-}
 
 function searchRow(
   summary: ReviewedTemplateSummary,
@@ -237,40 +269,13 @@ function searchRow(
   };
 }
 
-function summarizeRawCatalogCourse(raw: RawCatalogCourse): ReviewedTemplateSummary {
-  const [code, title, credits, department, faculty, audience, kcs] = raw;
-  const levels: CourseMeta['levels'] = audience === 'b'
-    ? ['undergraduate', 'graduate']
-    : [audience === 'g' ? 'graduate' : 'undergraduate'];
-  return {
-    template_id: catalogSlug(code),
-    code,
-    title,
-    credits,
-    levels,
-    subject: code.split(' ')[0],
-    ...(department ? { department } : {}),
-    ...(faculty ? { faculty } : {}),
-    branch_count: 1,
-    kc_count: kcs.length,
-    assessment_count: 0,
-  };
-}
-
-// Building normalized search text is the expensive part of catalog search.
-// Do it once per worker isolate instead of rebuilding ~10,000 expanded course
-// objects for every onboarding keystroke.
+// Nine authored templates, so building their normalized search text once per
+// isolate is free. The catalogue's equivalent is the seeded FTS5 index.
 const authoredSearchRows = [...templates.values()].map((template) => searchRow(
   summarizeTemplate(template),
   template.content.branches.flatMap((branch) => [branch.name, ...branch.kcs.map((kc) => kc.name)]),
   true,
 ));
-const catalogSearchRows = (rawMcGillCatalog.courses as RawCatalogCourse[]).map((raw) => searchRow(
-  summarizeRawCatalogCourse(raw),
-  raw[6].map(([name]) => name),
-  false,
-));
-const templateSearchRows = [...authoredSearchRows, ...catalogSearchRows];
 
 export type TemplateSearchResult = {
   /** The ranked window, bounded by options.limit. */
@@ -280,6 +285,8 @@ export type TemplateSearchResult = {
   truncated: boolean;
 };
 
+type RankedMatch = { summary: ReviewedTemplateSummary; rank: number; sortKey: string };
+
 /**
  * Search the reviewed catalog by code, title, aliases, department, or KC
  * names. Matching happens server-side so a large catalog does not need to be
@@ -288,29 +295,89 @@ export type TemplateSearchResult = {
  * Returns the total alongside the window: a caller that only sees the window
  * cannot tell 100 matches from 1,700, and the onboarding picker reports the
  * count to the learner.
+ *
+ * The catalogue half runs entirely in SQLite — FTS5 selects the candidates and
+ * the same CASE ranking the in-memory index used decides the order — so a
+ * bounded search never materializes more than `limit` catalogue rows. The nine
+ * authored rows are ranked in memory and merged in; because they are ranked on
+ * the same scale, merging the two ordered lists and re-slicing is exact.
  */
-export function searchReviewedTemplates(
+export async function searchReviewedTemplates(
+  db: Db,
   query = '',
   options: { level?: CourseMeta['level']; limit?: number } = {},
-): TemplateSearchResult {
+): Promise<TemplateSearchResult> {
   const normalized = normalizeSearchText(query);
   const terms = normalized ? normalized.split(' ') : [];
-  const matches = templateSearchRows
+  const limit = options.limit && options.limit > 0 ? options.limit : null;
+
+  const authoredMatches: RankedMatch[] = authoredSearchRows
     .filter(({ summary }) => !options.level || summary.level === options.level || summary.levels?.includes(options.level))
     .filter(({ searchable, compactCode }) => !normalized
-      || terms.every((term) => searchable.includes(term) || compactCode.includes(term)));
+      || terms.every((term) => searchable.includes(term) || compactCode.includes(term)))
+    .map((row) => ({ summary: row.summary, rank: searchRank(row, normalized), sortKey: row.sortKey }));
 
-  // Rank once per row rather than twice per comparison.
-  const ranked = matches
-    .map((row) => ({ row, rank: searchRank(row, normalized) }))
-    .sort((a, b) => b.rank - a.rank || (a.row.sortKey < b.row.sortKey ? -1 : a.row.sortKey > b.row.sortKey ? 1 : 0));
+  const catalog = await searchCatalog(db, normalized, terms, options.level, limit);
 
-  const limit = options.limit && options.limit > 0 ? options.limit : ranked.length;
+  // Array.prototype.sort is stable, so an authored row still wins a tie with a
+  // catalogue row carrying the same code — the ordering the in-memory index had.
+  const ranked = [...authoredMatches, ...catalog.matches]
+    .sort((a, b) => b.rank - a.rank || (a.sortKey < b.sortKey ? -1 : a.sortKey > b.sortKey ? 1 : 0));
+
+  const total = authoredMatches.length + catalog.total;
+  const window = limit ?? ranked.length;
   return {
-    results: ranked.slice(0, limit).map(({ row }) => row.summary),
-    total: ranked.length,
-    truncated: ranked.length > limit,
+    results: ranked.slice(0, window).map(({ summary }) => summary),
+    total,
+    truncated: total > window,
   };
+}
+
+async function searchCatalog(
+  db: Db,
+  normalized: string,
+  terms: string[],
+  level: CourseMeta['level'],
+  limit: number | null,
+): Promise<{ matches: RankedMatch[]; total: number }> {
+  const audience = audienceClause(level);
+  const limitClause = limit === null ? sql`` : sql` limit ${limit}`;
+
+  // An empty query ranks every catalogue row 0, the same as the in-memory
+  // index did, so there is nothing for FTS5 to match and the LIKE prefixes
+  // below would degenerate to '%'.
+  if (terms.length === 0) {
+    const where = audience ? sql` where ${audience}` : sql``;
+    const [rows, counted] = await Promise.all([
+      db.all<CatalogSummaryRow>(sql`select ${CATALOG_SUMMARY_COLUMNS}, 0 as match_rank from catalog_courses c${where} order by c.sort_key asc${limitClause}`),
+      db.all<{ total: number }>(sql`select count(*) as total from catalog_courses c${where}`),
+    ]);
+    return { matches: rows.map(rankedFromRow), total: counted[0]?.total ?? 0 };
+  }
+
+  const match = ftsMatchExpression(terms);
+  const compactQuery = normalized.replaceAll(' ', '');
+  // normalizeSearchText leaves only [a-z0-9 ], so these prefixes carry no LIKE
+  // wildcards of their own and need no ESCAPE clause.
+  const prefix = `${normalized}%`;
+  const compactPrefix = `${compactQuery}%`;
+  const rank = sql`case
+      when c.compact_code = ${compactQuery} then 1000
+      when c.normalized_code like ${prefix} or c.compact_code like ${compactPrefix} then 500
+      when c.normalized_title like ${prefix} then 250
+      else 0 end`;
+  const from = sql`from catalog_courses_fts f join catalog_courses c on c.id = f.rowid where catalog_courses_fts match ${match}`;
+  const where = audience ? sql`${from} and ${audience}` : from;
+
+  const [rows, counted] = await Promise.all([
+    db.all<CatalogSummaryRow>(sql`select ${CATALOG_SUMMARY_COLUMNS}, ${rank} as match_rank ${where} order by match_rank desc, c.sort_key asc${limitClause}`),
+    db.all<{ total: number }>(sql`select count(*) as total ${where}`),
+  ]);
+  return { matches: rows.map(rankedFromRow), total: counted[0]?.total ?? 0 };
+}
+
+function rankedFromRow(row: CatalogSummaryRow): RankedMatch {
+  return { summary: summarizeCatalogRow(row), rank: row.match_rank, sortKey: row.sort_key };
 }
 
 function searchRank(row: SearchRow, query: string): number {
@@ -322,23 +389,29 @@ function searchRank(row: SearchRow, query: string): number {
   return row.authored ? 25 : 0;
 }
 
-function normalizeSearchText(value: string): string {
-  return value
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
+// A worker isolate can be asked for any of ~10,000 catalogue courses, so these
+// caches are bounded rather than unbounded maps. Clearing wholesale is crude
+// but correct: the entries are immutable derivations of seeded rows.
+const CACHE_LIMIT = 256;
 
-export function getReviewedTemplate(templateId: string): ReviewedTemplate | null {
-  const authored = templates.get(templateId);
-  if (authored) return authored;
-  const catalogCourse = catalogBySlug.get(templateId);
-  return catalogCourse ? synthesizeCatalogTemplate(expandCatalogCourse(catalogCourse)) : null;
+function remember<T>(cache: Map<string, T>, key: string, value: T): T {
+  if (cache.size >= CACHE_LIMIT) cache.clear();
+  cache.set(key, value);
+  return value;
 }
 
 const generatedTemplateCache = new Map<string, ReviewedTemplate>();
+
+export async function getReviewedTemplate(db: Db, templateId: string): Promise<ReviewedTemplate | null> {
+  const authored = templates.get(templateId);
+  if (authored) return authored;
+  const cached = generatedTemplateCache.get(templateId);
+  if (cached) return cached;
+  const rows = await db.all<CatalogTemplateRow>(
+    sql`select ${CATALOG_SUMMARY_COLUMNS}, c.kcs, 0 as match_rank from catalog_courses c where c.slug = ${templateId} limit 1`,
+  );
+  return rows[0] ? synthesizeCatalogTemplate(expandCatalogRow(rows[0])) : null;
+}
 
 function safeSlug(value: string, fallback: string): string {
   return value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -385,28 +458,23 @@ function synthesizeCatalogTemplate(meta: CatalogCourse): ReviewedTemplate {
     }],
   });
   const generated = { meta, content, exercises: exerciseFileSchema.parse({ schema_version: 1, exercises: [] }) };
-  generatedTemplateCache.set(meta.slug, generated);
-  return generated;
+  return remember(generatedTemplateCache, meta.slug, generated);
 }
 
 const revisionCache = new Map<string, Promise<string>>();
 
-export function getReviewedTemplateRevision(templateId: string): Promise<string | null> {
-  const template = getReviewedTemplate(templateId);
-  if (!template) return Promise.resolve(null);
-  let revision = revisionCache.get(templateId);
-  if (!revision) {
-    revision = crypto.subtle
-      .digest('SHA-256', new TextEncoder().encode(JSON.stringify(template)))
-      .then((digest) => [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join(''));
-    revisionCache.set(templateId, revision);
-  }
-  return revision;
+export async function getReviewedTemplateRevision(db: Db, templateId: string): Promise<string | null> {
+  const cached = revisionCache.get(templateId);
+  if (cached) return cached;
+  const template = await getReviewedTemplate(db, templateId);
+  if (!template) return null;
+  return remember(revisionCache, templateId, crypto.subtle
+    .digest('SHA-256', new TextEncoder().encode(JSON.stringify(template)))
+    .then((digest) => [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')));
 }
 
-export function getTemplateBaseline(templateId: string): TemplateBaseline | null {
-  const template = getReviewedTemplate(templateId);
-  if (!template) return null;
+/** The baseline of an already-loaded template; see getTemplateBaseline. */
+export function templateBaseline(template: ReviewedTemplate): TemplateBaseline {
   return {
     branches: template.content.branches.map((branch) => ({
       ref: branch.slug,
@@ -425,8 +493,13 @@ export function getTemplateBaseline(templateId: string): TemplateBaseline | null
   };
 }
 
-export function proposalFromReviewedTemplate(templateId: string): CourseSetupProposal | null {
-  const template = getReviewedTemplate(templateId);
+export async function getTemplateBaseline(db: Db, templateId: string): Promise<TemplateBaseline | null> {
+  const template = await getReviewedTemplate(db, templateId);
+  return template ? templateBaseline(template) : null;
+}
+
+export async function proposalFromReviewedTemplate(db: Db, templateId: string): Promise<CourseSetupProposal | null> {
+  const template = await getReviewedTemplate(db, templateId);
   if (!template) return null;
   return {
     schema_version: 1,

@@ -18,6 +18,8 @@
     "db:migrate:local": "wrangler d1 migrations apply studyus --local",
     "db:migrate:remote": "wrangler d1 migrations apply studyus --remote",
     "db:seed": "tsx scripts/seed.ts",
+    "db:seed:catalog:local": "tsx scripts/seed-catalog.ts --local",
+    "db:seed:catalog:remote": "tsx scripts/seed-catalog.ts --remote",
     "db:migrate:staging": "wrangler d1 migrations apply DB --env staging --remote",
     "db:seed:staging": "tsx scripts/seed.ts --remote --env staging",
     "test:e2e:auth": "playwright test --project=setup",

@@ -18,7 +18,8 @@ import { parseKcRef } from '../content/courseContent';
 import {
   getReviewedTemplate,
   getReviewedTemplateRevision,
-  getTemplateBaseline,
+  templateBaseline,
+  type ReviewedTemplate,
   type TemplateBaseline,
 } from '../content/templateCatalog';
 import type { ApplyTemplateUpdatesInput, UpdateCourseMapInput } from '../schemas/courseMap';
@@ -87,10 +88,10 @@ async function ownedGraph(db: Db, userId: string) {
   return { nodes, edges };
 }
 
-function templatePending(course: CourseRow, courseBranches: BranchRow[], courseKcs: KcRow[], decisions: Array<typeof courseTemplateDecisions.$inferSelect>) {
-  if (!course.templateId) return { added: [], removed: [], dismissed: [] };
-  const template = getReviewedTemplate(course.templateId);
-  if (!template) return { added: [], removed: [], dismissed: [] };
+// The template is resolved by the caller: it lives in D1 for catalogue courses,
+// and getCourseMap already has a Promise.all to load it alongside the rest.
+function templatePending(course: CourseRow, template: ReviewedTemplate | null, courseBranches: BranchRow[], courseKcs: KcRow[], decisions: Array<typeof courseTemplateDecisions.$inferSelect>) {
+  if (!course.templateId || !template) return { added: [], removed: [], dismissed: [] };
   const decisionByKey = new Map(decisions.map((row) => [`${row.itemKind}:${row.templateRef}`, row]));
   const branchRefs = new Set(courseBranches.map((row) => row.templateRef).filter(Boolean));
   const kcRefs = new Set(courseKcs.map((row) => row.slug).filter(Boolean));
@@ -116,11 +117,12 @@ function templatePending(course: CourseRow, courseBranches: BranchRow[], courseK
 
 export async function getCourseMap(db: Db, userId: string, courseId: string) {
   const course = await requireOwnedCourse(db, userId, courseId);
-  const [courseBranches, courseKcs, graph, decisions] = await Promise.all([
+  const [courseBranches, courseKcs, graph, decisions, template] = await Promise.all([
     db.select().from(branches).where(eq(branches.courseId, courseId)).orderBy(asc(branches.sortOrder)),
     db.select().from(kcs).where(eq(kcs.courseId, courseId)).orderBy(asc(kcs.sortOrder)),
     ownedGraph(db, userId),
     db.select().from(courseTemplateDecisions).where(eq(courseTemplateDecisions.courseId, courseId)),
+    course.templateId ? getReviewedTemplate(db, course.templateId) : null,
   ]);
   const edgesByKc = new Map<string, string[]>();
   const dependentsByKc = new Map<string, string[]>();
@@ -153,7 +155,7 @@ export async function getCourseMap(db: Db, userId: string, courseId: string) {
     prerequisiteCandidates: graph.nodes
       .filter((row) => row.kc.archivedAt === null && row.branchArchivedAt === null)
       .map((row) => ({ id: row.kc.id, name: row.kc.name, courseId: row.kc.courseId, courseTitle: row.courseTitle, courseSlug: row.courseSlug })),
-    templateUpdates: templatePending(course, courseBranches, courseKcs, decisions),
+    templateUpdates: templatePending(course, template, courseBranches, courseKcs, decisions),
   };
 }
 
@@ -240,7 +242,7 @@ export async function updateCourseMap(db: Db, userId: string, courseId: string, 
   return getCourseMap(db, userId, courseId);
 }
 
-function richTemplateStatements(db: Db, userId: string, courseId: string, kcId: string, template: NonNullable<ReturnType<typeof getReviewedTemplate>>, kcSlug: string, now: number): BatchItem<'sqlite'>[] {
+function richTemplateStatements(db: Db, userId: string, courseId: string, kcId: string, template: ReviewedTemplate, kcSlug: string, now: number): BatchItem<'sqlite'>[] {
   const authored = template.content.branches.flatMap((branch) => branch.kcs).find((kc) => kc.slug === kcSlug);
   if (!authored) return [];
   const authoredExercises = template.exercises.exercises.filter((exercise) => exercise.kc === kcSlug);
@@ -260,10 +262,11 @@ function richTemplateStatements(db: Db, userId: string, courseId: string, kcId: 
 export async function syncReviewedTemplateContent(db: Db, userId: string, courseId: string) {
   const course = await requireOwnedCourse(db, userId, courseId);
   if (!course.templateId) return false;
-  const template = getReviewedTemplate(course.templateId);
-  const revision = await getReviewedTemplateRevision(course.templateId);
-  const currentBaseline = getTemplateBaseline(course.templateId);
-  if (!template || !revision || !currentBaseline || course.templateRevision === revision) return false;
+  const template = await getReviewedTemplate(db, course.templateId);
+  if (!template) return false;
+  const revision = await getReviewedTemplateRevision(db, course.templateId);
+  const currentBaseline = templateBaseline(template);
+  if (!revision || course.templateRevision === revision) return false;
   const [courseBranches, courseKcs, graph] = await Promise.all([
     db.select().from(branches).where(eq(branches.courseId, courseId)),
     db.select().from(kcs).where(eq(kcs.courseId, courseId)),
@@ -342,8 +345,8 @@ export async function applyTemplateUpdateActions(db: Db, userId: string, courseI
   const course = await requireOwnedCourse(db, userId, courseId);
   if (course.mapRevision !== input.expected_revision) throw new ConflictError('The course map changed in another tab. Reload before continuing.');
   if (!course.templateId) throw new ConflictError('This course is not linked to a reviewed template.');
-  const template = getReviewedTemplate(course.templateId);
-  const revision = await getReviewedTemplateRevision(course.templateId);
+  const template = await getReviewedTemplate(db, course.templateId);
+  const revision = await getReviewedTemplateRevision(db, course.templateId);
   if (!template || !revision) throw new ConflictError('This reviewed template is unavailable.');
   const [courseBranches, courseKcs, graph] = await Promise.all([
     db.select().from(branches).where(eq(branches.courseId, courseId)),
