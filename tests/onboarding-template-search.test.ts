@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
 import { createCourseSearchIndex, searchCourseCatalog } from '../src/lib/courseSearch';
 import { searchReviewedTemplates } from '../src/lib/content/templateCatalog';
+import { codeSortKey } from '../src/lib/content/catalogRows';
 import { seedCatalogSample } from './setup/seed-catalog';
 import { GET as templatesRoute } from '../src/pages/api/v1/onboarding/templates/index';
 
@@ -102,5 +103,38 @@ describe('template search caching does not outlive a reseed', () => {
 
     const maxAge = Number(/max-age=(\d+)/.exec(cacheControl)?.[1] ?? NaN);
     expect(maxAge).toBeLessThanOrEqual(300);
+  });
+});
+
+// The onboarding picker opens with an empty box and browses the catalogue, so
+// the empty query is a real request path, not just the degenerate case. It used
+// to render the bundled nine-course fallback instead, which reported "9
+// matching courses" under a list labelled "McGill courses" — locally accurate,
+// globally wrong, and indistinguishable from a working catalogue.
+describe('an empty query browses the catalogue', () => {
+  it('returns a bounded window over a total far larger than the bundled fallback', async () => {
+    const browse = await searchReviewedTemplates(db, '', { limit: 100 });
+
+    expect(browse.results).toHaveLength(100);
+    // 9 authored templates + the seeded catalogue slice.
+    expect(browse.total).toBeGreaterThan(400);
+    expect(browse.truncated).toBe(true);
+  });
+
+  it('puts the authored templates first, then the catalogue by code', async () => {
+    const results = (await searchReviewedTemplates(db, '', { limit: 100 })).results;
+    const authoredCount = results.filter((course) => course.assessment_count > 0).length;
+
+    expect(authoredCount).toBeGreaterThan(0);
+    // Authored rows rank 1 and catalogue rows rank 0, so every authored row
+    // sorts ahead of every catalogue row without the UI grouping them.
+    expect(results.slice(0, authoredCount).every((course) => course.assessment_count > 0)).toBe(true);
+
+    // Compare on sort keys, not raw codes. Lexical order over codes agrees with
+    // catalogue order only while the window happens to avoid a subject holding
+    // both 3- and 4-digit codes ("COMP 1006" sorts before "COMP 202" as text),
+    // so asserting on codes would pass here by luck and break on a reseed.
+    const keys = results.slice(authoredCount).map((course) => codeSortKey(course.code));
+    expect(keys).toEqual([...keys].sort());
   });
 });
