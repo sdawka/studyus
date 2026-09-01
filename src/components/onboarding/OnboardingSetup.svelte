@@ -37,10 +37,16 @@
   let serverCourses = $state<CourseSearchCourse[]>([]);
   let serverTotal = $state(0);
   let serverTruncated = $state(false);
-  // True while the bundled catalog is standing in for the API: before the query
-  // is long enough to search, or after a failed fetch.
+  // True while the bundled catalog is standing in for the API, which now means
+  // exactly one thing: the request failed. It used to also cover "the query is
+  // too short to search", which made the nine-course fallback the state every
+  // learner saw first — the picker opened claiming "9 matching courses" under a
+  // list labelled "McGill courses", with nothing to suggest the catalogue holds
+  // ~10,000 more.
   let usingFallback = $state(true);
-  let searchingCatalog = $state(false);
+  // Starts true so the count reads "Searching McGill's catalog…" rather than
+  // flashing the fallback's 9 before the catalogue lands.
+  let searchingCatalog = $state(true);
   let searchTimer: ReturnType<typeof setTimeout> | null = null;
   let searchRequest = 0;
   let searchController: AbortController | null = null;
@@ -97,6 +103,11 @@
     phase = requestedImport && Boolean(loaded.context || loaded.courses.some((course) => course.source.kind !== 'simulated')) ? 'offer' : 'setup';
     if (phase === 'offer') void track('import_offered');
     ready = true;
+    // Browse the catalogue immediately. The empty-query path is a bounded
+    // `order by sort_key limit 100` over an indexed column, so opening the
+    // picker costs one cheap D1 read and the learner can scroll the catalogue
+    // without having to guess a search term first.
+    void loadTemplateOptions('');
   });
 
   onDestroy(() => {
@@ -140,17 +151,15 @@
     }
   }
 
+  // A single character is too little to search on usefully, but it is also no
+  // reason to abandon the catalogue: clearing the box, or typing the first
+  // letter of a code, browses the full list again rather than collapsing to the
+  // bundled nine.
   function scheduleTemplateSearch(value: string) {
     if (searchTimer) clearTimeout(searchTimer);
-    if (value.trim().length < 2) {
-      searchRequest += 1;
-      searchController?.abort();
-      usingFallback = true;
-      searchingCatalog = false;
-      return;
-    }
+    const search = value.trim().length < 2 ? '' : value;
     searchingCatalog = true;
-    searchTimer = setTimeout(() => void loadTemplateOptions(value), 250);
+    searchTimer = setTimeout(() => void loadTemplateOptions(search), 250);
   }
 
   async function track(name: 'import_offered' | 'import_accepted' | 'import_declined' | 'onboarding_completed') {
