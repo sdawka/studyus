@@ -18,7 +18,7 @@ export default defineConfig({
     },
     {
       name: 'authenticated',
-      testMatch: /browser-checks\.spec\.mjs/,
+      testMatch: /(?:browser-checks|authenticated-audit)\.spec\.mjs/,
       dependencies: ['setup'],
       use: { storageState: CLERK_AUTH_STATE_PATH },
     },

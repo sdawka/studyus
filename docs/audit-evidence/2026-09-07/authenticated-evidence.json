@@ -1,0 +1,338 @@
+{
+  "environment": "local isolated development; seeded synthetic learner; official Clerk Playwright sign-in fallback, NOT successful Agent Task consumption",
+  "authenticated_user_bound": true,
+  "course_count": 9,
+  "note_count_at_inventory": 0,
+  "screens": [
+    {
+      "route": "/dashboard",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/dashboard",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/courses",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/courses",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/calendar",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/planner",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/planner",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/planner",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/tasks",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/tasks",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/notes",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/notes",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/feed",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/feed",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/grades",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/grades",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/corrections",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/corrections",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/profile",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/profile",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/settings",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/settings",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/study",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/study",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/courses/chee-314-fluid-mechanics",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/courses/chee-314-fluid-mechanics",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/courses/chee-314-fluid-mechanics/concepts",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/courses/chee-314-fluid-mechanics/concepts",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/courses/chee-314-fluid-mechanics/notes",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/courses/chee-314-fluid-mechanics/notes",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/courses/chee-314-fluid-mechanics/play",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/courses/chee-314-fluid-mechanics/play",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/courses/chee-314-fluid-mechanics/practice",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/courses/chee-314-fluid-mechanics/practice",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/courses/chee-314-fluid-mechanics/resources",
+      "viewport": "desktop",
+      "status": 200,
+      "finalPath": "/courses/chee-314-fluid-mechanics/resources",
+      "overflow": false,
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    },
+    {
+      "route": "/dashboard",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/dashboard",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "route": "/courses",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/courses",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "route": "/calendar",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/planner",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "route": "/planner",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/planner",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "route": "/tasks",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/tasks",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "route": "/notes",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/notes",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "route": "/feed",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/feed",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "route": "/grades",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/grades",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "route": "/corrections",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/corrections",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "route": "/profile",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/profile",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "route": "/settings",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/settings",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "route": "/study",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/study",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "route": "/courses/chee-314-fluid-mechanics",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/courses/chee-314-fluid-mechanics",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "route": "/courses/chee-314-fluid-mechanics/concepts",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/courses/chee-314-fluid-mechanics/concepts",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "route": "/courses/chee-314-fluid-mechanics/notes",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/courses/chee-314-fluid-mechanics/notes",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "route": "/courses/chee-314-fluid-mechanics/play",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/courses/chee-314-fluid-mechanics/play",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "route": "/courses/chee-314-fluid-mechanics/practice",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/courses/chee-314-fluid-mechanics/practice",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    },
+    {
+      "route": "/courses/chee-314-fluid-mechanics/resources",
+      "viewport": "mobile",
+      "status": 200,
+      "finalPath": "/courses/chee-314-fluid-mechanics/resources",
+      "overflow": false,
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    }
+  ],
+  "html_upload_browser_proof": {
+    "title": "AUDIT_EXECUTED",
+    "bodyText": "Local synthetic audit attachment",
+    "path": "/api/v1/attachments/771b3d31-9f9c-4404-9047-dc97882a97ba"
+  },
+  "scope": "HTML script only set document.title; no external request or private-data access. Screenshot collection includes development toolbar/Docs overlay."
+}
