@@ -62,12 +62,12 @@
   let view = $state<View>(isMobile.get() ? 'agenda' : 'week');
 
   const seedAnchor = initialAnchor && !Number.isNaN(Date.parse(initialAnchor)) ? new Date(initialAnchor) : new Date(initialNow);
-  let weekStart = $state(mondayOf(new Date(initialNow), timezone));
+  let weekStart = $state(mondayOf(seedAnchor, timezone));
   let monthAnchor = $state(firstOfMonth(seedAnchor, timezone));
 
   // Leftmost visible day in WeekGrid's 1/3-day modes (default today; ignored
   // entirely in 7-day mode, where `weekStart` alone drives the display).
-  let dayAnchor = $state(startOfDay(new Date(initialNow), timezone));
+  let dayAnchor = $state(startOfDay(seedAnchor, timezone));
   const dayAnchorKey = $derived(localDateKey(dayAnchor, timezone));
   // Live readback of WeekGrid's own container-measured day count, so the
   // chevrons/arrow keys know whether to page by a week or by the visible
@@ -100,6 +100,13 @@
   let pendingSelectItem: CalendarItem | null = null;
   let lastPointerPos = { x: 0, y: 0 };
   let didDeepLink = false;
+  // Week and month share `items`, loading, and error. A navigation or a
+  // calendar-sync refresh can start another range before an earlier request
+  // returns, so only the most recently requested range may publish state.
+  let calendarRequestVersion = 0;
+  // The rail is independent from the main surface, but filters can similarly
+  // issue a newer rail request while the prior one is still in flight.
+  let railRequestVersion = 0;
 
   const courseParam = $derived(filter !== 'current_term' && filter !== 'all' ? filter : undefined);
 
@@ -121,6 +128,7 @@
   );
 
   async function loadWeek() {
+    const requestVersion = ++calendarRequestVersion;
     loading = true;
     error = null;
     try {
@@ -129,6 +137,7 @@
       const params = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
       if (courseParam) params.set('course', courseParam);
       const result = await apiFetch<CalendarItem[]>(`/api/v1/calendar?${params.toString()}`, {}, 'Could not load calendar.');
+      if (requestVersion !== calendarRequestVersion) return;
       if (!result.ok) {
         error = result.error;
         return;
@@ -140,11 +149,12 @@
         await selectItem(item);
       }
     } finally {
-      loading = false;
+      if (requestVersion === calendarRequestVersion) loading = false;
     }
   }
 
   async function loadMonth() {
+    const requestVersion = ++calendarRequestVersion;
     loading = true;
     error = null;
     try {
@@ -153,24 +163,26 @@
       const params = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
       if (courseParam) params.set('course', courseParam);
       const result = await apiFetch<CalendarItem[]>(`/api/v1/calendar?${params.toString()}`, {}, 'Could not load calendar.');
+      if (requestVersion !== calendarRequestVersion) return;
       if (!result.ok) {
         error = result.error;
         return;
       }
       items = result.data;
     } finally {
-      loading = false;
+      if (requestVersion === calendarRequestVersion) loading = false;
     }
   }
 
   async function loadRail() {
+    const requestVersion = ++railRequestVersion;
     // Rail is a secondary surface — a failed fetch just leaves it empty.
     const from = addDays(new Date(clockNow), -30, timezone);
     const to = addDays(new Date(clockNow), 7, timezone);
     const params = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
     if (courseParam) params.set('course', courseParam);
     const result = await apiFetch<CalendarItem[]>(`/api/v1/calendar?${params.toString()}`);
-    if (!result.ok) return;
+    if (requestVersion !== railRequestVersion || !result.ok) return;
     railItems = result.data.filter((i) => i.type === 'assessment_due' || i.type === 'task_due');
   }
 

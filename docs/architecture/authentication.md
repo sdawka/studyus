@@ -105,9 +105,32 @@ the exact Agent Task. No task-capable Clerk MCP was available; these attempts
 used the official SDK/Backend API. This diagnostic is excluded from release CI
 and is not passing authenticated coverage.
 
+A separately authorized production smoke on September 8 did consume real Agent
+Tasks successfully. One disposable learner completed onboarding, protected task
+creation/listing, Planner and Account rendering, and group/file creation/listing.
+Its returned local ID was independently matched to the exact Clerk identity in
+D1. This used a private, bounded production harness, not the localhost diagnostic
+or a CI test. Failed harness attempts revoked their exact delegated sessions;
+ordinary password sign-in was never substituted. The corrected harness accounts
+for fresh local IDs, waits for Account hydration, and sends the legitimate browser
+Origin on multipart uploads without changing CSRF enforcement.
+
 The ordinary authenticated CI job is restricted to manual dispatch on `main`.
-Its GitHub `clerk-e2e` environment, three development secrets and repository
-`CLERK_E2E_ENABLED` variable are not configured: automatic approval review
-rejected environment creation. Production Clerk dashboard access and browser
-smoke were also rejected. Merge/deploy authorization has been recorded, but
-the production webhook/group secrets and smoke remain separate blocked steps.
+The user explicitly approved environment/secret setup and disposable production
+smoke on September 8, superseding the earlier automatic-review blocks.
+The `clerk-e2e` environment now restricts deployments to `main`, with administrative
+bypass disabled. Its three development secrets and `CLERK_E2E_ENABLED=true` are
+configured. Manual CI run `34229603733` passed all jobs: the authenticated job
+reported 21 passed and two skipped (Agent Tasks diagnostic and a missing seeded
+group-detail fixture). This does not count as passing Agent Tasks coverage.
+
+Production version `1f664e22-8ac2-4120-8e02-4fa906f5e688` deploys merged commit
+`8e933ba`. Migrations 0014–0029 applied; the foreign-key check and runtime-registry
+backfill check passed. Both required secret names are present, AI is disabled,
+and the five-minute schedule is active. The production Clerk endpoint subscribes
+only to `user.deleted` and is enabled. Exact disposable-user deletion returned
+Clerk 404; its real webhook delivery succeeded and D1 recorded one delivery with
+the immediate account/runtime `deleting` fence. The scheduled job then reached
+`done` with zero retries and both states `deleted`. Its group became read-only
+with no owner; its retained ready file lost author identity. The old browser
+context received exactly 401, and temporary browser storage was removed.
