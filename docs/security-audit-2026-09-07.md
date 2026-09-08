@@ -154,8 +154,9 @@ package advisories at execution time. This does not establish absence of exposur
 CI now runs public built-browser checks and provides an environment-gated Clerk
 job against a built preview; it does not expose secrets to pull-request code.
 
-The Clerk/CSP compatibility regression is still an explicit release blocker,
-pending approval for the rejected wrapper replacement. Production/staging secrets,
+The approved CSP-compatible Clerk wrapper passes both ordinary built auth UI
+regressions; manual development sign-in preserves the requested return, and
+Account renders without CSP errors. Production/staging secrets,
 signed webhook delivery, scheduled lifecycle processing, live provider failure
 paths and edge TLS/HSTS remain deployment verification gates. Staging has no cron
 trigger. No production settings, data, deployment or third-party security probes

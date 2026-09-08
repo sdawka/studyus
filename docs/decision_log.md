@@ -9,3 +9,5 @@
 - 2026-09-07T20:38:53-04:00 — Uploaded files download only. Keep AI disabled while implementing conservative quotas. Study time supports one active session across devices with durable pause/recovery.
 - 2026-09-07T20:38:53-04:00 — Account deletion soft-deletes backend data and retains the Durable Object reference in an operator-only registry; no automatic restoration/email relinking. Shared contributions remain available with deleted-author attribution. Ownerless groups become read-only until operator reassignment; future deleted-host sessions are canceled.
 - 2026-09-07T20:38:53-04:00 — Groups support shared links/files and scheduled sessions/RSVPs; invitations are single-use and bound to verified email. Personal notes, grades, mastery and tutor history remain private.
+
+- 2026-09-08T07:49:15-04:00 — Approve the CSP-compatible Clerk UI wrapper replacement and continued Agent Tasks E2E testing; authorize merging after all CI checks pass and deploying the remediation.

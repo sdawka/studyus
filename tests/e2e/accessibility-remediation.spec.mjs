@@ -163,9 +163,22 @@ test.describe('authenticated accessibility remediation journey', () => {
   });
 
   for (const width of [320, 390, 430]) test(`account profile fits a ${width}px viewport`, async ({ page }) => {
+    const cspErrors = [];
+    page.on('console', message => {
+      if (message.type() === 'error' && /Content Security Policy|violates.*directive/i.test(message.text())) cspErrors.push(message.text());
+    });
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/account', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Profile details', { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => [...window.__astro_clerk_component_props.get('user-profile').values()][0])).toMatchObject({
+      path: '/account', routing: 'path',
+      additionalOAuthScopes: { microsoft: ['Calendars.ReadWrite'], google: [
+        'https://www.googleapis.com/auth/calendar.events.readonly',
+        'https://www.googleapis.com/auth/calendar.calendarlist.readonly',
+        'https://www.googleapis.com/auth/calendar.app.created',
+      ] },
+    });
+    expect(cspErrors).toEqual([]);
     const bounds = await page.locator('.cl-cardBox').boundingBox();
     expect(bounds).not.toBeNull();
     expect(bounds.x).toBeGreaterThanOrEqual(0);

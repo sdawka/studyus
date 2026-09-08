@@ -1,6 +1,6 @@
 # Remediation implementation plan — 2026-09-07
 
-Approved in conversation; source specifications are audit-2026-09-07.md and security-audit-2026-09-07.md. Follow the explicit decisions in decision_log.md. No production deployment or production security probes; push reviewable PRs, no merge without green CI and authority.
+Approved in conversation; source specifications are audit-2026-09-07.md and security-audit-2026-09-07.md. Follow the explicit decisions in decision_log.md. The user subsequently authorized the Clerk CSP adapter, merge after all CI checks pass, and deployment on 2026-09-08. Production security probes remain excluded; production browser smoke requires explicit approval under automatic review.
 
 ## Delivery tasks
 

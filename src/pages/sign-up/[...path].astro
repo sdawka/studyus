@@ -1,6 +1,6 @@
 ---
-import { SignUp } from '@clerk/astro/components';
 import AuthShell from '../../components/auth/AuthShell.astro';
+import ClerkUi from '../../components/auth/ClerkUi.astro';
 import { authQuery, safeReturnPath } from '../../components/auth/returnUrl';
 import MarketingLayout from '../../layouts/MarketingLayout.astro';
 
@@ -13,7 +13,8 @@ if (Astro.locals.user) return Astro.redirect(Astro.locals.user.onboardedAt ? (re
 
 <MarketingLayout title="Create your account · studyus" description="Create an account and turn your trial into a real study plan.">
   <AuthShell heading="Create your account" description="Turn your trial into a real study plan.">
-    <SignUp
+    <ClerkUi
+      component="sign-up"
       routing="path"
       path="/sign-up"
       signInUrl={signInUrl}

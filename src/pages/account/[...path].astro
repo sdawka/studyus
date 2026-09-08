@@ -1,5 +1,5 @@
 ---
-import { UserProfile } from '@clerk/astro/components';
+import ClerkUi from '../../components/auth/ClerkUi.astro';
 import AppShell from '../../layouts/AppShell.astro';
 
 if (!Astro.locals.user) {
@@ -10,7 +10,8 @@ if (!Astro.locals.user) {
 
 <AppShell title="Account">
   <section class="account-shell">
-    <UserProfile
+    <ClerkUi
+      component="user-profile"
       routing="path"
       path="/account"
       additionalOAuthScopes={{

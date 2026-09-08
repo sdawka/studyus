@@ -74,7 +74,10 @@ session; the retired JSON login/logout endpoints return `410 auth_retired`.
    create a second session system.
 
 The app uses Clerk's Astro integration, middleware, prebuilt sign-in/sign-up,
-and the dedicated `/account` `UserProfile` control. See Clerk's current
+and the dedicated `/account` `UserProfile` control. The local `ClerkUi.astro`
+wrapper serializes props as escaped inert JSON; `/clerk-props-bridge.js` registers
+them in Clerk's official component map before its mount code runs. This preserves
+local redirects and OAuth scopes under CSP without allowing dynamic inline scripts. See Clerk's current
 [Astro quickstart](https://clerk.com/docs/astro/getting-started/quickstart),
 [Astro server helpers](https://clerk.com/docs/reference/astro/overview), and
 [PBKDF2 import format](https://clerk.com/docs/reference/backend/user/create-user).
