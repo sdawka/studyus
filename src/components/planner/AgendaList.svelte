@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CalendarItem } from '../../lib/types/calendar';
   import { courseForItem, hueForItem } from '../../lib/courseHue';
-  import { addDays, calendarItemStartLabel, daysUntil, deadlineUrgency, isSameLocalDay, localDateKeyFromIso } from '../../lib/plannerDates';
+  import { addDateKeyDays, calendarItemDateKey, calendarItemStartLabel, daysUntil, deadlineUrgency, formatZonedDate, zonedDateKey, zonedDateTime } from '../../lib/plannerDates';
 
   interface CourseInfo {
     code: string;
@@ -15,6 +15,8 @@
     selectedId = null,
     onSelect,
     scrollToDate,
+    timezone = Intl.DateTimeFormat().resolvedOptions().timeZone,
+    initialNow = Date.now(),
   }: {
     items: CalendarItem[];
     courseById: Map<string, CourseInfo>;
@@ -24,6 +26,8 @@
     // day-tap (mobile Month → Agenda handoff) to scroll that date's group
     // header into view.
     scrollToDate?: string | null;
+    timezone?: string;
+    initialNow?: number;
   } = $props();
 
   let listEl = $state<HTMLUListElement | null>(null);
@@ -35,11 +39,10 @@
   }
 
   function groupLabel(dateKey: string): string {
-    const d = new Date(`${dateKey}T00:00:00`);
-    const today = new Date();
-    if (isSameLocalDay(d, today)) return 'Today';
-    if (isSameLocalDay(d, addDays(today, 1))) return 'Tomorrow';
-    return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+    const todayKey = zonedDateKey(initialNow, timezone);
+    if (dateKey === todayKey) return 'Today';
+    if (dateKey === addDateKeyDays(todayKey, 1)) return 'Tomorrow';
+    return formatZonedDate(zonedDateTime(dateKey, 12 * 60, timezone), timezone, { weekday: 'long', month: 'short', day: 'numeric' });
   }
 
   // Items arrive pre-sorted by date (PlannerView's `agendaItems`); group
@@ -49,7 +52,7 @@
   const groups = $derived.by(() => {
     const byDay = new Map<string, CalendarItem[]>();
     for (const item of items) {
-      const key = localDateKeyFromIso(item.date);
+      const key = calendarItemDateKey(item, timezone);
       const list = byDay.get(key) ?? [];
       list.push(item);
       byDay.set(key, list);
@@ -70,7 +73,17 @@
     // calendarItemStartLabel, not a raw `new Date(item.date)` — a
     // class_session's real wall-clock start comes from details.start_min,
     // never from parsing hours off its ISO date (see plannerDates.ts).
-    return calendarItemStartLabel(item);
+    return calendarItemStartLabel(item, timezone);
+  }
+
+  function agendaUrgency(item: CalendarItem, days: number): { cls: string; label: string } {
+    if (item.type === 'task_due' && item.details.done !== true) return deadlineUrgency(days);
+    if (item.type === 'assessment_due' && item.details.grade_received == null) return deadlineUrgency(days);
+    return { cls: 'pill-idle', label: days > 0 ? 'upcoming' : days === 0 ? 'today' : 'recorded' };
+  }
+
+  function itemDays(item: CalendarItem): number {
+    return daysUntil(zonedDateTime(calendarItemDateKey(item, timezone), 12 * 60, timezone), new Date(initialNow), timezone);
   }
 </script>
 
@@ -81,8 +94,8 @@
   {#each groups as group (group.dateKey)}
     <li class="date-header" data-date-group={group.dateKey}>{group.label}</li>
     {#each group.items as item (item.id)}
-      {@const days = daysUntil(item.date)}
-      {@const u = deadlineUrgency(days)}
+      {@const days = itemDays(item)}
+      {@const u = agendaUrgency(item, days)}
       {@const code = courseForItem(item, courseById)?.code}
       {@const time = timeLabel(item)}
       <li>
@@ -91,7 +104,7 @@
           <span class="agenda-body">
             <span class="agenda-title">{item.title}</span>
             <span class="agenda-meta"
-              >{code ? `${code} · ` : ''}{new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}{time
+              >{code ? `${code} · ` : ''}{formatZonedDate(zonedDateTime(calendarItemDateKey(item, timezone), 12 * 60, timezone), timezone, { month: 'short', day: 'numeric' })}{time
                 ? ` · ${time}`
                 : ''}</span
             >

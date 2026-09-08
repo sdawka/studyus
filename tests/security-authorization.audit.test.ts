@@ -57,11 +57,11 @@ describe('rejected ownership references have no side effects', () => {
     createdAssessmentCount = (await db.select().from(assessments).where(eq(assessments.courseId, courseId))).length;
   });
 
-  it.fails('does not create a task when course ownership validation rejects the request', () => {
+  it('does not create a task when course ownership validation rejects the request', () => {
     expect(createdTaskCount).toBe(0);
   });
 
-  it.fails('does not create an assessment when KC ownership validation rejects the request', () => {
+  it('does not create an assessment when KC ownership validation rejects the request', () => {
     expect(createdAssessmentCount).toBe(0);
   });
 });
@@ -88,14 +88,14 @@ describe('rejected task link replacement is atomic', () => {
     };
   });
 
-  it.fails('does not apply task fields before rejecting a foreign course reference', () => {
+  it('does not apply task fields before rejecting a foreign course reference', () => {
     expect(observed).toEqual({ title: 'Original task', done: false, courseIds: [courseId] });
   });
 });
 
 describe('rejected assessment link replacement is atomic', () => {
   let assessmentId: string;
-  let observed: { title: string | undefined; gradeReceived: number | null | undefined; kcIds: string[] };
+  let observed: { title: string | undefined; gradeReceived: number | null | undefined; revision: number | undefined; kcIds: string[] };
 
   beforeEach(async () => {
     assessmentId = (
@@ -117,11 +117,12 @@ describe('rejected assessment link replacement is atomic', () => {
     observed = {
       title: persistedAssessment?.title,
       gradeReceived: persistedAssessment?.gradeReceived,
+      revision: persistedAssessment?.revision,
       kcIds: links.map((link) => link.kcId),
     };
   });
 
-  it.fails('does not apply assessment fields before rejecting a foreign KC reference', () => {
-    expect(observed).toEqual({ title: 'Original assessment', gradeReceived: null, kcIds: [ownKcId] });
+  it('does not apply assessment fields before rejecting a foreign KC reference', () => {
+    expect(observed).toEqual({ title: 'Original assessment', gradeReceived: null, revision: 0, kcIds: [ownKcId] });
   });
 });

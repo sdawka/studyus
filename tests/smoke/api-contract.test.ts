@@ -45,6 +45,7 @@ import * as kcScaffoldsRoutes from '../../src/pages/api/v1/kcs/[id]/scaffolds';
 import * as kcMisconceptionsRoutes from '../../src/pages/api/v1/kcs/[id]/misconceptions';
 import * as correctionsIndexRoutes from '../../src/pages/api/v1/corrections/index';
 import * as correctionsDetailRoutes from '../../src/pages/api/v1/corrections/[id]/index';
+import { ensureActiveRuntimeRegistry } from '../../src/lib/services/accountLifecycle';
 
 const db = getDb(env.DB);
 
@@ -64,6 +65,7 @@ async function setupFixture() {
     passwordHash: 'dummy',
     name: 'Test User',
   });
+  await ensureActiveRuntimeRegistry(db, userId);
 
   await db.insert(courses).values({
     id: courseId,
@@ -690,9 +692,9 @@ describe('API Contract Smoke Tests (docs/api.md)', () => {
         locals: { user: { id: fixture.userId } },
       }) as any);
       expect(downloadRes.status).toBe(200);
-      expect(downloadRes.headers.get('Content-Type')).toBe('text/plain');
-      expect(downloadRes.headers.get('Content-Disposition')).toMatch(/inline.*test\.txt/);
-      const downloadedContent = await downloadRes.text();
+      expect(downloadRes.headers.get('Content-Type')).toBe('application/octet-stream');
+      expect(downloadRes.headers.get('Content-Disposition')).toMatch(/attachment.*test\.txt/);
+      const downloadedContent = new TextDecoder().decode(await downloadRes.arrayBuffer());
       expect(downloadedContent).toBe(content);
 
       // Delete

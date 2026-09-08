@@ -20,10 +20,12 @@
     item,
     pos,
     course,
+    timezone = Intl.DateTimeFormat().resolvedOptions().timeZone,
   }: {
     item: CalendarItem;
     pos: { x: number; y: number };
     course: CourseOption | undefined;
+    timezone?: string;
   } = $props();
 
   const hue = $derived(course ? hueFor({ slug: course.slug, color: course.color === null ? null : String(course.color) }) : 220);
@@ -63,7 +65,7 @@
 
 <div class="hover-card" style={`left:${pos.x}px; top:${pos.y}px; --course-h:${hue}`}>
   <p class="hc-title">{item.title}</p>
-  <p class="hc-time">{calendarItemTimeLabel(item)}</p>
+  <p class="hc-time">{calendarItemTimeLabel(item, timezone)}</p>
   {#if course}
     <span class="chip hc-chip">{course.code}</span>
   {/if}

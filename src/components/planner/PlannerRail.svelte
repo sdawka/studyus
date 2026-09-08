@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CalendarItem } from '../../lib/types/calendar';
   import { courseForItem, hueForItem } from '../../lib/courseHue';
-  import { daysUntil, localDateKey, mondayOf, railDueLabel, startOfDay } from '../../lib/plannerDates';
+  import { calendarItemDateKey, daysUntil, localDateKey, mondayOf, railDueLabel, startOfDay, zonedDateTime } from '../../lib/plannerDates';
   import TaskTypeIcon from '../tasks/TaskTypeIcon.svelte';
   import type { TaskType } from '../../lib/taskTypeMeta';
 
@@ -20,6 +20,8 @@
     weekStart,
     onSelect,
     onJumpToWeek,
+    timezone,
+    initialNow,
   }: {
     items: CalendarItem[]; // task_due + assessment_due, incomplete, within window
     courses: CourseOption[];
@@ -27,14 +29,16 @@
     weekStart: string;
     onSelect: (item: CalendarItem) => void;
     onJumpToWeek: (date: Date, item: CalendarItem) => void;
+    timezone: string;
+    initialNow: number;
   } = $props();
 
   const courseById = new Map(courses.map((c) => [c.id, c]));
 
-  const today = $derived(startOfDay(new Date()));
+  const today = $derived(startOfDay(new Date(initialNow), timezone));
 
   function daysUntilItem(item: CalendarItem): number {
-    return daysUntil(item.date, today);
+    return daysUntil(item.date, today, timezone);
   }
 
   const incomplete = $derived(items.filter((i) => !(i.type === 'task_due' && i.details?.done === true)));
@@ -46,15 +50,16 @@
   );
 
   function weekStartFor(date: Date): string {
-    return localDateKey(mondayOf(date));
+    return localDateKey(mondayOf(date, timezone), timezone);
   }
 
   function handleClick(item: CalendarItem) {
-    const itemWeekStart = weekStartFor(new Date(item.date));
+    const itemDate = zonedDateTime(calendarItemDateKey(item, timezone), 0, timezone);
+    const itemWeekStart = weekStartFor(itemDate);
     if (itemWeekStart === weekStart) {
       onSelect(item);
     } else {
-      onJumpToWeek(new Date(item.date), item);
+      onJumpToWeek(itemDate, item);
     }
   }
 
@@ -68,7 +73,7 @@
   }
 
   function dueLabel(item: CalendarItem): string {
-    return railDueLabel(daysUntilItem(item), item.date);
+    return railDueLabel(daysUntilItem(item), item.date, timezone);
   }
 </script>
 

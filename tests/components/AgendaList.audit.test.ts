@@ -24,6 +24,11 @@ describe('AgendaList urgency', () => {
   beforeEach(() => vi.useFakeTimers({ now: new Date('2026-09-07T12:00:00.000Z') }));
   afterEach(() => vi.useRealTimers());
 
+  it('does not describe a future class as already recorded', () => {
+    render(AgendaList, { props: { items: [item({ type: 'class_session', title: 'Future class', date: '2026-09-09T12:00:00.000Z' })], courseById } });
+    expect(screen.getByRole('button', { name: /Future class/ }).querySelector('.pill')?.textContent).toBe('upcoming');
+  });
+
   it('keeps a future outstanding deadline actionable', () => {
     render(AgendaList, { props: { items: [item({ date: '2026-09-09T12:00:00.000Z' })], courseById } });
 
@@ -65,11 +70,31 @@ describe('AgendaList urgency', () => {
       expect(observedHistoryPills).toHaveLength(2);
     });
 
-    // Known planner defect: the list applies deadlineUrgency to every calendar
-    // item, including completed class sessions and logged events. These are
-    // historical records, so a past date must not imply an overdue obligation.
-    it.fails('does not label completed history as overdue', () => {
-      expect(observedHistoryPills).not.toContain('overdue');
+    it('keeps completed history neutral', () => {
+      expect(observedHistoryPills).toEqual(['recorded', 'recorded']);
     });
+  });
+
+  it('only labels outstanding tasks and assessments as overdue', () => {
+    render(AgendaList, {
+      props: {
+        items: [
+          item({ id: 'past-task', title: 'Past task', date: '2026-09-05T12:00:00.000Z', type: 'task_due' }),
+          item({ id: 'past-assessment', title: 'Past assessment', date: '2026-09-05T12:00:00.000Z', type: 'assessment_due' }),
+          item({ id: 'completed-task', title: 'Completed task', date: '2026-09-05T12:00:00.000Z', type: 'task_due', details: { done: true } }),
+          item({ id: 'graded-assessment', title: 'Graded assessment', date: '2026-09-05T12:00:00.000Z', type: 'assessment_due', details: { grade_received: 88 } }),
+          item({ id: 'past-session', title: 'Past study session', date: '2026-09-05T12:00:00.000Z', type: 'study_session' }),
+          item({ id: 'past-external', title: 'Past external event', date: '2026-09-05T12:00:00.000Z', type: 'external_event' }),
+        ],
+        courseById,
+      },
+    });
+
+    expect(screen.getByRole('button', { name: /Past task/ }).querySelector('.pill')?.textContent?.trim()).toBe('overdue');
+    expect(screen.getByRole('button', { name: /Past assessment/ }).querySelector('.pill')?.textContent?.trim()).toBe('overdue');
+    expect(screen.getByRole('button', { name: /Completed task/ }).querySelector('.pill')?.textContent?.trim()).toBe('recorded');
+    expect(screen.getByRole('button', { name: /Graded assessment/ }).querySelector('.pill')?.textContent?.trim()).toBe('recorded');
+    expect(screen.getByRole('button', { name: /Past study session/ }).querySelector('.pill')?.textContent?.trim()).toBe('recorded');
+    expect(screen.getByRole('button', { name: /Past external event/ }).querySelector('.pill')?.textContent?.trim()).toBe('recorded');
   });
 });

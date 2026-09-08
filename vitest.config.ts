@@ -33,10 +33,13 @@ export default defineConfig({
               wrangler: { configPath: './wrangler.jsonc' },
               miniflare: {
                 bindings: {
+                  GROUP_INVITE_HMAC_SECRET: 'synthetic-test-only-group-invitation-hmac-key-2026',
                   TEST_MIGRATIONS: migrations,
                   // Deliberately fake: runtime tests exercise the gate without
                   // depending on or exposing a real provider credential.
                   OPENROUTER_API_KEY: 'test-openrouter-key',
+                  // Provider behavior is exercised only in isolated tests.
+                  AI_FEATURES_ENABLED: 'true',
                 },
               },
             };

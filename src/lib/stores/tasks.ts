@@ -15,6 +15,7 @@ import { apiFetch } from '../apiClient';
 import { captureBehavioralEvent, currentAnalyticsSurface } from '../analytics/client';
 import { taskCheckedEvent, taskDismissedEvent } from '../analytics/engagement';
 import { COMPLETION_HOLD_MS } from '../completionMotion';
+import { zonedDateKey } from '../plannerDates';
 import type { TaskType } from '../taskTypeMeta';
 
 export interface ApiTaskCourse {
@@ -369,8 +370,8 @@ function byDueDateAsc(a: ApiTask, b: ApiTask): number {
 // Undated tasks (stale_kc's "anytime" policy) have nothing to be overdue
 // against, so they land as a tail appended to `next`, sorted after every
 // dated entry there.
-export function bucketByDue(tasks: ApiTask[], now: Date = new Date()): DueBuckets {
-  const todayStart = startOfDay(now);
+export function bucketByDue(tasks: ApiTask[], now: Date = new Date(), timeZone?: string): DueBuckets {
+  const todayStart = timeZone ? Date.parse(`${zonedDateKey(now, timeZone)}T00:00:00.000Z`) : startOfDay(now);
   const overdue: ApiTask[] = [];
   const today: ApiTask[] = [];
   const next: ApiTask[] = [];
@@ -382,7 +383,7 @@ export function bucketByDue(tasks: ApiTask[], now: Date = new Date()): DueBucket
       undated.push(task);
       continue;
     }
-    const dueStart = startOfDay(new Date(task.due_date));
+    const dueStart = timeZone ? Date.parse(`${zonedDateKey(task.due_date, timeZone)}T00:00:00.000Z`) : startOfDay(new Date(task.due_date));
     if (dueStart < todayStart) {
       if (task.type === 'attend_class') catchUp.push(task);
       else overdue.push(task);

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './authenticated-fixture.mjs';
 import { runHarness } from './run-harness.mjs';
 
 test.describe.configure({ mode: 'serial' });

@@ -1,0 +1,123 @@
+---
+interface Props {
+  heading: string;
+  description: string;
+  loadingLabel?: string;
+}
+
+const { heading, description, loadingLabel = 'Loading secure authentication…' } = Astro.props;
+const retryHref = `${Astro.url.pathname}${Astro.url.search}`;
+---
+<section class="auth-shell" data-auth-shell aria-labelledby="auth-title">
+  <div class="auth-card">
+    <header class="auth-heading">
+      <p class="auth-kicker">studyus</p>
+      <h1 id="auth-title">{heading}</h1>
+      <p>{description}</p>
+    </header>
+    <div class="auth-widget" data-auth-widget aria-busy="true">
+      <p class="auth-loading" data-auth-loading role="status">{loadingLabel}</p>
+      <slot />
+      <noscript><p class="auth-error" role="alert">Enable JavaScript to use secure authentication, then reload this page. <a href="/">Return to studyus</a>.</p></noscript>
+      <p class="auth-error" data-auth-error role="alert" hidden>
+        Secure authentication is taking longer than expected.
+        <span class="auth-links"><a href={retryHref}>Try again</a><a href="/">Return to studyus</a></span>
+      </p>
+    </div>
+  </div>
+</section>
+
+<script>
+  const shell = document.querySelector<HTMLElement>('[data-auth-shell]');
+  const widget = shell?.querySelector<HTMLElement>('[data-auth-widget]');
+  const loading = shell?.querySelector<HTMLElement>('[data-auth-loading]');
+  const error = shell?.querySelector<HTMLElement>('[data-auth-error]');
+
+  if (widget && loading && error) {
+    const hasProviderContent = () => Boolean(widget.querySelector('[data-clerk-id] button, [data-clerk-id] input, [data-clerk-id] iframe, [data-clerk-id] [role="dialog"]'));
+    const settle = () => {
+      const ready = hasProviderContent();
+      loading.hidden = ready;
+      loading.setAttribute('aria-hidden', String(ready));
+      widget.setAttribute('aria-busy', String(!ready));
+      return ready;
+    };
+
+    const observer = new MutationObserver(() => {
+      if (settle()) observer.disconnect();
+    });
+    observer.observe(widget, { childList: true, subtree: true });
+    if (!settle()) {
+      window.setTimeout(() => {
+        if (!settle()) {
+          loading.hidden = true;
+          error.hidden = false;
+          widget.setAttribute('aria-busy', 'false');
+          observer.disconnect();
+        }
+      }, 8000);
+    } else {
+      observer.disconnect();
+    }
+  }
+</script>
+
+<style>
+  .auth-shell {
+    min-height: calc(100dvh - 260px);
+    display: grid;
+    place-items: center;
+    padding: 48px 16px;
+  }
+
+  .auth-card {
+    width: min(440px, 100%);
+    box-sizing: border-box;
+    padding: clamp(24px, 5vw, 38px);
+    border: 1px solid var(--mk-hairline, var(--hairline, var(--border, #ddd6e4)));
+    border-radius: var(--radius-lg, 20px);
+    background: var(--mk-surface, var(--surface, #fff));
+    color: var(--mk-ink, var(--text, #28222d));
+    box-shadow: var(--shadow-card, 0 18px 44px rgb(38 25 50 / 10%));
+  }
+
+  .auth-heading { margin-bottom: 22px; }
+  .auth-kicker {
+    margin: 0 0 8px;
+    color: var(--mk-accent, var(--accent, #8b3fd0));
+    font: 800 12px/1 var(--mk-font-display, var(--font-display, system-ui));
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  h1 {
+    margin: 0;
+    font: 650 clamp(26px, 5vw, 34px)/1.1 var(--mk-font-display, var(--font-display, system-ui));
+    letter-spacing: -.02em;
+  }
+  .auth-heading > p:last-child {
+    margin: 8px 0 0;
+    color: var(--mk-muted, var(--muted, #706778));
+    line-height: 1.5;
+  }
+  .auth-widget { min-width: 0; }
+  .auth-widget :global(.cl-rootBox),
+  .auth-widget :global(.cl-cardBox),
+  .auth-widget :global(.cl-card) { width: 100%; max-width: 100%; min-width: 0; }
+  .auth-loading, .auth-error {
+    margin: 0;
+    padding: 12px;
+    border-radius: 12px;
+    color: var(--mk-muted, var(--muted, #706778));
+    background: var(--mk-bg, var(--surface-2, #f6f3f8));
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  .auth-error { color: var(--danger-ink, #9b2845); background: var(--danger-soft, #ffe8ed); }
+  .auth-links { display: inline-flex; flex-wrap: wrap; gap: 10px; margin-left: 8px; }
+  .auth-links a, noscript a { color: inherit; font-weight: 700; text-decoration: underline; }
+
+  @media (max-width: 560px) {
+    .auth-shell { min-height: calc(100dvh - 170px); padding: 28px 12px; }
+    .auth-card { padding: 22px 16px; border-radius: 16px; }
+  }
+</style>

@@ -77,8 +77,15 @@ export function focusTrap(node: HTMLElement, options: FocusTrapOptions = {}): Ac
     active = true;
     previouslyFocused = document.activeElement as HTMLElement | null;
     if (!node.hasAttribute('tabindex')) node.setAttribute('tabindex', '-1');
-    const els = focusableEls(node);
-    (els[0] ?? node).focus({ preventScroll: true });
+    // Sheets portal their containing layer to <body>. Child actions can run
+    // before that reparenting finishes, and focusing a still-detached control
+    // is discarded by the browser. Defer one microtask so the initial focus
+    // targets the panel in its final document position.
+    queueMicrotask(() => {
+      if (!active || !node.isConnected) return;
+      const els = focusableEls(node);
+      (els[0] ?? node).focus({ preventScroll: true });
+    });
     node.addEventListener('keydown', onKeydown);
   }
 

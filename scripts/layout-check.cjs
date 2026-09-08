@@ -445,13 +445,14 @@ async function main() {
   const dashboardStackBreakpoint = readDashboardStackBreakpoint();
   console.log(`layout-check: base=${CONFIG.baseUrl} dashboard rail breakpoint=${dashboardStackBreakpoint}px\n`);
 
-  const { authenticateClerkContext, CLERK_AUTH_STATE_PATH } = await import('./lib/clerk-e2e-auth.mjs');
+  const { authenticateClerkContext, setupClerkTestingContext, CLERK_AUTH_STATE_PATH } = await import('./lib/clerk-e2e-auth.mjs');
   const useStoredAuth = process.env.E2E_USE_STORED_AUTH === '1';
   const browser = await chromium.launch();
   const context = await browser.newContext({
     baseURL: CONFIG.baseUrl,
     ...(useStoredAuth ? { storageState: CLERK_AUTH_STATE_PATH } : {}),
   });
+  if (useStoredAuth) await setupClerkTestingContext(context);
   const page = await context.newPage();
 
   if (!useStoredAuth) await authenticateClerkContext({ context, page, baseUrl: CONFIG.baseUrl });

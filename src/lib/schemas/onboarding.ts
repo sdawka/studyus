@@ -146,7 +146,6 @@ export const DEMO_FUNNEL_EVENTS = [
   'import_offered',
   'import_accepted',
   'import_declined',
-  'onboarding_completed',
 ] as const;
 
 export const demoFunnelEventSchema = z.strictObject({

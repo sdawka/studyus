@@ -5,11 +5,16 @@ import type {
   ProviderEvent,
   ProviderEventInput,
   ProviderEventVersion,
+  ProvisionedCalendar,
+  ProviderCalendarDeleteRequest,
+  ProviderCalendarDiscoveryRequest,
+  ProviderCalendarProvisionRequest,
   ProviderSyncRequest,
 } from './types';
 
 const MICROSOFT_GRAPH_API = 'https://graph.microsoft.com/v1.0';
 const MICROSOFT_GRAPH_ORIGIN = 'https://graph.microsoft.com';
+export const MICROSOFT_STUDYUS_MARKER_PROPERTY = 'String {8d8156d3-7e51-4e7c-84e0-55c491034e87} Name StudyusProvision';
 
 interface MicrosoftEvent {
   id: string;
@@ -37,6 +42,12 @@ interface MicrosoftEventsPage {
   '@odata.deltaLink'?: string;
 }
 
+interface MicrosoftCalendar {
+  id: string;
+  name?: string;
+  canEdit?: boolean;
+}
+
 function calendarBase(calendarId: string): string {
   return calendarId === 'primary'
     ? `${MICROSOFT_GRAPH_API}/me`
@@ -51,6 +62,10 @@ function initialDeltaUrl(request: ProviderSyncRequest): string {
   url.searchParams.set('startDateTime', request.from);
   url.searchParams.set('endDateTime', request.to);
   return url.toString();
+}
+
+function microsoftCalendar(value: MicrosoftCalendar, fallbackTimezone = 'UTC'): ProvisionedCalendar {
+  return { id: value.id, name: value.name ?? 'Studyus', timezone: fallbackTimezone, accessRole: value.canEdit === false ? 'read' : 'owner' };
 }
 
 /** Delta links are opaque, but never trusted as bearer-token destinations. */
@@ -173,6 +188,34 @@ export function createMicrosoftCalendarProvider({ fetch }: { fetch: typeof globa
           headers,
         }),
       );
+    },
+
+    async provisionCalendar(request: ProviderCalendarProvisionRequest) {
+      const response = await fetch(`${MICROSOFT_GRAPH_API}/me/calendars`, {
+        method: 'POST',
+        headers: bearerHeaders(request.accessToken, { 'content-type': 'application/json' }),
+        body: JSON.stringify({
+          name: 'Studyus',
+          singleValueExtendedProperties: [{ id: MICROSOFT_STUDYUS_MARKER_PROPERTY, value: request.marker }],
+        }),
+      });
+      return microsoftCalendar(await readJson<MicrosoftCalendar>(response), request.timezone);
+    },
+
+    async discoverProvisionedCalendar(request: ProviderCalendarDiscoveryRequest) {
+      const url = new URL(`${MICROSOFT_GRAPH_API}/me/calendars`);
+      url.searchParams.set('$filter', `singleValueExtendedProperties/Any(ep: ep/id eq '${MICROSOFT_STUDYUS_MARKER_PROPERTY}' and ep/value eq '${request.marker}')`);
+      const response = await readJson<{ value?: MicrosoftCalendar[] }>(
+        await fetch(url.toString(), { headers: bearerHeaders(request.accessToken) }),
+      );
+      return response.value?.[0] ? microsoftCalendar(response.value[0]) : null;
+    },
+
+    async deleteProvisionedCalendar(request: ProviderCalendarDeleteRequest) {
+      await expectSuccess(await fetch(`${MICROSOFT_GRAPH_API}/me/calendars/${encodeURIComponent(request.calendarId)}`, {
+        method: 'DELETE',
+        headers: bearerHeaders(request.accessToken),
+      }));
     },
   };
 }

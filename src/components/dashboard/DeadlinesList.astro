@@ -10,9 +10,11 @@ interface DueItem {
 }
 interface Props {
   items: DueItem[];
+  timezone: string;
+  initialNow: number;
 }
-const { items } = Astro.props;
-const now = new Date();
+const { items, timezone, initialNow } = Astro.props;
+const now = new Date(initialNow);
 ---
 
 <section class="card">
@@ -25,14 +27,14 @@ const now = new Date();
   ) : (
     <div class="task-list">
       {items.map((item) => {
-        const days = daysUntil(item.dueDate, now);
+        const days = daysUntil(item.dueDate, now, timezone);
         const u = deadlineUrgency(days);
         return (
           <div class="task-row">
             <span class="task-dot" style={`--course-h:${item.courseHue ?? 220}`}></span>
             <span class="task-body">
               <span class="task-title">{item.title}</span>
-              <span class="task-meta">{item.courseCode ? `${item.courseCode} · ` : ''}{formatShortDate(item.dueDate)}</span>
+              <span class="task-meta">{item.courseCode ? `${item.courseCode} · ` : ''}{formatShortDate(item.dueDate, timezone)}</span>
             </span>
             <span class={`pill ${u.cls}`}>{u.label}</span>
           </div>

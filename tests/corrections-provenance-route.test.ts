@@ -5,6 +5,7 @@ import { getDb } from '../src/db/client';
 import { branches, courses, events, kcs, tutorConversations, userCorrections, users } from '../src/db/schema';
 import { getLearnerAgentForUser } from '../src/lib/runtime/learnerAgent';
 import * as correctionsRoutes from '../src/pages/api/v1/corrections/index';
+import { ensureActiveRuntimeRegistry } from '../src/lib/services/accountLifecycle';
 
 const db = getDb(env.DB);
 
@@ -16,6 +17,7 @@ async function makeFixture(): Promise<Fixture> {
   const branchId = crypto.randomUUID();
   const kcId = crypto.randomUUID();
   await db.insert(users).values({ id: userId, email: `${userId}@test.local`, passwordHash: 'x' });
+  await ensureActiveRuntimeRegistry(db, userId);
   await db.insert(courses).values({ id: courseId, userId, code: 'TEST 101', slug: `test-${courseId}`, title: 'Test course' });
   await db.insert(branches).values({ id: branchId, courseId, name: 'Test branch' });
   await db.insert(kcs).values({ id: kcId, branchId, courseId, name: 'Test KC', kcType: 'concept' });

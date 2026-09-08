@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [main]
   push:
@@ -11,14 +12,19 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -33,6 +39,9 @@ jobs:
       - name: Tests
         run: npm test
 
+      - name: Clean migration and repeatable two-user seed
+        run: node scripts/check-seed.mjs
+
       - name: Build
         run: npm run build
 
@@ -41,3 +50,48 @@ jobs:
       # same reason, and belongs with the Playwright suite rather than here.
       - name: Annotations
         run: npm run check:annotations
+
+  public-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run db:migrate:local
+      - run: npm run build
+      - run: npx playwright test --config playwright.public.config.mjs
+
+  clerk-browser:
+    # Never run privileged checkout with secrets from an untrusted PR.
+    # Enable only after a dedicated development Clerk environment is configured.
+    if: github.event_name == 'workflow_dispatch' && vars.CLERK_E2E_ENABLED == 'true'
+    environment: clerk-e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      STUDYUS_ISOLATED_AUDIT: '1'
+      E2E_BUILT_APP: '1'
+      PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_E2E_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_E2E_SECRET_KEY }}
+      E2E_CLERK_USER_PASSWORD: ${{ secrets.CLERK_E2E_USER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run db:migrate:local
+      - run: npm run db:seed
+      - run: npm run build
+      - run: npx playwright test --project authenticated --project security-boundaries --project clerk-ui

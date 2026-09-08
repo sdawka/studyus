@@ -162,7 +162,7 @@
     searchTimer = setTimeout(() => void loadTemplateOptions(search), 250);
   }
 
-  async function track(name: 'import_offered' | 'import_accepted' | 'import_declined' | 'onboarding_completed') {
+  async function track(name: 'import_offered' | 'import_accepted' | 'import_declined') {
     const current = demoDraft.get();
     await trackDemoFunnelEvent({ name, trial_session_id: current.draft_id }, '/onboarding');
   }
@@ -187,7 +187,6 @@
         error = 'Your profile was imported, but one real course with at least one concept is still required.';
         return;
       }
-      void track('onboarding_completed');
       clearDemoDraft();
       window.location.href = `/courses/${payload.data.course_slug}`;
     } catch (cause) {

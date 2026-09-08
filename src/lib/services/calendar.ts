@@ -17,6 +17,7 @@ import {
 import { calendarItemId } from '../calendar/domain';
 import { sweepTasks } from './taskSweep';
 import type { CalendarItem } from '../types/calendar';
+import { listAcceptedGroupEvents } from './groups';
 
 export type { CalendarItem };
 
@@ -42,6 +43,9 @@ export async function getCalendar(
   if (opts.sweep ?? true) await sweepTasks(db, userId);
 
   const items: CalendarItem[] = [];
+  for (const event of await listAcceptedGroupEvents(db,userId,fromMs,toMs)) {
+    items.push({id:`group:${event.id}`,type:'group_session',title:event.title,date:new Date(event.startsAt).toISOString(),end_date:new Date(event.endsAt).toISOString(),all_day:false,course_id:null,href:`/groups/${event.groupId}`,details:{group_id:event.groupId,event_id:event.id,timezone:event.timezone}});
+  }
 
   // --- external_event ---------------------------------------------------
   // Imported provider events are materialized by the sync worker. Provider
@@ -138,7 +142,11 @@ export async function getCalendar(
       all_day: true,
       course_id: row.courseId,
       href: `/courses/${row.courseSlug}#assessments`,
-      details: { assessment_type: row.assessment.type, weight_pct: row.assessment.weightPct },
+      details: {
+        assessment_type: row.assessment.type,
+        weight_pct: row.assessment.weightPct,
+        grade_received: row.assessment.gradeReceived,
+      },
     });
   }
 
@@ -285,6 +293,7 @@ export async function getCalendar(
   // started session sorts by its planned time, a started one by when it began.
   const sessionConditions = [
     eq(studySessions.userId, userId),
+    eq(studySessions.planningUnscheduled, false),
     sql`coalesce(${studySessions.scheduledAt}, ${studySessions.startedAt}) >= ${fromMs}`,
     sql`coalesce(${studySessions.scheduledAt}, ${studySessions.startedAt}) <= ${toMs}`,
   ];
@@ -315,6 +324,7 @@ export async function getCalendar(
         started_at: s.startedAt,
         ended_at: s.endedAt,
         scheduled_at: s.scheduledAt,
+        locked: s.locked,
         completed: !!s.endedAt,
       },
     });

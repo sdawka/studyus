@@ -44,6 +44,11 @@ function monogram(code: string): string {
     <span class="label">Tasks</span>
   </a>
 
+  <a class="nav-item" href="/groups" class:list={{ active: currentPath === '/groups' || currentPath.startsWith('/groups/') }} title="Groups">
+    <Icon name="user" />
+    <span class="label">Groups</span>
+  </a>
+
   <div class="nav-group">
     <p class="kicker sidebar-kicker">Courses</p>
     <ul class="course-list">

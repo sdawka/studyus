@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { sqliteTable, text, integer, real, index, primaryKey, uniqueIndex, type AnySQLiteColumn } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, index, primaryKey, uniqueIndex, type AnySQLiteColumn, check } from 'drizzle-orm/sqlite-core';
 import { TASK_TYPES } from '../lib/schemas/tasks';
 
 // Convention: text ids via crypto.randomUUID(); integer timestamps in epoch ms.
@@ -23,7 +23,9 @@ export const users = sqliteTable('users', {
   // application/tenant identifier so every existing D1 foreign key stays
   // valid through the auth migration.
   clerkUserId: text('clerk_user_id').unique(),
-  email: text('email').notNull().unique(),
+  email: text('email').notNull(),
+  accountState: text('account_state', { enum: ['active', 'deleting', 'deleted'] }).notNull().default('active'),
+  deletedAt: integer('deleted_at'),
   // Retained solely for migration compatibility. New Clerk-provisioned rows
   // receive a non-verifying sentinel while legacy rows retain their hash.
   passwordHash: text('password_hash').notNull(),
@@ -40,7 +42,31 @@ export const users = sqliteTable('users', {
     .default(sql`'{}'`),
   onboardedAt: integer('onboarded_at'),
   createdAt: createdAt(),
+}, (table) => [uniqueIndex('users_active_email_unique').on(table.email).where(sql`${table.accountState} = 'active'`)]);
+
+// Internal retention registry: intentionally no cascading foreign keys.
+export const learnerRuntimeRegistry = sqliteTable('learner_runtime_registry', {
+  userId: text('user_id').primaryKey(),
+  objectName: text('object_name').notNull().unique(),
+  state: text('state', { enum: ['active', 'deleting', 'deleted'] }).notNull().default('active'),
+  deletionEventId: text('deletion_event_id'),
+  deletedAt: integer('deleted_at'),
+  updatedAt: integer('updated_at').notNull(),
 });
+export const accountDeletionEvents = sqliteTable('account_deletion_events', {
+  eventId: text('event_id').primaryKey(),
+  clerkUserId: text('clerk_user_id').notNull(),
+  receivedAt: integer('received_at').notNull(),
+}, (table) => [index('account_deletion_events_clerk_idx').on(table.clerkUserId)]);
+export const accountDeletionJobs = sqliteTable('account_deletion_jobs', {
+  clerkUserId: text('clerk_user_id').primaryKey(),
+  userId: text('user_id'),
+  eventId: text('event_id').notNull(),
+  state: text('state', { enum: ['pending', 'done'] }).notNull().default('pending'),
+  attemptCount: integer('attempt_count').notNull().default(0),
+  availableAt: integer('available_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+}, (table) => [index('account_deletion_jobs_pending_idx').on(table.state, table.availableAt)]);
 
 export const sessions = sqliteTable('sessions', {
   // sha256 hex digest of the random session token; the token itself is never stored.
@@ -160,6 +186,7 @@ export const kcs = sqliteTable(
     sortOrder: integer('sort_order').notNull().default(0),
     archivedAt: integer('archived_at'),
     // Derived caches, recomputed on every event write.
+    revision: integer('revision').notNull().default(0),
     mastery: integer('mastery').notNull().default(0), // 0-100
     status: text('status').notNull().default('not-started'),
     lastEventAt: integer('last_event_at'),
@@ -168,6 +195,7 @@ export const kcs = sqliteTable(
   (table) => [
     index('kcs_course_id_idx').on(table.courseId),
     uniqueIndex('kcs_course_slug_unique').on(table.courseId, table.slug),
+    check('kcs_revision_nonnegative', sql`${table.revision} >= 0`),
   ],
 );
 
@@ -486,9 +514,10 @@ export const assessments = sqliteTable(
     // 'practice' ones never do, even when graded — see services/grades.ts and
     // services/practiceSummary.ts.
     kind: text('kind', { enum: ['official', 'practice'] }).notNull().default('official'),
+    revision: integer('revision').notNull().default(0),
     createdAt: createdAt(),
   },
-  (table) => [index('assessments_course_id_idx').on(table.courseId)],
+  (table) => [index('assessments_course_id_idx').on(table.courseId), check('assessments_revision_nonnegative', sql`${table.revision} >= 0`)],
 );
 
 export const assessmentKcs = sqliteTable('assessment_kcs', {
@@ -541,8 +570,10 @@ export const attachments = sqliteTable('attachments', {
   filename: text('filename').notNull(),
   contentType: text('content_type'),
   sizeBytes: integer('size_bytes'),
+  state: text('state', { enum: ['pending', 'ready', 'deleting'] }).notNull().default('ready'),
+  updatedAt: integer('updated_at').notNull().default(0),
   createdAt: createdAt(),
-});
+}, (table) => [index('attachments_user_state_idx').on(table.userId, table.state), index('attachments_reconcile_idx').on(table.state, table.updatedAt)]);
 
 // ---------------------------------------------------------------------------
 // Rituals — recurring study practices ("Sunday weekly review") and/or
@@ -599,6 +630,8 @@ export const tasks = sqliteTable(
     description: text('description'),
     dueDate: integer('due_date'),
     done: integer('done', { mode: 'boolean' }).notNull().default(false),
+    estimatedMinutes: integer('estimated_minutes').notNull().default(25),
+    priority: integer('priority').notNull().default(1),
     // v1.4: 'todo' is the only type a user can mint directly (createTaskSchema
     // has no `type` field); the rest are sweep-generated only — see
     // services/taskSweep.ts and the TASK_TYPES doc comment.
@@ -693,6 +726,10 @@ export const studySessions = sqliteTable(
     startedAt: integer('started_at').notNull(),
     endedAt: integer('ended_at'),
     scheduledAt: integer('scheduled_at'),
+    taskId: text('task_id').references(() => tasks.id, { onDelete: 'set null' }),
+    locked: integer('locked', { mode: 'boolean' }).notNull().default(false),
+    managed: integer('managed', { mode: 'boolean' }).notNull().default(false),
+    planningUnscheduled: integer('planning_unscheduled', { mode: 'boolean' }).notNull().default(false),
     reflection: text('reflection'),
     // v1.9: session-shape ritual adherence signal — see rituals table and
     // services/rituals.ts::listRitualsWithAdherence.
@@ -707,6 +744,52 @@ export const studySessions = sqliteTable(
     index('study_sessions_user_started_idx').on(table.userId, table.startedAt),
   ],
 );
+
+export const planningPreferences = sqliteTable('planning_preferences', {
+  userId: text('user_id').primaryKey().references(() => users.id),
+  nextReviewAt: integer('next_review_at').notNull().default(0),
+  enabled: integer('enabled', { mode: 'boolean' }).notNull().default(false),
+  weeklyMinutes: integer('weekly_minutes').notNull().default(420),
+  availability: text('availability', { mode: 'json' }).notNull().$type<Array<{ day: number; startMinute: number; endMinute: number }>>().default([]),
+  revision: integer('revision').notNull().default(0),
+  applying: integer('applying', { mode: 'boolean' }).notNull().default(false),
+  updatedAt: integer('updated_at').notNull().$defaultFn(() => Date.now()),
+}, (table) => [check('planning_revision_nonnegative', sql`${table.revision} >= 0`)]);
+
+export const planningJobs = sqliteTable('planning_jobs', {
+  userId: text('user_id').primaryKey().references(() => users.id),
+  version: integer('version').notNull().default(0),
+  attemptCount: integer('attempt_count').notNull().default(0),
+  availableAt: integer('available_at').notNull(),
+  requestedAt: integer('requested_at').notNull(),
+});
+
+export const planningRuns = sqliteTable('planning_runs', {
+  id: id(),
+  userId: text('user_id').notNull().references(() => users.id),
+  status: text('status', { enum: ['preview', 'applied', 'undone'] }).notNull().default('preview'),
+  sourceRevision: integer('source_revision').notNull(),
+  appliedRevision: integer('applied_revision'),
+  changes: text('changes', { mode: 'json' }).notNull().$type<Array<Record<string, unknown>>>(),
+  unplaced: text('unplaced', { mode: 'json' }).notNull().$type<Array<Record<string, unknown>>>(),
+  createdAt: createdAt(),
+  appliedAt: integer('applied_at'),
+}, (table) => [index('planning_runs_user_created_idx').on(table.userId, table.createdAt)]);
+
+// Confirmed active time is separate from legacy wall-clock timestamps.
+export const studySessionTiming = sqliteTable('study_session_timing', {
+  sessionId: text('session_id').primaryKey().references(() => studySessions.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  state: text('state', { enum: ['paused', 'running', 'ended'] }).notNull().default('paused'),
+  elapsedMs: integer('elapsed_ms').notNull().default(0),
+  deviceId: text('device_id'),
+  leaseToken: text('lease_token'),
+  lastAckAt: integer('last_ack_at'),
+  leaseExpiresAt: integer('lease_expires_at'),
+  sequence: integer('sequence').notNull().default(0),
+  revision: integer('revision').notNull().default(0),
+  updatedAt: integer('updated_at').notNull(),
+}, (table) => [uniqueIndex('study_timing_one_running_user').on(table.userId).where(sql`${table.state} = 'running'`)]);
 
 export const sessionKcs = sqliteTable(
   'session_kcs',
@@ -1055,6 +1138,28 @@ export const calendarOutbox = sqliteTable(
   ],
 );
 
+export const calendarProvisionLedger = sqliteTable('calendar_provision_ledger', {
+  id: id(),
+  userId: text('user_id').notNull().references(() => users.id),
+  provider: text('provider', { enum: ['google', 'microsoft'] }).notNull(),
+  externalAccountId: text('external_account_id').notNull(),
+  marker: text('marker').notNull(),
+  remoteCalendarId: text('remote_calendar_id'),
+  connectionId: text('connection_id'),
+  state: text('state', { enum: ['pending', 'remote_created', 'persisted', 'cleanup_failed'] }).notNull().default('pending'),
+  leaseToken: text('lease_token'),
+  leaseExpiresAt: integer('lease_expires_at'),
+  attemptCount: integer('attempt_count').notNull().default(0),
+  lastError: text('last_error'),
+  updatedAt: integer('updated_at').notNull().$defaultFn(() => Date.now()),
+  createdAt: createdAt(),
+}, (table) => [
+  uniqueIndex('calendar_provision_account_unique').on(table.userId, table.provider, table.externalAccountId),
+  uniqueIndex('calendar_provision_marker_unique').on(table.marker),
+  index('calendar_provision_state_updated_idx').on(table.state, table.updatedAt),
+  index('calendar_provision_state_lease_idx').on(table.state, table.leaseExpiresAt),
+]);
+
 export const calendarFeedCredentials = sqliteTable(
   'calendar_feed_credentials',
   {
@@ -1116,3 +1221,38 @@ export const catalogCourses = sqliteTable(
     index('catalog_courses_audience_sort_idx').on(table.audience, table.sortKey),
   ],
 );
+
+// Invite-only collaboration owns its contributions independently of private courses.
+export const groups = sqliteTable('groups', {
+ id: id(), name: text('name').notNull(), ownerUserId: text('owner_user_id').references(() => users.id),
+ state: text('state', {enum:['active','read_only']}).notNull().default('active'),
+ revision: integer('revision').notNull().default(0), createdAt: createdAt(), updatedAt: integer('updated_at').notNull(),
+}, t => [index('groups_owner_state_idx').on(t.ownerUserId,t.state), check('groups_revision_nonnegative',sql`${t.revision} >= 0`)]);
+export const groupMembers = sqliteTable('group_members', {
+ groupId: text('group_id').notNull().references(()=>groups.id,{onDelete:'cascade'}), userId: text('user_id').notNull().references(()=>users.id),
+ role: text('role',{enum:['owner','member']}).notNull().default('member'), joinedAt: integer('joined_at').notNull(),
+}, t=>[primaryKey({columns:[t.groupId,t.userId]}),uniqueIndex('group_members_one_owner').on(t.groupId).where(sql`${t.role} = 'owner'`),index('group_members_user_idx').on(t.userId)]);
+export const groupInvitations = sqliteTable('group_invitations', {
+ id:id(), groupId:text('group_id').notNull().references(()=>groups.id,{onDelete:'cascade'}), emailHash:text('email_hash').notNull(),
+ tokenHash:text('token_hash').notNull().unique(), invitedByUserId:text('invited_by_user_id').references(()=>users.id),
+ expiresAt:integer('expires_at').notNull(), acceptedAt:integer('accepted_at'), acceptedByUserId:text('accepted_by_user_id').references(()=>users.id), createdAt:createdAt(),
+},t=>[index('group_invitations_group_expiry_idx').on(t.groupId,t.expiresAt),check('group_invitation_acceptance_valid',sql`${t.acceptedAt} IS NULL OR ${t.acceptedAt} >= ${t.createdAt}`)]);
+export const groupResources = sqliteTable('group_resources', {
+ id:id(),groupId:text('group_id').notNull().references(()=>groups.id,{onDelete:'cascade'}),authorUserId:text('author_user_id').references(()=>users.id),
+ authorLabel:text('author_label').notNull(),authorDeletedAt:integer('author_deleted_at'),url:text('url').notNull(),label:text('label').notNull(),createdAt:createdAt(),
+},t=>[index('group_resources_group_created_idx').on(t.groupId,t.createdAt)]);
+export const groupFiles = sqliteTable('group_files', {
+ id:id(),groupId:text('group_id').notNull().references(()=>groups.id,{onDelete:'cascade'}),authorUserId:text('author_user_id').references(()=>users.id),
+ authorLabel:text('author_label').notNull(),authorDeletedAt:integer('author_deleted_at'),r2Key:text('r2_key').notNull().unique(),filename:text('filename').notNull(),
+ contentType:text('content_type'),sizeBytes:integer('size_bytes').notNull(),state:text('state',{enum:['pending','ready','deleting']}).notNull().default('pending'),createdAt:createdAt(),updatedAt:integer('updated_at').notNull(),
+},t=>[index('group_files_group_state_idx').on(t.groupId,t.state)]);
+export const groupEvents = sqliteTable('group_events', {
+ id:id(),groupId:text('group_id').notNull().references(()=>groups.id,{onDelete:'cascade'}),hostUserId:text('host_user_id').references(()=>users.id),hostLabel:text('host_label').notNull(),hostDeletedAt:integer('host_deleted_at'),
+ title:text('title').notNull(),startsAt:integer('starts_at').notNull(),endsAt:integer('ends_at').notNull(),timezone:text('timezone').notNull(),state:text('state',{enum:['scheduled','cancelled']}).notNull().default('scheduled'),createdAt:createdAt(),updatedAt:integer('updated_at').notNull(),
+},t=>[index('group_events_group_start_idx').on(t.groupId,t.startsAt),check('group_events_positive_duration',sql`${t.endsAt} > ${t.startsAt}`)]);
+export const groupEventRsvps = sqliteTable('group_event_rsvps', {
+ eventId:text('event_id').notNull().references(()=>groupEvents.id,{onDelete:'cascade'}),userId:text('user_id').notNull().references(()=>users.id),response:text('response',{enum:['going','maybe','declined']}).notNull(),createdAt:createdAt(),updatedAt:integer('updated_at').notNull(),
+},t=>[primaryKey({columns:[t.eventId,t.userId]}),index('group_rsvps_user_idx').on(t.userId)]);
+export const groupOwnerReassignments = sqliteTable('group_owner_reassignments', {
+ id:id(),groupId:text('group_id').notNull().references(()=>groups.id),previousOwnerUserId:text('previous_owner_user_id'),newOwnerUserId:text('new_owner_user_id').notNull(),operatorLabel:text('operator_label').notNull(),reason:text('reason').notNull(),createdAt:createdAt(),
+});

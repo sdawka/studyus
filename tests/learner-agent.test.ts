@@ -1,15 +1,23 @@
-import { env, reset } from 'cloudflare:test';
-import { afterEach, describe, expect, it } from 'vitest';
+import { env } from 'cloudflare:test';
+import { describe, expect, it } from 'vitest';
 import { getLearnerAgentForUser } from '../src/lib/runtime/learnerAgent';
+import { getDb } from '../src/db/client';
+import { users } from '../src/db/schema';
+import { ensureActiveRuntimeRegistry } from '../src/lib/services/accountLifecycle';
 
-afterEach(async () => {
-  await reset();
-});
+const db = getDb(env.DB);
+
+async function createLearner() {
+  const id = crypto.randomUUID();
+  await db.insert(users).values({ id, email: `${id}@learner-agent.test`, passwordHash: 'x' });
+  await ensureActiveRuntimeRegistry(db, id);
+  return getLearnerAgentForUser(env, id);
+}
 
 describe('LearnerAgent', () => {
   it('isolates each deterministic learner runtime and persists the conversation tool/session state', async () => {
-    const learnerOne = await getLearnerAgentForUser(env, crypto.randomUUID());
-    const learnerTwo = await getLearnerAgentForUser(env, crypto.randomUUID());
+    const learnerOne = await createLearner();
+    const learnerTwo = await createLearner();
 
     const conversation = await learnerOne.createConversation({
       kcId: 'kc-1',
@@ -39,7 +47,7 @@ describe('LearnerAgent', () => {
   });
 
   it('schedules per-learner alarms and imports a legacy transcript at most once', async () => {
-    const learner = await getLearnerAgentForUser(env, crypto.randomUUID());
+    const learner = await createLearner();
     const conversationId = crypto.randomUUID();
     const messageId = crypto.randomUUID();
 

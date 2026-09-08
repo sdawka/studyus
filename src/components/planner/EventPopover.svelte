@@ -16,6 +16,7 @@
   import { hueFor } from '../../lib/courseHue';
   import { bindPopoverDismiss } from '../shell/popover.svelte.ts';
   import { isMobile } from '../../lib/stores/viewport';
+  import { onMount } from 'svelte';
   import Sheet from '../shell/Sheet.svelte';
   import EventSummary from './event-popover/EventSummary.svelte';
   import TaskDueToggle from './event-popover/TaskDueToggle.svelte';
@@ -23,6 +24,7 @@
   import ClassSessionActions from './event-popover/ClassSessionActions.svelte';
   import EventActions from './event-popover/EventActions.svelte';
   import type { CourseOption } from './event-popover/types';
+  import { apiFetch } from '../../lib/apiClient';
 
   let {
     item,
@@ -33,6 +35,7 @@
     onTaskToggled,
     onItemUpdated,
     plannerLink,
+    timezone = Intl.DateTimeFormat().resolvedOptions().timeZone,
   }: {
     item: CalendarItem;
     course: CourseOption | undefined;
@@ -53,9 +56,21 @@
     // in-place popover can still hand off to the full planner; PlannerView
     // itself is already the planner, so it never passes this.
     plannerLink?: string | null;
+    timezone?: string;
   } = $props();
 
   let panelEl = $state<HTMLElement | null>(null);
+  let lockSaving = $state(false);
+  let lockError = $state('');
+  async function toggleLock() {
+    lockSaving = true;
+    lockError = '';
+    const locked = !item.details?.locked;
+    const result = await apiFetch(`/api/v1/sessions/${item.id}`, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({locked})});
+    if (result.ok) applyDetails({locked});
+    else lockError = result.error;
+    lockSaving = false;
+  }
 
   const hue = $derived(course ? hueFor({ slug: course.slug, color: course.color === null ? null : String(course.color) }) : 220);
 
@@ -106,15 +121,32 @@
   // Completed sessions can't be nudged: PATCH /sessions/:id 409s on them, so
   // the controls are hidden rather than rendered disabled-but-clickable.
   const canReschedule = $derived(item.type === 'study_session' && !item.details?.completed);
+
+  // Desktop popovers are nonmodal, so they leave focus where the user opened
+  // them. Keep that trigger as the return target when the popover is removed;
+  // mobile Sheets own their focus lifecycle through Sheet/focusTrap.
+  let returnFocusEl: HTMLElement | null = null;
+  onMount(() => {
+    if (isMobile.get()) return;
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && active !== document.body) returnFocusEl = active;
+    return () => {
+      if (returnFocusEl?.isConnected) returnFocusEl.focus({ preventScroll: true });
+    };
+  });
 </script>
 
 {#snippet body()}
-  <EventSummary {item} {course} />
+  <EventSummary {item} {course} {timezone} />
   {#if item.type === 'task_due'}
     <TaskDueToggle {item} onDone={applyTaskDone} />
   {/if}
   {#if canReschedule}
     <SessionReschedule {item} onRescheduled={applyTimes} />
+    <button type="button" disabled={lockSaving} aria-pressed={Boolean(item.details?.locked)} onclick={toggleLock}>
+      {item.details?.locked ? 'Unlock for automatic planning' : 'Keep this session at this time'}
+    </button>
+    {#if lockError}<p role="alert">{lockError}</p>{/if}
   {/if}
   {#if item.type === 'class_session'}
     <ClassSessionActions {item} onDetailsChanged={applyDetails} />

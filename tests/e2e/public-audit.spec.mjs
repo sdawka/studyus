@@ -1,6 +1,17 @@
 import { expect, test } from '@playwright/test';
 import { readdirSync, readFileSync } from 'node:fs';
 
+test('built public response preserves native script hashes and framing protection',async({request})=>{
+  const response=await request.get('/try');
+  expect(response.status()).toBe(200);
+  const policy=response.headers()['content-security-policy'];
+  expect(policy).toContain("default-src 'self'");
+  expect(policy).toContain("script-src 'self'");
+  expect(policy).toContain("'sha256-");
+  expect(policy).toContain("frame-ancestors 'none'");
+  expect(response.headers()['x-content-type-options']).toBe('nosniff');
+});
+
 async function waitForTrialHydration(page) {
   await page.locator('astro-island[ssr]').waitFor({ state: 'detached' });
 }
@@ -32,7 +43,7 @@ test('public trial turns a sample decision into a session outline and signup han
   await page.getByRole('button', { name: 'Show my next move' }).click();
   await expect(page).toHaveURL(/\/try\/app\/today$/);
 
-  await page.getByRole('button', { name: /Open this 25 min session/ }).click();
+  await page.getByRole('button', { name: 'Open this 25 minute session', exact: true }).click();
   await expect(page.getByText('Here’s the session')).toBeVisible();
 
   const signup = page.getByRole('link', { name: /Use this with my courses/ });
@@ -46,7 +57,7 @@ test('public trial has no horizontal page overflow at a 390px viewport', async (
   await expect(page.getByRole('button', { name: 'Show my next move' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Show my next move' }).click();
-  const openSession = page.getByRole('button', { name: /Open this 25 min session/ });
+  const openSession = page.getByRole('button', { name: 'Open this 25 minute session', exact: true });
   await expect(openSession).toBeVisible();
   await openSession.click();
   await expect(page.getByText('Here’s the session')).toBeVisible();
@@ -122,7 +133,7 @@ test.describe('local HTTP security boundaries', () => {
     // A same-origin request reaches schema validation, proving the denial
     // above is the origin boundary rather than merely a malformed payload.
     const response = await request.post('/api/public/demo-events', {
-      headers: { Origin: new URL(baseURL).origin }, data: {},
+      headers: { Origin: new URL(baseURL).origin, DNT: '0' }, data: {},
     });
     expect(response.status()).toBe(400);
     expect(await response.json()).toMatchObject({ error: { code: 'invalid_input' } });

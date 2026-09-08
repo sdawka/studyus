@@ -59,3 +59,26 @@ be enabled in the Clerk dashboard.
 Provider connection, manual sync, disconnect, timezone, and private ICS URL
 controls live in Settings. Reconnecting an existing provider account reuses
 the previously created remote Studyus calendar instead of creating a duplicate.
+
+Provisioning uses a durable marker and lease ledger before remote creation.
+Retries discover that marker, while failed local publication compensates the
+remote calendar or records cleanup failure. Local connection, calendars, and
+ledger publication share one D1 batch. Account/connection state is rechecked
+around provider calls; this cannot recall a request already accepted remotely.
+
+## Automatic planning
+
+Planning is explicitly opt-in. Availability, timezone, task estimates and
+priority determine a deterministic two-week preview. Locked, active, completed,
+external, and accepted group events constrain capacity. Unknown mastery is not
+invented. Unplaced work stays explicitly unscheduled.
+
+Apply and undo compare the source revision and update sessions, history and
+calendar outbox in one D1 batch. A rejected revision changes none of them.
+Unscheduling removes the remote projection; undo restores it. Source changes
+queue versioned work, with bounded processing, retry backoff and daily catch-up.
+Undo clears pending automatic work and defers the daily review for 24 hours,
+so the next scheduled tick does not immediately reapply the reversed plan.
+New source changes can still queue a fresh review. History reads are bounded;
+previews are reused only when their normalized content is identical. Applied
+and undone history is retained.

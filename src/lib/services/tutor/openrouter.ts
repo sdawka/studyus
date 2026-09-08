@@ -2,8 +2,8 @@
 // OpenAI-compatible, so a plain Workers-native `fetch` is enough.
 //
 // Two shapes are exposed:
-//   - streamChatCompletion: raw upstream fetch with stream:true, returns the
-//     response body ReadableStream untouched.
+//   - streamChatCompletion: upstream fetch with stream:true, wrapped only to
+//     keep the deadline active through body completion and cancellation.
 //   - relayAsSSE: wraps that upstream stream into our own minimal SSE format
 //     ({"delta":"..."} frames, then {"done":true}) while accumulating the
 //     full text so a caller can persist it once the stream finishes.
@@ -14,6 +14,8 @@
 export type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+export const OPENROUTER_MAX_OUTPUT_TOKENS = 1_000;
+export const OPENROUTER_DEADLINE_MS = 30_000;
 
 export class OpenRouterError extends Error {
   status?: number;
@@ -31,32 +33,47 @@ async function callOpenRouter(opts: {
   stream: boolean;
   temperature?: number;
   responseFormatJson?: boolean;
-}): Promise<Response> {
+  deadlineAt?: number;
+}): Promise<{ response: Response; abort: (reason?: unknown) => void; finish: () => void }> {
   if (!opts.apiKey.trim()) {
     throw new OpenRouterError('OpenRouter is not configured', 503);
   }
-  const res = await fetch(OPENROUTER_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${opts.apiKey}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://studyus.local',
-      'X-Title': 'studyus',
-    },
-    body: JSON.stringify({
-      model: opts.model,
-      stream: opts.stream,
-      messages: opts.messages,
-      temperature: opts.temperature ?? 0.7,
-      ...(opts.responseFormatJson ? { response_format: { type: 'json_object' } } : {}),
-    }),
-  });
+  const controller = new AbortController();
+  const remainingMs = opts.deadlineAt === undefined ? OPENROUTER_DEADLINE_MS : opts.deadlineAt - Date.now();
+  if (remainingMs <= 0) throw new OpenRouterError('OpenRouter request deadline exceeded', 504);
+  const deadline = setTimeout(() => controller.abort(new OpenRouterError('OpenRouter request deadline exceeded', 504)), remainingMs);
+  const finish = () => clearTimeout(deadline);
+  let res: Response;
+  try {
+    res = await fetch(OPENROUTER_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${opts.apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://studyus.local',
+        'X-Title': 'studyus',
+      },
+      body: JSON.stringify({
+        model: opts.model,
+        stream: opts.stream,
+        messages: opts.messages,
+        temperature: opts.temperature ?? 0.7,
+        max_tokens: OPENROUTER_MAX_OUTPUT_TOKENS,
+        ...(opts.responseFormatJson ? { response_format: { type: 'json_object' } } : {}),
+      }),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    finish();
+    throw error;
+  }
 
   if (!res.ok || (opts.stream && !res.body)) {
     const text = await res.text().catch(() => '');
+    finish();
     throw new OpenRouterError(`OpenRouter request failed (${res.status}): ${text.slice(0, 500)}`, res.status);
   }
-  return res;
+  return { response: res, abort: (reason) => controller.abort(reason), finish };
 }
 
 export async function streamChatCompletion(opts: {
@@ -64,14 +81,37 @@ export async function streamChatCompletion(opts: {
   model: string;
   messages: ChatMessage[];
   temperature?: number;
+  deadlineAt?: number;
 }): Promise<ReadableStream<Uint8Array>> {
-  const res = await callOpenRouter({ ...opts, stream: true });
-  return res.body as ReadableStream<Uint8Array>;
+  const bounded = await callOpenRouter({ ...opts, stream: true });
+  const reader = (bounded.response.body as ReadableStream<Uint8Array>).getReader();
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      try {
+        const { value, done } = await reader.read();
+        if (done) {
+          bounded.finish();
+          controller.close();
+        } else {
+          controller.enqueue(value);
+        }
+      } catch (error) {
+        bounded.finish();
+        controller.error(error);
+      }
+    },
+    async cancel(reason) {
+      bounded.abort(reason);
+      bounded.finish();
+      await reader.cancel(reason);
+    },
+  });
 }
 
 export type RelayCallbacks = {
   onDone?: (fullText: string) => Promise<void> | void;
   onError?: (err: unknown) => Promise<void> | void;
+  onCancel?: () => Promise<void> | void;
 };
 
 /** Re-emits an OpenAI-compatible upstream SSE byte stream as our own
@@ -130,6 +170,7 @@ export function relayAsSSE(upstream: ReadableStream<Uint8Array>, callbacks: Rela
     },
     async cancel() {
       await reader.cancel();
+      if (callbacks.onCancel) await callbacks.onCancel();
     },
   });
 }
@@ -181,18 +222,25 @@ export async function chatCompletionJSON(opts: {
   model: string;
   messages: ChatMessage[];
   temperature?: number;
+  beforeRetry?: () => Promise<void> | void;
+  deadlineAt?: number;
 }): Promise<unknown> {
-  let res: Response;
+  let bounded: Awaited<ReturnType<typeof callOpenRouter>>;
   try {
-    res = await callOpenRouter({ ...opts, stream: false, responseFormatJson: true });
+    bounded = await callOpenRouter({ ...opts, stream: false, responseFormatJson: true });
   } catch {
     // Some OpenRouter-routed models reject response_format entirely — retry
     // once without it; extractJsonBlock below still has to do the work of
     // finding JSON in whatever prose comes back either way.
-    res = await callOpenRouter({ ...opts, stream: false, responseFormatJson: false });
+    if (opts.beforeRetry) await opts.beforeRetry();
+    bounded = await callOpenRouter({ ...opts, stream: false, responseFormatJson: false });
   }
-
-  const body = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+  let body: { choices?: Array<{ message?: { content?: string } }> };
+  try {
+    body = (await bounded.response.json()) as { choices?: Array<{ message?: { content?: string } }> };
+  } finally {
+    bounded.finish();
+  }
   const content = body.choices?.[0]?.message?.content;
   if (typeof content !== 'string') {
     throw new OpenRouterError('OpenRouter response had no message content');

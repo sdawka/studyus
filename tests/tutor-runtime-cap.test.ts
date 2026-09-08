@@ -11,6 +11,7 @@ import {
   streamRuntimeTutorReply,
 } from '../src/lib/runtime/tutorRuntime';
 import { ConversationCapReachedError, MAX_MESSAGES_PER_CONVERSATION, MAX_MESSAGES_PER_CONVERSATION_ABSORB } from '../src/lib/services/tutor/conversations';
+import { ensureActiveRuntimeRegistry } from '../src/lib/services/accountLifecycle';
 
 const db = getDb(env.DB);
 
@@ -24,6 +25,7 @@ beforeEach(async () => {
   kcId = crypto.randomUUID();
   const branchId = crypto.randomUUID();
   await db.insert(users).values({ id: userId, email: `${userId}@test.local`, passwordHash: 'test' });
+  await ensureActiveRuntimeRegistry(db, userId);
   await db.insert(courses).values({ id: courseId, userId, code: 'CAP 101', slug: `cap-${courseId}`, title: 'Cap test', overview: null });
   await db.insert(branches).values({ id: branchId, courseId, name: 'Core' });
   await db.insert(kcs).values({ id: kcId, branchId, courseId, name: 'Cap KC', kcType: 'fact' });
@@ -282,6 +284,7 @@ describe('runtime tutor cap finalization', () => {
     const conversation = await createRuntimeConversation(db, env, userId, { kc_id: kcId, mode: 'recall' });
     const otherUserId = crypto.randomUUID();
     await db.insert(users).values({ id: otherUserId, email: `${otherUserId}@test.local`, passwordHash: 'test' });
+    await ensureActiveRuntimeRegistry(db, otherUserId);
 
     await expect(getRuntimeConversation(db, env, otherUserId, conversation.id)).rejects.toThrow('Conversation');
   });
@@ -293,6 +296,7 @@ describe('runtime tutor cap finalization', () => {
     const otherBranchId = crypto.randomUUID();
     const otherKcId = crypto.randomUUID();
     await db.insert(users).values({ id: otherUserId, email: `${otherUserId}@test.local`, passwordHash: 'test' });
+    await ensureActiveRuntimeRegistry(db, otherUserId);
     await db.insert(courses).values({ id: otherCourseId, userId: otherUserId, code: 'OTHER 101', slug: `other-${otherCourseId}`, title: 'Other', overview: null });
     await db.insert(branches).values({ id: otherBranchId, courseId: otherCourseId, name: 'Other branch' });
     await db.insert(kcs).values({ id: otherKcId, branchId: otherBranchId, courseId: otherCourseId, name: 'Other KC', kcType: 'fact' });

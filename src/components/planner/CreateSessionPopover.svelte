@@ -1,7 +1,7 @@
 <script lang="ts">
   import { bindPopoverDismiss } from '../shell/popover.svelte.ts';
   import { apiFetch } from '../../lib/apiClient';
-  import { addMinutes } from '../../lib/plannerDates';
+  import { addMinutes, formatZonedDate, timeRangeLabel, zonedDateKey, zonedDateTime, zonedMinuteOfDay } from '../../lib/plannerDates';
   import { isMobile } from '../../lib/stores/viewport';
   import Sheet from '../shell/Sheet.svelte';
 
@@ -20,6 +20,7 @@
     courses,
     onClose,
     onCreated,
+    timezone = Intl.DateTimeFormat().resolvedOptions().timeZone,
   }: {
     start: Date;
     // Present only for a WeekGrid drag-create — pre-fills `duration` from the
@@ -30,6 +31,7 @@
     courses: CourseOption[];
     onClose: () => void;
     onCreated: () => void;
+    timezone?: string;
   } = $props();
 
   type CreateType = 'study' | 'class' | 'other';
@@ -60,10 +62,8 @@
 
   const popTitle = $derived(type === 'study' ? 'New study block' : type === 'class' ? 'New class' : 'New task');
   const timeLabel = $derived.by(() => {
-    const startLabel = start.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-    if (type === 'other') return start.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-    const endLabel = addMinutes(start, duration).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-    return `${startLabel} – ${endLabel}`;
+    if (type === 'other') return formatZonedDate(start, timezone, { weekday: 'short', month: 'short', day: 'numeric' });
+    return timeRangeLabel(start, addMinutes(start, duration), timezone);
   });
 
   const style = $derived.by(() => {
@@ -99,9 +99,11 @@
   // a late-evening or early-morning drag into the wrong day once due_date
   // round-trips through storage.
   function dayNoonIso(d: Date): string {
-    const r = new Date(d);
-    r.setHours(12, 0, 0, 0);
-    return r.toISOString();
+    return zonedDateTime(zonedDateKey(d, timezone), 12 * 60, timezone).toISOString();
+  }
+
+  function encodedDayNoonIso(d: Date): string {
+    return `${zonedDateKey(d, timezone)}T12:00:00.000Z`;
   }
 
   async function handleSubmit(e: Event) {
@@ -120,7 +122,7 @@
     let classStartMin = 0;
     let classEndMin = 0;
     if (type === 'class') {
-      classStartMin = start.getHours() * 60 + start.getMinutes();
+      classStartMin = zonedMinuteOfDay(start, timezone);
       classEndMin = classStartMin + duration;
       if (classEndMin > 1439) {
         error = "Class can't extend past midnight.";
@@ -152,7 +154,7 @@
                 {
                   method: 'POST',
                   headers: { 'content-type': 'application/json' },
-                  body: JSON.stringify({ date: start.toISOString(), start_min: classStartMin, end_min: classEndMin }),
+                  body: JSON.stringify({ date: encodedDayNoonIso(start), start_min: classStartMin, end_min: classEndMin }),
                 },
                 'Could not create class session.',
               )
@@ -202,7 +204,7 @@
       <span class="field-label">Title</span>
       <input type="text" bind:value={title} placeholder="e.g. Email professor" maxlength="300" />
     </label>
-    <p class="pop-hint">Shows as due {start.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })} (all-day).</p>
+    <p class="pop-hint">Shows as due {formatZonedDate(start, timezone, { weekday: 'long', month: 'short', day: 'numeric' })} (all-day).</p>
   {/if}
 
   <label class="field">

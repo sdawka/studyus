@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { apiFetch } from '../../lib/apiClient';
+  import LinkPicker from './LinkPicker.svelte';
 
   interface Link {
     course_id?: string;
@@ -38,6 +40,17 @@
   let saveError = $state<string | null>(null);
   let saveSuccess = $state(false);
   let unsavedChanges = $state(false);
+  let draftRevision = $state(0);
+
+  onMount(() => {
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!unsavedChanges) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnBeforeUnload);
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload);
+  });
 
   interface MarkdownElement {
     type: string;
@@ -101,25 +114,51 @@
 
   function handleTitleChange(e: Event) {
     title = (e.target as HTMLInputElement).value;
-    unsavedChanges = true;
+    markDraftChanged();
   }
 
   function handleContentChange(e: Event) {
     content = (e.target as HTMLTextAreaElement).value;
+    markDraftChanged();
+  }
+
+  function linkLabel(link: Link) {
+    if (link.course_id) {
+      const course = coursesWithKcs.find((candidate) => candidate.id === link.course_id);
+      return course ? `${course.code} · ${course.title}` : link.course_id;
+    }
+
+    if (link.kc_id) {
+      for (const course of coursesWithKcs) {
+        const kc = course.kcs.find((candidate) => candidate.id === link.kc_id);
+        if (kc) return kc.name;
+      }
+      return link.kc_id;
+    }
+
+    return 'linked item';
+  }
+
+  function markDraftChanged() {
+    draftRevision += 1;
     unsavedChanges = true;
+    saveSuccess = false;
   }
 
   async function saveNote() {
-    if (!unsavedChanges) return;
+    if (!unsavedChanges || saving) return;
 
     saving = true;
     saveError = null;
     saveSuccess = false;
+    const savedRevision = draftRevision;
+    const payload = { title, content, links: links.map((link) => ({ ...link })) };
+    let savedCurrentDraft = false;
 
     try {
       const result = await apiFetch(
         `/api/v1/notes/${noteId}`,
-        { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, content, links }) },
+        { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) },
         'Failed to save note',
       );
 
@@ -128,23 +167,31 @@
         return;
       }
 
-      unsavedChanges = false;
-      saveSuccess = true;
-      setTimeout(() => (saveSuccess = false), 2000);
+      if (savedRevision === draftRevision) {
+        unsavedChanges = false;
+        saveSuccess = true;
+        savedCurrentDraft = true;
+        setTimeout(() => (saveSuccess = false), 2000);
+      }
+    } catch {
+      saveError = 'Failed to save note';
     } finally {
       saving = false;
     }
+
+    if (!savedCurrentDraft && !saveError && unsavedChanges) void saveNote();
   }
 
   function addLink(courseId?: string, kcId?: string) {
     if (!courseId && !kcId) return;
+    if (links.some((link) => link.course_id === courseId && link.kc_id === kcId)) return;
     links = [...links, { course_id: courseId, kc_id: kcId }];
-    unsavedChanges = true;
+    markDraftChanged();
   }
 
   function removeLink(index: number) {
     links = links.filter((_, i) => i !== index);
-    unsavedChanges = true;
+    markDraftChanged();
   }
 
   function handleContentBlur() {
@@ -158,7 +205,7 @@
       type="text"
       class="title-input"
       bind:value={title}
-      onchange={handleTitleChange}
+      oninput={handleTitleChange}
       placeholder="Note title"
     />
 
@@ -166,7 +213,7 @@
       <textarea
         class="markdown-input"
         bind:value={content}
-        onchange={handleContentChange}
+        oninput={handleContentChange}
         onblur={handleContentBlur}
         placeholder="Write your note here... Markdown supported."
       ></textarea>
@@ -215,28 +262,35 @@
   <div class="editor-sidebar">
     <div class="links-section">
       <h3>Links</h3>
-      <button class="btn-secondary" onclick={() => (showLinkPicker = !showLinkPicker)}>
+      <button
+        class="btn-secondary"
+        onclick={() => (showLinkPicker = !showLinkPicker)}
+        aria-expanded={showLinkPicker}
+        aria-controls="note-link-picker"
+      >
         {showLinkPicker ? 'Hide' : 'Add links'}
       </button>
 
-      {#if showLinkPicker}
-        <LinkPicker {coursesWithKcs} onAdd={addLink} />
-      {/if}
+      <div id="note-link-picker" hidden={!showLinkPicker}>
+        {#if showLinkPicker}
+          <LinkPicker {coursesWithKcs} onAdd={addLink} />
+        {/if}
+      </div>
 
       {#if links.length > 0}
         <div class="links-list">
           {#each links as link, idx}
             <div class="link-item">
               {#if link.course_id}
-                <span class="link-badge course">{link.course_id}</span>
+                <span class="link-badge course">{linkLabel(link)}</span>
               {/if}
               {#if link.kc_id}
-                <span class="link-badge kc">{link.kc_id}</span>
+                <span class="link-badge kc">{linkLabel(link)}</span>
               {/if}
               <button
                 class="btn-remove"
                 onclick={() => removeLink(idx)}
-                aria-label={`Remove link${link.course_id ? ` to course ${link.course_id}` : link.kc_id ? ` to concept ${link.kc_id}` : ''}`}
+                aria-label={`Remove link to ${linkLabel(link)}`}
               >
                 <span aria-hidden="true">×</span>
               </button>

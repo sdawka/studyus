@@ -26,6 +26,7 @@
     plannedMinutes: number | null;
     startedAt: number;
     ritualId?: string | null;
+    timing?: { state: 'paused' | 'running' | 'ended'; elapsedMs: number; updatedAt: number } | null;
   }
   // v1.9: session-shape ritual picked at session start — steps render as a
   // guidance rail during the running step (not enforced gates).
@@ -87,6 +88,12 @@
   let paused = $state(false);
   let elapsedSeconds = $state(0);
   let timerHandle: ReturnType<typeof setInterval> | null = null;
+  let heartbeatHandle: ReturnType<typeof setInterval> | null = null;
+  let deviceId = $state('');
+  let leaseToken = $state<string | null>(null);
+  let timerRevision = $state(0);
+  let timerSequence = $state(0);
+  let timerConflict = $state(false);
 
   let discarding = $state(false);
   let resumeVisitStartedAt = $state(0);
@@ -112,6 +119,9 @@
   }
 
   onMount(() => {
+    const storedDeviceId = localStorage.getItem('studyus.timer.device');
+    deviceId = storedDeviceId || crypto.randomUUID();
+    if (!storedDeviceId) localStorage.setItem('studyus.timer.device', deviceId);
     resumeVisitStartedAt = Date.now();
     const cleanupAbandonment = installPageExitAbandonment(practiceAnalytics.abandon);
     return () => {
@@ -129,9 +139,10 @@
     timerHandle = setInterval(() => {
       if (!paused) {
         elapsedSeconds += 1;
-        if (remainingSeconds() <= 0) endSession();
+        if (remainingSeconds() <= 0) void endSession();
       }
     }, 1000);
+    heartbeatHandle = setInterval(() => void sendHeartbeat(), 15_000);
   }
 
   function stopTimer() {
@@ -139,6 +150,106 @@
       clearInterval(timerHandle);
       timerHandle = null;
     }
+    if (heartbeatHandle) {
+      clearInterval(heartbeatHandle);
+      heartbeatHandle = null;
+    }
+  }
+
+  type TimerResult = {
+    state: 'paused' | 'running' | 'ended';
+    elapsed_ms: number | null;
+    sequence: number;
+    revision: number;
+    lease_token?: string;
+  };
+
+  type StoredTimerLease = {
+    leaseToken: string;
+    revision: number;
+    sequence: number;
+  };
+
+  function timerStorageKey(id: string) {
+    return `studyus.timer.${id}`;
+  }
+
+  function storedTimerLease(id: string): StoredTimerLease | null {
+    try {
+      const raw = sessionStorage.getItem(timerStorageKey(id));
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as Partial<StoredTimerLease>;
+      if (typeof parsed.leaseToken !== 'string' || typeof parsed.revision !== 'number' || typeof parsed.sequence !== 'number') return null;
+      return { leaseToken: parsed.leaseToken, revision: parsed.revision, sequence: parsed.sequence };
+    } catch {
+      return null;
+    }
+  }
+
+  function persistTimerLease(result: TimerResult) {
+    if (!sessionId) return;
+    if (result.state === 'running' && result.lease_token) {
+      sessionStorage.setItem(timerStorageKey(sessionId), JSON.stringify({
+        leaseToken: result.lease_token,
+        revision: result.revision,
+        sequence: result.sequence,
+      } satisfies StoredTimerLease));
+    } else {
+      sessionStorage.removeItem(timerStorageKey(sessionId));
+    }
+  }
+
+  function applyTimer(result: TimerResult) {
+    elapsedSeconds = Math.floor((result.elapsed_ms ?? 0) / 1000);
+    timerSequence = result.sequence;
+    timerRevision = result.revision;
+    leaseToken = result.lease_token ?? null;
+    paused = result.state !== 'running';
+    persistTimerLease(result);
+  }
+
+  async function timerCommand(body: Record<string, unknown>, fallback: string): Promise<TimerResult | null> {
+    if (!sessionId || !deviceId) return null;
+    const result = await apiFetch<TimerResult>(`/api/v1/sessions/${sessionId}/timer`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, device_id: deviceId }),
+    }, fallback);
+    if (!result.ok) {
+      error = result.error;
+      timerConflict = true;
+      return null;
+    }
+    timerConflict = false;
+    applyTimer(result.data);
+    return result.data;
+  }
+
+  async function sendHeartbeat() {
+    if (paused || !leaseToken || !sessionId) return;
+    const result = await timerCommand({ operation: 'heartbeat', lease_token: leaseToken, sequence: timerSequence + 1, revision: timerRevision }, 'Could not save timer progress');
+    if (!result || result.state !== 'running') {
+      stopTimer();
+      paused = true;
+    }
+  }
+
+  async function pauseTimer(): Promise<boolean> {
+    if (paused) return true;
+    if (!leaseToken) {
+      error = 'Timer lease is unavailable. Try again before ending this session.';
+      return false;
+    }
+    const result = await timerCommand({ operation: 'pause', lease_token: leaseToken, sequence: timerSequence + 1, revision: timerRevision }, 'Could not pause timer');
+    if (!result || result.state !== 'paused') return false;
+    stopTimer();
+    return true;
+  }
+
+  async function resumeTimer(takeover = false) {
+    const result = await timerCommand(
+      takeover ? { operation: 'takeover' } : { operation: 'resume', ...(leaseToken ? { lease_token: leaseToken } : {}) },
+      takeover ? 'Could not take over this timer' : 'Could not resume timer',
+    );
+    if (result?.state === 'running') startTimer();
   }
 
   function formatTime(seconds: number): string {
@@ -147,16 +258,21 @@
     return `${m}:${String(s).padStart(2, '0')}`;
   }
 
-  function resumeSession() {
+  async function resumeSession(takeover = false) {
     if (!openSession) return;
     selectedCourse = courses.find((c) => c.id === openSession.courseId) ?? null;
     selectedRitual = rituals.find((r) => r.id === openSession.ritualId) ?? null;
     sessionId = openSession.id;
     sessionPlannedMinutes = openSession.plannedMinutes ?? 25;
     sessionStartedAt = openSession.startedAt;
-    elapsedSeconds = Math.floor((Date.now() - openSession.startedAt) / 1000);
+    elapsedSeconds = Math.floor((openSession.timing?.elapsedMs ?? 0) / 1000);
+    const storedLease = storedTimerLease(openSession.id);
+    timerRevision = storedLease?.revision ?? 0;
+    timerSequence = storedLease?.sequence ?? 0;
+    leaseToken = storedLease?.leaseToken ?? null;
+    await resumeTimer(takeover);
+    if (paused) return;
     step = 'running';
-    startTimer();
     if (selectedCourse && maintainedEventType(openSession.intendedEventType)) {
       practiceAnalytics.start({
         course_id: selectedCourse.id,
@@ -181,6 +297,7 @@
         return;
       }
       practiceAnalytics.abandonOnDiscard(resumeVisitStartedAt || Date.now());
+      sessionStorage.removeItem(timerStorageKey(openSession.id));
       step = 'course';
     } finally {
       discarding = false;
@@ -250,8 +367,12 @@
     sessionPlannedMinutes = plannedMinutes;
     sessionStartedAt = Date.now();
     elapsedSeconds = 0;
+    timerRevision = 0;
+    timerSequence = 0;
+    leaseToken = null;
+    await resumeTimer();
+    if (paused) return;
     step = 'running';
-    startTimer();
     if (selectedCourse && intendedType && intendedType !== 'quick_quiz') {
       practiceAnalytics.start({
         course_id: selectedCourse.id,
@@ -263,6 +384,7 @@
   }
 
   async function endSession() {
+    if (!(await pauseTimer())) return;
     stopTimer();
     practiceAnalytics.enterStage('reflection');
     branches = [];
@@ -319,6 +441,8 @@
       }
 
       practiceAnalytics.terminal();
+      leaseToken = null;
+      sessionStorage.removeItem(timerStorageKey(sessionId));
       result = {
         eventsCreated: completion.data.events_appended?.length ?? 0,
         masteryDeltas: completion.data.mastery_deltas ?? [],
@@ -369,8 +493,14 @@
         You have an open session{openSession.courseCode ? ` for ${openSession.courseCode}` : ''}
         ({openSession.intendedEventType.replace(/_/g, ' ')}), started {new Date(openSession.startedAt).toLocaleString()}.
       </p>
+      {#if openSession.timing === null}
+        <p class="muted">Time from before timer tracking is unknown. Resuming starts from zero.</p>
+      {/if}
       <div class="actions">
         <button type="button" class="primary" onclick={resumeSession}>Resume</button>
+        {#if timerConflict}
+          <button type="button" class="ghost" onclick={() => resumeSession(true)}>Take over</button>
+        {/if}
         <button type="button" class="ghost" disabled={discarding} onclick={discardSession}>
           {discarding ? 'Discarding…' : 'Discard'}
         </button>
@@ -473,7 +603,7 @@
         </div>
       {/if}
       <div class="actions">
-        <button type="button" class="ghost" onclick={() => (paused = !paused)}>{paused ? 'Resume' : 'Pause'}</button>
+        <button type="button" class="ghost" onclick={() => (paused ? resumeTimer() : pauseTimer())}>{paused ? 'Resume' : 'Pause'}</button>
         <button type="button" class="primary" onclick={endSession}>End session</button>
       </div>
     </div>

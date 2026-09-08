@@ -105,6 +105,8 @@ Read-only Cloudflare management evidence on 2026-09-07 mapped `studyus.app` to W
 
 **Transport hardening recommendation (P2, 0.5 day):** zone settings report minimum TLS 1.0, Always Use HTTPS off, HSTS disabled and SSL mode Full. Recommend TLS 1.2 minimum and deliberate HTTPS/HSTS rollout after compatibility checks. Full versus Strict origin-certificate validation is relevant to conventional origins, not evidence of a Worker custom-domain flaw. No HTTP downgrade or TLS handshake attack was attempted. Acceptance: authorized verification confirms HTTP redirects and the selected TLS floor/HSTS policy without breaking authentication.
 
+**Prepared rollout, pending production authorization:** record current zone settings, then enable Always Use HTTPS and minimum TLS 1.2. Verify HTTP redirects preserve paths/query parameters and exercise Clerk sign-in/callbacks plus calendar callback/feed URLs over HTTPS. Start HSTS at `max-age=300` without `includeSubDomains` or preload; after a successful observation window, increase to one day and then six months. Inventory every subdomain and certificate before considering `includeSubDomains`; preload requires a separate decision because browser removal is slow. Roll back HTTPS/TLS settings if compatibility fails; an HSTS rollback takes effect only after a client receives `max-age=0` or its cached policy expires. These are operator instructions, not executed changes or verified production results.
+
 Zone entrypoint reads returned “could not find entrypoint ruleset” for rate limiting, custom firewall and response-header transforms. The zone lists managed normalization, free managed firewall and DDoS rulesets; listing alone does not establish their activation or effectiveness. Account-level rules, platform limits and other settings may still apply. This narrows the edge-control gap but does not prove unlimited requests or absent effective headers. All of these were management GETs, not production application security probes; no settings changed.
 
 ## Coverage, execution and gaps
@@ -133,3 +135,28 @@ Gaps: live session revocation/recovery/MFA and Clerk administrative policies; ac
 Recommended remediation order: (1) contain active uploaded content and fix rejected-write atomicity; (2) decide and enforce AI/upload/ingestion budgets and trustworthy conversion events; (3) constrain resource URL schemes and add cross-store reconciliation; (4) patch dependencies, harden headers/logging/CI, then verify in the isolated authenticated environment and a separately authorized production smoke. Convert expected failures to ordinary passing regression assertions as each defect is fixed.
 
 Cleanup: temporary development credentials, ignored Clerk storage state and temporary Playwright configuration were removed; the isolated server stopped. Agent Task revocation was attempted, but final task status could not be listed; enforced 900-second task windows elapsed. No claim is made that every attempted task was explicitly revoked.
+
+## Approved remediation candidate
+
+Implementation follows the subsequent approved plan. Rejected-write atomicity,
+account deletion fences, bounded upload reservation/compensation, safe downloads,
+URL validation, telemetry and AI budgets, group isolation, calendar retry leases,
+and versioned planning claims now have regression coverage. Additive migrations
+0014–0029 preserve retained account data. Real local D1/DO/R2 boundaries are used;
+external provider adapters are controlled fakes, not claims of live integration.
+Review also reproduced and fixed overlapping planning workers and stale calendar
+delete retries after Undo. The integrated suite passed 1,230 tests across 152
+files. Types, build and clean two-user seed passed.
+The complete unauthenticated HTTP method inventory passed on the built preview.
+
+Compatible dependency updates and consumer checks completed with no reported
+package advisories at execution time. This does not establish absence of exposure.
+CI now runs public built-browser checks and provides an environment-gated Clerk
+job against a built preview; it does not expose secrets to pull-request code.
+
+The Clerk/CSP compatibility regression is still an explicit release blocker,
+pending approval for the rejected wrapper replacement. Production/staging secrets,
+signed webhook delivery, scheduled lifecycle processing, live provider failure
+paths and edge TLS/HSTS remain deployment verification gates. Staging has no cron
+trigger. No production settings, data, deployment or third-party security probes
+were changed. See authentication documentation for the two required new secrets.

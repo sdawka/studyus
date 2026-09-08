@@ -1,5 +1,6 @@
 import { env } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { eq } from 'drizzle-orm';
 import { getDb } from '../src/db/client';
 import { calendarFeedCredentials, users } from '../src/db/schema';
 import { issueCalendarFeed, resolveCalendarFeedUser, revokeCalendarFeed } from '../src/lib/services/calendarFeed';
@@ -13,6 +14,12 @@ beforeEach(async () => {
 });
 
 describe('calendar feed credentials', () => {
+  it('rejects an inactive account even when a stale credential was not revoked', async () => {
+    const { token } = await issueCalendarFeed(db, userId);
+    await db.update(users).set({ accountState: 'deleting' }).where(eq(users.id, userId));
+    expect(await resolveCalendarFeedUser(db, token)).toBeNull();
+    await expect(issueCalendarFeed(db, userId)).rejects.toThrow('Account not found');
+  });
   it('persists only a digest and rotates the previous bearer token', async () => {
     const first = await issueCalendarFeed(db, userId);
     expect(await resolveCalendarFeedUser(db, first.token)).toMatchObject({ id: userId });

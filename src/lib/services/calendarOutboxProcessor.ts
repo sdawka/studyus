@@ -1,5 +1,6 @@
-import { and, asc, eq, inArray, lte, or, sql } from 'drizzle-orm';
+import { and, asc, eq, lt, lte, or, sql } from 'drizzle-orm';
 import type { Db } from '../../db/client';
+import {assertCalendarActive,CalendarInactiveError} from './calendarActive';
 import {
   calendarConnections,
   calendarEventLinks,
@@ -38,13 +39,21 @@ const WRITE_SCOPES: Record<CalendarProviderName, readonly string[]> = {
 const PROCESSING_LEASE_MS = 5 * 60_000;
 const RETRY_BASE_MS = 60_000;
 const RETRY_MAX_MS = 60 * 60_000;
+const MAX_AUTOMATIC_ATTEMPTS = 10;
+const FAILED_RETAIN_MS = 30 * 86_400_000;
+const DONE_RETENTION_MS = 7 * 86_400_000;
+const MAX_OPERATIONS_PER_USER = 5;
 
 function retryDelay(attemptCount: number): number {
   return Math.min(RETRY_BASE_MS * 2 ** Math.max(0, attemptCount - 1), RETRY_MAX_MS);
 }
 
 function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  if (error instanceof CalendarProviderHttpError) {
+    return `Calendar provider request failed with status ${error.status}`;
+  }
+  if (error instanceof ProviderTokenUnavailableError) return error.message;
+  return 'Calendar operation failed';
 }
 
 function providerVersion(provider: CalendarProviderName, value: string | null | undefined) {
@@ -88,7 +97,12 @@ async function claimOperation(db: Db, operationId: string, now: number) {
         eq(calendarOutbox.id, operationId),
         or(
           and(
-            inArray(calendarOutbox.status, ['pending', 'failed']),
+            eq(calendarOutbox.status, 'pending'),
+            lte(calendarOutbox.availableAt, now),
+          ),
+          and(
+            eq(calendarOutbox.status, 'failed'),
+            lt(calendarOutbox.attemptCount, MAX_AUTOMATIC_ATTEMPTS),
             lte(calendarOutbox.availableAt, now),
           ),
           and(
@@ -105,23 +119,55 @@ async function claimOperation(db: Db, operationId: string, now: number) {
   return operation;
 }
 
-async function markDone(db: Db, operationId: string, now: number) {
-  await db
+async function markDone(db: Db, operationId: string, attemptCount: number, now: number) {
+  const completed = await db
     .update(calendarOutbox)
     .set({ status: 'done', lastError: null, updatedAt: now })
-    .where(and(eq(calendarOutbox.id, operationId), eq(calendarOutbox.status, 'processing')));
+    .where(and(
+      eq(calendarOutbox.id, operationId),
+      eq(calendarOutbox.status, 'processing'),
+      eq(calendarOutbox.attemptCount, attemptCount),
+    ))
+    .returning({ id: calendarOutbox.id });
+  return completed.length === 1;
 }
 
-async function markFailed(db: Db, operationId: string, attemptCount: number, error: unknown, now: number) {
-  await db
+async function markFailed(
+  db: Db,
+  operationId: string,
+  attemptCount: number,
+  error: unknown,
+  now: number,
+  terminal = false,
+) {
+  const recordedAttemptCount = terminal ? MAX_AUTOMATIC_ATTEMPTS : attemptCount;
+  const failed = await db
     .update(calendarOutbox)
     .set({
       status: 'failed',
+      attemptCount: recordedAttemptCount,
       lastError: errorMessage(error),
-      availableAt: now + retryDelay(attemptCount),
+      availableAt: now + (terminal || attemptCount >= MAX_AUTOMATIC_ATTEMPTS ? FAILED_RETAIN_MS : retryDelay(attemptCount)),
       updatedAt: now,
     })
-    .where(and(eq(calendarOutbox.id, operationId), eq(calendarOutbox.status, 'processing')));
+    .where(and(
+      eq(calendarOutbox.id, operationId),
+      eq(calendarOutbox.status, 'processing'),
+      eq(calendarOutbox.attemptCount, attemptCount),
+    ))
+    .returning({ id: calendarOutbox.id });
+  return failed.length === 1;
+}
+
+async function stopInactiveOperation(db: Db, operationId: string, attemptCount: number, reason: string, now: number) {
+  await db
+    .update(calendarOutbox)
+    .set({ status: 'done', lastError: reason, updatedAt: now })
+    .where(and(
+      eq(calendarOutbox.id, operationId),
+      eq(calendarOutbox.status, 'processing'),
+      eq(calendarOutbox.attemptCount, attemptCount),
+    ));
 }
 
 async function upsertStudySession(
@@ -141,7 +187,15 @@ async function upsertStudySession(
     .limit(1);
   if (!record) throw new Error('Study session not found');
 
-  const startAt = record.session.scheduledAt ?? record.session.startedAt;
+  // A queued upsert can become stale before the worker claims it. Never use
+  // startedAt as a fallback for a session the planner explicitly unscheduled;
+  // remove any prior remote projection instead.
+  if (record.session.planningUnscheduled || record.session.scheduledAt === null) {
+    await deleteStudySession(db, operation, calendars, adapter, accessToken);
+    return;
+  }
+
+  const startAt = record.session.scheduledAt;
   const endAt = record.session.endedAt ?? startAt + (record.session.plannedMinutes ?? 60) * 60_000;
   const createId = deterministicCreateId(record.session.id);
   const event: ProviderEventInput = {
@@ -169,12 +223,14 @@ async function upsertStudySession(
       )
       .limit(1);
 
+    await assertCalendarActive(db,operation.userId,operation.connectionId);
     const result = await adapter.upsert({
       accessToken,
       calendarId: calendar.providerCalendarId,
       event,
       ...(link ? { remoteId: link.providerEventId, ...providerVersion(adapter.name, link.providerVersion) } : {}),
     });
+    await assertCalendarActive(db,operation.userId,operation.connectionId);
     await db
       .insert(calendarEventLinks)
       .values({
@@ -226,6 +282,7 @@ async function deleteStudySession(
     if (!link) continue;
 
     try {
+      await assertCalendarActive(db,operation.userId,operation.connectionId);
       await adapter.delete({
         accessToken,
         calendarId: calendar.providerCalendarId,
@@ -235,6 +292,7 @@ async function deleteStudySession(
     } catch (error) {
       if (!isIdempotentDeleteResult(error)) throw error;
     }
+    await assertCalendarActive(db,operation.userId,operation.connectionId);
     await db.delete(calendarEventLinks).where(eq(calendarEventLinks.id, link.id));
   }
 }
@@ -254,7 +312,7 @@ export async function processCalendarOutboxOperation(
       throw new Error(`Calendar outbox entity ${operation.entityType} is not supported`);
     }
     const [connection] = await db
-      .select({ connection: calendarConnections, clerkUserId: users.clerkUserId })
+      .select({ connection: calendarConnections, clerkUserId: users.clerkUserId, accountState: users.accountState })
       .from(calendarConnections)
       .innerJoin(users, eq(calendarConnections.userId, users.id))
       .where(
@@ -264,7 +322,22 @@ export async function processCalendarOutboxOperation(
         ),
       )
       .limit(1);
-    if (!connection) throw new Error('Calendar connection not found');
+    if (!connection) {
+      await stopInactiveOperation(db, operation.id, operation.attemptCount, 'connection_missing', now);
+      return { status: 'skipped', processedCalendars: 0 };
+    }
+    if (connection.accountState !== 'active') {
+      await stopInactiveOperation(db, operation.id, operation.attemptCount, 'account_inactive', now);
+      return { status: 'skipped', processedCalendars: 0 };
+    }
+    if (connection.connection.status === 'disconnected') {
+      await stopInactiveOperation(db, operation.id, operation.attemptCount, 'connection_inactive', now);
+      return { status: 'skipped', processedCalendars: 0 };
+    }
+    if (connection.connection.status !== 'active') {
+      await markFailed(db, operation.id, operation.attemptCount, new Error('Calendar connection is not active'), now, true);
+      return { status: 'skipped', processedCalendars: 0 };
+    }
     if (connection.connection.syncMode !== 'controlled') {
       throw new Error('Calendar connection is not enabled for controlled writes');
     }
@@ -288,26 +361,50 @@ export async function processCalendarOutboxOperation(
       connection.connection.provider,
       WRITE_SCOPES[connection.connection.provider],
     );
-    if (operation.action === 'upsert') {
+    // Outbox rows are durable reconciliation requests, not commands to replay
+    // blindly. A retry may run after a newer apply/undo changed the session,
+    // so the current D1 state decides the provider action.
+    const [currentSession] = await db.select({
+      scheduledAt: studySessions.scheduledAt,
+      planningUnscheduled: studySessions.planningUnscheduled,
+    }).from(studySessions).where(and(
+      eq(studySessions.id, operation.entityId),
+      eq(studySessions.userId, operation.userId),
+    )).limit(1);
+    if (currentSession && currentSession.scheduledAt !== null && !currentSession.planningUnscheduled) {
       await upsertStudySession(db, operation, calendars, adapter, accessToken, now);
     } else {
       await deleteStudySession(db, operation, calendars, adapter, accessToken);
     }
     processedCalendars = calendars.length;
-    await markDone(db, operation.id, now);
-    await db
-      .update(calendarConnections)
-      .set({ status: 'active', lastError: null, updatedAt: now })
-      .where(eq(calendarConnections.id, connection.connection.id));
+    const completed = await markDone(db, operation.id, operation.attemptCount, now);
+    if (completed) {
+      await db
+        .update(calendarConnections)
+        .set({ status: 'active', lastError: null, updatedAt: now })
+        .where(and(
+          eq(calendarConnections.id, connection.connection.id),
+          eq(calendarConnections.status, 'active'),
+          sql`EXISTS (SELECT 1 FROM users WHERE users.id=${operation.userId} AND users.account_state='active')`,
+        ));
+    }
     return { status: 'done', processedCalendars };
   } catch (error) {
-    if (error instanceof ProviderTokenUnavailableError) {
+    if(error instanceof CalendarInactiveError){
+      await stopInactiveOperation(db,operation.id,operation.attemptCount,'account_or_connection_inactive',now);
+      return {status:'skipped',processedCalendars};
+    }
+    const failed = await markFailed(db, operation.id, operation.attemptCount, error, now);
+    if (error instanceof ProviderTokenUnavailableError && failed) {
       await db
         .update(calendarConnections)
         .set({ status: 'reconnect_required', lastError: error.message, updatedAt: now })
-        .where(eq(calendarConnections.id, operation.connectionId));
+        .where(and(
+          eq(calendarConnections.id, operation.connectionId),
+          eq(calendarConnections.status, 'active'),
+          sql`EXISTS (SELECT 1 FROM users WHERE users.id=${operation.userId} AND users.account_state='active')`,
+        ));
     }
-    await markFailed(db, operation.id, operation.attemptCount, error, now);
     return { status: 'failed', processedCalendars };
   }
 }
@@ -321,7 +418,12 @@ export async function processCalendarOutbox(
   const limit = Math.max(1, Math.min(options.limit ?? 25, 100));
   const due = or(
     and(
-      inArray(calendarOutbox.status, ['pending', 'failed']),
+      eq(calendarOutbox.status, 'pending'),
+      lte(calendarOutbox.availableAt, now),
+    ),
+    and(
+      eq(calendarOutbox.status, 'failed'),
+      lt(calendarOutbox.attemptCount, MAX_AUTOMATIC_ATTEMPTS),
       lte(calendarOutbox.availableAt, now),
     ),
     and(
@@ -329,12 +431,39 @@ export async function processCalendarOutbox(
       lte(calendarOutbox.updatedAt, now - PROCESSING_LEASE_MS),
     ),
   );
-  const candidates = await db
-    .select({ id: calendarOutbox.id })
+  await db
+    .delete(calendarOutbox)
+    .where(and(eq(calendarOutbox.status, 'done'), lte(calendarOutbox.updatedAt, now - DONE_RETENTION_MS)));
+  await db
+    .delete(calendarOutbox)
+    .where(and(
+      eq(calendarOutbox.status, 'failed'),
+      eq(calendarOutbox.attemptCount, MAX_AUTOMATIC_ATTEMPTS),
+      lte(calendarOutbox.updatedAt, now - FAILED_RETAIN_MS),
+    ));
+
+  const dueUsers = await db
+    .select({ userId: calendarOutbox.userId })
     .from(calendarOutbox)
     .where(options.connectionId ? and(eq(calendarOutbox.connectionId, options.connectionId), due) : due)
-    .orderBy(asc(calendarOutbox.availableAt), asc(calendarOutbox.createdAt))
-    .limit(limit);
+    .groupBy(calendarOutbox.userId)
+    .orderBy(asc(sql`min(${calendarOutbox.availableAt})`))
+      .limit(limit);
+
+  const candidates: Array<{ id: string }> = [];
+  for (const user of dueUsers) {
+    const userDue = options.connectionId
+      ? and(eq(calendarOutbox.connectionId, options.connectionId), eq(calendarOutbox.userId, user.userId), due)
+      : and(eq(calendarOutbox.userId, user.userId), due);
+    const rows = await db
+      .select({ id: calendarOutbox.id })
+      .from(calendarOutbox)
+      .where(userDue)
+      .orderBy(asc(calendarOutbox.availableAt), asc(calendarOutbox.createdAt))
+      .limit(Math.min(MAX_OPERATIONS_PER_USER, limit - candidates.length));
+    candidates.push(...rows);
+    if (candidates.length >= limit) break;
+  }
 
   let claimed = 0;
   let done = 0;

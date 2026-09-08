@@ -48,6 +48,21 @@ describe('getCalendar', () => {
     expect(item!.course_id).toBe(courseId);
   });
 
+  it('carries an assessment grade into the calendar item details', async () => {
+    const dueDate = Date.now() + 3 * DAY_MS;
+    const gradedId = crypto.randomUUID();
+    const ungradedId = crypto.randomUUID();
+    await db.insert(assessments).values([
+      { id: gradedId, courseId, title: 'Graded quiz', type: 'quiz', dueDate, gradeReceived: 18, gradeMax: 20 },
+      { id: ungradedId, courseId, title: 'Ungraded quiz', type: 'quiz', dueDate },
+    ]);
+
+    const items = await getCalendar(db, userId, Date.now(), Date.now() + 7 * DAY_MS);
+
+    expect(items.find((item) => item.id === gradedId)?.details.grade_received).toBe(18);
+    expect(items.find((item) => item.id === ungradedId)?.details.grade_received).toBeNull();
+  });
+
   it('returns task_due items and resolves multiple linked course_ids without an N+1 query per task', async () => {
     const dueDate = Date.now() + 2 * DAY_MS;
     const taskId = crypto.randomUUID();

@@ -1,29 +1,24 @@
 ---
 import { SignUp } from '@clerk/astro/components';
+import AuthShell from '../../components/auth/AuthShell.astro';
+import { authQuery, safeReturnPath } from '../../components/auth/returnUrl';
 import MarketingLayout from '../../layouts/MarketingLayout.astro';
 
 const fromDemo = Astro.url.searchParams.get('from') === 'demo';
-const destination = fromDemo ? '/onboarding?import=demo' : '/onboarding';
-if (Astro.locals.user) return Astro.redirect(destination);
+const returnPath = safeReturnPath(Astro.url.searchParams.get('return'), Astro.url.origin);
+const destination = returnPath ?? (fromDemo ? '/onboarding?import=demo' : '/onboarding');
+const signInUrl = `/sign-in${authQuery({ returnPath, fromDemo })}`;
+if (Astro.locals.user) return Astro.redirect(Astro.locals.user.onboardedAt ? (returnPath ?? '/dashboard') : destination);
 ---
 
 <MarketingLayout title="Create your account · studyus" description="Create an account and turn your trial into a real study plan.">
-  <section class="auth-shell">
+  <AuthShell heading="Create your account" description="Turn your trial into a real study plan.">
     <SignUp
       routing="path"
       path="/sign-up"
-      signInUrl="/sign-in"
+      signInUrl={signInUrl}
       fallbackRedirectUrl={destination}
       forceRedirectUrl={destination}
     />
-  </section>
+  </AuthShell>
 </MarketingLayout>
-
-<style>
-  .auth-shell {
-    min-height: calc(100dvh - 260px);
-    display: grid;
-    place-items: center;
-    padding: 48px 16px;
-  }
-</style>

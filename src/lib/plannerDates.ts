@@ -1,65 +1,166 @@
-// Local-date helpers shared by the planner views. The previous month/agenda
+// Calendar-date helpers shared by the planner views. Callers with an
+// authenticated learner pass their stored IANA timezone so SSR and hydrated
+// islands classify the same instant on the same day; optional timezone
+// arguments retain host-local behavior for older, unrelated consumers.
+// The previous month/agenda
 // views keyed days with `iso.slice(0, 10)` / `date.toISOString().slice(0,10)`,
 // which reads the UTC calendar day — wrong for any user west of UTC in the
 // evening. Everything here keys/derives against the *local* calendar day.
 import type { CalendarItem } from './types/calendar';
 
-export function localDateKey(d: Date): string {
+type DateValue = string | number | Date;
+
+function asDate(value: DateValue): Date {
+  return value instanceof Date ? value : new Date(value);
+}
+
+function dateKeyParts(dateKey: string) {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return { year, month, day };
+}
+
+function zonedParts(value: DateValue, timeZone: string) {
+  const parts = new Intl.DateTimeFormat('en-CA-u-ca-iso8601-nu-latn', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(asDate(value));
+  const get = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((part) => part.type === type)?.value);
+  return { year: get('year'), month: get('month'), day: get('day'), hour: get('hour'), minute: get('minute'), second: get('second') };
+}
+
+export function zonedDateKey(value: DateValue, timeZone: string): string {
+  const { year, month, day } = zonedParts(value, timeZone);
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+export function addDateKeyDays(dateKey: string, days: number): string {
+  const { year, month, day } = dateKeyParts(dateKey);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+
+export function zonedDateTime(dateKey: string, minutesSinceMidnight: number, timeZone: string): Date {
+  const { year, month, day } = dateKeyParts(dateKey);
+  const hour = Math.floor(minutesSinceMidnight / 60);
+  const minute = minutesSinceMidnight % 60;
+  const desiredWallMs = Date.UTC(year, month - 1, day, hour, minute);
+  let candidate = desiredWallMs;
+  // Convert a wall clock to an instant without relying on the Worker or
+  // browser's host timezone. Re-evaluate after each correction so DST offset
+  // changes around the candidate are handled as well.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const actual = zonedParts(candidate, timeZone);
+    const actualWallMs = Date.UTC(actual.year, actual.month - 1, actual.day, actual.hour, actual.minute, actual.second);
+    const correction = desiredWallMs - actualWallMs;
+    candidate += correction;
+    if (correction === 0) break;
+  }
+  return new Date(candidate);
+}
+
+export function zonedDayBounds(dateKey: string, timeZone: string) {
+  return {
+    start: zonedDateTime(dateKey, 0, timeZone),
+    end: zonedDateTime(addDateKeyDays(dateKey, 1), 0, timeZone),
+  };
+}
+
+export function formatZonedDate(value: DateValue, timeZone: string, options: Intl.DateTimeFormatOptions): string {
+  return new Intl.DateTimeFormat(undefined, { ...options, timeZone }).format(asDate(value));
+}
+
+export function zonedMinuteOfDay(value: DateValue, timeZone: string): number {
+  const { hour, minute } = zonedParts(value, timeZone);
+  return hour * 60 + minute;
+}
+
+export function calendarItemDateKey(item: CalendarItem, timeZone: string): string {
+  // These values encode a calendar date independently of an instant. Do not
+  // shift them through a timezone before grouping them.
+  if (item.type === 'class_session') return item.date.slice(0, 10);
+  if (item.all_day && typeof item.details?.date_only === 'string') return item.details.date_only;
+  return zonedDateKey(item.date, timeZone);
+}
+
+export function localDateKey(d: Date, timeZone?: string): string {
+  if (timeZone) return zonedDateKey(d, timeZone);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
 
-export function localDateKeyFromIso(iso: string): string {
-  return localDateKey(new Date(iso));
+export function localDateKeyFromIso(iso: string, timeZone?: string): string {
+  return localDateKey(new Date(iso), timeZone);
 }
 
-export function startOfDay(d: Date): Date {
+export function startOfDay(d: Date, timeZone?: string): Date {
+  if (timeZone) return zonedDayBounds(zonedDateKey(d, timeZone), timeZone).start;
   const r = new Date(d);
   r.setHours(0, 0, 0, 0);
   return r;
 }
 
-export function addDays(d: Date, n: number): Date {
+export function addDays(d: Date, n: number, timeZone?: string): Date {
+  if (timeZone) return zonedDayBounds(addDateKeyDays(zonedDateKey(d, timeZone), n), timeZone).start;
   const r = new Date(d);
   r.setDate(r.getDate() + n);
   return r;
 }
 
 // Monday of the week containing `d` (ISO week start), local time.
-export function mondayOf(d: Date): Date {
-  const r = startOfDay(d);
-  const dow = r.getDay(); // 0 = Sun .. 6 = Sat
+export function mondayOf(d: Date, timeZone?: string): Date {
+  const r = startOfDay(d, timeZone);
+  const dateKey = timeZone ? zonedDateKey(r, timeZone) : localDateKey(r);
+  const dow = timeZone ? new Date(`${dateKey}T12:00:00.000Z`).getUTCDay() : r.getDay(); // 0 = Sun .. 6 = Sat
   const diff = dow === 0 ? -6 : 1 - dow;
-  return addDays(r, diff);
+  return addDays(r, diff, timeZone);
 }
 
-export function isSameLocalDay(a: Date, b: Date): boolean {
+export function isSameLocalDay(a: Date, b: Date, timeZone?: string): boolean {
+  if (timeZone) return zonedDateKey(a, timeZone) === zonedDateKey(b, timeZone);
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-export function firstOfMonth(d: Date): Date {
+export function firstOfMonth(d: Date, timeZone?: string): Date {
+  if (timeZone) {
+    const { year, month } = dateKeyParts(zonedDateKey(d, timeZone));
+    return zonedDateTime(`${year}-${String(month).padStart(2, '0')}-01`, 0, timeZone);
+  }
   return new Date(d.getFullYear(), d.getMonth(), 1);
 }
 
-export function addMonths(d: Date, n: number): Date {
+export function addMonths(d: Date, n: number, timeZone?: string): Date {
+  if (timeZone) {
+    const { year, month } = dateKeyParts(zonedDateKey(d, timeZone));
+    const shifted = new Date(Date.UTC(year, month - 1 + n, 1));
+    return zonedDateTime(shifted.toISOString().slice(0, 10), 0, timeZone);
+  }
   return new Date(d.getFullYear(), d.getMonth() + n, 1);
 }
 
-export function weekRangeLabel(weekStart: Date): string {
-  const end = addDays(weekStart, 6);
-  const sameMonth = weekStart.getMonth() === end.getMonth() && weekStart.getFullYear() === end.getFullYear();
+export function weekRangeLabel(weekStart: Date, timeZone?: string): string {
+  const end = addDays(weekStart, 6, timeZone);
+  const startKey = timeZone ? zonedDateKey(weekStart, timeZone) : localDateKey(weekStart);
+  const endKey = timeZone ? zonedDateKey(end, timeZone) : localDateKey(end);
+  const startParts = dateKeyParts(startKey);
+  const endParts = dateKeyParts(endKey);
+  const sameMonth = startParts.month === endParts.month && startParts.year === endParts.year;
   const optsStart: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
   const optsEnd: Intl.DateTimeFormatOptions = sameMonth ? { day: 'numeric' } : { month: 'short', day: 'numeric' };
-  const startLabel = weekStart.toLocaleDateString(undefined, optsStart);
-  const endLabel = end.toLocaleDateString(undefined, optsEnd);
-  const year = end.getFullYear();
+  const startLabel = timeZone ? formatZonedDate(weekStart, timeZone, optsStart) : weekStart.toLocaleDateString(undefined, optsStart);
+  const endLabel = timeZone ? formatZonedDate(end, timeZone, optsEnd) : end.toLocaleDateString(undefined, optsEnd);
+  const year = endParts.year;
   return `${startLabel} – ${endLabel}, ${year}`;
 }
 
-export function timeRangeLabel(start: Date, end: Date | null): string {
-  const fmt = (d: Date) => d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }).replace(' ', '');
+export function timeRangeLabel(start: Date, end: Date | null, timeZone?: string): string {
+  const fmt = (d: Date) => d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', ...(timeZone ? { timeZone } : {}) }).replace(' ', '');
   if (!end) return fmt(start);
   return `${fmt(start)} – ${fmt(end)}`;
 }
@@ -79,10 +180,10 @@ export function addMinutes(d: Date, n: number): Date {
 }
 
 // ---------------------------------------------------------------------------
-// class_session time resolution (v1.6.1). There is no per-user timezone
-// stored anywhere in this app, so a class_session's `details.start_min`/
-// `end_min` (minutes since midnight of the class day) are wall-clock minutes
-// with no fixed UTC relationship — per types/calendar.ts's class_session
+// class_session time resolution (v1.6.1). A class_session's
+// `details.start_min`/`end_min` (minutes since midnight of the class day) are
+// wall-clock minutes with no fixed UTC relationship — per
+// types/calendar.ts's class_session
 // contract comment, a client must derive the displayed time-of-day (grid
 // position, labels) from those integers directly, and must NEVER recover
 // hour/minute by reading the item's `date`/`end_date` ISO fields through
@@ -100,8 +201,9 @@ export function addMinutes(d: Date, n: number): Date {
 // local Date, every existing Date-getter-based consumer (topFor/heightFor's
 // getHours()/getMinutes(), toLocaleTimeString()) recovers the correct value
 // for free — no separate "minutes-mode" rendering path needed.
-export function classSessionLocalDate(dayAnchorIso: string, minutesSinceMidnight: number): Date {
-  const dayKey = localDateKeyFromIso(dayAnchorIso);
+export function classSessionLocalDate(dayAnchorIso: string, minutesSinceMidnight: number, timeZone?: string): Date {
+  const dayKey = dayAnchorIso.slice(0, 10);
+  if (timeZone) return zonedDateTime(dayKey, minutesSinceMidnight, timeZone);
   const d = new Date(`${dayKey}T00:00:00`);
   d.setMinutes(d.getMinutes() + minutesSinceMidnight);
   return d;
@@ -115,14 +217,14 @@ export function classSessionLocalDate(dayAnchorIso: string, minutesSinceMidnight
 // class_session item somehow arrives without start_min/end_min (e.g. an
 // older calendar response before this contract existed) rather than
 // throwing or mis-rendering.
-export function resolvedEventTimes(item: CalendarItem): { startMs: number; endMs: number | null } {
+export function resolvedEventTimes(item: CalendarItem, timeZone?: string): { startMs: number; endMs: number | null } {
   const d = item.details ?? {};
   const startMin = item.type === 'class_session' ? d.start_min : undefined;
   const endMin = item.type === 'class_session' ? d.end_min : undefined;
-  const startMs = typeof startMin === 'number' ? classSessionLocalDate(item.date, startMin).getTime() : Date.parse(item.date);
+  const startMs = typeof startMin === 'number' ? classSessionLocalDate(item.date, startMin, timeZone).getTime() : Date.parse(item.date);
   const endMs =
     typeof endMin === 'number'
-      ? classSessionLocalDate(item.date, endMin).getTime()
+      ? classSessionLocalDate(item.date, endMin, timeZone).getTime()
       : item.end_date
         ? Date.parse(item.end_date)
         : null;
@@ -131,16 +233,16 @@ export function resolvedEventTimes(item: CalendarItem): { startMs: number; endMs
 
 // Convenience wrapper for the (frequent) case of just wanting the rendered
 // time-range label — hover cards, EventPopover's header, etc.
-export function calendarItemTimeLabel(item: CalendarItem): string {
-  const { startMs, endMs } = resolvedEventTimes(item);
-  return timeRangeLabel(new Date(startMs), endMs !== null ? new Date(endMs) : null);
+export function calendarItemTimeLabel(item: CalendarItem, timeZone?: string): string {
+  const { startMs, endMs } = resolvedEventTimes(item, timeZone);
+  return timeRangeLabel(new Date(startMs), endMs !== null ? new Date(endMs) : null, timeZone);
 }
 
 // Start-only counterpart for single-time rows (AgendaList, dashboard
 // WeekView's collapsed chips) that only ever show one clock time, not a range.
-export function calendarItemStartLabel(item: CalendarItem): string {
-  const { startMs } = resolvedEventTimes(item);
-  return new Date(startMs).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+export function calendarItemStartLabel(item: CalendarItem, timeZone?: string): string {
+  const { startMs } = resolvedEventTimes(item, timeZone);
+  return new Date(startMs).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', ...(timeZone ? { timeZone } : {}) });
 }
 
 // ---------------------------------------------------------------------------
@@ -155,7 +257,12 @@ export function calendarItemStartLabel(item: CalendarItem): string {
 // Whole calendar days between `now`'s local day and `date`'s local day
 // (negative = in the past). Every "due in N days" surface computed this
 // exact thing independently via its own pair of setHours(0,0,0,0) calls.
-export function daysUntil(date: string | number | Date, now: Date = new Date()): number {
+export function daysUntil(date: string | number | Date, now: Date = new Date(), timeZone?: string): number {
+  if (timeZone) {
+    const target = dateKeyParts(zonedDateKey(date, timeZone));
+    const today = dateKeyParts(zonedDateKey(now, timeZone));
+    return Math.round((Date.UTC(target.year, target.month - 1, target.day) - Date.UTC(today.year, today.month - 1, today.day)) / 86_400_000);
+  }
   const target = startOfDay(date instanceof Date ? date : new Date(date));
   const today = startOfDay(now);
   return Math.round((target.getTime() - today.getTime()) / 86_400_000);
@@ -190,12 +297,12 @@ export function deadlineUrgency(days: number): { cls: string; label: string } {
 // PlannerRail's due label: a plain string, "Nd overdue" wording (not just
 // "overdue") once past due, and a real calendar date (not "in Nd") once
 // past tomorrow.
-export function railDueLabel(days: number, date: string | number | Date): string {
+export function railDueLabel(days: number, date: string | number | Date, timeZone?: string): string {
   if (days < 0) return `${Math.abs(days)}d overdue`;
   if (days === 0) return 'Today';
   if (days === 1) return 'Tomorrow';
   const d = date instanceof Date ? date : new Date(date);
-  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', ...(timeZone ? { timeZone } : {}) });
 }
 
 // ---------------------------------------------------------------------------
@@ -205,15 +312,15 @@ export function railDueLabel(days: number, date: string | number | Date): string
 // ---------------------------------------------------------------------------
 
 // "Aug 15" — DeadlinesCard, RecentActivityCard, dashboard/DeadlinesList.
-export function formatShortDate(date: string | number | Date): string {
+export function formatShortDate(date: string | number | Date, timeZone?: string): string {
   const d = date instanceof Date ? date : new Date(date);
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', ...(timeZone ? { timeZone } : {}) });
 }
 
 // "Aug 15, 2026" with a 'No due date' fallback for null — standing/AssessmentsCard.
-export function formatDueDate(iso: string | null): string {
+export function formatDueDate(iso: string | null, timeZone?: string): string {
   if (!iso) return 'No due date';
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', ...(timeZone ? { timeZone } : {}) });
 }
 
 // today / yesterday / "N days ago" / "Nw ago" / falls back to formatShortDate

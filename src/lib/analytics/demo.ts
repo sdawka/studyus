@@ -17,8 +17,7 @@ export type DemoFunnelEventInput = {
     | 'signup_clicked'
     | 'import_offered'
     | 'import_accepted'
-    | 'import_declined'
-    | 'onboarding_completed';
+    | 'import_declined';
   trial_session_id: string;
   step?: 'context' | 'preferences' | 'course';
   scenario_id?: DemoScenarioId;

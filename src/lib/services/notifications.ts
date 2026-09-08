@@ -270,8 +270,8 @@ export async function markAllRead(db: Db, userId: string) {
     .where(and(eq(notifications.userId, userId), isNull(notifications.readAt)));
 }
 
-export async function createNotification(db: Db, input: CreateNotificationInput) {
-  await db
+export function createNotificationStatement(db: Db, input: CreateNotificationInput) {
+  return db
     .insert(notifications)
     .values({
       id: crypto.randomUUID(),
@@ -285,4 +285,8 @@ export async function createNotification(db: Db, input: CreateNotificationInput)
       createdAt: Date.now(),
     })
     .onConflictDoNothing({ target: notifications.dedupeKey });
+}
+
+export async function createNotification(db: Db, input: CreateNotificationInput) {
+  await createNotificationStatement(db, input);
 }

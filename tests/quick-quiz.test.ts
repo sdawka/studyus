@@ -5,10 +5,13 @@ import { getDb } from '../src/db/client';
 import { branches, courses, events, exercises, kcs, studySessions, users } from '../src/db/schema';
 import { generateQuickQuiz, QuizNotGradableError, submitQuickQuizAnswers } from '../src/lib/flows/quick_quiz';
 import { AiFeatureUnavailableError } from '../src/lib/ai/capabilities';
+import { ensureActiveRuntimeRegistry } from '../src/lib/services/accountLifecycle';
+import type { LearnerAgentStub } from '../src/lib/runtime/learnerAgent';
 
 const db = getDb(env.DB);
-const AI_ENV = { AI_FEATURES_ENABLED: 'true', OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' } as const;
-const NO_AI_ENV = { AI_FEATURES_ENABLED: 'false', OPENROUTER_API_KEY: '', OPENROUTER_MODEL: '' } as const;
+// Keep every real test binding while overriding configured literals for these capability-path tests.
+const AI_ENV = { ...env, AI_FEATURES_ENABLED: 'true', OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' } as unknown as Cloudflare.Env;
+const NO_AI_ENV = { ...env, AI_FEATURES_ENABLED: 'false', OPENROUTER_API_KEY: '', OPENROUTER_MODEL: '' } as unknown as Cloudflare.Env;
 
 let userId: string;
 let courseId: string;
@@ -19,6 +22,7 @@ beforeEach(async () => {
   courseId = crypto.randomUUID();
   const branchId = crypto.randomUUID();
   await db.insert(users).values({ id: userId, email: `${userId}@test.local`, passwordHash: 'x' });
+  await ensureActiveRuntimeRegistry(db, userId);
   await db.insert(courses).values({ id: courseId, userId, code: 'TEST 101', slug: `test-${courseId}`, title: 'Test Course' });
   await db.insert(branches).values({ id: branchId, courseId, name: 'Branch' });
 
@@ -279,6 +283,34 @@ describe('generateQuickQuiz — v2.0 seeded exercise bank', () => {
 
     const sessions = await db.select().from(studySessions).where(eq(studySessions.userId, userId));
     expect(sessions).toHaveLength(0);
+  });
+
+  it('rechecks the D1 account state after reserving budget and before calling the provider', async () => {
+    const provider = vi.fn(async () => new Response('{}', { status: 200 }));
+    vi.stubGlobal('fetch', provider);
+    const deletingAfterReservationEnv = {
+      ...AI_ENV,
+      LEARNER_AGENT: {
+        getByName(name: string) {
+          const real = env.LEARNER_AGENT.getByName(name) as unknown as LearnerAgentStub;
+          return {
+            initialize: (id: string) => real.initialize(id),
+            tryReserveAiProviderCall: async () => {
+              const reservation = await real.tryReserveAiProviderCall();
+              await db.update(users).set({ accountState: 'deleting' }).where(eq(users.id, userId));
+              return reservation;
+            },
+            releaseAiProviderCall: (leaseId: string) => real.releaseAiProviderCall(leaseId),
+          };
+        },
+      },
+    } as unknown as Cloudflare.Env;
+
+    await expect(generateQuickQuiz(db, userId, { kc_id: kcIds[0] }, deletingAfterReservationEnv)).rejects.toMatchObject({
+      name: 'LearnerAgentDeletedError',
+    });
+    expect(provider).not.toHaveBeenCalled();
+    expect(await db.select().from(studySessions).where(eq(studySessions.userId, userId))).toEqual([]);
   });
 
   it('grading a fully-seeded quiz still appends retrieval_practice events with the standard payload/channel', async () => {

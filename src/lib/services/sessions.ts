@@ -5,7 +5,7 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import type { Db } from '../../db/client';
-import { calendarConnections, events, sessionKcs, studySessionFinalizations, studySessions } from '../../db/schema';
+import { calendarConnections, events, sessionKcs, studySessionFinalizations, studySessionTiming, studySessions, users } from '../../db/schema';
 import type {
   CompleteStudySessionInput,
   CreateStudySessionInput,
@@ -22,6 +22,12 @@ import { ConflictError, NotFoundError, requireOwnedCourse, requireOwnedKc } from
 
 function resolveEventType(intended: string): EventType {
   return (EVENT_TYPES as readonly string[]).includes(intended) ? (intended as EventType) : 'practice_done';
+}
+
+async function requireActiveSessionUser(db: Db, userId: string): Promise<void> {
+  const row = await db.select({ id: users.id }).from(users)
+    .where(and(eq(users.id, userId), eq(users.accountState, 'active'))).limit(1);
+  if (!row[0]) throw new NotFoundError('User');
 }
 
 async function enqueueSessionChange(
@@ -58,6 +64,7 @@ function sessionRevision(session: typeof studySessions.$inferSelect): string {
 }
 
 export async function createSession(db: Db, userId: string, input: CreateStudySessionInput) {
+  await requireActiveSessionUser(db, userId);
   if (input.course_id) await requireOwnedCourse(db, userId, input.course_id);
   // v1.9: session-shape ritual picked at session start — reject a ritual_id
   // that isn't the caller's own (same NotFoundError-on-mismatch pattern as
@@ -83,13 +90,23 @@ export async function createSession(db: Db, userId: string, input: CreateStudySe
     scheduledAt,
     ritualId: input.ritual_id ?? null,
   });
+  const insertTiming = db.insert(studySessionTiming).values({
+    sessionId: id,
+    userId,
+    state: 'paused',
+    elapsedMs: 0,
+    sequence: 0,
+    revision: 0,
+    updatedAt: Date.now(),
+  });
   if (kcIds.length > 0) {
     await db.batch([
       insertSession,
+      insertTiming,
       db.insert(sessionKcs).values(kcIds.map((kcId) => ({ id: crypto.randomUUID(), studySessionId: id, kcId }))),
     ]);
   } else {
-    await insertSession;
+    await db.batch([insertSession, insertTiming]);
   }
 
   const rows = await db.select().from(studySessions).where(eq(studySessions.id, id)).limit(1);
@@ -100,6 +117,7 @@ export async function createSession(db: Db, userId: string, input: CreateStudySe
 }
 
 export async function listSessions(db: Db, userId: string, query: ListSessionsQuery) {
+  await requireActiveSessionUser(db, userId);
   const conditions = [eq(studySessions.userId, userId)];
   if (query.course) conditions.push(eq(studySessions.courseId, query.course));
   // Range over COALESCE(scheduled_at, started_at), matching the calendar's
@@ -107,13 +125,17 @@ export async function listSessions(db: Db, userId: string, query: ListSessionsQu
   if (query.from) conditions.push(sql`coalesce(${studySessions.scheduledAt}, ${studySessions.startedAt}) >= ${toEpochMs(query.from)}`);
   if (query.to) conditions.push(sql`coalesce(${studySessions.scheduledAt}, ${studySessions.startedAt}) <= ${toEpochMs(query.to)}`);
   const rows = await db
-    .select({ session: studySessions, disposition: studySessionFinalizations.disposition })
+    .select({ session: studySessions, disposition: studySessionFinalizations.disposition, timing: studySessionTiming })
     .from(studySessions)
     .leftJoin(studySessionFinalizations, eq(studySessionFinalizations.studySessionId, studySessions.id))
+    .leftJoin(studySessionTiming, eq(studySessionTiming.sessionId, studySessions.id))
     .where(and(...conditions));
-  return rows.map(({ session, disposition }) => ({
+  return rows.map(({ session, disposition, timing }) => ({
     ...session,
     disposition: disposition ?? (session.endedAt !== null ? ('completed' as const) : null),
+    timing: timing
+      ? { state: timing.state, elapsedMs: timing.elapsedMs, updatedAt: timing.updatedAt }
+      : null,
   }));
 }
 
@@ -179,6 +201,7 @@ async function finalizeSession(
   disposition: SessionDisposition,
   input: CompleteStudySessionInput | DiscardStudySessionInput,
 ) {
+  await requireActiveSessionUser(db, userId);
   const session = await requireOwnedSession(db, userId, sessionId);
   if (session.intendedEventType === 'quick_quiz') {
     throw new ConflictError('Quick quizzes must be finalized through quiz grading');
@@ -195,6 +218,29 @@ async function finalizeSession(
       finalizedAt,
       createdAt: Date.now(),
     }),
+    db
+      .insert(studySessionTiming)
+      .values({
+        sessionId,
+        userId,
+        state: 'ended',
+        elapsedMs: 0,
+        sequence: 0,
+        revision: 1,
+        updatedAt: Date.now(),
+      })
+      .onConflictDoUpdate({
+        target: studySessionTiming.sessionId,
+        set: {
+          state: 'ended',
+          deviceId: null,
+          leaseToken: null,
+          lastAckAt: null,
+          leaseExpiresAt: null,
+          revision: sql`${studySessionTiming.revision} + 1`,
+          updatedAt: Date.now(),
+        },
+      }),
   ];
 
   const eventInputs: AtomicEventInput[] = [];
@@ -288,11 +334,13 @@ export async function discardSession(db: Db, userId: string, sessionId: string, 
 // completeSession's own optional `scheduled_at` (used to record what a
 // session that's finishing right now was actually rescheduled to earlier).
 export async function updateSession(db: Db, userId: string, sessionId: string, input: UpdateSessionInput) {
+  await requireActiveSessionUser(db, userId);
   const session = await requireOwnedSession(db, userId, sessionId);
   if (session.endedAt) throw new ConflictError('Study session already completed');
 
   const patch: Partial<typeof studySessions.$inferInsert> = {};
-  if (input.scheduled_at !== undefined) patch.scheduledAt = toEpochMs(input.scheduled_at);
+  if (input.locked !== undefined) patch.locked = input.locked;
+  if (input.scheduled_at !== undefined) { patch.scheduledAt = toEpochMs(input.scheduled_at); patch.planningUnscheduled = false; }
   if (input.planned_minutes !== undefined) patch.plannedMinutes = input.planned_minutes;
 
   if (Object.keys(patch).length > 0) {
@@ -309,6 +357,7 @@ export async function updateSession(db: Db, userId: string, sessionId: string, i
 // v1.6: hard delete, ownership-checked — closes the sessions-DELETE
 // deferral (docs/todo.md).
 export async function deleteSession(db: Db, userId: string, sessionId: string): Promise<void> {
+  await requireActiveSessionUser(db, userId);
   const session = await requireOwnedSession(db, userId, sessionId);
   await enqueueSessionChange(db, userId, sessionId, 'delete', `deleted:${sessionRevision(session)}`);
   await db.delete(studySessions).where(eq(studySessions.id, sessionId));

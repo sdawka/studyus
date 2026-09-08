@@ -14,53 +14,49 @@ const note = {
   links: [],
 };
 
+const coursesWithKcs = [{
+  id: 'course-1',
+  code: 'HIST101',
+  title: 'History',
+  kcs: [{ id: 'kc-1', name: 'Spaced repetition' }],
+}];
+
 describe('NoteEditor recovery', () => {
   beforeEach(() => mockApiFetch.mockReset());
 
-  describe('when an older save finishes after a newer edit', () => {
-    let observedSaveState: {
-      canRetryNewerDraft: boolean;
-      falselyReportsNewerDraftSaved: boolean;
-    };
+  it('serializes a newer draft after an earlier save without reporting it saved early', async () => {
+    let resolveFirstSave!: (result: { ok: true; data: unknown }) => void;
+    let resolveLatestSave!: (result: { ok: true; data: unknown }) => void;
+    mockApiFetch
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveFirstSave = resolve; }))
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveLatestSave = resolve; }));
 
-    beforeEach(async () => {
-      let resolveFirstSave!: (result: { ok: true; data: unknown }) => void;
-      mockApiFetch.mockImplementationOnce(
-        () => new Promise((resolve) => { resolveFirstSave = resolve; }),
-      );
+    render(NoteEditor, { props: { note, noteId: note.id, coursesWithKcs } });
+    const title = screen.getByPlaceholderText('Note title') as HTMLInputElement;
+    const content = screen.getByPlaceholderText('Write your note here... Markdown supported.') as HTMLTextAreaElement;
 
-      render(NoteEditor, { props: { note, noteId: note.id, coursesWithKcs: [] } });
-      const content = screen.getByPlaceholderText('Write your note here... Markdown supported.') as HTMLTextAreaElement;
+    await fireEvent.input(title, { target: { value: 'First title' } });
+    await fireEvent.input(content, { target: { value: 'First content' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Add links' }));
+    await fireEvent.click(screen.getByRole('button', { name: /HIST101/ }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Link course' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(mockApiFetch).toHaveBeenCalledTimes(1));
 
-      await fireEvent.change(content, { target: { value: 'Saved snapshot' } });
-      await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-      await waitFor(() => expect(mockApiFetch).toHaveBeenCalledTimes(1));
-      expect(JSON.parse((mockApiFetch.mock.calls[0][1] as RequestInit).body as string)).toMatchObject({
-        content: 'Saved snapshot',
-      });
+    await fireEvent.input(title, { target: { value: 'Latest title' } });
+    await fireEvent.input(content, { target: { value: 'Latest content' } });
+    resolveFirstSave({ ok: true, data: {} });
 
-      await fireEvent.change(content, { target: { value: 'Newer unsaved draft' } });
-      expect(content.value).toBe('Newer unsaved draft');
-      resolveFirstSave({ ok: true, data: {} });
-
-      await waitFor(() => expect(screen.queryByRole('button', { name: 'Saving…' })).toBeNull());
-      const save = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
-      observedSaveState = {
-        canRetryNewerDraft: !save.disabled,
-        falselyReportsNewerDraftSaved: screen.queryByText('Saved') !== null,
-      };
+    await waitFor(() => expect(mockApiFetch).toHaveBeenCalledTimes(2));
+    expect(screen.queryByText('Saved')).toBeNull();
+    expect(JSON.parse((mockApiFetch.mock.calls[1][1] as RequestInit).body as string)).toEqual({
+      title: 'Latest title',
+      content: 'Latest content',
+      links: [{ course_id: 'course-1' }],
     });
 
-    // Known recovery defect: saveNote clears unsavedChanges after any
-    // successful response, including a response for an older request payload.
-    // Setup lives above so an unexpected render, request, or transition failure
-    // remains an ordinary failing test instead of an expected failure.
-    it.fails('keeps a newer edit unsaved when an earlier save finishes', () => {
-      expect(observedSaveState).toEqual({
-        canRetryNewerDraft: true,
-        falselyReportsNewerDraftSaved: false,
-      });
-    });
+    resolveLatestSave({ ok: true, data: {} });
+    await screen.findByText('Saved');
   });
 
   it('keeps the editable draft and enables retry after a failed save', async () => {
@@ -68,10 +64,15 @@ describe('NoteEditor recovery', () => {
       .mockResolvedValueOnce({ ok: false, error: 'Connection lost', reason: 'network' })
       .mockResolvedValueOnce({ ok: true, data: {} });
 
-    render(NoteEditor, { props: { note, noteId: note.id, coursesWithKcs: [] } });
+    render(NoteEditor, { props: { note, noteId: note.id, coursesWithKcs } });
+    const title = screen.getByPlaceholderText('Note title') as HTMLInputElement;
     const content = screen.getByPlaceholderText('Write your note here... Markdown supported.') as HTMLTextAreaElement;
 
-    await fireEvent.change(content, { target: { value: 'Recoverable draft' } });
+    await fireEvent.input(title, { target: { value: 'Recovered title' } });
+    await fireEvent.input(content, { target: { value: 'Recoverable draft' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Add links' }));
+    await fireEvent.click(screen.getByRole('button', { name: /HIST101/ }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Link course' }));
     await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await screen.findByText('Connection lost');
@@ -82,7 +83,52 @@ describe('NoteEditor recovery', () => {
     await screen.findByText('Saved');
     expect(mockApiFetch).toHaveBeenCalledTimes(2);
     expect(JSON.parse((mockApiFetch.mock.calls[1][1] as RequestInit).body as string)).toMatchObject({
+      title: 'Recovered title',
       content: 'Recoverable draft',
+      links: [{ course_id: 'course-1' }],
+    });
+  });
+
+  it('warns before navigation while an editable draft remains unsaved', async () => {
+    render(NoteEditor, { props: { note, noteId: note.id, coursesWithKcs } });
+    const title = screen.getByPlaceholderText('Note title') as HTMLInputElement;
+    const content = screen.getByPlaceholderText('Write your note here... Markdown supported.') as HTMLTextAreaElement;
+
+    await fireEvent.input(title, { target: { value: 'Draft title before navigation' } });
+    await fireEvent.input(content, { target: { value: 'Draft before navigation' } });
+    const event = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(title.value).toBe('Draft title before navigation');
+    expect(content.value).toBe('Draft before navigation');
+  });
+
+  it('shows human link labels, exposes picker state, and deduplicates links', async () => {
+    mockApiFetch.mockResolvedValueOnce({ ok: true, data: {} });
+
+    render(NoteEditor, { props: { note, noteId: note.id, coursesWithKcs } });
+    const addLinks = screen.getByRole('button', { name: 'Add links' });
+    expect(addLinks.getAttribute('aria-expanded')).toBe('false');
+    expect(addLinks.getAttribute('aria-controls')).toBe('note-link-picker');
+
+    await fireEvent.click(addLinks);
+    expect(addLinks.getAttribute('aria-expanded')).toBe('true');
+    expect(document.getElementById('note-link-picker')).not.toBeNull();
+
+    await fireEvent.click(screen.getByRole('button', { name: /HIST101/ }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Link course' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Link course' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Spaced repetition' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Spaced repetition' }));
+
+    expect(document.querySelector('.link-badge.course')?.textContent?.trim()).toBe('HIST101 · History');
+    expect(document.querySelector('.link-badge.kc')?.textContent?.trim()).toBe('Spaced repetition');
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(mockApiFetch).toHaveBeenCalledTimes(1));
+    expect(JSON.parse((mockApiFetch.mock.calls[0][1] as RequestInit).body as string)).toMatchObject({
+      links: [{ course_id: 'course-1' }, { kc_id: 'kc-1' }],
     });
   });
 });

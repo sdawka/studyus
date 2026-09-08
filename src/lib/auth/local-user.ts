@@ -1,6 +1,9 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { users } from '../../db/schema';
+import { AccountInactiveError, assertClerkIdentityMayResolve, ensureActiveRuntimeRegistry } from '../services/accountLifecycle';
+
+export { AccountInactiveError } from '../services/accountLifecycle';
 
 /** The small Clerk profile subset needed to establish a local learner row. */
 export interface ClerkIdentity {
@@ -38,17 +41,30 @@ function fallbackEmail(clerkUserId: string): string {
  * A brand-new Clerk account instead receives a fresh local learner row.
  */
 export async function resolveLocalUser(db: Db, identity: ClerkIdentity) {
+  await assertClerkIdentityMayResolve(db, identity.id);
   const byClerkId = await db.select().from(users).where(eq(users.clerkUserId, identity.id)).limit(1);
-  if (byClerkId[0]) return { user: byClerkId[0], wasCreated: false };
+  if (byClerkId[0]) {
+    if (byClerkId[0].accountState !== 'active') throw new AccountInactiveError();
+    await ensureActiveRuntimeRegistry(db, byClerkId[0].id);
+    return { user: byClerkId[0], wasCreated: false };
+  }
 
   if (identity.externalId) {
     const byLegacyId = await db.select().from(users).where(eq(users.id, identity.externalId)).limit(1);
     const legacyUser = byLegacyId[0];
     if (legacyUser) {
+      if (legacyUser.accountState !== 'active') throw new AccountInactiveError();
       if (legacyUser.clerkUserId && legacyUser.clerkUserId !== identity.id) {
         throw new ClerkIdentityConflictError('This learner is already linked to another Clerk account.');
       }
-      await db.update(users).set({ clerkUserId: identity.id }).where(eq(users.id, legacyUser.id));
+      await ensureActiveRuntimeRegistry(db, legacyUser.id);
+      const binding = await db.run(sql`
+        UPDATE users SET clerk_user_id = ${identity.id}
+        WHERE id = ${legacyUser.id} AND account_state = 'active'
+        AND NOT EXISTS (SELECT 1 FROM account_deletion_events WHERE clerk_user_id = ${identity.id})
+        AND NOT EXISTS (SELECT 1 FROM account_deletion_jobs WHERE clerk_user_id = ${identity.id})
+      `);
+      if (binding.meta.changes !== 1) throw new AccountInactiveError();
       return { user: { ...legacyUser, clerkUserId: identity.id }, wasCreated: false };
     }
   }
@@ -56,15 +72,15 @@ export async function resolveLocalUser(db: Db, identity: ClerkIdentity) {
   const id = crypto.randomUUID();
   const email = identity.primaryEmailAddress ?? fallbackEmail(identity.id);
   const name = displayName(identity);
-  await db.insert(users).values({
-    id,
-    clerkUserId: identity.id,
-    email,
-    // The physical D1 column remains non-null to keep the migration additive.
-    // Custom password verification is retired, so this value is never valid.
-    passwordHash: 'clerk-managed',
-    name,
-  });
+  const createdAt = Date.now();
+  const insertion = await db.run(sql`
+    INSERT INTO users (id, clerk_user_id, email, password_hash, name, account_state, created_at)
+    SELECT ${id}, ${identity.id}, ${email}, 'clerk-managed', ${name}, 'active', ${createdAt}
+    WHERE NOT EXISTS (SELECT 1 FROM account_deletion_events WHERE clerk_user_id = ${identity.id})
+    AND NOT EXISTS (SELECT 1 FROM account_deletion_jobs WHERE clerk_user_id = ${identity.id})
+  `);
+  if (insertion.meta.changes !== 1) throw new AccountInactiveError();
+  await ensureActiveRuntimeRegistry(db, id);
 
   const created = await db.select().from(users).where(eq(users.id, id)).limit(1);
   // The insert was acknowledged and id is generated locally; this narrows the

@@ -287,7 +287,7 @@ Matches draft (`multipart/form-data`, field `file`). R2 key convention: `{userId
 **Size cap** (landed 2026-08-15): files over `MAX_ATTACHMENT_BYTES` (10 MB, `src/lib/schemas/attachments.ts`) are rejected with `400 invalid_input` — checked against `file.size` before the upload is ever buffered into memory, so an oversized file never reaches R2. There is no MIME allow/deny list; any content type is accepted.
 
 ### GET|DELETE /attachments/:id
-Matches draft. `GET` streams the object body with the stored `Content-Type` and a `Content-Disposition: inline` header.
+`GET` streams bytes as `application/octet-stream` with an attachment disposition; uploaded content is never rendered inline. `DELETE` is admitted by an active-owner `ready` to `deleting` compare-and-set. Once admitted, R2 and metadata cleanup may finish asynchronously, including after an account deletion fence; inactive accounts cannot admit a new deletion.
 
 ---
 
@@ -1110,3 +1110,17 @@ is product-usage telemetry, not a learner-domain event. The UI therefore does no
 post those actions to `/events`; `recommendation_followed` and
 `recommendation_ignored` are sent through the deliberate behavioral wrapper, after a
 same-recommendation `next_move_viewed` impression.
+
+## Remediation lifecycle contract (2026-09-07)
+
+Accounts gain `account_state` (`active`, `deleting`, `deleted`) and `deleted_at`. Only active identities may access private APIs, feed tokens, runtime calls or background integrations. Deletion is monotonic and retains data. Internal `learner_runtime_registry` maps immutable user IDs to `learner:<id>`; it and deletion delivery/jobs are not public resources and never cascade away. Active email uniqueness permits a new identity without relinking retained data. The verified Clerk deletion webhook durably fences access before acknowledging; reconciliation tombstones the DO without clearing its storage.
+
+Attachments: `state` is pending/ready/deleting, with `updated_at`; only ready objects are visible/downloadable. Reservations count against 250MiB/100-file user quota, including in-flight/deleting bytes until reconciliation. Existing rows migrate to ready. The upload route retains multipart input with a bounded parser and verifies actual byte counts.
+
+Study timing: `study_session_timing` records confirmed elapsed milliseconds independently of historical `started_at`. Timer operations (`resume`, `heartbeat`, `pause`, explicit `takeover`) use an opaque device lease, monotonically increasing sequence/revision and server timestamps; 15-second client updates, 45-second lease, no gap credit above 30 seconds. Only one running lease/user. Legacy rows have unknown prior active duration, shown as recovery rather than invented hours. Completion/discard ends timing atomically with the existing finalization ledger.
+
+Assessment updates increment `revision` inside the same atomic evidence/link/task batch. A stale concurrent snapshot receives the existing409 conflict envelope and writes nothing; clients refetch before retrying. Revision is server-controlled and not writable in request bodies.
+
+Planning: `GET|PUT /planning/preferences`, `POST /planning/preview`, `GET /planning/runs`, and `POST /planning/runs/:id/apply|undo`. Preferences use `expectedRevision`; apply requires the preview's `sourceRevision`. A stale revision returns409 without session/outbox changes. Automatic planning is opt-in; preview/apply/undo remain visible actions. Task create/update accepts `estimated_minutes` and `priority`; session update accepts `locked`. Overflow has `planningUnscheduled=true` and no calendar projection.
+
+Groups: `GET|POST /groups`, `GET /groups/:id`, member listing/removal, owner-issued `/invitations`, and `POST /groups/invitations/accept`. Invitations are seven-day, single-use, email-bound tokens; persistence contains an HMAC email hash, not the email. Acceptance requires the matching verified primary Clerk email. Each group supports resources, files and events under its own path; resource/event authors can edit and owners can moderate. Event RSVP is scoped to both group and event. `/groups/:id/files/copy` creates an independently owned group object from an authorized private attachment. Download responses never expose R2 keys or render uploaded content inline. Membership is checked server-side; non-members receive no group data. Limits: five owned groups/account, 25 members/group, 100 files and250MiB/group, 10MiB/file. `GROUP_INVITE_HMAC_SECRET` must be configured per environment before invitations are available.

@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { resources } from '../../db/schema';
-import type { CreateResourceInput, ListResourcesQuery } from '../schemas/resources';
+import { createResourceSchema, type CreateResourceInput, type ListResourcesQuery } from '../schemas/resources';
 import { NotFoundError, requireOwnedCourse, requireOwnedKc } from './util';
 
 export async function listResources(db: Db, userId: string, query: ListResourcesQuery) {
@@ -12,6 +12,7 @@ export async function listResources(db: Db, userId: string, query: ListResources
 }
 
 export async function createResource(db: Db, userId: string, input: CreateResourceInput) {
+  input = createResourceSchema.parse(input);
   if (input.course_id) await requireOwnedCourse(db, userId, input.course_id);
   if (input.kc_id) await requireOwnedKc(db, userId, input.kc_id);
 

@@ -14,4 +14,17 @@ describe('StudyFlow session finalization wiring', () => {
     expect(source).not.toContain('await fetch(`/api/v1/sessions/');
     expect(source).not.toContain('Discarded — not counted.');
   });
+
+  it('uses acknowledged timer state and exposes recovery and takeover actions', () => {
+    expect(source).toContain('/timer`');
+    expect(source).toContain("operation: 'heartbeat'");
+    expect(source).toContain("operation: 'takeover'");
+    expect(source).toContain('Time from before timer tracking is unknown');
+    expect(source).not.toContain('Date.now() - openSession.startedAt');
+  });
+
+  it('keeps the session running when the final timer pause fails', () => {
+    expect(source).toContain('async function pauseTimer(): Promise<boolean>');
+    expect(source).toContain('if (!(await pauseTimer())) return;');
+  });
 });

@@ -21,6 +21,8 @@ export type TaskType = (typeof TASK_TYPES)[number];
 
 export const createTaskSchema = z.strictObject({
   title: z.string().min(1).max(300),
+  estimated_minutes: z.number().int().min(5).max(480).optional(),
+  priority: z.number().int().min(0).max(2).optional(),
   description: z.string().max(2000).optional(),
   due_date: isoDatetimeSchema.optional(),
   course_ids: z.array(idSchema).optional(),
@@ -33,6 +35,8 @@ export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 
 export const updateTaskSchema = z.strictObject({
   title: z.string().min(1).max(300).optional(),
+  estimated_minutes: z.number().int().min(5).max(480).optional(),
+  priority: z.number().int().min(0).max(2).optional(),
   description: z.string().max(2000).nullable().optional(),
   due_date: isoDatetimeSchema.nullable().optional(),
   completed: z.boolean().optional(),

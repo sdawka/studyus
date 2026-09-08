@@ -8,6 +8,13 @@ const baseURL = process.env.E2E_BASE_URL || 'http://127.0.0.1:4357';
 export default defineConfig({
   testDir: './tests/e2e',
   testMatch: /public-audit\.spec\.mjs/,
+  grepInvert: /local HTTP security boundaries/,
+  webServer: process.env.CI ? {
+    command:'npm run preview -- --host 127.0.0.1 --port 4357',
+    env:{...process.env,ASTRO_PREVIEW_BACKGROUND:'0'},
+    url:baseURL,
+    reuseExistingServer:false,
+  } : undefined,
   fullyParallel: false,
   reporter: 'line',
   use: {

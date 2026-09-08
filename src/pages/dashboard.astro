@@ -17,13 +17,17 @@ import { listTasks } from '../lib/services/tasks';
 import { sweepTasks } from '../lib/services/taskSweep';
 import { getNextMove } from '../lib/services/nextMove';
 import type { NextMoveResponse } from '../lib/schemas/nextMove';
+import { addDateKeyDays, daysUntil, formatZonedDate, zonedDateKey, zonedDayBounds } from '../lib/plannerDates';
 
 const db = getDb(env.DB);
 const user = Astro.locals.user!;
 const userId = user.id;
+const timezone = user.timezone;
 
 const now = Date.now();
-const weekFromNow = now + 7 * 24 * 60 * 60 * 1000;
+const todayKey = zonedDateKey(now, timezone);
+const dashboardRangeStart = zonedDayBounds(todayKey, timezone).start.getTime();
+const weekFromNow = zonedDayBounds(addDateKeyDays(todayKey, 7), timezone).start.getTime();
 
 // One explicit sweep up front, then every fetch below opts out of its own
 // internal sweep (both getCalendar and listTasks otherwise run the full
@@ -33,7 +37,7 @@ await sweepTasks(db, userId, now);
 
 const [userCourses, deadlines, gradesSummary, allTasks, nextMove] = await Promise.all([
   listCourses(db, userId),
-  getCalendar(db, userId, now, weekFromNow, undefined, { sweep: false }),
+  getCalendar(db, userId, dashboardRangeStart, weekFromNow, undefined, { sweep: false }),
   getGradesSummary(db, userId),
   listTasks(db, userId, { sweep: false }),
   getNextMove(db, userId, 25, now),
@@ -67,7 +71,7 @@ const courseCards = userCourses.map((c) => {
     color: c.color,
     weightedGrade: weightedGradeByCourse.get(c.id) ?? null,
     openTasks: stats.count,
-    nextDueLabel: stats.nextDue !== null ? new Date(stats.nextDue).toLocaleDateString(undefined, { weekday: 'long' }) : null,
+    nextDueLabel: stats.nextDue !== null ? formatZonedDate(stats.nextDue, timezone, { weekday: 'long' }) : null,
   };
 });
 
@@ -101,17 +105,13 @@ const quickEventCourses = userCourses.map((c) => ({ id: c.id, code: c.code, titl
 // task (never a past attend_class — missing a class isn't a broken
 // commitment) beats a task due today, which beats the nearest assessment
 // deadline.
-const kicker = `${new Date(now).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} · ${user.currentTerm ?? 'No term set'}`;
-
-const startOfToday = new Date(now);
-startOfToday.setHours(0, 0, 0, 0);
-const startOfTomorrowMs = startOfToday.getTime() + 24 * 60 * 60 * 1000;
+const kicker = `${formatZonedDate(now, timezone, { weekday: 'long', month: 'long', day: 'numeric' })} · ${user.currentTerm ?? 'No term set'}`;
 
 const overdueNonAttendTasks = allTasks
-  .filter((t) => !t.completed && t.dueDate !== null && t.dueDate < now && t.type !== 'attend_class')
+  .filter((t) => !t.completed && t.dueDate !== null && daysUntil(t.dueDate, new Date(now), timezone) < 0 && t.type !== 'attend_class')
   .sort((a, b) => a.dueDate! - b.dueDate!);
 const todaysOpenTasks = allTasks
-  .filter((t) => !t.completed && t.dueDate !== null && t.dueDate >= startOfToday.getTime() && t.dueDate < startOfTomorrowMs)
+  .filter((t) => !t.completed && t.dueDate !== null && daysUntil(t.dueDate, new Date(now), timezone) === 0)
   .sort((a, b) => a.dueDate! - b.dueDate!);
 const mostUrgentTask = overdueNonAttendTasks[0] ?? todaysOpenTasks[0] ?? null;
 const mostUrgentDeadline = deadlineItems[0];
@@ -122,15 +122,15 @@ if (userCourses.length === 0) {
   headline = "Let's get your first course set up.";
   sub = 'Add a course to start tracking grades, concepts, and what\'s due.';
 } else if (mostUrgentTask) {
-  const days = Math.round((mostUrgentTask.dueDate! - now) / 86400000);
-  const weekday = new Date(mostUrgentTask.dueDate!).toLocaleDateString(undefined, { weekday: 'long' });
+  const days = daysUntil(mostUrgentTask.dueDate!, new Date(now), timezone);
+  const weekday = formatZonedDate(mostUrgentTask.dueDate!, timezone, { weekday: 'long' });
   const taskCourse = mostUrgentTask.courses[0] ? courseById.get(mostUrgentTask.courses[0].id) : undefined;
   const courseLabel = taskCourse ? ` — ${taskCourse.code} first` : '';
   headline = days < 0 ? `${mostUrgentTask.title} is overdue${courseLabel}.` : `${mostUrgentTask.title} ${weekday}${courseLabel}.`;
   sub = `${userCourses.length} course${userCourses.length === 1 ? '' : 's'} in progress.`;
 } else if (mostUrgentDeadline) {
-  const days = Math.round((mostUrgentDeadline.dueDate - now) / 86400000);
-  const weekday = new Date(mostUrgentDeadline.dueDate).toLocaleDateString(undefined, { weekday: 'long' });
+  const days = daysUntil(mostUrgentDeadline.dueDate, new Date(now), timezone);
+  const weekday = formatZonedDate(mostUrgentDeadline.dueDate, timezone, { weekday: 'long' });
   const courseLabel = mostUrgentDeadline.courseCode ? ` — ${mostUrgentDeadline.courseCode} first` : '';
   headline = days < 0 ? `${mostUrgentDeadline.title} is overdue${courseLabel}.` : `${mostUrgentDeadline.title} ${weekday}${courseLabel}.`;
   sub = `${userCourses.length} course${userCourses.length === 1 ? '' : 's'} in progress.`;
@@ -159,13 +159,13 @@ if (userCourses.length === 0) {
     ) : (
       <div class="main">
         <div class="slot-today">
-          <TodayTasks client:load initialTasks={toApi(allTasks)} courses={todayTasksCourses} />
+          <TodayTasks client:load initialTasks={toApi(allTasks)} courses={todayTasksCourses} {timezone} initialNow={now} />
         </div>
         <div class="slot-next-move">
           <NextMoveCard client:load initialResponse={initialNextMove} />
         </div>
         <div class="slot-week">
-          <WeekView client:load initialItems={deadlines} courses={weekViewCourses} />
+          <WeekView client:load initialItems={deadlines} courses={weekViewCourses} {timezone} initialNow={now} />
         </div>
         <div class="slot-courses">
           <CourseCards courses={courseCards} />
@@ -178,7 +178,7 @@ if (userCourses.length === 0) {
         <RecordEventCard courses={quickEventCourses} />
       </div>
       <div class="slot-deadlines">
-        <DeadlinesList items={deadlineItems} />
+        <DeadlinesList items={deadlineItems} {timezone} initialNow={now} />
       </div>
     </aside>
   </div>

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { safeWebUrl } from '../webUrl';
 import { idSchema } from './common';
 
 export const RESOURCE_KINDS = ['canonical', 'feed', 'user_shared'] as const;
@@ -12,7 +13,7 @@ export type ListResourcesQuery = z.infer<typeof listResourcesQuerySchema>;
 
 // User-added resources are always kind=user_shared; canonical/feed are seed-only.
 export const createResourceSchema = z.strictObject({
-  url: z.url(),
+  url: z.string().refine((value) => safeWebUrl(value) !== null, 'Use an HTTP or HTTPS URL without embedded credentials.'),
   label: z.string().min(1),
   course_id: idSchema.optional(),
   kc_id: idSchema.optional(),

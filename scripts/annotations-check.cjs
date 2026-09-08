@@ -416,13 +416,14 @@ async function runLiveHalf(parsed) {
 
   const results = [];
   const expectedUnresolved = []; // components on CONFIG.EXPECTED_UNRESOLVED — never pass/fail, always reported
-  const { authenticateClerkContext, CLERK_AUTH_STATE_PATH } = await import('./lib/clerk-e2e-auth.mjs');
+  const { authenticateClerkContext, setupClerkTestingContext, CLERK_AUTH_STATE_PATH } = await import('./lib/clerk-e2e-auth.mjs');
   const useStoredAuth = process.env.E2E_USE_STORED_AUTH === '1';
   const browser = await chromium.launch();
   const context = await browser.newContext({
     baseURL: CONFIG.baseUrl,
     ...(useStoredAuth ? { storageState: CLERK_AUTH_STATE_PATH } : {}),
   });
+  if (useStoredAuth) await setupClerkTestingContext(context);
   const page = await context.newPage();
 
   try {

@@ -5,8 +5,10 @@
   // or a wellness-chip add here is instantly visible to any other
   // task-consuming island mounted on the same page (e.g. TodoDropdown).
   import TaskItem from '../tasks/TaskItem.svelte';
+  import { onMount } from 'svelte';
   import { addTask, bucketByDue, hydrateTasks, recentlyCompletedIds, selectOpen, tasksList, type ApiTask } from '../../lib/stores/tasks';
   import { taskDepart } from '../../lib/completionMotion';
+  import { daysUntil, zonedDateKey, zonedDateTime } from '../../lib/plannerDates';
 
   interface CourseOption {
     id: string;
@@ -17,9 +19,18 @@
   interface Props {
     initialTasks: ApiTask[];
     courses: CourseOption[];
+    timezone: string;
+    initialNow: number;
   }
 
-  let { initialTasks, courses }: Props = $props();
+  let { initialTasks, courses, timezone, initialNow }: Props = $props();
+
+  let clockNow = $state(initialNow);
+  onMount(() => {
+    clockNow = Date.now();
+    const timer = setInterval(() => (clockNow = Date.now()), 60_000);
+    return () => clearInterval(timer);
+  });
 
   hydrateTasks(initialTasks);
 
@@ -46,7 +57,7 @@
     const byId = new Map(all.map((t) => [t.id, t]));
     return selectOpen(candidates).map((t) => byId.get(t.id) ?? t);
   });
-  let buckets = $derived(bucketByDue(openTasks));
+  let buckets = $derived(bucketByDue(openTasks, new Date(clockNow), timezone));
 
   // "Next" from the store is unbounded (everything after today, undated
   // tail last) — the card itself narrows that to a 7-day look-ahead before
@@ -54,13 +65,7 @@
   // nearer ones; undated tasks (stale_kc's "anytime" policy) always pass,
   // matching the store's intent of always surfacing them somewhere.
   const NEXT_CAP = 5;
-  let sevenDayWindowEnd = $derived.by(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + 8);
-    return d.getTime();
-  });
-  let nextInWindow = $derived(buckets.next.filter((t) => !t.due_date || new Date(t.due_date).getTime() < sevenDayWindowEnd));
+  let nextInWindow = $derived(buckets.next.filter((t) => !t.due_date || daysUntil(t.due_date, new Date(clockNow), timezone) <= 7));
   let nextRows = $derived(nextInWindow.slice(0, NEXT_CAP));
   let nextOverflow = $derived(Math.max(0, nextInWindow.length - NEXT_CAP));
 
@@ -75,9 +80,7 @@
   let flashTimer: ReturnType<typeof setTimeout> | undefined;
 
   function todayNoonIso(): string {
-    const d = new Date();
-    d.setHours(12, 0, 0, 0);
-    return d.toISOString();
+    return zonedDateTime(zonedDateKey(clockNow, timezone), 12 * 60, timezone).toISOString();
   }
 
   async function mintWellness(title: string) {
@@ -113,7 +116,7 @@
         <div class="rows">
           {#each buckets.overdue as task (task.id)}
             <div class="depart-wrap" out:taskDepart={{ gap: 6 }}>
-              <TaskItem {task} compact={false} {courseHues} />
+              <TaskItem {task} compact={false} {courseHues} {timezone} initialNow={clockNow} />
             </div>
           {/each}
         </div>
@@ -126,7 +129,7 @@
         <div class="rows">
           {#each buckets.today as task (task.id)}
             <div class="depart-wrap" out:taskDepart={{ gap: 6 }}>
-              <TaskItem {task} compact={false} {courseHues} />
+              <TaskItem {task} compact={false} {courseHues} {timezone} initialNow={clockNow} />
             </div>
           {/each}
         </div>
@@ -139,7 +142,7 @@
         <div class="rows">
           {#each nextRows as task (task.id)}
             <div class="depart-wrap" out:taskDepart={{ gap: 6 }}>
-              <TaskItem {task} compact={false} {courseHues} />
+              <TaskItem {task} compact={false} {courseHues} {timezone} initialNow={clockNow} />
             </div>
           {/each}
         </div>
@@ -155,7 +158,7 @@
         <div class="rows">
           {#each buckets.catchUp as task (task.id)}
             <div class="depart-wrap" out:taskDepart={{ gap: 6 }}>
-              <TaskItem {task} compact={false} {courseHues} />
+              <TaskItem {task} compact={false} {courseHues} {timezone} initialNow={clockNow} />
             </div>
           {/each}
         </div>

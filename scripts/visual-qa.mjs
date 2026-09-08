@@ -4,7 +4,7 @@
 // credentials in .env.e2e.local (see .env.e2e.example).
 import { mkdirSync } from 'node:fs';
 import { chromium } from 'playwright';
-import { authenticateClerkContext, CLERK_AUTH_STATE_PATH } from './lib/clerk-e2e-auth.mjs';
+import { authenticateClerkContext, setupClerkTestingContext, CLERK_AUTH_STATE_PATH } from './lib/clerk-e2e-auth.mjs';
 
 const BASE = process.argv[2] ?? 'http://localhost:4350';
 const OUT = process.argv[3] ?? 'vqa-shots';
@@ -22,6 +22,10 @@ const SCHEMES = ['light', 'dark'];
 // Full theme×scheme matrix pages vs single-pass (compass/light) pages.
 const MATRIX_PAGES = { dashboard: '/dashboard', course: `/courses/${COURSE}`, planner: '/planner', settings: '/settings' };
 const SINGLE_PAGES = {
+  groups: '/groups',
+  account: '/account',
+  grades: '/grades',
+  study: '/study',
   courses: '/courses',
   concepts: `/courses/${COURSE}/concepts`,
   'class-notes': `/courses/${COURSE}/notes`,
@@ -32,11 +36,7 @@ const SINGLE_PAGES = {
   tasks: '/tasks',
   notes: '/notes',
   profile: '/profile',
-  // v1.7 absorb experience. The learn page uses the CHEE 314 Navier-Stokes KC
-  // (deterministic seed id, stable across reseeds) — flagship because it has
-  // mixed-readiness prereqs across 4 depth levels after the verify phase's
-  // demo readiness events.
-  learn: '/learn/c1eb4cbf-7e99-760d-c1eb-4cbf7e99760d',
+  // The learn route is added from the authenticated course API after login.
   corrections: '/corrections',
 };
 // Dashboard-with-expanded-week is per-theme×scheme but overkill for the full
@@ -54,6 +54,7 @@ const ctx = await browser.newContext({
   baseURL: BASE,
   ...(USE_STORED_AUTH ? { storageState: CLERK_AUTH_STATE_PATH } : {}),
 });
+if (USE_STORED_AUTH) await setupClerkTestingContext(ctx);
 // Hide the docs-overlay dev toggle (FAB) from every shot. The overlay panel is
 // already screenshot-safe (starts closed); this flag suppresses only the
 // always-on toggle, keeping QA captures free of dev chrome. See DocsOverlay.svelte.
@@ -93,8 +94,12 @@ async function api(method, path, body) {
 }
 
 async function shot(name, path, { before } = {}) {
-  await page.goto(BASE + path, { waitUntil: 'networkidle' });
+  await page.goto(BASE + path, { waitUntil: 'domcontentloaded' });
+  await page.locator('astro-island[client="load"][ssr]').first().waitFor({ state: 'detached', timeout: 15_000 });
+  if (path === '/account') await page.getByText('Profile details', { exact: true }).waitFor({ state: 'visible', timeout: 15_000 });
+  if (path === '/settings') await page.getByText('Loading calendar connections...', { exact: true }).waitFor({ state: 'hidden', timeout: 15_000 });
   if (before) await before();
+  await page.locator('main, [data-auth-shell], .planner-layer').first().waitFor({ state: 'visible', timeout: 10_000 });
   await page.waitForTimeout(300); // settle animations
   await page.screenshot({ ...SCREENSHOT_OPTIONS, path: `${OUT}/${name}.jpg`, fullPage: true });
   console.log(`shot ${name}`);
@@ -106,7 +111,8 @@ async function shot(name, path, { before } = {}) {
 if (USE_STORED_AUTH) {
   const signedOutContext = await browser.newContext({ viewport: { width: 1440, height: 900 }, baseURL: BASE });
   const signedOutPage = await signedOutContext.newPage();
-  await signedOutPage.goto(BASE + '/login', { waitUntil: 'networkidle' });
+  await signedOutPage.goto(BASE + '/login', { waitUntil: 'domcontentloaded' });
+  await signedOutPage.getByRole('textbox', { name: 'Email address', exact: true }).waitFor({ state: 'visible', timeout: 15_000 });
   await signedOutPage.screenshot({ ...SCREENSHOT_OPTIONS, path: `${OUT}/login.jpg`, fullPage: true });
   await signedOutContext.close();
   console.log('shot login');
@@ -116,6 +122,14 @@ if (USE_STORED_AUTH) {
 
 // Sign in through Clerk and bind the identity to the seeded local learner.
 if (!USE_STORED_AUTH) await authenticateClerkContext({ context: ctx, page, baseUrl: BASE });
+
+// Resolve the owned seed graph through the actual API. Learner-namespaced
+// fixture IDs must never be copied from another account or an older seed.
+const ownedCourse = (await (await api('GET', `/api/v1/courses/${COURSE}`)).json()).data;
+const ownedKcs = (ownedCourse.branches ?? []).flatMap((branch) => branch.kcs ?? []);
+const learnKc = ownedKcs.find((kc) => /navier|stokes/i.test(kc.name ?? kc.title ?? '')) ?? ownedKcs[0];
+if (!learnKc?.id) throw new Error('The selected owned course has no KC for the learning screenshot.');
+SINGLE_PAGES.learn = `/learn/${learnKc.id}`;
 
 // Theme × scheme matrix
 for (const theme of THEMES) {
@@ -166,7 +180,7 @@ await page.setViewportSize({ width: 1440, height: 900 });
 
 // Interaction states (compass light, dashboard)
 const clickShot = async (name, selector) => {
-  await page.goto(BASE + '/dashboard', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
   const el = page.locator(selector).first();
   if ((await el.count()) === 0) { console.log(`MISSING selector for ${name}: ${selector}`); return; }
   await el.click();
@@ -182,7 +196,7 @@ await clickShot('modal-record-event', 'button:text-matches("record event", "i")'
 await clickShot('modal-add-course', '#add-course-btn, button:text-matches("add course", "i")');
 
 // Planner: select an event (opens EventPopover) and switch to month view
-await page.goto(BASE + '/planner', { waitUntil: 'networkidle' });
+await page.goto(BASE + '/planner', { waitUntil: 'domcontentloaded' });
 const eventBlock = page.locator('[data-event-id]').first();
 if ((await eventBlock.count()) === 0) {
   console.log('MISSING selector for planner-event-selected: [data-event-id]');
@@ -192,7 +206,7 @@ if ((await eventBlock.count()) === 0) {
   await page.screenshot({ ...SCREENSHOT_OPTIONS, path: `${OUT}/planner-event-selected.jpg`, fullPage: false });
   console.log('shot planner-event-selected');
 }
-await page.goto(BASE + '/planner', { waitUntil: 'networkidle' });
+await page.goto(BASE + '/planner', { waitUntil: 'domcontentloaded' });
 const monthToggle = page.locator('.view-toggle .chip:text-matches("^month$", "i")');
 if ((await monthToggle.count()) === 0) {
   console.log('MISSING selector for planner-month-view: .view-toggle .chip:text-matches("month")');
@@ -204,13 +218,13 @@ if ((await monthToggle.count()) === 0) {
 }
 
 // Sidebar collapsed + narrow viewports
-await page.goto(BASE + '/dashboard', { waitUntil: 'networkidle' });
+await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
 await page.evaluate(() => { document.documentElement.dataset.sidebar = 'collapsed'; });
 await page.waitForTimeout(300);
 await page.screenshot({ ...SCREENSHOT_OPTIONS, path: `${OUT}/sidebar-collapsed.jpg`, fullPage: false });
 console.log('shot sidebar-collapsed');
 await page.setViewportSize({ width: 820, height: 900 });
-await page.goto(BASE + '/dashboard', { waitUntil: 'networkidle' });
+await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
 await page.screenshot({ ...SCREENSHOT_OPTIONS, path: `${OUT}/dashboard-narrow-820.jpg`, fullPage: true });
 console.log('shot dashboard-narrow-820');
 
@@ -231,7 +245,7 @@ for (const [name, path] of Object.entries(MOBILE_PAGES)) {
   await shot(`mobile-390--${name}`, path);
 }
 async function mobileSheetShot(name, triggerSelector) {
-  await page.goto(BASE + '/dashboard', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
   const el = page.locator(triggerSelector).first();
   if ((await el.count()) === 0 || !(await el.isVisible())) {
     console.log(`MISSING selector for ${name}: ${triggerSelector}`);
@@ -270,6 +284,20 @@ for (const [name, path] of Object.entries({ dashboard: '/dashboard', planner: '/
 await page.setViewportSize({ width: 1440, height: 900 });
 
 // Restore defaults (light is now the default scheme, not system)
+for (const width of [320, 430, 820]) {
+  await page.setViewportSize({width,height:900});
+  for (const [name,path] of Object.entries({...MATRIX_PAGES,groups:'/groups',grades:'/grades',study:'/study'})) {
+    await shot(`width-${width}--${name}`,path);
+  }
+}
+await page.setViewportSize({width:720,height:450});
+await page.emulateMedia({reducedMotion:'reduce'});
+for (const [name,path] of Object.entries({planner:'/planner',groups:'/groups',study:'/study'})) {
+  await shot(`reflow-200-percent-reduced-motion--${name}`,path);
+}
+// A 720px CSS viewport exercises the layout reflow of a 1440px window at
+// 200% zoom; browser text rasterization and assistive technology remain a
+// separate manual acceptance check.
 await api('PATCH', '/api/v1/user', { settings: { theme: 'compass', scheme: 'light' } });
 await browser.close();
 if (errors.length) {

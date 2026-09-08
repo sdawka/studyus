@@ -26,9 +26,11 @@ import {
   getConversation,
   MAX_MESSAGES_PER_CONVERSATION_ABSORB,
 } from '../src/lib/services/tutor/conversations';
+import { ensureActiveRuntimeRegistry } from '../src/lib/services/accountLifecycle';
 
 const db = getDb(env.DB);
-const AI_ENV = { AI_FEATURES_ENABLED: 'true', OPENROUTER_API_KEY: 'test-key', OPENROUTER_MODEL: 'test-model' } as const;
+// Keep every real test binding while overriding configured literals for this capability-path test.
+const AI_ENV = { ...env, AI_FEATURES_ENABLED: 'true', OPENROUTER_API_KEY: 'test-key', OPENROUTER_MODEL: 'test-model' } as unknown as Cloudflare.Env;
 
 const mockGetKcGraph = vi.mocked(getKcGraph);
 const mockListKcMisconceptions = vi.mocked(listKcMisconceptions);
@@ -77,6 +79,7 @@ beforeEach(async () => {
   userId = crypto.randomUUID();
   courseId = crypto.randomUUID();
   await db.insert(users).values({ id: userId, email: `${userId}@test.local`, passwordHash: 'x' });
+  await ensureActiveRuntimeRegistry(db, userId);
   await db.insert(courses).values({ id: courseId, userId, code: 'TEST 101', slug: `test-${courseId}`, title: 'Test Course', overview: 'A course.' });
 
   mockGetKcGraph.mockReset();
