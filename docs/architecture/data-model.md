@@ -1,12 +1,28 @@
 # studyus Data Model
 
-**Re-derived from `src/db/schema.ts`; current through 2026-08-28.** The repository contains the v2.0 baseline plus additive migrations through `0011_event_idempotency_keys.sql`. ADR-003's pre-v0.1 single-baseline preference is therefore historical policy, not the current filesystem shape.
+**Re-derived from `src/db/schema.ts`, with remediation additions through migration0029 (2026-09-07).** The repository uses additive migrations. ADR-003's pre-v0.1 single-baseline preference is historical policy.
 
 **Glossary note**: "capability" means two different things in this codebase, deliberately not unified. The `capabilities` table (below) is a **domain noun** — a competency a learner is building. Elsewhere (`docs/architecture/overview.md`, `agentic-channels.md`), "capability" was used loosely to mean *a pure service function* — those two docs were reworded to say "service function" instead once the domain table landed, to kill the collision at the source rather than footnote around it. Column names below are the actual snake_case DB names; `src/db/schema.ts` uses camelCase Drizzle field names that map onto them (e.g. `userId` → `user_id`). Every table's primary key is `id` (text, UUID from `crypto.randomUUID()`) unless noted otherwise; every table has `created_at` (integer epoch ms) unless noted.
 
 Timestamps are epoch-ms integers in the DB; the API boundary (`src/lib/serialize.ts::toApi`) converts every `_at`/`_date` field (plus `ts` and `date`) to an ISO 8601 string — see `docs/api.md`.
 
 ## Tables (Drizzle + D1)
+
+### Remediation coordination tables
+
+- `learner_runtime_registry`, `account_deletion_events`, `account_deletion_jobs`: retained runtime identities, verified webhook deduplication and durable account tombstoning. These are operator/internal records, not public resources.
+- `study_session_timing`: confirmed elapsed time, running/paused/ended state, device lease, sequence and revision; a partial unique index permits one running session per learner.
+- `calendar_provision_ledger`: stable remote marker, provision lease and cleanup state, bridging remote creation with atomic local publication.
+- `planning_preferences`, `planning_jobs`, `planning_runs`: explicit opt-in/capacity, versioned coalesced work, immutable previews and applied/undone changes. Domain triggers invalidate the source revision; the applying flag suppresses only mutations inside the same atomic planning batch.
+- `groups`, `group_members`, `group_invitations`: invite-only ownership and membership, hashed expiring single-use invitations, atomic member/owner quotas.
+- `group_resources`, `group_files`, `group_events`, `group_event_rsvps`: group-owned contributions and viewer-scoped attendance responses. Private-file sharing copies bytes into group ownership. Retained contributions anonymize deleted authors; accepted events constrain personal planning without disclosing personal calendars.
+- `group_operator_actions`: audited owner reassignment admission for ownerless read-only groups.
+
+Attachments have pending/ready/deleting lifecycle states. Pending reservations
+count toward quota; ready bytes are retained on account deletion. An active
+user's ready-to-deleting transition admits an explicit file deletion, whose
+cleanup can finish after a later account fence. Assessment and KC revisions
+guard concurrent atomic evidence/mastery updates.
 
 ### users
 
@@ -15,12 +31,13 @@ Timestamps are epoch-ms integers in the DB; the API boundary (`src/lib/serialize
   The local `id` remains the application/tenant key, so all existing foreign
   keys and the per-learner Durable Object name remain stable through auth
   migration.
-- `email` (text, **unique**) — local profile/contact identity; Clerk is the authentication authority and there is no `username` column
+- `email` (text, unique among active accounts) — local profile/contact identity; Clerk is the authentication authority and there is no `username` column
+- `account_state` (`active|deleting|deleted`) and `deleted_at` — monotonic retained-account lifecycle; inactive identity cannot relink by email.
 - `password_hash` (text) — legacy import compatibility; new Clerk-provisioned users store the non-verifying `clerk-managed` sentinel
 - `name` (text, nullable)
 - `current_term` (text, nullable) — default term filter for calendar/courses (e.g., `"Winter 2025"`)
 - `settings` (text, JSON mode, default `'{}'`) — resolved via `resolveSettings`/`DEFAULT_SETTINGS` in `src/lib/services/user.ts`; holds `theme`, `scheme`, `sidebar_collapsed`, `task_generators` (see `docs/api.md`)
-- `onboarded_at` (integer, nullable) — stamped by the current onboarding stepper, but not yet a global route/content invariant; target behavior is in `docs/product/onboarding.md`
+- `onboarded_at` (integer, nullable) — completion marker checked with usable-course existence by application middleware.
 - `created_at`
 
 No `updated_at`. Not user-scoped by a `user_id` FK (it's the root of the ownership graph).

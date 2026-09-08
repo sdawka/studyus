@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { extractJsonBlock, relayAsSSE } from '../src/lib/services/tutor/openrouter';
+import { OPENROUTER_DEADLINE_MS, OPENROUTER_MAX_OUTPUT_TOKENS, extractJsonBlock, relayAsSSE, streamChatCompletion } from '../src/lib/services/tutor/openrouter';
 
 function sseUpstream(events: string[]): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
@@ -80,5 +80,82 @@ describe('extractJsonBlock', () => {
 
   it('returns null when no JSON can be found', () => {
     expect(extractJsonBlock('no json here at all')).toBeNull();
+  });
+});
+
+describe('OpenRouter resource bounds', () => {
+  it('sends the fixed output-token ceiling and keeps the deadline signal attached to the streaming body', async () => {
+    let requestBody: Record<string, unknown> | undefined;
+    let requestSignal: AbortSignal | null | undefined;
+    const upstream = new ReadableStream<Uint8Array>({
+      pull() {
+        // Deliberately remains open until the consumer cancels it.
+      },
+    });
+    vi.stubGlobal('fetch', vi.fn(async (_input, init) => {
+      requestBody = JSON.parse(String(init?.body));
+      requestSignal = init?.signal;
+      return new Response(upstream, { status: 200 });
+    }));
+
+    const stream = await streamChatCompletion({ apiKey: 'test', model: 'model', messages: [{ role: 'user', content: 'hello' }] });
+    expect(requestBody?.max_tokens).toBe(OPENROUTER_MAX_OUTPUT_TOKENS);
+    expect(requestSignal).toBeInstanceOf(AbortSignal);
+    expect(requestSignal?.aborted).toBe(false);
+    await stream.cancel();
+    expect(requestSignal?.aborted).toBe(true);
+  });
+
+  it('keeps the 30-second deadline active until an unfinished stream is cancelled', async () => {
+    vi.useFakeTimers();
+    try {
+      let requestSignal: AbortSignal | null | undefined;
+      const upstream = new ReadableStream<Uint8Array>({ pull() {} });
+      vi.stubGlobal('fetch', vi.fn(async (_input, init) => {
+        requestSignal = init?.signal;
+        return new Response(upstream, { status: 200 });
+      }));
+
+      const stream = await streamChatCompletion({ apiKey: 'test', model: 'model', messages: [{ role: 'user', content: 'hello' }] });
+      const reader = stream.getReader();
+      const pending = reader.read();
+      await vi.advanceTimersByTimeAsync(OPENROUTER_DEADLINE_MS);
+      expect(requestSignal?.aborted).toBe(true);
+      await reader.cancel();
+      await pending;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('honors an absolute deadline that started before the provider request', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-09-07T12:00:00.000Z'));
+      let requestSignal: AbortSignal | null | undefined;
+      const upstream = new ReadableStream<Uint8Array>({ pull() {} });
+      vi.stubGlobal('fetch', vi.fn(async (_input, init) => {
+        requestSignal = init?.signal;
+        return new Response(upstream, { status: 200 });
+      }));
+      const options = {
+        apiKey: 'test',
+        model: 'model',
+        messages: [{ role: 'user' as const, content: 'hello' }],
+        deadlineAt: Date.now() + 1_000,
+      };
+
+      const stream = await streamChatCompletion(options);
+      const reader = stream.getReader();
+      const pending = reader.read();
+      await vi.advanceTimersByTimeAsync(999);
+      expect(requestSignal?.aborted).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(requestSignal?.aborted).toBe(true);
+      await reader.cancel();
+      await pending;
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

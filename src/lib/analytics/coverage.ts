@@ -80,10 +80,10 @@ export const behavioralEventCoverage = {
     id: 'OnboardingSetup.import-decline',
     description: 'Authenticated onboarding records decline of the trial handoff.',
   }),
-  onboarding_completed: live('product_ui', {
-    id: 'OnboardingSetup.demo-funnel-complete',
-    description: 'The legacy demo funnel closes after authenticated onboarding succeeds.',
-  }),
+  onboarding_completed: reserved(
+    'Public demo callers cannot make an authoritative onboarding conversion claim.',
+    'Authenticated import emits onboarding_completed_auth after the course commit succeeds.',
+  ),
   page_viewed: live('system', {
     id: 'AnalyticsBootstrap.page-lifecycle',
     description: 'The deliberate layout bootstrap records one validated route-pattern page view.',

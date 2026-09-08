@@ -24,6 +24,8 @@ import { NotFoundError, requireOwnedKc } from '../util';
 import { buildSystemPrompt, modeForKcType, type AbsorbMisconception, type AbsorbPrereq, type AbsorbScaffold, type TutorContext } from './prompts';
 import { relayAsSSE, streamChatCompletion, type ChatMessage } from './openrouter';
 import { requireAiFeature } from '../../ai/capabilities';
+import { AiBudgetExceededError } from '../../ai/errors';
+import { assertAiProviderAccountActive, getLearnerAgentForUser } from '../../runtime/learnerAgent';
 
 export const MAX_MESSAGES_PER_CONVERSATION = 30;
 
@@ -53,7 +55,7 @@ export class ConversationCapReachedError extends Error {
   }
 }
 
-type TutorEnv = { AI_FEATURES_ENABLED?: string; OPENROUTER_API_KEY?: string; OPENROUTER_MODEL: string };
+type TutorEnv = Pick<Cloudflare.Env, 'AI_FEATURES_ENABLED' | 'OPENROUTER_API_KEY' | 'OPENROUTER_MODEL' | 'LEARNER_AGENT' | 'DB'>;
 
 export async function createConversation(db: Db, userId: string, input: CreateConversationInput) {
   const kc = await requireOwnedKc(db, userId, input.kc_id);
@@ -270,8 +272,6 @@ export async function appendMessageAndStream(
     throw new ConversationCapReachedError(cap);
   }
 
-  await db.insert(tutorMessages).values({ id: crypto.randomUUID(), conversationId, role: 'user', content });
-
   const ctx = await assembleTutorContext(db, userId, kc, mode, convo.details as Record<string, unknown> | null | undefined);
   const systemPrompt = buildSystemPrompt(ctx);
 
@@ -281,7 +281,30 @@ export async function appendMessageAndStream(
     { role: 'user', content },
   ];
 
-  const upstream = await streamChatCompletion({ apiKey: env.OPENROUTER_API_KEY, model: env.OPENROUTER_MODEL, messages: history });
+  const learner = await getLearnerAgentForUser(env, userId);
+  const reservation = await learner.tryReserveAiProviderCall();
+  if (!reservation.ok) throw new AiBudgetExceededError(reservation.code);
+  const providerLease = reservation.lease;
+  let leaseReleased = false;
+  const releaseLease = async () => {
+    if (leaseReleased) return;
+    leaseReleased = true;
+    await learner.releaseAiProviderCall(providerLease.id);
+  };
+  let upstream: ReadableStream<Uint8Array>;
+  try {
+    await db.insert(tutorMessages).values({ id: crypto.randomUUID(), conversationId, role: 'user', content });
+    await assertAiProviderAccountActive(env, userId);
+    upstream = await streamChatCompletion({
+      apiKey: env.OPENROUTER_API_KEY,
+      model: env.OPENROUTER_MODEL,
+      messages: history,
+      deadlineAt: providerLease.expiresAt,
+    });
+  } catch (error) {
+    await releaseLease();
+    throw error;
+  }
 
   // +1 for the user message just inserted, +1 for the assistant reply about
   // to be persisted in onDone below — if that pushes us to the cap, end the
@@ -290,12 +313,19 @@ export async function appendMessageAndStream(
 
   return relayAsSSE(upstream, {
     onDone: async (fullText) => {
-      const text = fullText.trim().length > 0 ? fullText : "Sorry, I didn't get a reply that time — could you try again?";
-      await db.insert(tutorMessages).values({ id: crypto.randomUUID(), conversationId, role: 'assistant', content: text });
-      if (willReachCap) {
-        await endConversation(db, userId, conversationId, {});
+      try {
+        await learner.getSnapshot();
+        const text = fullText.trim().length > 0 ? fullText : "Sorry, I didn't get a reply that time — could you try again?";
+        await db.insert(tutorMessages).values({ id: crypto.randomUUID(), conversationId, role: 'assistant', content: text });
+        if (willReachCap) {
+          await endConversation(db, userId, conversationId, {});
+        }
+      } finally {
+        await releaseLease();
       }
     },
+    onError: releaseLease,
+    onCancel: releaseLease,
   });
 }
 

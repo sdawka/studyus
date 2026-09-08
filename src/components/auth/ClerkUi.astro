@@ -1,0 +1,24 @@
+---
+import { generateSafeId } from '@clerk/astro/internal';
+import { serializeClerkProps } from './serializeClerkProps';
+
+type ClerkUiComponent = 'sign-in' | 'sign-up' | 'user-profile' | 'user-button';
+
+interface Props {
+  component: ClerkUiComponent;
+  id?: string;
+  [key: string]: unknown;
+}
+
+const { component, id, ...props } = Astro.props as Props;
+const safeId = id || generateSafeId();
+const clerkId = `clerk-${component}-${safeId}`;
+// The data attribute is inert: Astro escapes its attribute context, and this
+// serializer keeps user-supplied strings from ever becoming HTML markup.
+const serializedProps = serializeClerkProps(props);
+---
+
+<div data-clerk-id={clerkId} data-clerk-component={component} data-clerk-props={serializedProps}></div>
+<!-- A same-origin classic script executes during parsing, before Clerk's
+     module bootstrap reads its official component-props map. -->
+<script is:inline src="/clerk-props-bridge.js"></script>

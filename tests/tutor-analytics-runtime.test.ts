@@ -11,6 +11,7 @@ import {
   TUTOR_ABANDONMENT_IDLE_MS,
   TUTOR_ABANDONMENT_IN_FLIGHT_RETRY_MS,
 } from '../src/lib/runtime/learnerAgent';
+import { ensureActiveRuntimeRegistry } from '../src/lib/services/accountLifecycle';
 
 const db = getDb(env.DB);
 
@@ -25,6 +26,7 @@ beforeEach(() => {
 async function fixture(settings: Record<string, unknown> = {}) {
   const userId = crypto.randomUUID();
   await db.insert(users).values({ id: userId, email: `${userId}@tutor-analytics.test`, passwordHash: 'x', settings });
+  await ensureActiveRuntimeRegistry(db, userId);
   const raw = env.LEARNER_AGENT.getByName(learnerAgentObjectName(userId));
   const learner = await getLearnerAgentForUser(env, userId);
   const conversation = await learner.createConversation({ kcId: 'kc-1', mode: 'recall' });
@@ -49,7 +51,7 @@ async function accept(raw: DurableObjectStub, conversationId: string, content: s
     analytics: { sessionId: 'session-1', surface: '/tutor/[kcId]' },
   }));
   expect(response.ok).toBe(true);
-  return response.json<{ turnId: string }>();
+  return response.json<{ turnId: string; providerLeaseId: string }>();
 }
 
 async function makeDue(raw: DurableObjectStub) {
@@ -119,6 +121,7 @@ describe('tutor inactivity alarms', () => {
     const reply = await raw.fetch(createLearnerReplyStreamRequest({
       conversationId: conversation.id,
       turnId: accepted.turnId,
+      providerLeaseId: accepted.providerLeaseId,
       systemPrompt: 'A trusted system prompt long enough for validation.',
       messageCap: 30,
     }));

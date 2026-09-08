@@ -2,10 +2,10 @@
 // create/update/delete recomputes the affected KC's mastery cache in the
 // same db.batch as the event mutation, so the cache is never observably
 // stale relative to the log it's derived from.
-import { and, desc, eq, gte, inArray, lte, ne } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lte, ne, sql } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import type { Db } from '../../db/client';
-import { eventIdempotencyKeys, events, kcs, runtimeTutorSessionEvents } from '../../db/schema';
+import { eventIdempotencyKeys, events, kcs, runtimeTutorSessionEvents, users } from '../../db/schema';
 import type { CreateEventInput, EventSource, ListEventsQuery, UpdateEventInput } from '../schemas/events';
 import { EVENT_ROLE_FLAGS } from '../schemas/events';
 import { toEpochMs } from '../schemas/common';
@@ -23,6 +23,29 @@ export class IdempotencyConflictError extends Error {
     super(message);
     this.name = 'IdempotencyConflictError';
   }
+}
+
+const KC_CACHE_CAS_CONSTRAINT = 'CHECK constraint failed: kcs_revision_nonnegative';
+
+function isKcCacheConflict(error: unknown): boolean {
+  let current: unknown = error;
+  while (current instanceof Error) {
+    if (current.message.includes(KC_CACHE_CAS_CONSTRAINT)) return true;
+    current = current.cause;
+  }
+  return false;
+}
+
+async function requireActiveEventUser(db: Db, userId: string): Promise<void> {
+  const row = await db.select({ id: users.id }).from(users)
+    .where(and(eq(users.id, userId), eq(users.accountState, 'active'))).limit(1);
+  if (!row[0]) throw new NotFoundError('User');
+}
+
+function activeEventUserFence(db: Db, userId: string): BatchItem<'sqlite'> {
+  return db.update(users).set({
+    accountState: sql`case when ${users.accountState} = 'active' then 'active' else null end`,
+  }).where(eq(users.id, userId));
 }
 
 // JSON request bodies have no object-key ordering semantics. Sort object keys
@@ -100,8 +123,9 @@ async function resolveIdempotentReplay(
 }
 
 async function foldedKcUpdate(db: Db, kcId: string, eventsForFold: Array<Pick<EventRow, 'ts' | 'isInstructional' | 'isAssessment' | 'payload'>>) {
-  const before = await db.select({ mastery: kcs.mastery }).from(kcs).where(eq(kcs.id, kcId)).limit(1);
+  const before = await db.select({ mastery: kcs.mastery, revision: kcs.revision }).from(kcs).where(eq(kcs.id, kcId)).limit(1);
   const oldMastery = before[0]?.mastery ?? 0;
+  const expectedRevision = before[0]?.revision ?? 0;
 
   const folded = await withSpan('mastery.fold', { kc_id: kcId, event_count: eventsForFold.length }, async () =>
     foldMastery(eventsForFold, Date.now()),
@@ -109,7 +133,12 @@ async function foldedKcUpdate(db: Db, kcId: string, eventsForFold: Array<Pick<Ev
 
   const updateStmt = db
     .update(kcs)
-    .set({ mastery: folded.mastery, status: folded.status, lastEventAt: folded.lastEventAt })
+    .set({
+      mastery: folded.mastery,
+      status: folded.status,
+      lastEventAt: folded.lastEventAt,
+      revision: sql`case when ${kcs.revision} = ${expectedRevision} then ${expectedRevision + 1} else -1 end`,
+    })
     .where(eq(kcs.id, kcId));
   const delta: MasteryDelta = { kc_id: kcId, old_mastery: oldMastery, new_mastery: folded.mastery };
   return { updateStmt, delta };
@@ -128,6 +157,7 @@ export async function createEvent(
   source: EventSource = 'manual',
   idempotencyKey?: string,
 ) {
+  await requireActiveEventUser(db, userId);
   const requestFingerprint = idempotencyKey ? await eventRequestFingerprint(input, source) : null;
   if (idempotencyKey && requestFingerprint) {
     const replay = await resolveIdempotentReplay(db, userId, idempotencyKey, requestFingerprint);
@@ -183,25 +213,32 @@ export async function createEvent(
 
   try {
     if (newEvent.kcId) {
-      const existing = await db
-        .select({ ts: events.ts, isInstructional: events.isInstructional, isAssessment: events.isAssessment, payload: events.payload })
-        .from(events)
-        .where(eq(events.kcId, newEvent.kcId));
-      const { updateStmt, delta } = await foldedKcUpdate(db, newEvent.kcId, [...existing, newEvent]);
-      masteryDeltas.push(delta);
-      if (ledgerStmt) {
-        await withSpan('events.append', { event_type: newEvent.type, kc_id: newEvent.kcId }, () =>
-          db.batch([insertStmt, updateStmt, ledgerStmt]),
-        );
-      } else {
-        await withSpan('events.append', { event_type: newEvent.type, kc_id: newEvent.kcId }, () =>
-          db.batch([insertStmt, updateStmt]),
-        );
+      for (let attempt = 0; attempt < 16; attempt += 1) {
+        const existing = await db
+          .select({ ts: events.ts, isInstructional: events.isInstructional, isAssessment: events.isAssessment, payload: events.payload })
+          .from(events)
+          .where(eq(events.kcId, newEvent.kcId));
+        const { updateStmt, delta } = await foldedKcUpdate(db, newEvent.kcId, [...existing, newEvent]);
+        try {
+          if (ledgerStmt) {
+            await withSpan('events.append', { event_type: newEvent.type, kc_id: newEvent.kcId }, () =>
+              db.batch([activeEventUserFence(db, userId), insertStmt, updateStmt, ledgerStmt]),
+            );
+          } else {
+            await withSpan('events.append', { event_type: newEvent.type, kc_id: newEvent.kcId }, () =>
+              db.batch([activeEventUserFence(db, userId), insertStmt, updateStmt]),
+            );
+          }
+          masteryDeltas.push(delta);
+          break;
+        } catch (error) {
+          if (!isKcCacheConflict(error) || attempt === 15) throw error;
+        }
       }
     } else if (ledgerStmt) {
-      await withSpan('events.append', { event_type: newEvent.type }, () => db.batch([insertStmt, ledgerStmt]));
+      await withSpan('events.append', { event_type: newEvent.type }, () => db.batch([activeEventUserFence(db, userId), insertStmt, ledgerStmt]));
     } else {
-      await withSpan('events.append', { event_type: newEvent.type }, () => insertStmt);
+      await withSpan('events.append', { event_type: newEvent.type }, () => db.batch([activeEventUserFence(db, userId), insertStmt]));
     }
   } catch (error) {
     // Two at-least-once deliveries can both miss the initial ledger read.
@@ -247,6 +284,7 @@ export async function appendEventsAtomically(
   source: EventSource,
   companionStatements: BatchItem<'sqlite'>[],
 ) {
+  await requireActiveEventUser(db, userId);
   for (const input of inputs) {
     if (input.course_id) await requireOwnedCourse(db, userId, input.course_id);
     if (input.kc_id) await requireOwnedKc(db, userId, input.kc_id);
@@ -271,27 +309,29 @@ export async function appendEventsAtomically(
     };
   });
 
-  const statements: BatchItem<'sqlite'>[] = [...companionStatements];
-  if (newEvents.length > 0) statements.push(db.insert(events).values(newEvents));
-
-  const masteryDeltas: MasteryDelta[] = [];
   const kcIds = [...new Set(newEvents.flatMap((event) => (event.kcId ? [event.kcId] : [])))];
-  for (const kcId of kcIds) {
-    const existing = await db
-      .select({ ts: events.ts, isInstructional: events.isInstructional, isAssessment: events.isAssessment, payload: events.payload })
-      .from(events)
-      .where(eq(events.kcId, kcId));
-    const additions = newEvents.filter((event) => event.kcId === kcId);
-    const { updateStmt, delta } = await foldedKcUpdate(db, kcId, [...existing, ...additions]);
-    statements.push(updateStmt);
-    masteryDeltas.push(delta);
+  for (let attempt = 0; attempt < 16; attempt += 1) {
+    const statements: BatchItem<'sqlite'>[] = [activeEventUserFence(db, userId), ...companionStatements];
+    if (newEvents.length > 0) statements.push(db.insert(events).values(newEvents));
+    const masteryDeltas: MasteryDelta[] = [];
+    for (const kcId of kcIds) {
+      const existing = await db
+        .select({ ts: events.ts, isInstructional: events.isInstructional, isAssessment: events.isAssessment, payload: events.payload })
+        .from(events)
+        .where(eq(events.kcId, kcId));
+      const additions = newEvents.filter((event) => event.kcId === kcId);
+      const { updateStmt, delta } = await foldedKcUpdate(db, kcId, [...existing, ...additions]);
+      statements.push(updateStmt);
+      masteryDeltas.push(delta);
+    }
+    try {
+      await withSpan('events.append_atomic', { event_count: newEvents.length, kc_count: kcIds.length }, () => runBatch(db, statements));
+      return { events: newEvents, masteryDeltas };
+    } catch (error) {
+      if (!isKcCacheConflict(error) || attempt === 15) throw error;
+    }
   }
-
-  if (statements.length === 0) return { events: newEvents, masteryDeltas };
-  await withSpan('events.append_atomic', { event_count: newEvents.length, kc_count: kcIds.length }, () =>
-    runBatch(db, statements),
-  );
-  return { events: newEvents, masteryDeltas };
+  throw new ConflictError('KC evidence changed concurrently');
 }
 
 /**
@@ -307,6 +347,7 @@ export async function createRuntimeTutorSessionEvent(
   userId: string,
   input: { conversationId: string; kcId: string; courseId: string; mode: string; finalRating?: number },
 ) {
+  await requireActiveEventUser(db, userId);
   const existing = await db
     .select({ event: events })
     .from(runtimeTutorSessionEvents)
@@ -335,41 +376,45 @@ export async function createRuntimeTutorSessionEvent(
     source: 'tutor' as const,
     createdAt: now,
   };
-  const existingEvents = await db
-    .select({ ts: events.ts, isInstructional: events.isInstructional, isAssessment: events.isAssessment, payload: events.payload })
-    .from(events)
-    .where(eq(events.kcId, input.kcId));
-  const { updateStmt, delta } = await foldedKcUpdate(db, input.kcId, [...existingEvents, newEvent]);
-
-  try {
-    await withSpan('events.append_runtime_tutor_session', { kc_id: input.kcId }, () =>
-      db.batch([
-        db.insert(events).values(newEvent),
-        updateStmt,
-        db.insert(runtimeTutorSessionEvents).values({
-          conversationId: input.conversationId,
-          userId,
-          eventId: newEvent.id,
-          createdAt: now,
-        }),
-      ]),
-    );
-    return { event: newEvent, masteryDeltas: [delta] };
-  } catch (error) {
-    // A concurrent stream completion / explicit-end retry lost the unique
-    // ledger race. Its D1 batch rolled back, so returning the winner is safe.
-    const settled = await db
-      .select({ event: events })
-      .from(runtimeTutorSessionEvents)
-      .innerJoin(events, eq(runtimeTutorSessionEvents.eventId, events.id))
-      .where(and(eq(runtimeTutorSessionEvents.conversationId, input.conversationId), eq(runtimeTutorSessionEvents.userId, userId)))
-      .limit(1);
-    if (settled[0]) return { event: settled[0].event, masteryDeltas: [] as MasteryDelta[] };
-    throw error;
+  for (let attempt = 0; attempt < 16; attempt += 1) {
+    const existingEvents = await db
+      .select({ ts: events.ts, isInstructional: events.isInstructional, isAssessment: events.isAssessment, payload: events.payload })
+      .from(events)
+      .where(eq(events.kcId, input.kcId));
+    const { updateStmt, delta } = await foldedKcUpdate(db, input.kcId, [...existingEvents, newEvent]);
+    try {
+      await withSpan('events.append_runtime_tutor_session', { kc_id: input.kcId }, () =>
+        db.batch([
+          activeEventUserFence(db, userId),
+          db.insert(events).values(newEvent),
+          updateStmt,
+          db.insert(runtimeTutorSessionEvents).values({
+            conversationId: input.conversationId,
+            userId,
+            eventId: newEvent.id,
+            createdAt: now,
+          }),
+        ]),
+      );
+      return { event: newEvent, masteryDeltas: [delta] };
+    } catch (error) {
+      // A concurrent stream completion / explicit-end retry lost the unique
+      // ledger race. Its D1 batch rolled back, so returning the winner is safe.
+      const settled = await db
+        .select({ event: events })
+        .from(runtimeTutorSessionEvents)
+        .innerJoin(events, eq(runtimeTutorSessionEvents.eventId, events.id))
+        .where(and(eq(runtimeTutorSessionEvents.conversationId, input.conversationId), eq(runtimeTutorSessionEvents.userId, userId)))
+        .limit(1);
+      if (settled[0]) return { event: settled[0].event, masteryDeltas: [] as MasteryDelta[] };
+      if (!isKcCacheConflict(error) || attempt === 15) throw error;
+    }
   }
+  throw new ConflictError('KC evidence changed concurrently');
 }
 
 export async function listEvents(db: Db, userId: string, query: ListEventsQuery) {
+  await requireActiveEventUser(db, userId);
   if (query.course) await requireOwnedCourse(db, userId, query.course);
   if (query.kc) await requireOwnedKc(db, userId, query.kc);
 
@@ -392,6 +437,7 @@ export async function listEvents(db: Db, userId: string, query: ListEventsQuery)
 }
 
 export async function getKcEvents(db: Db, userId: string, kcId: string, opts: { limit?: number; offset?: number } = {}) {
+  await requireActiveEventUser(db, userId);
   await requireOwnedKc(db, userId, kcId);
   return db
     .select()
@@ -419,6 +465,7 @@ export class NotManualEventError extends Error {
 // PATCH is manual-source only (typo correction). DELETE (below) allows any
 // source — system-generated events are delete-only, confirmed by the client.
 export async function updateEvent(db: Db, userId: string, eventId: string, input: UpdateEventInput) {
+  await requireActiveEventUser(db, userId);
   const existingEvent = await requireOwnedEvent(db, userId, eventId);
   if (existingEvent.source !== 'manual') {
     throw new NotManualEventError();
@@ -450,15 +497,16 @@ export async function updateEvent(db: Db, userId: string, eventId: string, input
       .where(and(eq(events.kcId, existingEvent.kcId), eq(events.userId, userId), ne(events.id, eventId)));
     const { updateStmt, delta } = await foldedKcUpdate(db, existingEvent.kcId, [...others, updated]);
     masteryDeltas.push(delta);
-    await db.batch([updateEventStmt, updateStmt]);
+    await db.batch([activeEventUserFence(db, userId), updateEventStmt, updateStmt]);
   } else {
-    await updateEventStmt;
+    await db.batch([activeEventUserFence(db, userId), updateEventStmt]);
   }
 
   return { event: updated, masteryDeltas };
 }
 
 export async function deleteEvent(db: Db, userId: string, eventId: string) {
+  await requireActiveEventUser(db, userId);
   const existingEvent = await requireOwnedEvent(db, userId, eventId);
   const deleteStmt = db.delete(events).where(eq(events.id, eventId));
 
@@ -471,9 +519,9 @@ export async function deleteEvent(db: Db, userId: string, eventId: string) {
       .where(and(eq(events.kcId, existingEvent.kcId), eq(events.userId, userId), ne(events.id, eventId)));
     const { updateStmt, delta } = await foldedKcUpdate(db, existingEvent.kcId, remaining);
     masteryDeltas.push(delta);
-    await db.batch([deleteStmt, updateStmt]);
+    await db.batch([activeEventUserFence(db, userId), deleteStmt, updateStmt]);
   } else {
-    await deleteStmt;
+    await db.batch([activeEventUserFence(db, userId), deleteStmt]);
   }
 
   return { masteryDeltas };

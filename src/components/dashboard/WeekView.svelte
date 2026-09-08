@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tick } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { courseForItem, hueForItem } from '../../lib/courseHue';
   import WeekGrid from '../planner/WeekGrid.svelte';
   import EventPopover from '../planner/EventPopover.svelte';
@@ -7,7 +7,7 @@
   import EventHoverCard from '../planner/EventHoverCard.svelte';
   import { createEventHoverCard } from '../planner/eventHoverCard.svelte.ts';
   import { apiFetch } from '../../lib/apiClient';
-  import { calendarItemStartLabel } from '../../lib/plannerDates';
+  import { addDateKeyDays, calendarItemDateKey, calendarItemStartLabel, formatZonedDate, zonedDateKey, zonedDayBounds } from '../../lib/plannerDates';
   import type { CalendarItem } from '../../lib/types/calendar';
 
   interface CourseInfo {
@@ -21,7 +21,16 @@
   let {
     initialItems,
     courses,
-  }: { initialItems: CalendarItem[]; courses: CourseInfo[] } = $props();
+    timezone,
+    initialNow,
+  }: { initialItems: CalendarItem[]; courses: CourseInfo[]; timezone: string; initialNow: number } = $props();
+
+  let clockNow = $state(initialNow);
+  onMount(() => {
+    clockNow = Date.now();
+    const timer = setInterval(() => (clockNow = Date.now()), 60_000);
+    return () => clearInterval(timer);
+  });
 
   const courseById = new Map(courses.map((c) => [c.id, c]));
 
@@ -60,21 +69,11 @@
     if (expanded && !loadedExpandedWeek) loadExpandedWeek();
   }
 
-  function isSameDay(a: Date, b: Date): boolean {
-    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-  }
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayKey = $derived(zonedDateKey(clockNow, timezone));
 
   // Collapsed view: today-first 7-day window.
-  const collapsedDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(d.getDate() + i);
-    return d;
-  });
-
-  const weekdayFmt = new Intl.DateTimeFormat(undefined, { weekday: 'short' });
+  const collapsedDayKeys = $derived(Array.from({ length: 7 }, (_, i) => addDateKeyDays(todayKey, i)));
+  const collapsedDays = $derived(collapsedDayKeys.map((key) => zonedDayBounds(key, timezone).start));
 
   function shortTitle(item: CalendarItem): string {
     const c = courseForItem(item, courseById);
@@ -103,15 +102,8 @@
     return `${item.details.done ? '●' : '○'} ${base}`;
   }
 
-  const itemsByDay = $derived(collapsedDays.map((d) => items.filter((it) => isSameDay(new Date(it.date), d))));
+  const itemsByDay = $derived(collapsedDayKeys.map((key) => items.filter((it) => calendarItemDateKey(it, timezone) === key)));
   const MAX_CHIPS = 4;
-
-  function toIsoDate(d: Date): string {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  }
 
   // Rolling window from today, NOT mondayOf(today): this widget is "Next 7
   // days" — the collapsed chips, the SSR item window, and the compact grid's
@@ -119,9 +111,7 @@
   // here silently dropped items on days the rolling display shows but the
   // calendar-week window doesn't cover (e.g. next Monday's classes, viewed
   // on a Saturday) — the expanded grid rendered them as empty columns.
-  const weekStartDate = new Date(today);
-  weekStartDate.setHours(0, 0, 0, 0);
-  const weekStart = toIsoDate(weekStartDate);
+  const weekStart = $derived(todayKey);
 
   // `force` re-fetches even after the initial load already ran — used after
   // a create/delete in the popovers below, where the SSR/first-expand items
@@ -129,9 +119,8 @@
   async function loadExpandedWeek(force = false) {
     if (loadedExpandedWeek && !force) return;
     loading = true;
-    const from = new Date(weekStartDate);
-    const to = new Date(weekStartDate);
-    to.setDate(to.getDate() + 7);
+    const from = zonedDayBounds(weekStart, timezone).start;
+    const to = zonedDayBounds(addDateKeyDays(weekStart, 7), timezone).start;
     const params = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
     const result = await apiFetch<CalendarItem[]>(`/api/v1/calendar?${params.toString()}`);
     if (result.ok) {
@@ -144,7 +133,7 @@
   }
 
   function plannerLinkFor(item: CalendarItem): string {
-    return `/planner?event=${item.id}&date=${item.date.slice(0, 10)}`;
+    return `/planner?event=${item.id}&date=${calendarItemDateKey(item, timezone)}`;
   }
 
   function closePopover() {
@@ -230,10 +219,10 @@
     <div class="reveal-inner">
       <div class="week">
         {#each collapsedDays as d, i}
-          <div class="day" class:today={isSameDay(d, today)}>
+          <div class="day" class:today={collapsedDayKeys[i] === todayKey}>
             <div class="dh">
-              <span class="wd">{weekdayFmt.format(d)}</span>
-              <span class="n num">{d.getDate()}</span>
+              <span class="wd">{formatZonedDate(d, timezone, { weekday: 'short' })}</span>
+              <span class="n num">{Number(collapsedDayKeys[i].slice(8, 10))}</span>
             </div>
             {#if itemsByDay[i].length === 0}
               <div class="day-empty">—</div>
@@ -251,7 +240,7 @@
                   onmouseleave={() => chipHoverCard.onLeave()}
                 >
                   <span class="t">{chipLabel(item)}</span>
-                  {#if !item.all_day}<span class="time">{calendarItemStartLabel(item)}</span>{/if}
+                  {#if !item.all_day}<span class="time">{calendarItemStartLabel(item, timezone)}</span>{/if}
                 </button>
               {/each}
               {#if itemsByDay[i].length > MAX_CHIPS}
@@ -273,6 +262,8 @@
         {courses}
         compact={true}
         selectedId={selectedItem?.id ?? null}
+        {timezone}
+        {initialNow}
         onSelect={selectItem}
         onSlotClick={handleSlotClick}
       />
@@ -282,7 +273,7 @@
 
 {#if chipHoverCard.item}
   {@const hoverItem = chipHoverCard.item}
-  <EventHoverCard item={hoverItem} pos={chipHoverCard.pos} course={courseForItem(hoverItem, courseById)} />
+  <EventHoverCard item={hoverItem} pos={chipHoverCard.pos} course={courseForItem(hoverItem, courseById)} {timezone} />
 {/if}
 
 {#if showPopover && selectedItem && popoverAnchor}
@@ -298,6 +289,7 @@
       onDeleted={() => void loadExpandedWeek(true)}
       onTaskToggled={handleTaskToggled}
       onItemUpdated={handleItemUpdated}
+      {timezone}
       plannerLink={plannerLinkFor(selectedItem)}
     />
   {/key}
@@ -308,7 +300,7 @@
        (and the drag-derived initial duration) from carrying over between
        two different slot selections made without closing in between. -->
   {#key `${createSlot.getTime()}-${createSlotEnd?.getTime() ?? 0}`}
-    <CreateSessionPopover start={createSlot} end={createSlotEnd} anchorRect={createAnchor} {courses} onClose={closeCreate} onCreated={handleCreated} />
+    <CreateSessionPopover start={createSlot} end={createSlotEnd} anchorRect={createAnchor} {courses} onClose={closeCreate} onCreated={handleCreated} {timezone} />
   {/key}
 {/if}
 

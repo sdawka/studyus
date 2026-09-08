@@ -33,9 +33,11 @@
     courseHues?: Record<string, number>;
     ontoggle?: (task: TaskItemTask) => void;
     ondelete?: (taskId: string) => void;
+    timezone?: string;
+    initialNow?: number;
   }
 
-  let { task, compact = false, courseHues = {}, ontoggle, ondelete }: Props = $props();
+  let { task, compact = false, courseHues = {}, ontoggle, ondelete, timezone, initialNow }: Props = $props();
   let busy = $state(false);
   // Mounted only while checking (not unchecking) a typed task — the flow
   // owns collecting recap/follow-ups and completing it; see handleCheck.
@@ -43,7 +45,7 @@
 
   function dueMeta(t: TaskItemTask) {
     if (!t.due_date) return null;
-    return taskDueMeta(daysUntil(t.due_date), t.type === 'attend_class');
+    return taskDueMeta(daysUntil(t.due_date, initialNow === undefined ? new Date() : new Date(initialNow), timezone), t.type === 'attend_class');
   }
 
   let due = $derived(dueMeta(task));
@@ -145,7 +147,7 @@
             class="pill"
             class:pill-danger={due.danger}
             class:pill-idle={!due.danger}
-            title={formatDueDate(task.due_date ?? null)}
+            title={formatDueDate(task.due_date ?? null, timezone)}
           >{due.label}</span>
         {/if}
         {#each task.courses as c (c.id)}

@@ -5,6 +5,7 @@ import { branches, courses, kcs, users } from '../src/db/schema';
 import { getLearnerAgentForUser } from '../src/lib/runtime/learnerAgent';
 import { GET as getRuntimeSnapshot } from '../src/pages/api/v1/runtime/snapshot';
 import { GET as getConversation } from '../src/pages/api/v1/tutor/conversations/[id]/index';
+import { ensureActiveRuntimeRegistry } from '../src/lib/services/accountLifecycle';
 
 const db = getDb(env.DB);
 
@@ -18,6 +19,7 @@ async function makeKc(userId: string, label: string) {
     db.insert(branches).values({ id: branchId, courseId, name: 'Main' }),
     db.insert(kcs).values({ id: kcId, branchId, courseId, name: `${label} KC`, kcType: 'concept' }),
   ]);
+  await ensureActiveRuntimeRegistry(db, userId);
   return kcId;
 }
 

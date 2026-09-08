@@ -1,0 +1,106 @@
+{
+  "screens": [
+    {
+      "path": "/courses/chee-314-fluid-mechanics/kc/756277e5-28ac-3107-7562-77e528ac3107",
+      "finalPath": "/courses/chee-314-fluid-mechanics/kc/756277e5-28ac-3107-7562-77e528ac3107",
+      "status": 200,
+      "viewport": "desktop",
+      "title": "Fluid properties \u00b7 studyus",
+      "heading": "Fluid properties"
+    },
+    {
+      "path": "/courses/chee-314-fluid-mechanics/kc/756277e5-28ac-3107-7562-77e528ac3107",
+      "finalPath": "/courses/chee-314-fluid-mechanics/kc/756277e5-28ac-3107-7562-77e528ac3107",
+      "status": 200,
+      "viewport": "mobile",
+      "title": "Fluid properties \u00b7 studyus",
+      "heading": "Fluid properties"
+    },
+    {
+      "path": "/learn/756277e5-28ac-3107-7562-77e528ac3107",
+      "finalPath": "/learn/756277e5-28ac-3107-7562-77e528ac3107",
+      "status": 200,
+      "viewport": "desktop",
+      "title": "Understand \u00b7 Fluid properties \u00b7 studyus",
+      "heading": "Understand: Fluid properties"
+    },
+    {
+      "path": "/learn/756277e5-28ac-3107-7562-77e528ac3107",
+      "finalPath": "/learn/756277e5-28ac-3107-7562-77e528ac3107",
+      "status": 200,
+      "viewport": "mobile",
+      "title": "Understand \u00b7 Fluid properties \u00b7 studyus",
+      "heading": "Understand: Fluid properties"
+    },
+    {
+      "path": "/tutor/756277e5-28ac-3107-7562-77e528ac3107",
+      "finalPath": "/tutor/756277e5-28ac-3107-7562-77e528ac3107",
+      "status": 200,
+      "viewport": "desktop",
+      "title": "Tutor \u00b7 Fluid properties \u00b7 studyus",
+      "heading": "Fluid properties"
+    },
+    {
+      "path": "/tutor/756277e5-28ac-3107-7562-77e528ac3107",
+      "finalPath": "/tutor/756277e5-28ac-3107-7562-77e528ac3107",
+      "status": 200,
+      "viewport": "mobile",
+      "title": "Tutor \u00b7 Fluid properties \u00b7 studyus",
+      "heading": "Fluid properties"
+    },
+    {
+      "path": "/study/quiz",
+      "finalPath": "/study/quiz",
+      "status": 200,
+      "viewport": "desktop",
+      "title": "Quick Quiz \u00b7 studyus",
+      "heading": "Quick quiz"
+    },
+    {
+      "path": "/study/quiz",
+      "finalPath": "/study/quiz",
+      "status": 200,
+      "viewport": "mobile",
+      "title": "Quick Quiz \u00b7 studyus",
+      "heading": "Quick quiz"
+    },
+    {
+      "path": "/audit-missing-route",
+      "finalPath": "/audit-missing-route",
+      "status": 404,
+      "viewport": "desktop",
+      "title": "Not found \u00b7 studyus",
+      "heading": "Not on the syllabus."
+    },
+    {
+      "path": "/audit-missing-route",
+      "finalPath": "/audit-missing-route",
+      "status": 404,
+      "viewport": "mobile",
+      "title": "Not found \u00b7 studyus",
+      "heading": "Not on the syllabus."
+    }
+  ],
+  "noteSave": {
+    "path": "/notes/8282de42-255d-4ec7-a72f-7028d8fdb43b",
+    "patches": [
+      200
+    ],
+    "title": "Authenticated audit note saved",
+    "content": "# Verified\nSaved through the real note editor."
+  },
+  "task": {
+    "id": "ce62c0e8-ceb7-441b-a9de-e9aef1379c63",
+    "completed": true,
+    "visibleAfterClick": true,
+    "visibleInTada": true
+  },
+  "study": {
+    "resumeText": "su\nNotifications\nS\nStudy\n\nCHEE 310 \u2014 Physical Chemistry for Engineers\n\n7405:08\nPause\nEnd session\nHome\nTasks\nPlanner\nCourses\nDocs\n\u21e7D",
+    "unfinishedAfterDiscard": true
+  },
+  "sessionCount": 7,
+  "remainingOpenSessions": 2,
+  "quizCompleted": true,
+  "quizScoreText": "You scored 20%"
+}

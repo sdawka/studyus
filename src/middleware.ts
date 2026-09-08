@@ -3,13 +3,14 @@ import type { MiddlewareHandler } from 'astro';
 import { env } from 'cloudflare:workers';
 import { getDb } from './db/client';
 import { apiError } from './lib/api';
-import { ClerkIdentityConflictError, resolveLocalUser } from './lib/auth/local-user';
+import { AccountInactiveError, ClerkIdentityConflictError, resolveLocalUser } from './lib/auth/local-user';
 import { canonicalRedirectUrl } from './lib/canonicalOrigin';
 import { resolveSignupMethod } from './lib/analytics/identity';
 import { queueBehavioralEvent } from './lib/analytics/server';
 import { readAnalyticsCorrelation, readTrialHandoff } from './lib/analytics/session';
 import { hasUsableCourse } from './lib/services/onboarding';
 import { needsUsableCourseCheck, onboardingRedirect } from './lib/onboardingRoute';
+import { secureResponse } from './lib/securityHeaders';
 
 const PUBLIC_PAGE_PATHS = new Set(['/', '/login', '/sign-in', '/sign-up', '/compare', '/how-it-works']);
 
@@ -28,7 +29,7 @@ function isApiPath(pathname: string): boolean {
 }
 
 function isPublicApiPath(pathname: string): boolean {
-  return pathname === '/api/public/demo-events' || pathname.startsWith('/api/calendar/feed/');
+  return pathname === '/api/public/demo-events' || pathname === '/api/webhooks/clerk' || pathname.startsWith('/api/calendar/feed/');
 }
 
 function isAuthIndependentPath(pathname: string): boolean {
@@ -91,6 +92,10 @@ const authenticatedRequest = clerkMiddleware(async (auth, context, next) => {
         }
       }
     } catch (error) {
+      if (error instanceof AccountInactiveError) {
+        if (isApiPath(pathname)) return apiError('account_inactive', error.message, 410);
+        return new Response(error.message, { status: 410 });
+      }
       if (error instanceof ClerkIdentityConflictError) {
         if (isApiPath(pathname)) return apiError('identity_conflict', error.message, 409);
         return new Response(error.message, { status: 409 });
@@ -119,7 +124,7 @@ const authenticatedRequest = clerkMiddleware(async (auth, context, next) => {
 // them outside Clerk initialization also keeps the public demo available during
 // an auth-provider configuration problem or outage. No protected path bypasses
 // Clerk through this wrapper.
-export const onRequest: MiddlewareHandler = (context, next) => {
+export const onRequest: MiddlewareHandler = async (context, next) => secureResponse(context.url.pathname, async () => {
   const canonicalUrl = canonicalRedirectUrl(context.url);
   if (canonicalUrl) return Response.redirect(canonicalUrl, 308);
 
@@ -127,5 +132,7 @@ export const onRequest: MiddlewareHandler = (context, next) => {
     context.locals.user = null;
     return next();
   }
-  return authenticatedRequest(context, next);
-};
+  const response=await authenticatedRequest(context,next);
+  if (!response) throw new Error('Authentication middleware returned no response');
+  return response;
+});

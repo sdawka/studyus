@@ -6,8 +6,21 @@ import { apiError } from './api';
 import { NotFoundError, ForbiddenError, ConflictError, ExerciseAttemptMismatchError } from './services/util';
 import { IdempotencyConflictError, NotManualEventError } from './services/events';
 import { AiFeatureUnavailableError } from './ai/capabilities';
+import { AccountInactiveError } from './services/accountLifecycle';
+import { AiBudgetExceededError } from './ai/errors';
+
+function isInactiveAccountFailure(error: unknown): boolean {
+  let value = error;
+  for (let depth = 0; depth < 5 && value instanceof Error; depth += 1) {
+    if (value instanceof AccountInactiveError || /(?:^|: )inactive account(?:: SQLITE_CONSTRAINT(?: \(extended: SQLITE_CONSTRAINT_TRIGGER\))?)?$/.test(value.message)) return true;
+    value = value.cause;
+  }
+  return false;
+}
 
 export function serviceErrorResponse(err: unknown): Response {
+  if (err instanceof AiBudgetExceededError) return apiError(err.code, err.message, err.status);
+  if (isInactiveAccountFailure(err)) return apiError('not_found', 'Account not found', 404);
   if (err instanceof ZodError) {
     return apiError('invalid_input', err.issues.map((i) => i.message).join('; '), 400);
   }
@@ -32,7 +45,9 @@ export function serviceErrorResponse(err: unknown): Response {
   if (err instanceof AiFeatureUnavailableError) {
     return apiError('ai_unavailable', err.message, 503);
   }
-  console.error(err);
+  // Database/provider errors can contain bound private input or bearer URLs.
+  // Keep the operational signal without serializing those error objects.
+  console.error('service_request_failed', { code: 'internal_error' });
   return apiError('internal_error', 'Something went wrong', 500);
 }
 

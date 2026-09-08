@@ -28,12 +28,28 @@ returns `409 identity_conflict`; do not overwrite the binding manually.
 
 ## Onboarding boundary
 
-Authentication provisioning currently creates only the local `users` row. It
-does not enroll a new learner in repository seed courses or create KCs. Clerk's
-current fallback redirects also land on `/dashboard`, while only `/` checks
-`onboarded_at`. This is a known product gap, not an authentication feature:
-`docs/product/onboarding.md` defines the middleware gate and atomic course/KC
-completion invariant that must follow identity resolution.
+Authentication provisioning creates only the local `users` row. It does not
+enroll a new learner in seed courses. Middleware requires completed onboarding
+and a usable course before ordinary application pages; sign-in preserves a
+validated same-origin return path and the explicit demo-import handoff.
+`docs/product/onboarding.md` defines the atomic course/KC completion invariant.
+
+## Retained account deletion
+
+Verified Clerk deletion webhooks atomically record their delivery, mark the
+local account `deleting`, revoke local credentials/feed access, and queue
+Durable Object tombstoning. Ordinary requests, background work, and private
+commit-time D1 writes reject inactive accounts. The runtime registry retains
+all learner runtime identities so deletion can cover previously used objects.
+The completed state is `deleted`; private rows and acknowledged `ready` uploaded
+bytes remain retained. An attachment deletion already admitted by an active-owner
+`ready` to `deleting` transition may finish cleanup after the fence. A new account
+with the same email does not relink retained data.
+
+Group contributions survive with author identity removed. Future events hosted
+by the deleted account are canceled; an ownerless group becomes read-only.
+`scripts/group-assignment.mjs` supports audited reassignment to an active member
+and defaults to local storage. Retained-account restoration is not implemented.
 
 The legacy `sessions` table and password/session helper files remain for
 migration compatibility and historical tests. No new request may create a D1
@@ -58,7 +74,40 @@ session; the retired JSON login/logout endpoints return `410 auth_retired`.
    create a second session system.
 
 The app uses Clerk's Astro integration, middleware, prebuilt sign-in/sign-up,
-and the dedicated `/account` `UserProfile` control. See Clerk's current
+and the dedicated `/account` `UserProfile` control. The local `ClerkUi.astro`
+wrapper serializes props as escaped inert JSON; `/clerk-props-bridge.js` registers
+them in Clerk's official component map before its mount code runs. This preserves
+local redirects and OAuth scopes under CSP without allowing dynamic inline scripts. See Clerk's current
 [Astro quickstart](https://clerk.com/docs/astro/getting-started/quickstart),
 [Astro server helpers](https://clerk.com/docs/reference/astro/overview), and
 [PBKDF2 import format](https://clerk.com/docs/reference/backend/user/create-user).
+## Deployment verification
+
+Configure `CLERK_WEBHOOK_SIGNING_SECRET` and `GROUP_INVITE_HMAC_SECRET` as
+separate Worker secrets in each target environment. A successful application
+build does not verify either secret or Clerk webhook delivery. Verify a signed
+development deletion event and its background job before release. Staging
+currently has no cron trigger: its request-time account fence is active, but
+background tombstoning and reconciliation need an explicitly invoked isolated
+scheduled run or an approved schedule before that lifecycle can be certified.
+
+## Agent Tasks E2E status
+
+The explicit `agent-tasks` Playwright diagnostic uses Clerk's official
+`createAgentTestingTask`, never the ordinary sign-in helper. Run locally with
+`STUDYUS_AGENT_TASK_DIAGNOSTIC=1 STUDYUS_ISOLATED_AUDIT=1 E2E_BASE_URL=http://localhost:4357 E2E_BUILT_APP=1 npx playwright test --project=agent-tasks`.
+It currently fails: Clerk consumes the ticket and creates a real delegated
+session, but both localhost and 127.0.0.1 enter development handshake loops and
+finish signed out. Testing-token interception initially consumed the redirect
+twice; installing it after navigation removes that first failure, not the
+remaining handoff failure. Failed-run cleanup revokes only sessions matching
+the exact Agent Task. No task-capable Clerk MCP was available; these attempts
+used the official SDK/Backend API. This diagnostic is excluded from release CI
+and is not passing authenticated coverage.
+
+The ordinary authenticated CI job is restricted to manual dispatch on `main`.
+Its GitHub `clerk-e2e` environment, three development secrets and repository
+`CLERK_E2E_ENABLED` variable are not configured: automatic approval review
+rejected environment creation. Production Clerk dashboard access and browser
+smoke were also rejected. Merge/deploy authorization has been recorded, but
+the production webhook/group secrets and smoke remain separate blocked steps.

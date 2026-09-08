@@ -71,11 +71,39 @@ export interface ProviderDeleteRequest {
   changeKey?: string;
 }
 
+/** A provider calendar owned and managed by Studyus rather than a user calendar. */
+export interface ProvisionedCalendar {
+  id: string;
+  name: string;
+  timezone: string | null;
+  accessRole: string | null;
+}
+
+export interface ProviderCalendarProvisionRequest {
+  accessToken: string;
+  marker: string;
+  timezone: string;
+}
+
+export interface ProviderCalendarDiscoveryRequest {
+  accessToken: string;
+  marker: string;
+}
+
+export interface ProviderCalendarDeleteRequest {
+  accessToken: string;
+  calendarId: string;
+}
+
 export interface CalendarProviderAdapter {
   readonly name: CalendarProviderName;
   sync(request: ProviderSyncRequest): Promise<ProviderSyncResult>;
   upsert(request: ProviderUpsertRequest): Promise<ProviderEventVersion>;
   delete(request: ProviderDeleteRequest): Promise<void>;
+  /** Optional because inbound-only adapters do not need provisioning access. */
+  provisionCalendar?(request: ProviderCalendarProvisionRequest): Promise<ProvisionedCalendar>;
+  discoverProvisionedCalendar?(request: ProviderCalendarDiscoveryRequest): Promise<ProvisionedCalendar | null>;
+  deleteProvisionedCalendar?(request: ProviderCalendarDeleteRequest): Promise<void>;
 }
 
 export interface CalendarTokenBroker {

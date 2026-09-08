@@ -1,16 +1,21 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import type { CalendarItem } from '../../lib/types/calendar';
   import { courseForItem, hueForItem } from '../../lib/courseHue';
   import {
     addDays,
     addMinutes,
+    calendarItemDateKey,
+    formatZonedDate,
     isSameLocalDay,
     localDateKey,
-    localDateKeyFromIso,
     resolvedEventTimes,
     snap15,
     startOfDay,
     timeRangeLabel,
+    zonedDateKey,
+    zonedDateTime,
+    zonedMinuteOfDay,
   } from '../../lib/plannerDates';
   import EventHoverCard from './EventHoverCard.svelte';
   import { createEventHoverCard } from './eventHoverCard.svelte.ts';
@@ -33,6 +38,8 @@
     dayCount = $bindable(7),
     onSelect,
     onSlotClick,
+    timezone = Intl.DateTimeFormat().resolvedOptions().timeZone,
+    initialNow = Date.now(),
   }: {
     items: CalendarItem[];
     weekStart: string;
@@ -54,6 +61,8 @@
     // handlers below) — a plain click/tap always calls this with one arg,
     // same contract as before drag-create existed.
     onSlotClick?: (start: Date, end?: Date) => void;
+    timezone?: string;
+    initialNow?: number;
   } = $props();
 
   // Container-measured, not @media/@container: this component renders both
@@ -93,32 +102,32 @@
   // clipping — those blocks show the (vertically centered) title alone.
   const TWO_LINE_THRESHOLD = 34;
 
-  const weekStartDate = $derived(new Date(`${weekStart}T00:00:00`));
+  const weekStartDate = $derived(zonedDateTime(weekStart, 0, timezone));
   // 7-day mode always shows the calendar week (Monday-anchored, matching the
   // `weekStart` fetch window). 1/3-day modes ignore `weekStart` for display
   // purposes and instead show `dayCount` consecutive days starting at
   // `anchorDate` (default today) — a rolling window, not locked to Sun–Sat,
   // so whatever day the caller is paging toward stays pinned leftmost.
   const days = $derived.by(() => {
-    if (dayCount >= 7) return Array.from({ length: 7 }, (_, i) => addDays(weekStartDate, i));
-    const anchor = anchorDate ? new Date(`${anchorDate}T00:00:00`) : startOfDay(new Date());
-    return Array.from({ length: dayCount }, (_, i) => addDays(anchor, i));
+    if (dayCount >= 7) return Array.from({ length: 7 }, (_, i) => addDays(weekStartDate, i, timezone));
+    const anchor = anchorDate ? zonedDateTime(anchorDate, 0, timezone) : startOfDay(new Date(initialNow), timezone);
+    return Array.from({ length: dayCount }, (_, i) => addDays(anchor, i, timezone));
   });
-  const dayKeys = $derived(days.map((d) => localDateKey(d)));
+  const dayKeys = $derived(days.map((d) => localDateKey(d, timezone)));
 
   // Defensive filter: items belonging to the visible days, matched by local
   // day key (handles items that arrive pre-filtered too). Also the mechanism
   // that keeps 1/3-day modes showing only their narrower window's items.
   const weekItems = $derived.by(() => {
     const keySet = new Set(dayKeys);
-    return items.filter((i) => keySet.has(localDateKeyFromIso(i.date)));
+    return items.filter((i) => keySet.has(calendarItemDateKey(i, timezone)));
   });
 
   const allDayItems = $derived(weekItems.filter((i) => i.all_day));
   const timedItems = $derived(weekItems.filter((i) => !i.all_day));
 
   function allDayForDay(dayKey: string): CalendarItem[] {
-    return allDayItems.filter((i) => localDateKeyFromIso(i.date) === dayKey);
+    return allDayItems.filter((i) => calendarItemDateKey(i, timezone) === dayKey);
   }
 
   interface Timed {
@@ -129,12 +138,12 @@
 
   function timedForDay(dayKey: string): Timed[] {
     return timedItems
-      .filter((i) => localDateKeyFromIso(i.date) === dayKey)
+      .filter((i) => calendarItemDateKey(i, timezone) === dayKey)
       .map((i) => {
         // resolvedEventTimes is the class_session-aware resolver (details.
         // start_min/end_min, never the ISO's local getHours()) — see
         // plannerDates.ts. Every other type resolves identically to before.
-        const { startMs, endMs: resolvedEndMs } = resolvedEventTimes(i);
+        const { startMs, endMs: resolvedEndMs } = resolvedEventTimes(i, timezone);
         const endMs = resolvedEndMs ?? startMs + 30 * 60_000;
         return { item: i, startMs, endMs };
       });
@@ -153,11 +162,9 @@
         // resolvedEventTimes, not a raw `new Date(i.date)` — see timedForDay's
         // identical comment; a class_session's window must come from its
         // details.start_min/end_min or the auto-sized hour range comes out wrong.
-        const { startMs, endMs: resolvedEndMs } = resolvedEventTimes(i);
-        const start = new Date(startMs);
-        const end = new Date(resolvedEndMs ?? startMs + 30 * 60_000);
-        minHour = Math.min(minHour, start.getHours() + start.getMinutes() / 60);
-        maxHour = Math.max(maxHour, end.getHours() + end.getMinutes() / 60);
+        const { startMs, endMs: resolvedEndMs } = resolvedEventTimes(i, timezone);
+        minHour = Math.min(minHour, zonedMinuteOfDay(startMs, timezone) / 60);
+        maxHour = Math.max(maxHour, zonedMinuteOfDay(resolvedEndMs ?? startMs + 30 * 60_000, timezone) / 60);
       }
       let start = Math.max(HARD_FLOOR, Math.floor(minHour) - 1);
       let end = Math.min(HARD_CEIL, Math.ceil(maxHour) + 1);
@@ -170,11 +177,9 @@
     let minHour = DEFAULT_START;
     let maxHour = DEFAULT_END;
     for (const i of timedItems) {
-      const { startMs, endMs: resolvedEndMs } = resolvedEventTimes(i);
-      const start = new Date(startMs);
-      const end = new Date(resolvedEndMs ?? startMs + 30 * 60_000);
-      minHour = Math.min(minHour, start.getHours() + start.getMinutes() / 60);
-      maxHour = Math.max(maxHour, end.getHours() + end.getMinutes() / 60);
+      const { startMs, endMs: resolvedEndMs } = resolvedEventTimes(i, timezone);
+      minHour = Math.min(minHour, zonedMinuteOfDay(startMs, timezone) / 60);
+      maxHour = Math.max(maxHour, zonedMinuteOfDay(resolvedEndMs ?? startMs + 30 * 60_000, timezone) / 60);
     }
     let start = Math.max(HARD_FLOOR, Math.floor(minHour));
     let end = Math.min(HARD_CEIL, Math.ceil(maxHour));
@@ -245,8 +250,7 @@
   }
 
   function topFor(ms: number): number {
-    const d = new Date(ms);
-    const minutesFromBoundStart = (d.getHours() - bounds.start) * 60 + d.getMinutes();
+    const minutesFromBoundStart = zonedMinuteOfDay(ms, timezone) - bounds.start * 60;
     return (minutesFromBoundStart / 60) * PX_PER_HOUR;
   }
   function heightFor(startMs: number, endMs: number): number {
@@ -254,27 +258,27 @@
     return Math.max(MIN_BLOCK_HEIGHT, (minutes / 60) * PX_PER_HOUR);
   }
 
-  let now = $state(new Date());
-  let nowTimer: ReturnType<typeof setInterval> | undefined;
-  $effect(() => {
-    nowTimer = setInterval(() => {
+  let now = $state(new Date(initialNow));
+  onMount(() => {
+    now = new Date();
+    const nowTimer = setInterval(() => {
       now = new Date();
     }, 60_000);
     return () => clearInterval(nowTimer);
   });
 
   function isWeekend(d: Date): boolean {
-    const dow = d.getDay();
+    const dow = new Date(`${zonedDateKey(d, timezone)}T12:00:00.000Z`).getUTCDay();
     return dow === 0 || dow === 6;
   }
   function isToday(d: Date): boolean {
-    return isSameLocalDay(d, now);
+    return isSameLocalDay(d, now, timezone);
   }
   function nowTop(): number {
-    const minutesFromBoundStart = (now.getHours() - bounds.start) * 60 + now.getMinutes();
+    const minutesFromBoundStart = zonedMinuteOfDay(now, timezone) - bounds.start * 60;
     return (minutesFromBoundStart / 60) * PX_PER_HOUR;
   }
-  const nowVisible = $derived(now.getHours() + now.getMinutes() / 60 >= bounds.start && now.getHours() + now.getMinutes() / 60 <= bounds.end);
+  const nowVisible = $derived(zonedMinuteOfDay(now, timezone) / 60 >= bounds.start && zonedMinuteOfDay(now, timezone) / 60 <= bounds.end);
 
   function isPast(endMs: number): boolean {
     return endMs < now.getTime();
@@ -329,10 +333,7 @@
     const offsetY = clientY - columnTop;
     const totalMinutes = (bounds.end - bounds.start) * 60;
     const minutesFromStart = Math.max(0, Math.min(totalMinutes, (offsetY / PX_PER_HOUR) * 60));
-    const d = new Date(day);
-    d.setHours(bounds.start, 0, 0, 0);
-    d.setMinutes(d.getMinutes() + minutesFromStart);
-    return d;
+    return zonedDateTime(zonedDateKey(day, timezone), bounds.start * 60 + minutesFromStart, timezone);
   }
 
   function handleSlotClick(e: MouseEvent, day: Date) {
@@ -362,8 +363,7 @@
     if ((e.target as HTMLElement).closest('.event-block')) return;
     if (!onSlotClick) return;
     e.preventDefault();
-    const start = new Date(day);
-    start.setHours(9, 0, 0, 0);
+    const start = zonedDateTime(zonedDateKey(day, timezone), 9 * 60, timezone);
     onSlotClick(start);
   }
 
@@ -462,8 +462,8 @@
     <div class="gutter-cell"></div>
     {#each days as day, i}
       <div class="day-header" class:weekend={isWeekend(day)} class:today={isToday(day)}>
-        <span class="wd">{day.toLocaleDateString(undefined, { weekday: 'short' })}</span>
-        <span class="dn" class:badge={isToday(day)}>{day.getDate()}</span>
+        <span class="wd">{formatZonedDate(day, timezone, { weekday: 'short' })}</span>
+        <span class="dn" class:badge={isToday(day)}>{Number(zonedDateKey(day, timezone).slice(8, 10))}</span>
       </div>
     {/each}
   </div>
@@ -513,7 +513,7 @@
           class:dragging={!!dragState && dragState.dayIndex === i && dragState.moved}
           role={onSlotClick ? 'button' : undefined}
           tabindex={onSlotClick ? 0 : undefined}
-          aria-label={onSlotClick ? `Add study block on ${day.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}` : undefined}
+          aria-label={onSlotClick ? `Add study block on ${formatZonedDate(day, timezone, { weekday: 'long', month: 'short', day: 'numeric' })}` : undefined}
           onclick={(e) => handleSlotClick(e, day)}
           onkeydown={(e) => handleSlotKeydown(e, day)}
           onpointerdown={(e) => onColumnPointerDown(e, day, i)}
@@ -552,7 +552,7 @@
             >
               <span class="evt-title">{#if statusGlyph}<span class="evt-status">{statusGlyph}</span>{/if}{blockTitle(p)}</span>
               {#if twoLine}
-                <span class="evt-time">{timeRangeLabel(new Date(p.startMs), new Date(p.endMs))}</span>
+                <span class="evt-time">{timeRangeLabel(new Date(p.startMs), new Date(p.endMs), timezone)}</span>
               {/if}
             </button>
           {/each}
@@ -562,7 +562,7 @@
               class="drag-ghost"
               style={`top:${topFor(range.start.getTime())}px; height:${heightFor(range.start.getTime(), range.end.getTime())}px;`}
             >
-              <span class="ghost-label">{timeRangeLabel(range.start, range.end)}</span>
+              <span class="ghost-label">{timeRangeLabel(range.start, range.end, timezone)}</span>
             </div>
           {/if}
         </div>
@@ -573,7 +573,7 @@
 
 {#if hoverCard.item}
   {@const item = hoverCard.item}
-  <EventHoverCard {item} pos={hoverCard.pos} course={courseForItem(item, courseById)} />
+  <EventHoverCard {item} pos={hoverCard.pos} course={courseForItem(item, courseById)} {timezone} />
 {/if}
 
 <style>
@@ -592,7 +592,7 @@
        grid-template-columns declaration drops to `none`, and every
        all-day item collapses into one full-width column instead of
        its actual day. */
-    grid-template-columns: var(--gutter, 56px) repeat(var(--day-count, 7), 1fr);
+    grid-template-columns: var(--gutter, 56px) repeat(var(--day-count, 7), minmax(0, 1fr));
   }
   .gutter-cell {
     width: var(--gutter, 56px);
@@ -646,6 +646,7 @@
     letter-spacing: 0.04em;
   }
   .all-day-cell {
+    min-width: 0;
     border-left: 1px solid var(--hairline);
     padding: 4px;
     display: flex;
@@ -725,7 +726,7 @@
   .day-columns {
     position: relative;
     display: grid;
-    grid-template-columns: repeat(var(--day-count, 7), 1fr);
+    grid-template-columns: repeat(var(--day-count, 7), minmax(0, 1fr));
   }
   .day-column {
     position: relative;

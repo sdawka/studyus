@@ -3,16 +3,21 @@ import { relayAsSSE, streamChatCompletion, type ChatMessage } from '../services/
 import { requireAiFeature } from '../ai/capabilities';
 import { deliverBehavioralEventAwaited } from '../analytics/server';
 import { resolveSettings } from '../services/user';
+import { LEARNER_RUNTIME_NAME_PREFIX, learnerRuntimeObjectName } from '../services/accountLifecycle';
+import { AiBudgetExceededError } from '../ai/errors';
+export { AiBudgetExceededError } from '../ai/errors';
 
 export const TUTOR_ABANDONMENT_IDLE_MS = 30 * 60 * 1000;
 export const TUTOR_ABANDONMENT_IN_FLIGHT_RETRY_MS = 60 * 1000;
+export const AI_DAILY_CALL_LIMIT = 30;
+export const AI_PROVIDER_LEASE_MS = 30 * 1000;
 
 /**
  * A learner is the tenancy boundary for state that needs strict ordering. The
  * stable local user ID, rather than an auth-provider ID, is deliberately used
  * here because all current D1 ownership relations use it.
  */
-export const LEARNER_AGENT_NAME_PREFIX = 'learner:';
+export const LEARNER_AGENT_NAME_PREFIX = LEARNER_RUNTIME_NAME_PREFIX;
 
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
@@ -78,6 +83,7 @@ export type LearnerAgentSnapshot = {
 /** The intentionally small, transport-safe API returned to Worker adapters. */
 export interface LearnerAgentStub {
   initialize(learnerId: string): Promise<void>;
+  markAccountDeleted(input: { eventId: string; deletedAt: number }): Promise<void>;
   getSnapshot(): Promise<LearnerAgentSnapshot>;
   createConversation(input: CreateLearnerConversationInput): Promise<LearnerConversation>;
   listConversations(input?: { limit?: number; kcId?: string }): Promise<LearnerConversation[]>;
@@ -95,8 +101,26 @@ export interface LearnerAgentStub {
   listFiredAlarms(): Promise<LearnerScheduledAlarm[]>;
   completeAlarm(id: string): Promise<void>;
   importLegacyConversations(input: { source: string; conversations: LegacyLearnerConversationImport[] }): Promise<{ imported: boolean; conversationCount: number }>;
+  tryReserveAiProviderCall(): Promise<LearnerAiProviderReservation>;
+  tryRecordAiProviderRetry(leaseId: string): Promise<LearnerAiProviderAttemptResult>;
+  releaseAiProviderCall(leaseId: string): Promise<void>;
   fetch(request: Request): Promise<Response>;
 }
+
+export type LearnerAiProviderLease = {
+  id: string;
+  utcDay: string;
+  attemptedCalls: number;
+  expiresAt: number;
+};
+
+export type LearnerAiProviderReservation =
+  | { ok: true; lease: LearnerAiProviderLease }
+  | { ok: false; code: AiBudgetExceededError['code']; status: AiBudgetExceededError['status'] };
+
+export type LearnerAiProviderAttemptResult =
+  | { ok: true; attemptedCalls: number }
+  | { ok: false; code: AiBudgetExceededError['code']; status: AiBudgetExceededError['status'] };
 
 export type CreateLearnerConversationInput = {
   id?: string;
@@ -124,11 +148,13 @@ export type AcceptedLearnerTutorTurn = {
   messageId: string;
   acceptedAt: number;
   turnIndex: number;
+  providerLeaseId: string;
 };
 
 export type StreamLearnerReplyInput = {
   conversationId: string;
   turnId: string;
+  providerLeaseId: string;
   /** A trusted domain/pedagogy adapter constructs this; it is never client input. */
   systemPrompt: string;
   /** The runtime-owned policy cap. It is never accepted from a client. */
@@ -161,6 +187,13 @@ export class LearnerAgentConflictError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'LearnerAgentConflictError';
+  }
+}
+
+export class LearnerAgentDeletedError extends Error {
+  constructor() {
+    super('Learner runtime is deleted');
+    this.name = 'LearnerAgentDeletedError';
   }
 }
 
@@ -381,11 +414,41 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
         INSERT INTO _learner_agent_schema_migrations (id, applied_at) VALUES (2, ?);
       `, Date.now());
     }
+    if (version < 3) {
+      this.ctx.storage.sql.exec(`
+        CREATE TABLE account_lifecycle (
+          singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+          state TEXT NOT NULL CHECK (state IN ('active', 'deleted')),
+          deletion_event_id TEXT,
+          deleted_at INTEGER
+        );
+        INSERT INTO account_lifecycle (singleton, state) VALUES (1, 'active');
+        INSERT INTO _learner_agent_schema_migrations (id, applied_at) VALUES (3, ?);
+      `, Date.now());
+    }
+    if (version < 4) {
+      this.ctx.storage.sql.exec(`
+        CREATE TABLE ai_usage_daily (
+          utc_day TEXT PRIMARY KEY,
+          attempted_calls INTEGER NOT NULL CHECK (attempted_calls >= 0 AND attempted_calls <= ${AI_DAILY_CALL_LIMIT})
+        );
+        CREATE TABLE ai_provider_lease (
+          singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+          lease_id TEXT NOT NULL,
+          acquired_at INTEGER NOT NULL,
+          expires_at INTEGER NOT NULL
+        );
+        ALTER TABLE conversations ADD COLUMN provider_lease_id TEXT;
+        INSERT INTO _learner_agent_schema_migrations (id, applied_at) VALUES (4, ?);
+      `, Date.now());
+    }
   }
 
   /** Bind the immutable local learner ID to this deterministically named object. */
   async initialize(learnerId: string): Promise<void> {
+    this.requireActive();
     assertNonBlank(learnerId, 'learnerId', 200);
+    await this.requireD1AccountActive(learnerId);
     const existing = this.ctx.storage.sql.exec<{ learner_id: string }>('SELECT learner_id FROM learner_identity LIMIT 1').toArray()[0];
     if (existing && existing.learner_id !== learnerId) {
       throw new LearnerAgentConflictError('Learner runtime is already initialized for a different learner');
@@ -395,8 +458,24 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
     }
   }
 
+  /** Permanently fence this object while retaining learner-owned data for operators. */
+  async markAccountDeleted(input: { eventId: string; deletedAt: number }): Promise<void> {
+    assertNonBlank(input.eventId, 'eventId', 200);
+    if (!Number.isFinite(input.deletedAt) || input.deletedAt <= 0) throw new TypeError('deletedAt is invalid');
+    this.ctx.storage.sql.exec(
+      "UPDATE account_lifecycle SET state = 'deleted', deletion_event_id = ?, deleted_at = ? WHERE singleton = 1 AND state = 'active'",
+      input.eventId,
+      input.deletedAt,
+    );
+    this.ctx.storage.sql.exec("UPDATE scheduled_alarms SET status = 'cancelled' WHERE status IN ('scheduled', 'fired')");
+    this.ctx.storage.sql.exec('DELETE FROM tutor_abandonment_alarms');
+    this.ctx.storage.sql.exec('UPDATE conversations SET active_turn_id = NULL, provider_lease_id = NULL WHERE active_turn_id IS NOT NULL');
+    this.ctx.storage.sql.exec('DELETE FROM ai_provider_lease');
+    await this.ctx.storage.deleteAlarm();
+  }
+
   async getSnapshot(): Promise<LearnerAgentSnapshot> {
-    const learnerId = this.requireLearnerId();
+    const learnerId = await this.requireActiveLearnerId();
     const activeConversations = this.ctx.storage.sql
       .exec<ConversationRow>("SELECT id, kc_id, mode, details_json, status, active_turn_id, created_at, ended_at FROM conversations WHERE status = 'active' ORDER BY created_at DESC, id")
       .toArray()
@@ -410,7 +489,7 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
   }
 
   async createConversation(input: CreateLearnerConversationInput): Promise<LearnerConversation> {
-    this.requireLearnerId();
+    await this.requireActiveLearnerId();
     assertNonBlank(input.mode, 'mode', 100);
     if (input.kcId !== undefined && input.kcId !== null) assertNonBlank(input.kcId, 'kcId', 200);
     const id = input.id ?? crypto.randomUUID();
@@ -432,7 +511,7 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
   }
 
   async listConversations(input: { limit?: number; kcId?: string } = {}): Promise<LearnerConversation[]> {
-    this.requireLearnerId();
+    await this.requireActiveLearnerId();
     const limit = Math.min(Math.max(input.limit ?? 20, 1), 100);
     if (input.kcId) {
       return this.ctx.storage.sql
@@ -451,7 +530,7 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
   }
 
   async getConversation(conversationId: string): Promise<LearnerConversationDetails> {
-    this.requireLearnerId();
+    await this.requireActiveLearnerId();
     const conversation = this.requireConversation(conversationId);
     const messages = this.ctx.storage.sql
       .exec<MessageRow>('SELECT id, conversation_id, role, content, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at, id', conversationId)
@@ -473,7 +552,7 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
   }
 
   async appendMessage(input: AppendLearnerMessageInput): Promise<LearnerTutorMessage> {
-    this.requireLearnerId();
+    await this.requireActiveLearnerId();
     const conversation = this.requireConversation(input.conversationId);
     this.assertCanAppend(conversation, input.content);
     const message = this.insertMessage(input.conversationId, 'user', input.content);
@@ -481,46 +560,53 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
   }
 
   async acceptTutorTurn(input: AcceptLearnerTutorTurnInput): Promise<AcceptedLearnerTutorTurn> {
-    this.requireLearnerId();
+    await this.requireActiveLearnerId();
+    this.recoverExpiredAiProviderLease();
     const conversation = this.requireConversation(input.conversationId);
     this.assertCanAppend(conversation, input.content);
     if (input.analytics) this.assertTutorAnalyticsCorrelation(input.analytics);
     requireAiFeature(this.env, 'tutor');
+    const providerLease = await this.acquireAiProviderLease();
     const turnId = crypto.randomUUID();
-    const message = this.insertMessage(input.conversationId, 'user', input.content);
-    this.ctx.storage.sql.exec('UPDATE conversations SET active_turn_id = ? WHERE id = ?', turnId, input.conversationId);
-    const turnIndex = this.ctx.storage.sql
-      .exec<{ count: number }>("SELECT COUNT(*) AS count FROM messages WHERE conversation_id = ? AND role = 'user'", input.conversationId)
-      .one().count;
+    try {
+      const message = this.insertMessage(input.conversationId, 'user', input.content);
+      this.ctx.storage.sql.exec('UPDATE conversations SET active_turn_id = ?, provider_lease_id = ? WHERE id = ?', turnId, providerLease.id, input.conversationId);
+      const turnIndex = this.ctx.storage.sql
+        .exec<{ count: number }>("SELECT COUNT(*) AS count FROM messages WHERE conversation_id = ? AND role = 'user'", input.conversationId)
+        .one().count;
 
-    if (input.analytics) {
-      this.ctx.storage.sql.exec(
-        `INSERT INTO tutor_abandonment_alarms
-          (conversation_id, session_id, surface, last_user_turn_at, turn_count, scheduled_at, insert_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
-         ON CONFLICT(conversation_id) DO UPDATE SET
-           session_id = excluded.session_id,
-           surface = excluded.surface,
-           last_user_turn_at = excluded.last_user_turn_at,
-           turn_count = excluded.turn_count,
-           scheduled_at = excluded.scheduled_at,
-           insert_id = excluded.insert_id`,
-        input.conversationId,
-        input.analytics.sessionId,
-        input.analytics.surface,
-        message.created_at,
-        turnIndex,
-        message.created_at + TUTOR_ABANDONMENT_IDLE_MS,
-        `tutor-abandoned:${input.conversationId}:${message.id}`,
-      );
-      await this.rescheduleNextAlarm();
+      if (input.analytics) {
+        this.ctx.storage.sql.exec(
+          `INSERT INTO tutor_abandonment_alarms
+            (conversation_id, session_id, surface, last_user_turn_at, turn_count, scheduled_at, insert_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(conversation_id) DO UPDATE SET
+             session_id = excluded.session_id,
+             surface = excluded.surface,
+             last_user_turn_at = excluded.last_user_turn_at,
+             turn_count = excluded.turn_count,
+             scheduled_at = excluded.scheduled_at,
+             insert_id = excluded.insert_id`,
+          input.conversationId,
+          input.analytics.sessionId,
+          input.analytics.surface,
+          message.created_at,
+          turnIndex,
+          message.created_at + TUTOR_ABANDONMENT_IDLE_MS,
+          `tutor-abandoned:${input.conversationId}:${message.id}`,
+        );
+        await this.rescheduleNextAlarm();
+      }
+
+      return { turnId, messageId: message.id, acceptedAt: message.created_at, turnIndex, providerLeaseId: providerLease.id };
+    } catch (error) {
+      await this.releaseAiProviderCall(providerLease.id);
+      throw error;
     }
-
-    return { turnId, messageId: message.id, acceptedAt: message.created_at, turnIndex };
   }
 
   async endConversation(conversationId: string): Promise<LearnerConversation> {
-    this.requireLearnerId();
+    await this.requireActiveLearnerId();
     const conversation = this.requireConversation(conversationId);
     if (conversation.active_turn_id) throw new LearnerAgentConflictError('The conversation has a streaming reply in progress');
     if (conversation.status === 'ended') {
@@ -535,15 +621,19 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
 
   /** Clear a client-abandoned stream without ending the learner session. */
   async cancelStreamingReply(conversationId: string): Promise<LearnerConversation> {
-    this.requireLearnerId();
+    await this.requireActiveLearnerId();
     const conversation = this.requireConversation(conversationId);
     if (!conversation.active_turn_id) return toConversation(conversation);
-    this.ctx.storage.sql.exec('UPDATE conversations SET active_turn_id = NULL WHERE id = ? AND active_turn_id = ?', conversationId, conversation.active_turn_id);
+    const providerLease = this.ctx.storage.sql
+      .exec<{ provider_lease_id: string | null }>('SELECT provider_lease_id FROM conversations WHERE id = ?', conversationId)
+      .one().provider_lease_id;
+    this.ctx.storage.sql.exec('UPDATE conversations SET active_turn_id = NULL, provider_lease_id = NULL WHERE id = ? AND active_turn_id = ?', conversationId, conversation.active_turn_id);
+    if (providerLease) await this.releaseAiProviderCall(providerLease);
     return { ...toConversation(conversation), activeTurnId: null };
   }
 
   async setSessionState(input: { key: string; value: JsonValue; expectedVersion?: number }): Promise<LearnerSessionState> {
-    this.requireLearnerId();
+    await this.requireActiveLearnerId();
     assertNonBlank(input.key, 'session state key', 200);
     const existing = this.ctx.storage.sql.exec<SessionStateRow>('SELECT key, value_json, version, updated_at FROM session_state WHERE key = ?', input.key).toArray()[0];
     if (input.expectedVersion !== undefined && input.expectedVersion !== (existing?.version ?? 0)) {
@@ -563,14 +653,14 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
   }
 
   async getSessionState(key: string): Promise<LearnerSessionState | null> {
-    this.requireLearnerId();
+    await this.requireActiveLearnerId();
     assertNonBlank(key, 'session state key', 200);
     const row = this.ctx.storage.sql.exec<SessionStateRow>('SELECT key, value_json, version, updated_at FROM session_state WHERE key = ?', key).toArray()[0];
     return row ? { key: row.key, value: parseJson(row.value_json), version: row.version, updatedAt: row.updated_at } : null;
   }
 
   async createToolCall(input: { conversationId: string; name: string; input: JsonValue }): Promise<LearnerToolCall> {
-    this.requireLearnerId();
+    await this.requireActiveLearnerId();
     this.requireConversation(input.conversationId);
     assertNonBlank(input.name, 'tool name', 200);
     const now = Date.now();
@@ -591,7 +681,7 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
   }
 
   async resolveToolCall(input: { id: string; status: 'succeeded' | 'failed'; output: JsonValue }): Promise<LearnerToolCall> {
-    this.requireLearnerId();
+    await this.requireActiveLearnerId();
     const row = this.ctx.storage.sql
       .exec<ToolCallRow>('SELECT id, conversation_id, name, input_json, output_json, status, created_at, updated_at FROM tool_calls WHERE id = ?', input.id)
       .toArray()[0];
@@ -604,7 +694,7 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
   }
 
   async listToolCalls(conversationId: string): Promise<LearnerToolCall[]> {
-    this.requireLearnerId();
+    await this.requireActiveLearnerId();
     this.requireConversation(conversationId);
     return this.ctx.storage.sql
       .exec<ToolCallRow>('SELECT id, conversation_id, name, input_json, output_json, status, created_at, updated_at FROM tool_calls WHERE conversation_id = ? ORDER BY created_at, id', conversationId)
@@ -613,7 +703,7 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
   }
 
   async scheduleAlarm(input: { id?: string; kind: string; payload?: JsonValue; scheduledAt: number }): Promise<LearnerScheduledAlarm> {
-    this.requireLearnerId();
+    await this.requireActiveLearnerId();
     assertNonBlank(input.kind, 'alarm kind', 200);
     if (!Number.isFinite(input.scheduledAt) || input.scheduledAt <= 0) throw new TypeError('scheduledAt must be a Unix timestamp in milliseconds');
     const id = input.id ?? crypto.randomUUID();
@@ -634,7 +724,7 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
   }
 
   async listFiredAlarms(): Promise<LearnerScheduledAlarm[]> {
-    this.requireLearnerId();
+    await this.requireActiveLearnerId();
     return this.ctx.storage.sql
       .exec<AlarmRow>("SELECT id, kind, payload_json, scheduled_at, status, created_at, fired_at FROM scheduled_alarms WHERE status = 'fired' ORDER BY scheduled_at, id")
       .toArray()
@@ -642,7 +732,7 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
   }
 
   async completeAlarm(id: string): Promise<void> {
-    this.requireLearnerId();
+    await this.requireActiveLearnerId();
     this.ctx.storage.sql.exec("UPDATE scheduled_alarms SET status = 'completed' WHERE id = ? AND status = 'fired'", id);
     await this.rescheduleNextAlarm();
   }
@@ -653,7 +743,7 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
    * source marker so retries cannot duplicate transcripts.
    */
   async importLegacyConversations(input: { source: string; conversations: LegacyLearnerConversationImport[] }): Promise<{ imported: boolean; conversationCount: number }> {
-    this.requireLearnerId();
+    await this.requireActiveLearnerId();
     assertNonBlank(input.source, 'import source', 200);
     const marker = this.ctx.storage.sql.exec<{ source: string }>('SELECT source FROM import_markers WHERE source = ?', input.source).toArray()[0];
     if (marker) return { imported: false, conversationCount: 0 };
@@ -688,6 +778,100 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
     return { imported: true, conversationCount: input.conversations.length };
   }
 
+  /** Reserve the account's only provider slot and charge the UTC-day budget
+   * before any external request is attempted. The expiring lease recovers
+   * safely if a caller disappears without releasing it. */
+  async tryReserveAiProviderCall(): Promise<LearnerAiProviderReservation> {
+    try {
+      return { ok: true, lease: await this.acquireAiProviderLease() };
+    } catch (error) {
+      if (error instanceof AiBudgetExceededError) return { ok: false, code: error.code, status: error.status };
+      throw error;
+    }
+  }
+
+  private async acquireAiProviderLease(): Promise<LearnerAiProviderLease> {
+    await this.requireActiveLearnerId();
+    requireAiFeature(this.env, 'tutor');
+    const now = Date.now();
+    const utcDay = new Date(now).toISOString().slice(0, 10);
+    const id = crypto.randomUUID();
+    const expiresAt = now + AI_PROVIDER_LEASE_MS;
+
+    this.recoverExpiredAiProviderLease(now);
+    return this.ctx.storage.transactionSync(() => {
+      const activeLease = this.ctx.storage.sql.exec<{ lease_id: string }>('SELECT lease_id FROM ai_provider_lease WHERE singleton = 1').toArray()[0];
+      if (activeLease) throw new AiBudgetExceededError('concurrent_limit');
+
+      const usage = this.ctx.storage.sql.exec<{ attempted_calls: number }>('SELECT attempted_calls FROM ai_usage_daily WHERE utc_day = ?', utcDay).toArray()[0];
+      const attemptedCalls = usage?.attempted_calls ?? 0;
+      if (attemptedCalls >= AI_DAILY_CALL_LIMIT) throw new AiBudgetExceededError('daily_limit');
+
+      this.ctx.storage.sql.exec(
+        'INSERT INTO ai_usage_daily (utc_day, attempted_calls) VALUES (?, 1) ON CONFLICT(utc_day) DO UPDATE SET attempted_calls = attempted_calls + 1',
+        utcDay,
+      );
+      this.ctx.storage.sql.exec(
+        'INSERT INTO ai_provider_lease (singleton, lease_id, acquired_at, expires_at) VALUES (1, ?, ?, ?)',
+        id,
+        now,
+        expiresAt,
+      );
+      this.ctx.storage.sql.exec('DELETE FROM ai_usage_daily WHERE utc_day <> ?', utcDay);
+      return { id, utcDay, attemptedCalls: attemptedCalls + 1, expiresAt };
+    });
+  }
+
+  private recoverExpiredAiProviderLease(now = Date.now()): void {
+    this.ctx.storage.transactionSync(() => {
+      const expired = this.ctx.storage.sql
+        .exec<{ lease_id: string }>('SELECT lease_id FROM ai_provider_lease WHERE singleton = 1 AND expires_at <= ?', now)
+        .toArray()[0];
+      if (!expired) return;
+      this.ctx.storage.sql.exec(
+        'UPDATE conversations SET active_turn_id = NULL, provider_lease_id = NULL WHERE provider_lease_id = ?',
+        expired.lease_id,
+      );
+      this.ctx.storage.sql.exec('DELETE FROM ai_provider_lease WHERE singleton = 1 AND lease_id = ?', expired.lease_id);
+    });
+  }
+
+  async tryRecordAiProviderRetry(leaseId: string): Promise<LearnerAiProviderAttemptResult> {
+    try {
+      return { ok: true, attemptedCalls: await this.recordAiProviderRetry(leaseId) };
+    } catch (error) {
+      if (error instanceof AiBudgetExceededError) return { ok: false, code: error.code, status: error.status };
+      throw error;
+    }
+  }
+
+  private async recordAiProviderRetry(leaseId: string): Promise<number> {
+    await this.requireActiveLearnerId();
+    assertNonBlank(leaseId, 'AI provider lease id', 200);
+    const now = Date.now();
+    const utcDay = new Date(now).toISOString().slice(0, 10);
+    return this.ctx.storage.transactionSync(() => {
+      const lease = this.ctx.storage.sql
+        .exec<{ lease_id: string; expires_at: number }>('SELECT lease_id, expires_at FROM ai_provider_lease WHERE singleton = 1')
+        .toArray()[0];
+      if (!lease || lease.lease_id !== leaseId || lease.expires_at <= now) throw new AiBudgetExceededError('concurrent_limit');
+      const usage = this.ctx.storage.sql.exec<{ attempted_calls: number }>('SELECT attempted_calls FROM ai_usage_daily WHERE utc_day = ?', utcDay).toArray()[0];
+      const attemptedCalls = usage?.attempted_calls ?? 0;
+      if (attemptedCalls >= AI_DAILY_CALL_LIMIT) throw new AiBudgetExceededError('daily_limit');
+      this.ctx.storage.sql.exec(
+        'INSERT INTO ai_usage_daily (utc_day, attempted_calls) VALUES (?, 1) ON CONFLICT(utc_day) DO UPDATE SET attempted_calls = attempted_calls + 1',
+        utcDay,
+      );
+      this.ctx.storage.sql.exec('DELETE FROM ai_usage_daily WHERE utc_day <> ?', utcDay);
+      return attemptedCalls + 1;
+    });
+  }
+
+  async releaseAiProviderCall(leaseId: string): Promise<void> {
+    assertNonBlank(leaseId, 'AI provider lease id', 200);
+    this.ctx.storage.sql.exec('DELETE FROM ai_provider_lease WHERE singleton = 1 AND lease_id = ?', leaseId);
+  }
+
   /** Fetch is intentionally reserved for response streaming; use RPC for every other command. */
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
@@ -700,9 +884,10 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
         return Response.json(await this.acceptTutorTurn(input));
       }
       const input = await request.json<StreamLearnerReplyInput>();
-      this.requireLearnerId();
+      await this.requireActiveLearnerId();
       assertNonBlank(input.conversationId, 'conversationId', 200);
       assertNonBlank(input.turnId, 'turnId', 200);
+      assertNonBlank(input.providerLeaseId, 'providerLeaseId', 200);
       assertNonBlank(input.systemPrompt, 'systemPrompt', 24_000);
       if (!Number.isInteger(input.messageCap) || input.messageCap < 2 || input.messageCap > 200) {
         throw new TypeError('messageCap must be an integer between 2 and 200');
@@ -712,12 +897,33 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
         headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' },
       });
     } catch (error) {
-      const status = error instanceof LearnerAgentNotFoundError ? 404 : error instanceof LearnerAgentConflictError ? 409 : 400;
-      return Response.json({ error: error instanceof Error ? error.message : 'Invalid streaming request' }, { status });
+      const status = error instanceof LearnerAgentDeletedError
+        ? 410
+        : error instanceof LearnerAgentNotFoundError
+          ? 404
+          : error instanceof AiBudgetExceededError
+            ? error.status
+            : error instanceof LearnerAgentConflictError
+              ? 409
+              : 400;
+      return Response.json(
+        {
+          error: error instanceof Error ? error.message : 'Invalid streaming request',
+          ...(error instanceof AiBudgetExceededError ? { code: error.code } : {}),
+        },
+        { status },
+      );
     }
   }
 
   async alarm(): Promise<void> {
+    try {
+      await this.requireActiveLearnerId();
+    } catch (error) {
+      if (!(error instanceof LearnerAgentDeletedError)) throw error;
+      await this.ctx.storage.deleteAlarm();
+      return;
+    }
     const now = Date.now();
     this.ctx.storage.sql.exec(
       "UPDATE scheduled_alarms SET status = 'fired', fired_at = ? WHERE status = 'scheduled' AND scheduled_at <= ?",
@@ -729,9 +935,20 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
   }
 
   private async streamReply(input: StreamLearnerReplyInput): Promise<ReadableStream<Uint8Array>> {
+    const learnerId = await this.requireActiveLearnerId();
     const conversation = this.requireConversation(input.conversationId);
     if (conversation.status !== 'active') throw new LearnerAgentConflictError('The conversation has ended');
     if (conversation.active_turn_id !== input.turnId) throw new LearnerAgentConflictError('The accepted tutor turn is no longer active');
+    const lease = this.ctx.storage.sql
+      .exec<{ lease_id: string; expires_at: number }>('SELECT lease_id, expires_at FROM ai_provider_lease WHERE singleton = 1')
+      .toArray()[0];
+    if (!lease || lease.lease_id !== input.providerLeaseId || lease.expires_at <= Date.now()) {
+      throw new LearnerAgentConflictError('The AI provider lease is no longer active');
+    }
+    const conversationLease = this.ctx.storage.sql
+      .exec<{ provider_lease_id: string | null }>('SELECT provider_lease_id FROM conversations WHERE id = ?', input.conversationId)
+      .one().provider_lease_id;
+    if (conversationLease !== input.providerLeaseId) throw new LearnerAgentConflictError('The tutor turn does not own this AI provider lease');
     requireAiFeature(this.env, 'tutor');
     const turnId = input.turnId;
 
@@ -745,65 +962,98 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
     ];
 
     let finalised = false;
-    const finalise = (status: 'completed' | 'failed', text?: string) => {
+    const finalise = async (status: 'completed' | 'failed', text?: string) => {
       if (finalised) return;
       finalised = true;
-      if (status === 'completed') {
-        this.insertMessage(input.conversationId, 'assistant', text?.trim() || "Sorry, I didn't get a reply that time — could you try again?");
-      }
-      this.ctx.storage.sql.exec('UPDATE conversations SET active_turn_id = NULL WHERE id = ? AND active_turn_id = ?', input.conversationId, turnId);
-      if (status === 'completed') {
-        const messageCount = this.ctx.storage.sql
-          .exec<{ count: number }>('SELECT COUNT(*) AS count FROM messages WHERE conversation_id = ?', input.conversationId)
-          .one().count;
-        if (messageCount >= input.messageCap) {
-          this.ctx.storage.sql.exec(
-            "UPDATE conversations SET status = 'ended', ended_at = ? WHERE id = ? AND status = 'active'",
-            Date.now(),
-            input.conversationId,
-          );
-          this.ctx.storage.sql.exec('DELETE FROM tutor_abandonment_alarms WHERE conversation_id = ?', input.conversationId);
-          this.ctx.waitUntil(this.rescheduleNextAlarm());
+      try {
+        await this.requireD1AccountActive(learnerId);
+        if (status === 'completed') {
+          this.insertMessage(input.conversationId, 'assistant', text?.trim() || "Sorry, I didn't get a reply that time — could you try again?");
         }
+        this.ctx.storage.sql.exec('UPDATE conversations SET active_turn_id = NULL, provider_lease_id = NULL WHERE id = ? AND active_turn_id = ?', input.conversationId, turnId);
+        if (status === 'completed') {
+          const messageCount = this.ctx.storage.sql
+            .exec<{ count: number }>('SELECT COUNT(*) AS count FROM messages WHERE conversation_id = ?', input.conversationId)
+            .one().count;
+          if (messageCount >= input.messageCap) {
+            this.ctx.storage.sql.exec(
+              "UPDATE conversations SET status = 'ended', ended_at = ? WHERE id = ? AND status = 'active'",
+              Date.now(),
+              input.conversationId,
+            );
+            this.ctx.storage.sql.exec('DELETE FROM tutor_abandonment_alarms WHERE conversation_id = ?', input.conversationId);
+            this.ctx.waitUntil(this.rescheduleNextAlarm());
+          }
+        }
+      } finally {
+        await this.releaseAiProviderCall(input.providerLeaseId);
       }
     };
 
     try {
+      await this.requireD1AccountActive(learnerId);
       const upstream = await streamChatCompletion({
         apiKey: this.env.OPENROUTER_API_KEY,
         model: this.env.OPENROUTER_MODEL,
         messages: history,
+        deadlineAt: lease.expires_at,
       });
+      await this.requireD1AccountActive(learnerId);
       const relay = relayAsSSE(upstream, {
         onDone: (text) => finalise('completed', text),
         onError: () => finalise('failed'),
       });
       return this.withCancellationFinalizer(relay, () => finalise('failed'));
     } catch (error) {
-      finalise('failed');
+      await finalise('failed');
       throw error;
     }
   }
 
-  private withCancellationFinalizer(stream: ReadableStream<Uint8Array>, onCancel: () => void): ReadableStream<Uint8Array> {
+  private withCancellationFinalizer(stream: ReadableStream<Uint8Array>, onCancel: () => Promise<void> | void): ReadableStream<Uint8Array> {
     const reader = stream.getReader();
     return new ReadableStream<Uint8Array>({
       async pull(controller) {
-        const { value, done } = await reader.read();
-        if (done) controller.close();
-        else controller.enqueue(value);
+        try {
+          const { value, done } = await reader.read();
+          if (done) controller.close();
+          else controller.enqueue(value);
+        } catch (error) {
+          controller.error(error);
+        }
       },
       async cancel(reason) {
         await reader.cancel(reason);
-        onCancel();
+        await onCancel();
       },
     });
   }
 
   private requireLearnerId(): string {
+    this.requireActive();
     const row = this.ctx.storage.sql.exec<{ learner_id: string }>('SELECT learner_id FROM learner_identity LIMIT 1').toArray()[0];
     if (!row) throw new LearnerAgentConflictError('Learner runtime has not been initialized');
     return row.learner_id;
+  }
+
+  private async requireActiveLearnerId(): Promise<string> {
+    const learnerId = this.requireLearnerId();
+    await this.requireD1AccountActive(learnerId);
+    return learnerId;
+  }
+
+  private async requireD1AccountActive(learnerId: string): Promise<void> {
+    this.requireActive();
+    await assertAiProviderAccountActive(this.env, learnerId);
+    this.requireActive();
+  }
+
+  private isActive(): boolean {
+    return this.ctx.storage.sql.exec<{ state: string }>('SELECT state FROM account_lifecycle WHERE singleton = 1').one().state === 'active';
+  }
+
+  private requireActive(): void {
+    if (!this.isActive()) throw new LearnerAgentDeletedError();
   }
 
   private requireConversation(conversationId: string): ConversationRow {
@@ -900,6 +1150,7 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
         }
       }
       const analyticsOptOut = !user || resolveSettings(rawSettings).analytics_opt_out;
+      await this.requireD1AccountActive(learnerId);
       await deliverBehavioralEventAwaited(
         { env: this.env, user_id: learnerId, analytics_opt_out: analyticsOptOut },
         {
@@ -914,6 +1165,7 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
         },
         { insert_id: pending.insert_id },
       );
+      await this.requireD1AccountActive(learnerId);
       // Transport failures throw before deletion, so the platform retries the
       // same insert id. Config/privacy rejection is a terminal no-op.
       this.ctx.storage.sql.exec('DELETE FROM tutor_abandonment_alarms WHERE conversation_id = ?', pending.conversation_id);
@@ -928,8 +1180,7 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
 }
 
 export function learnerAgentObjectName(userId: string): string {
-  assertNonBlank(userId, 'userId', 200);
-  return `${LEARNER_AGENT_NAME_PREFIX}${userId}`;
+  return learnerRuntimeObjectName(userId);
 }
 
 /**
@@ -944,6 +1195,37 @@ export async function getLearnerAgentForUser(
   const stub = env.LEARNER_AGENT.getByName(learnerAgentObjectName(userId));
   await stub.initialize(userId);
   return stub as unknown as LearnerAgentStub;
+}
+
+export async function assertAiProviderAccountActive(
+  env: Pick<Cloudflare.Env, 'DB'>,
+  userId: string,
+): Promise<void> {
+  const row = await env.DB.prepare(
+    `SELECT u.account_state AS account_state, r.state AS runtime_state
+     FROM users u
+     INNER JOIN learner_runtime_registry r ON r.user_id = u.id
+     WHERE u.id = ?
+     LIMIT 1`,
+  ).bind(userId).first<{ account_state: string; runtime_state: string }>();
+  if (!row || row.account_state !== 'active' || row.runtime_state !== 'active') throw new LearnerAgentDeletedError();
+}
+
+export async function withLearnerAiProviderLease<T>(
+  env: Pick<Cloudflare.Env, 'LEARNER_AGENT' | 'DB'>,
+  userId: string,
+  providerWork: (lease: LearnerAiProviderLease, learner: LearnerAgentStub) => Promise<T>,
+): Promise<T> {
+  const learner = await getLearnerAgentForUser(env, userId);
+  const reservation = await learner.tryReserveAiProviderCall();
+  if (!reservation.ok) throw new AiBudgetExceededError(reservation.code);
+  const lease = reservation.lease;
+  try {
+    await assertAiProviderAccountActive(env, userId);
+    return await providerWork(lease, learner);
+  } finally {
+    await learner.releaseAiProviderCall(lease.id);
+  }
 }
 
 /** Build the internal request used by a protected Worker route to relay SSE. */

@@ -23,7 +23,7 @@ describe('behavioral analytics coverage registry', () => {
       .filter(([, entry]) => entry.status === 'reserved')
       .map(([name, entry]) => ({ name, entry }));
 
-    expect(reserved.map(({ name }) => name)).toEqual(['resource_saved']);
+    expect(reserved.map(({ name }) => name)).toEqual(['onboarding_completed', 'resource_saved']);
     for (const { entry } of reserved) {
       if (entry.status !== 'reserved') throw new Error('Expected a reserved coverage entry');
       expect(entry.reason.trim()).not.toBe('');

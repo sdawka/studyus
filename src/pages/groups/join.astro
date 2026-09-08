@@ -1,0 +1,14 @@
+---
+import AppShell from '../../layouts/AppShell.astro';
+import GroupJoin from '../../components/groups/GroupJoin.svelte';
+
+const token = Astro.url.searchParams.get('token') ?? '';
+if (!Astro.locals.user) {
+  const returnPath = `${Astro.url.pathname}${Astro.url.search}`;
+  return Astro.redirect(`/sign-in?return=${encodeURIComponent(returnPath)}`);
+}
+---
+
+<AppShell title="Join group">
+  <GroupJoin token={token} client:load />
+</AppShell>

@@ -1,0 +1,13 @@
+---
+import AppShell from '../../layouts/AppShell.astro';
+import GroupDetail from '../../components/groups/GroupDetail.svelte';
+
+if (!Astro.locals.user) {
+  const returnPath = `${Astro.url.pathname}${Astro.url.search}`;
+  return Astro.redirect(`/sign-in?return=${encodeURIComponent(returnPath)}`);
+}
+---
+
+<AppShell title="Group">
+  <GroupDetail groupId={Astro.params.id!} viewerUserId={Astro.locals.user.id} client:load />
+</AppShell>

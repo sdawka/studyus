@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Db } from '../../db/client';
+  import { safeWebUrl } from '../../lib/webUrl';
   import { captureBehavioralEvent } from '../../lib/analytics/client';
   import { createResourceAnalytics, type ResourceOrigin } from '../../lib/analytics/engagement';
 
@@ -29,7 +29,6 @@
 
   let { resource, course }: Props = $props();
   let deleting = $state(false);
-  let faviconFailed = $state(false);
   const analytics = createResourceAnalytics(captureBehavioralEvent);
 
   const hue = $derived(course?.color ? Number(course.color) : null);
@@ -44,22 +43,13 @@
     }
   }
 
-  function getHostname(urlString: string): string {
-    try {
-      return new URL(urlString).hostname;
-    } catch {
-      return '';
-    }
-  }
-
   const domain = $derived(getDomain(resource.url));
-  const hostname = $derived(getHostname(resource.url));
-  const faviconUrl = $derived(hostname ? `https://www.google.com/s2/favicons?domain=${hostname}&sz=64` : '');
+  const safeUrl = $derived(safeWebUrl(resource.url));
   const tileHeight = $derived(resource.kind === 'user_shared' ? 88 : 72);
   const origin = $derived<ResourceOrigin>(resource.kind === 'user_shared' ? 'shared' : resource.kind === 'feed' ? 'feed' : 'course');
 
   function trackOpen() {
-    analytics.opened(resource.id, origin);
+    if (safeUrl) analytics.opened(resource.id, origin);
   }
 
   async function deleteResource(e: MouseEvent) {
@@ -85,13 +75,13 @@
     // Let native anchor/button clicks (title link, course chip, delete) handle themselves.
     if (target.closest('a, button')) return;
     trackOpen();
-    window.open(resource.url, '_blank', 'noopener,noreferrer');
+    if (safeUrl) window.open(safeUrl, '_blank', 'noopener,noreferrer');
   }
 
   function handleCardKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' && e.target === e.currentTarget) {
       trackOpen();
-      window.open(resource.url, '_blank', 'noopener,noreferrer');
+      if (safeUrl) window.open(safeUrl, '_blank', 'noopener,noreferrer');
     }
   }
 </script>
@@ -106,17 +96,16 @@
   onkeydown={handleCardKeydown}
 >
   <div class="card-tile" class:tinted={hue !== null} style={`height:${tileHeight}px`}>
-    {#if faviconUrl && !faviconFailed}
-      <img src={faviconUrl} alt="" onerror={() => (faviconFailed = true)} />
-    {:else}
-      <span class="tile-initial">{domain.charAt(0).toUpperCase()}</span>
-    {/if}
+    <span class="tile-initial" aria-hidden="true">{domain.charAt(0).toUpperCase()}</span>
   </div>
 
   <div class="card-body">
-    <a href={resource.url} target="_blank" rel="noopener noreferrer" class="resource-link" onclick={trackOpen}>
-      {resource.label}
-    </a>
+    {#if safeUrl}
+      <a href={safeUrl} target="_blank" rel="noopener noreferrer" class="resource-link" onclick={trackOpen}>{resource.label}</a>
+    {:else}
+      <span class="resource-link">{resource.label}</span>
+      <small>Link unavailable. Replace it with an HTTP or HTTPS URL.</small>
+    {/if}
     <span class="domain">{domain}</span>
 
     <div class="card-footer">
@@ -173,11 +162,6 @@
     background: var(--course-soft);
   }
 
-  .card-tile img {
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-sm);
-  }
 
   .tile-initial {
     font-size: 1.75rem;

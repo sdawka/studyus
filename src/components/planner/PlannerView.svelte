@@ -8,7 +8,7 @@
   import CreateSessionPopover from './CreateSessionPopover.svelte';
   import type { CalendarItem } from '../../lib/types/calendar';
   import { apiFetch } from '../../lib/apiClient';
-  import { addDays, addMonths, firstOfMonth, localDateKey, mondayOf, startOfDay, weekRangeLabel } from '../../lib/plannerDates';
+  import { addDays, addMonths, calendarItemDateKey, firstOfMonth, formatZonedDate, localDateKey, mondayOf, startOfDay, weekRangeLabel, zonedDateKey, zonedDateTime } from '../../lib/plannerDates';
   import { isMobile } from '../../lib/stores/viewport';
   import { listenForCalendarSync } from '../../lib/plannerCalendarRefresh';
 
@@ -27,13 +27,24 @@
     initialItems,
     initialAnchor,
     deepLinkEventId,
+    timezone,
+    initialNow,
   }: {
     courses: CourseOption[];
     currentTerm: string | null;
     initialItems: CalendarItem[];
     initialAnchor?: string;
     deepLinkEventId?: string | null;
+    timezone: string;
+    initialNow: number;
   } = $props();
+
+  let clockNow = $state(initialNow);
+  onMount(() => {
+    clockNow = Date.now();
+    const timer = setInterval(() => (clockNow = Date.now()), 60_000);
+    return () => clearInterval(timer);
+  });
 
   const courseById = new Map(courses.map((c) => [c.id, c]));
   const currentTermCourseIds = new Set(courses.filter((c) => c.term === currentTerm).map((c) => c.id));
@@ -50,14 +61,14 @@
   // gets one intentional swap on load rather than a wrong-then-right flash.
   let view = $state<View>(isMobile.get() ? 'agenda' : 'week');
 
-  const seedAnchor = initialAnchor && !Number.isNaN(Date.parse(initialAnchor)) ? new Date(initialAnchor) : new Date();
-  let weekStart = $state(mondayOf(new Date()));
-  let monthAnchor = $state(firstOfMonth(seedAnchor));
+  const seedAnchor = initialAnchor && !Number.isNaN(Date.parse(initialAnchor)) ? new Date(initialAnchor) : new Date(initialNow);
+  let weekStart = $state(mondayOf(new Date(initialNow), timezone));
+  let monthAnchor = $state(firstOfMonth(seedAnchor, timezone));
 
   // Leftmost visible day in WeekGrid's 1/3-day modes (default today; ignored
   // entirely in 7-day mode, where `weekStart` alone drives the display).
-  let dayAnchor = $state(startOfDay(new Date()));
-  const dayAnchorKey = $derived(localDateKey(dayAnchor));
+  let dayAnchor = $state(startOfDay(new Date(initialNow), timezone));
+  const dayAnchorKey = $derived(localDateKey(dayAnchor, timezone));
   // Live readback of WeekGrid's own container-measured day count, so the
   // chevrons/arrow keys know whether to page by a week or by the visible
   // window — see WeekGrid's `dayCount` prop doc for why this is bindable
@@ -92,7 +103,7 @@
 
   const courseParam = $derived(filter !== 'current_term' && filter !== 'all' ? filter : undefined);
 
-  const weekStartKey = $derived(localDateKey(weekStart));
+  const weekStartKey = $derived(localDateKey(weekStart, timezone));
 
   const visibleItems = $derived(
     filter === 'current_term' ? items.filter((i) => i.course_id === null || currentTermCourseIds.has(i.course_id)) : items,
@@ -114,7 +125,7 @@
     error = null;
     try {
       const from = weekStart;
-      const to = addDays(weekStart, 7);
+      const to = addDays(weekStart, 7, timezone);
       const params = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
       if (courseParam) params.set('course', courseParam);
       const result = await apiFetch<CalendarItem[]>(`/api/v1/calendar?${params.toString()}`, {}, 'Could not load calendar.');
@@ -138,7 +149,7 @@
     error = null;
     try {
       const from = monthAnchor;
-      const to = addMonths(monthAnchor, 1);
+      const to = addMonths(monthAnchor, 1, timezone);
       const params = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
       if (courseParam) params.set('course', courseParam);
       const result = await apiFetch<CalendarItem[]>(`/api/v1/calendar?${params.toString()}`, {}, 'Could not load calendar.');
@@ -154,8 +165,8 @@
 
   async function loadRail() {
     // Rail is a secondary surface — a failed fetch just leaves it empty.
-    const from = addDays(new Date(), -30);
-    const to = addDays(new Date(), 7);
+    const from = addDays(new Date(clockNow), -30, timezone);
+    const to = addDays(new Date(clockNow), 7, timezone);
     const params = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
     if (courseParam) params.set('course', courseParam);
     const result = await apiFetch<CalendarItem[]>(`/api/v1/calendar?${params.toString()}`);
@@ -186,7 +197,7 @@
   });
 
   function shiftWeek(delta: number) {
-    weekStart = addDays(weekStart, delta * 7);
+    weekStart = addDays(weekStart, delta * 7, timezone);
     dayAnchor = weekStart;
   }
   // 1/3-day WeekGrid paging: chevrons/arrow keys move by the visible window
@@ -195,12 +206,12 @@
   // moves when the anchor crosses into a different calendar week, so a
   // 3-day page that stays within the same week doesn't re-fetch.
   function shiftDays(delta: number) {
-    dayAnchor = addDays(dayAnchor, delta * weekGridDayCount);
-    const monday = mondayOf(dayAnchor);
-    if (localDateKey(monday) !== weekStartKey) weekStart = monday;
+    dayAnchor = addDays(dayAnchor, delta * weekGridDayCount, timezone);
+    const monday = mondayOf(dayAnchor, timezone);
+    if (localDateKey(monday, timezone) !== weekStartKey) weekStart = monday;
   }
   function shiftMonth(delta: number) {
-    monthAnchor = addMonths(monthAnchor, delta);
+    monthAnchor = addMonths(monthAnchor, delta, timezone);
   }
   function shiftWeekView(delta: number) {
     if (weekGridDayCount >= 7) shiftWeek(delta);
@@ -208,50 +219,49 @@
   }
   function goToday() {
     if (view === 'week') {
-      weekStart = mondayOf(new Date());
-      dayAnchor = startOfDay(new Date());
-    } else monthAnchor = firstOfMonth(new Date());
+      weekStart = mondayOf(new Date(clockNow), timezone);
+      dayAnchor = startOfDay(new Date(clockNow), timezone);
+    } else monthAnchor = firstOfMonth(new Date(clockNow), timezone);
   }
   const isTodayInView = $derived.by(() => {
     if (view === 'week') {
-      if (weekGridDayCount >= 7) return weekStartKey === localDateKey(mondayOf(new Date()));
-      const todayKey = localDateKey(startOfDay(new Date()));
-      const lastVisibleKey = localDateKey(addDays(dayAnchor, weekGridDayCount - 1));
+      if (weekGridDayCount >= 7) return weekStartKey === localDateKey(mondayOf(new Date(clockNow), timezone), timezone);
+      const todayKey = zonedDateKey(clockNow, timezone);
+      const lastVisibleKey = localDateKey(addDays(dayAnchor, weekGridDayCount - 1, timezone), timezone);
       return dayAnchorKey <= todayKey && todayKey <= lastVisibleKey;
     }
-    const now = new Date();
-    return monthAnchor.getFullYear() === now.getFullYear() && monthAnchor.getMonth() === now.getMonth();
+    return zonedDateKey(monthAnchor, timezone).slice(0, 7) === zonedDateKey(clockNow, timezone).slice(0, 7);
   });
 
   // 1/3-day mode shows a narrower window than the fetch week, so the label
   // should describe what's actually on screen, not the underlying week.
   function dayRangeLabel(start: Date, count: number): string {
-    if (count === 1) return start.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-    const end = addDays(start, count - 1);
-    const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+    if (count === 1) return formatZonedDate(start, timezone, { weekday: 'short', month: 'short', day: 'numeric' });
+    const end = addDays(start, count - 1, timezone);
+    const startKey = zonedDateKey(start, timezone);
+    const endKey = zonedDateKey(end, timezone);
+    const sameMonth = startKey.slice(0, 7) === endKey.slice(0, 7);
     const optsStart: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
     const optsEnd: Intl.DateTimeFormatOptions = sameMonth ? { day: 'numeric' } : { month: 'short', day: 'numeric' };
-    return `${start.toLocaleDateString(undefined, optsStart)} – ${end.toLocaleDateString(undefined, optsEnd)}, ${end.getFullYear()}`;
+    return `${formatZonedDate(start, timezone, optsStart)} – ${formatZonedDate(end, timezone, optsEnd)}, ${endKey.slice(0, 4)}`;
   }
 
   const rangeLabel = $derived(
     view === 'week'
       ? weekGridDayCount >= 7
-        ? weekRangeLabel(weekStart)
+        ? weekRangeLabel(weekStart, timezone)
         : dayRangeLabel(dayAnchor, weekGridDayCount)
-      : monthAnchor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
+      : formatZonedDate(monthAnchor, timezone, { month: 'long', year: 'numeric' }),
   );
 
-  function dayKey(iso: string): string {
-    return localDateKey(new Date(iso));
-  }
-
   const monthCells = $derived.by(() => {
-    const startWeekday = monthAnchor.getDay();
-    const daysInMonth = new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() + 1, 0).getDate();
+    const monthKey = zonedDateKey(monthAnchor, timezone).slice(0, 7);
+    const [year, month] = monthKey.split('-').map(Number);
+    const startWeekday = new Date(`${monthKey}-01T12:00:00.000Z`).getUTCDay();
+    const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
     const itemsByDay = new Map<string, CalendarItem[]>();
     for (const item of visibleItems) {
-      const key = dayKey(item.date);
+      const key = calendarItemDateKey(item, timezone);
       const list = itemsByDay.get(key) ?? [];
       list.push(item);
       itemsByDay.set(key, list);
@@ -259,8 +269,9 @@
     const cells: { date: Date | null; items: CalendarItem[] }[] = [];
     for (let i = 0; i < startWeekday; i++) cells.push({ date: null, items: [] });
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(monthAnchor.getFullYear(), monthAnchor.getMonth(), day);
-      cells.push({ date, items: itemsByDay.get(localDateKey(date)) ?? [] });
+      const dateKey = `${monthKey}-${String(day).padStart(2, '0')}`;
+      const date = zonedDateTime(dateKey, 0, timezone);
+      cells.push({ date, items: itemsByDay.get(dateKey) ?? [] });
     }
     return cells;
   });
@@ -322,12 +333,12 @@
 
   function handleRailJump(date: Date, item: CalendarItem) {
     view = 'week';
-    weekStart = mondayOf(date);
+    weekStart = mondayOf(date, timezone);
     // In 1/3-day mode the grid only renders `dayCount` days starting at
     // `dayAnchor` — without this, a jump into a week where the anchor is
     // stale would fetch the right week but still not draw a column for the
     // target day.
-    dayAnchor = startOfDay(date);
+    dayAnchor = startOfDay(date, timezone);
     pendingSelectItem = item;
   }
 
@@ -377,15 +388,16 @@
     let found = initialItems.find((i) => i.id === id);
     if (!found) {
       // Give up quietly on failure — deep link just won't resolve.
-      const from = addDays(new Date(), -60);
-      const to = addDays(new Date(), 180);
+      const from = addDays(new Date(clockNow), -60, timezone);
+      const to = addDays(new Date(clockNow), 180, timezone);
       const result = await apiFetch<CalendarItem[]>(`/api/v1/calendar?from=${from.toISOString()}&to=${to.toISOString()}`);
       if (result.ok) found = result.data.find((i) => i.id === id);
     }
     if (!found) return;
     view = 'week';
-    weekStart = mondayOf(new Date(found.date));
-    dayAnchor = startOfDay(new Date(found.date)); // see handleRailJump's comment
+    const foundDate = zonedDateTime(calendarItemDateKey(found, timezone), 0, timezone);
+    weekStart = mondayOf(foundDate, timezone);
+    dayAnchor = foundDate; // see handleRailJump's comment
     pendingSelectItem = found;
   }
 
@@ -425,7 +437,7 @@
   // so a day tap hands off to Agenda scrolled to that date instead of
   // trying to show event detail in a ~3rem cell.
   function handleDayTap(date: Date) {
-    agendaScrollTarget = localDateKey(date);
+    agendaScrollTarget = localDateKey(date, timezone);
     view = 'agenda';
   }
 
@@ -484,16 +496,18 @@
           bind:dayCount={weekGridDayCount}
           onSelect={selectItem}
           onSlotClick={handleSlotClick}
+          {timezone}
+          {initialNow}
         />
       {:else if view === 'month'}
-        <CalendarGrid cells={monthCells} {courseById} {selectedId} onSelect={selectItem} onDayTap={$isMobile ? handleDayTap : undefined} />
+        <CalendarGrid cells={monthCells} {courseById} {selectedId} onSelect={selectItem} onDayTap={$isMobile ? handleDayTap : undefined} {timezone} initialNow={clockNow} />
       {:else}
-        <AgendaList items={agendaItems} {courseById} {selectedId} onSelect={selectItem} scrollToDate={agendaScrollTarget} />
+        <AgendaList items={agendaItems} {courseById} {selectedId} onSelect={selectItem} scrollToDate={agendaScrollTarget} {timezone} initialNow={clockNow} />
       {/if}
     </div>
     <div class="planner-side">
       <h2 class="kicker">Plan ahead</h2>
-      <PlannerRail items={visibleRailItems} {courses} {selectedId} weekStart={weekStartKey} onSelect={selectItem} onJumpToWeek={handleRailJump} />
+      <PlannerRail items={visibleRailItems} {courses} {selectedId} weekStart={weekStartKey} onSelect={selectItem} onJumpToWeek={handleRailJump} {timezone} initialNow={clockNow} />
     </div>
   </div>
 </div>
@@ -513,6 +527,7 @@
       onDeleted={() => (view === 'week' ? loadWeek() : loadMonth())}
       onTaskToggled={handleTaskToggled}
       onItemUpdated={handlePlannerItemUpdated}
+      {timezone}
     />
   {/key}
 {/if}
@@ -523,7 +538,7 @@
        type/title/duration state (and its duration wouldn't re-derive from
        the new drag range, since that only happens at $state init time). -->
   {#key `${createSlot.getTime()}-${createSlotEnd?.getTime() ?? 0}`}
-    <CreateSessionPopover start={createSlot} end={createSlotEnd} anchorRect={createAnchor} courses={createCourseOptions} onClose={closeCreate} onCreated={handleSessionCreated} />
+    <CreateSessionPopover start={createSlot} end={createSlotEnd} anchorRect={createAnchor} courses={createCourseOptions} onClose={closeCreate} onCreated={handleSessionCreated} {timezone} />
   {/key}
 {/if}
 

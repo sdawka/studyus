@@ -5,6 +5,10 @@ import type {
   ProviderEvent,
   ProviderEventInput,
   ProviderEventVersion,
+  ProvisionedCalendar,
+  ProviderCalendarDeleteRequest,
+  ProviderCalendarDiscoveryRequest,
+  ProviderCalendarProvisionRequest,
   ProviderSyncRequest,
 } from './types';
 
@@ -37,8 +41,29 @@ interface GoogleWriteResponse {
   etag?: string;
 }
 
+interface GoogleCalendar {
+  id: string;
+  summary?: string;
+  description?: string;
+  timeZone?: string;
+  accessRole?: string;
+}
+
 function eventsUrl(calendarId: string): URL {
   return new URL(`${GOOGLE_CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events`);
+}
+
+function googleCalendar(value: GoogleCalendar, fallbackTimezone: string): ProvisionedCalendar {
+  return {
+    id: value.id,
+    name: value.summary ?? 'Studyus',
+    timezone: value.timeZone ?? fallbackTimezone,
+    accessRole: value.accessRole ?? 'owner',
+  };
+}
+
+function provisionMarkerDescription(marker: string): string {
+  return `Study blocks managed by Studyus.\nStudyus provision marker: ${marker}`;
 }
 
 function mapGoogleEvent(event: GoogleEvent): ProviderChange {
@@ -159,6 +184,36 @@ export function createGoogleCalendarProvider({ fetch }: { fetch: typeof globalTh
           headers,
         }),
       );
+    },
+
+    async provisionCalendar(request: ProviderCalendarProvisionRequest) {
+      const response = await fetch(`${GOOGLE_CALENDAR_API}/calendars`, {
+        method: 'POST',
+        headers: bearerHeaders(request.accessToken, { 'content-type': 'application/json' }),
+        body: JSON.stringify({
+          summary: 'Studyus',
+          description: provisionMarkerDescription(request.marker),
+          timeZone: request.timezone,
+        }),
+      });
+      return googleCalendar(await readJson<GoogleCalendar>(response), request.timezone);
+    },
+
+    async discoverProvisionedCalendar(request: ProviderCalendarDiscoveryRequest) {
+      const result = await readJson<{ items?: GoogleCalendar[] }>(
+        await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+          headers: bearerHeaders(request.accessToken),
+        }),
+      );
+      const calendar = result.items?.find((item) => item.description?.includes(`Studyus provision marker: ${request.marker}`));
+      return calendar ? googleCalendar(calendar, 'UTC') : null;
+    },
+
+    async deleteProvisionedCalendar(request: ProviderCalendarDeleteRequest) {
+      await expectSuccess(await fetch(`${GOOGLE_CALENDAR_API}/calendars/${encodeURIComponent(request.calendarId)}`, {
+        method: 'DELETE',
+        headers: bearerHeaders(request.accessToken),
+      }));
     },
   };
 }

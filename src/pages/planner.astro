@@ -1,14 +1,19 @@
 ---
 import AppShell from '../layouts/AppShell.astro';
 import PlannerView from '../components/planner/PlannerView.svelte';
+import PlanningControls from '../components/planner/PlanningControls.svelte';
 import { env } from 'cloudflare:workers';
 import { getDb } from '../db/client';
 import { listCourses } from '../lib/services/courses';
 import { getCalendar } from '../lib/services/calendar';
+import { addMonths, zonedDateKey, zonedDateTime } from '../lib/plannerDates';
 
 const db = getDb(env.DB);
-const userId = Astro.locals.user!.id;
-const currentTerm = Astro.locals.user!.currentTerm;
+const user = Astro.locals.user!;
+const userId = user.id;
+const currentTerm = user.currentTerm;
+const timezone = user.timezone;
+const now = Date.now();
 
 const userCourses = await listCourses(db, userId);
 
@@ -18,9 +23,13 @@ const userCourses = await listCourses(db, userId);
 const deepLinkEvent = Astro.url.searchParams.get('event');
 const deepLinkDate = Astro.url.searchParams.get('date');
 
-const anchor = deepLinkDate && !Number.isNaN(Date.parse(deepLinkDate)) ? new Date(deepLinkDate) : new Date();
-const monthStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1).getTime();
-const monthEnd = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1).getTime();
+const parsedAnchor = deepLinkDate && !Number.isNaN(Date.parse(deepLinkDate)) ? new Date(deepLinkDate) : new Date(now);
+const anchorKey = /^\d{4}-\d{2}-\d{2}$/.test(deepLinkDate ?? '') ? deepLinkDate!.slice(0, 10) : zonedDateKey(parsedAnchor, timezone);
+const anchor = zonedDateTime(anchorKey, 0, timezone);
+const monthKey = `${anchorKey.slice(0, 7)}-01`;
+const monthStartDate = zonedDateTime(monthKey, 0, timezone);
+const monthStart = monthStartDate.getTime();
+const monthEnd = addMonths(monthStartDate, 1, timezone).getTime();
 const initialItems = await getCalendar(db, userId, monthStart, monthEnd);
 
 const courseOptions = userCourses.map((c) => ({
@@ -43,6 +52,7 @@ const courseOptions = userCourses.map((c) => ({
           <span aria-hidden="true">×</span>
         </button>
       </div>
+      <PlanningControls client:load />
       <PlannerView
         client:load
         courses={courseOptions}
@@ -50,6 +60,8 @@ const courseOptions = userCourses.map((c) => ({
         initialItems={initialItems}
         initialAnchor={anchor.toISOString()}
         deepLinkEventId={deepLinkEvent}
+        {timezone}
+        initialNow={now}
       />
     </div>
   </div>

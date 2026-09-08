@@ -33,11 +33,28 @@
     ),
   );
   let savingId = $state<string | null>(null);
+  let editingId = $state<string | null>(null);
   let feedback = $state<Record<string, string>>({});
 
   function formatDue(ms: number | null): string {
     if (ms === null) return 'No due date';
     return new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function beginEditing(assessmentId: string) {
+    editingId = assessmentId;
+    feedback = { ...feedback, [assessmentId]: '' };
+  }
+
+  function cancelEditing(assessment: Assessment) {
+    drafts = {
+      ...drafts,
+      [assessment.id]: {
+        received: assessment.gradeReceived?.toString() ?? '',
+        max: assessment.gradeMax?.toString() ?? '',
+      },
+    };
+    editingId = null;
   }
 
   async function saveGrade(assessmentId: string) {
@@ -62,6 +79,7 @@
       assessments = assessments.map((a) =>
         a.id === assessmentId ? { ...a, gradeReceived: updated.grade_received, gradeMax: updated.grade_max } : a,
       );
+      editingId = null;
       const loggedEvent = Array.isArray(updated.mastery_deltas) && updated.mastery_deltas.length > 0;
       feedback = { ...feedback, [assessmentId]: loggedEvent ? 'Saved — logged a grade event for linked concepts.' : 'Saved.' };
     } finally {
@@ -101,15 +119,32 @@
               <td>{formatDue(a.dueDate)}</td>
               <td>{a.weightPct !== null ? `${a.weightPct}%` : '—'}</td>
               <td>
-                <input type="number" min="0" bind:value={drafts[a.id].received} class="grade-input" />
+                {#if editingId === a.id}
+                  <label class="sr-only" for={`grade-received-${a.id}`}>Grade received for {a.title}</label>
+                  <input id={`grade-received-${a.id}`} type="number" min="0" bind:value={drafts[a.id].received} class="grade-input" aria-label={`Grade received for ${a.title}`} />
+                {:else}
+                  <span class="grade-value">{a.gradeReceived ?? '—'}</span>
+                {/if}
               </td>
               <td>
-                <input type="number" min="0" bind:value={drafts[a.id].max} class="grade-input" />
+                {#if editingId === a.id}
+                  <label class="sr-only" for={`grade-max-${a.id}`}>Maximum grade for {a.title}</label>
+                  <input id={`grade-max-${a.id}`} type="number" min="0" bind:value={drafts[a.id].max} class="grade-input" aria-label={`Maximum grade for ${a.title}`} />
+                {:else}
+                  <span class="grade-value">{a.gradeMax ?? '—'}</span>
+                {/if}
               </td>
               <td>
-                <button type="button" class="btn btn-primary save-btn" onclick={() => saveGrade(a.id)} disabled={savingId === a.id}>
-                  {savingId === a.id ? 'Saving…' : 'Save'}
-                </button>
+                {#if editingId === a.id}
+                  <div class="row-actions">
+                    <button type="button" class="btn btn-primary save-btn" onclick={() => saveGrade(a.id)} disabled={savingId === a.id} aria-label={`Save grade for ${a.title}`}>
+                      {savingId === a.id ? 'Saving…' : 'Save'}
+                    </button>
+                    <button type="button" class="btn btn-secondary cancel-btn" onclick={() => cancelEditing(a)} disabled={savingId === a.id} aria-label={`Cancel editing ${a.title}`}>Cancel</button>
+                  </div>
+                {:else}
+                  <button type="button" class="btn btn-secondary edit-btn" onclick={() => beginEditing(a.id)} aria-label={`Edit ${a.title}`}>Edit</button>
+                {/if}
               </td>
             </tr>
             {#if feedback[a.id]}
@@ -167,5 +202,19 @@
     box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 16%, transparent);
   }
   .save-btn { padding: 0.35rem 0.7rem; font-size: 0.82rem; }
+  .edit-btn, .cancel-btn { padding: 0.35rem 0.7rem; font-size: 0.82rem; }
+  .row-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .grade-value { display: inline-block; min-width: 4.5rem; }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
   .feedback-row td { color: var(--good-ink); font-size: 0.8rem; padding-top: 0; border-bottom: 1px solid var(--hover); }
 </style>

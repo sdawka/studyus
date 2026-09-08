@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { safeWebUrl } from '../../lib/webUrl';
   import { captureBehavioralEvent } from '../../lib/analytics/client';
   import { createResourceAnalytics, type ResourceOrigin } from '../../lib/analytics/engagement';
 
@@ -17,11 +18,10 @@
 
   let { resource, deletable = false, origin }: Props = $props();
   let deleting = $state(false);
-  let faviconFailed = $state(false);
   const analytics = createResourceAnalytics(captureBehavioralEvent);
 
   function trackOpen() {
-    analytics.opened(resource.id, origin);
+    if (safeUrl) analytics.opened(resource.id, origin);
   }
 
   function getHostname(urlString: string): string {
@@ -36,9 +36,8 @@
     return getHostname(urlString).replace('www.', '') || 'link';
   }
 
-  const hostname = $derived(getHostname(resource.url));
   const domain = $derived(getDomain(resource.url));
-  const faviconUrl = $derived(hostname ? `https://www.google.com/s2/favicons?domain=${hostname}&sz=64` : '');
+  const safeUrl = $derived(safeWebUrl(resource.url));
 
   async function deleteResource(e: MouseEvent) {
     e.stopPropagation();
@@ -62,13 +61,13 @@
     const target = e.target as HTMLElement;
     if (target.closest('a, button')) return;
     trackOpen();
-    window.open(resource.url, '_blank', 'noopener,noreferrer');
+    if (safeUrl) window.open(safeUrl, '_blank', 'noopener,noreferrer');
   }
 
   function handleTileKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' && e.target === e.currentTarget) {
       trackOpen();
-      window.open(resource.url, '_blank', 'noopener,noreferrer');
+      if (safeUrl) window.open(safeUrl, '_blank', 'noopener,noreferrer');
     }
   }
 </script>
@@ -79,20 +78,19 @@
   data-resource-id={resource.id}
   onclick={handleTileClick}
   onkeydown={handleTileKeydown}
-  tabindex="0"
+  tabindex={safeUrl ? 0 : undefined}
 >
   <div class="tile-favicon">
-    {#if faviconUrl && !faviconFailed}
-      <img src={faviconUrl} alt="" onerror={() => (faviconFailed = true)} />
-    {:else}
-      <span class="tile-initial">{domain.charAt(0).toUpperCase()}</span>
-    {/if}
+    <span class="tile-initial" aria-hidden="true">{domain.charAt(0).toUpperCase()}</span>
   </div>
 
   <div class="tile-body">
-    <a href={resource.url} target="_blank" rel="noopener noreferrer" class="tile-label" onclick={trackOpen}>
-      {resource.label}
-    </a>
+    {#if safeUrl}
+      <a href={safeUrl} target="_blank" rel="noopener noreferrer" class="tile-label" onclick={trackOpen}>{resource.label}</a>
+    {:else}
+      <span class="tile-label">{resource.label}</span>
+      <small>Link unavailable. Replace it with an HTTP or HTTPS URL.</small>
+    {/if}
     <span class="tile-domain">{domain}</span>
   </div>
 
@@ -145,11 +143,6 @@
     background: var(--course-soft, var(--surface-2));
   }
 
-  .tile-favicon img {
-    width: 20px;
-    height: 20px;
-    border-radius: var(--radius-sm);
-  }
 
   .tile-initial {
     font-size: 1.05rem;

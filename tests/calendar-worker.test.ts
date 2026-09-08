@@ -10,6 +10,11 @@ const mocks = vi.hoisted(() => {
     createClerkCalendarTokenBroker: vi.fn(() => ({ getAccessToken: vi.fn() })),
     db: { select: vi.fn(() => ({ from })) },
     processCalendarOutbox: vi.fn().mockResolvedValue({ processed: 0 }),
+    processAccountDeletionJobs: vi.fn().mockResolvedValue({ processed: 0, failed: 0 }),
+    reconcileAttachments: vi.fn().mockResolvedValue({ scanned: 0, repaired: 0, retained: 0 }),
+    reconcileGroupFiles: vi.fn().mockResolvedValue({scanned:0}),
+    pruneDemoFunnel: vi.fn().mockResolvedValue(undefined),
+    processPlanningJobs: vi.fn().mockResolvedValue({ processed: 0, applied: 0 }),
     syncProviderCalendar: vi.fn().mockResolvedValue(undefined),
   };
 });
@@ -24,6 +29,17 @@ vi.mock('../src/lib/calendar/providers', () => ({
 vi.mock('../src/lib/services/calendarOutboxProcessor', () => ({
   processCalendarOutbox: mocks.processCalendarOutbox,
 }));
+vi.mock('../src/lib/services/accountLifecycle', () => ({
+  processAccountDeletionJobs: mocks.processAccountDeletionJobs,
+}));
+vi.mock('../src/lib/services/attachments', () => ({
+  reconcileAttachments: mocks.reconcileAttachments,
+}));
+vi.mock('../src/lib/services/planning', () => ({
+  processPlanningJobs: mocks.processPlanningJobs,
+}));
+vi.mock('../src/lib/services/groupFiles',()=>({reconcileGroupFiles:mocks.reconcileGroupFiles}));
+vi.mock('../src/lib/services/demoFunnel',()=>({pruneDemoFunnel:mocks.pruneDemoFunnel}));
 vi.mock('../src/lib/services/calendarSyncEngine', () => ({
   syncProviderCalendar: mocks.syncProviderCalendar,
 }));
@@ -46,7 +62,7 @@ describe('calendar outbox scheduling', () => {
 
     handler(
       { scheduledTime: Date.parse('2026-08-25T12:30:00Z') } as ScheduledController,
-      { CLERK_SECRET_KEY: 'test-secret', DB: {} } as Cloudflare.Env,
+      { CLERK_SECRET_KEY: 'test-secret', DB: {}, UPLOADS: {} } as Cloudflare.Env,
       context as ExecutionContext,
     );
     await scheduledWork;
@@ -62,5 +78,10 @@ describe('calendar outbox scheduling', () => {
     );
     expect(mocks.db.select).not.toHaveBeenCalled();
     expect(mocks.syncProviderCalendar).not.toHaveBeenCalled();
+    expect(mocks.processAccountDeletionJobs).toHaveBeenCalledWith(mocks.db, expect.objectContaining({ DB: {} }));
+    expect(mocks.reconcileAttachments).toHaveBeenCalledWith(mocks.db, expect.anything());
+    expect(mocks.processPlanningJobs).toHaveBeenCalledWith(mocks.db);
+    expect(mocks.reconcileGroupFiles).toHaveBeenCalledWith(mocks.db,expect.anything());
+    expect(mocks.pruneDemoFunnel).toHaveBeenCalledWith(mocks.db,expect.any(Number));
   });
 });

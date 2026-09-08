@@ -23,6 +23,8 @@ import { listCourseMcqBank, listKcExercises, type ExerciseRow } from '../service
 import { NotFoundError, requireOwnedCourse, requireOwnedKc } from '../services/util';
 import { chatCompletionJSON, type ChatMessage } from '../services/tutor/openrouter';
 import { requireAiFeature } from '../ai/capabilities';
+import { AiBudgetExceededError } from '../ai/errors';
+import { withLearnerAiProviderLease } from '../runtime/learnerAgent';
 
 const QUICK_QUIZ_SENTINEL = 'quick_quiz';
 const DEFAULT_COUNT = 5;
@@ -40,7 +42,7 @@ type QuizBlob = {
   graded?: { answers: Array<{ question_index: number; selected_index: number; correct: boolean }>; score: number };
 };
 
-type TutorEnv = { AI_FEATURES_ENABLED?: string; OPENROUTER_API_KEY?: string; OPENROUTER_MODEL: string };
+type TutorEnv = Pick<Cloudflare.Env, 'AI_FEATURES_ENABLED' | 'OPENROUTER_API_KEY' | 'OPENROUTER_MODEL' | 'LEARNER_AGENT' | 'DB'>;
 
 type McqDetails = { options: string[]; correct_index: number; explanation: string };
 
@@ -238,11 +240,16 @@ export async function generateQuickQuiz(db: Db, userId: string, input: CreateQui
   let aiItems: QuizItem[] = [];
   if (aiTargetKcs.length > 0) {
     requireAiFeature(env, 'quiz_generation');
-    const raw = await chatCompletionJSON({
+    const raw = await withLearnerAiProviderLease(env, userId, (lease, learner) => chatCompletionJSON({
       apiKey: env.OPENROUTER_API_KEY,
       model: env.OPENROUTER_MODEL,
       messages: buildQuizPrompt(aiTargetKcs),
-    });
+      deadlineAt: lease.expiresAt,
+      beforeRetry: async () => {
+        const retry = await learner.tryRecordAiProviderRetry(lease.id);
+        if (!retry.ok) throw new AiBudgetExceededError(retry.code);
+      },
+    }));
     aiItems = parseQuizItems(raw, aiTargetKcs);
   }
 

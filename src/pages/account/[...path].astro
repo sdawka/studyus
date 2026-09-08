@@ -1,13 +1,17 @@
 ---
-import { UserProfile } from '@clerk/astro/components';
-import MarketingLayout from '../../layouts/MarketingLayout.astro';
+import ClerkUi from '../../components/auth/ClerkUi.astro';
+import AppShell from '../../layouts/AppShell.astro';
 
-if (!Astro.locals.user) return Astro.redirect('/sign-in');
+if (!Astro.locals.user) {
+  const returnPath = `${Astro.url.pathname}${Astro.url.search}`;
+  return Astro.redirect(`/sign-in?return=${encodeURIComponent(returnPath)}`);
+}
 ---
 
-<MarketingLayout title="Your account · studyus" description="Manage your studyus account and security settings.">
+<AppShell title="Account">
   <section class="account-shell">
-    <UserProfile
+    <ClerkUi
+      component="user-profile"
       routing="path"
       path="/account"
       additionalOAuthScopes={{
@@ -20,7 +24,7 @@ if (!Astro.locals.user) return Astro.redirect('/sign-in');
       }}
     />
   </section>
-</MarketingLayout>
+</AppShell>
 
 <style>
   .account-shell {

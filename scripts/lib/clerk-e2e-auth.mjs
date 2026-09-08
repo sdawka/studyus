@@ -1,5 +1,5 @@
 import { createClerkClient } from '@clerk/backend';
-import { clerk, clerkSetup } from '@clerk/testing/playwright';
+import { clerk, clerkSetup, setupClerkTestingToken } from '@clerk/testing/playwright';
 import dotenv from 'dotenv';
 import { existsSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -7,6 +7,7 @@ import { dirname, resolve } from 'node:path';
 export const CLERK_AUTH_STATE_PATH = resolve(process.cwd(), 'playwright/.clerk/user.json');
 
 let envLoaded = false;
+let clerkTestingSetup;
 
 function deterministicId(namespace, key) {
   const input = `${namespace}:${key}`;
@@ -55,6 +56,25 @@ export function loadClerkE2EEnv() {
   const externalId = process.env.E2E_SEED_USER_ID || deterministicId('user', seedEmail);
   const password = process.env.E2E_CLERK_USER_PASSWORD || 'Studyus-E2E-2026!';
   return { publishableKey, secretKey, email, externalId, password };
+}
+
+/** Initialize Clerk's testing token once in each Playwright worker process. */
+export function setupClerkTestingWorker() {
+  if (!clerkTestingSetup) {
+    const env = loadClerkE2EEnv();
+    clerkTestingSetup = clerkSetup({
+      dotenv: false,
+      publishableKey: env.publishableKey,
+      secretKey: env.secretKey,
+    });
+  }
+  return clerkTestingSetup;
+}
+
+/** Install Clerk's refresh/bot-protection route in a newly created context. */
+export async function setupClerkTestingContext(context) {
+  await setupClerkTestingWorker();
+  await setupClerkTestingToken({ context });
 }
 
 /**
@@ -110,7 +130,7 @@ export async function authenticateClerkContext({
   storageStatePath = CLERK_AUTH_STATE_PATH,
 }) {
   const env = loadClerkE2EEnv();
-  await clerkSetup({ dotenv: false, publishableKey: env.publishableKey, secretKey: env.secretKey });
+  await setupClerkTestingWorker();
   const user = await ensureClerkE2EUser();
 
   await page.goto(new URL('/login', baseUrl).href, { waitUntil: 'domcontentloaded' });

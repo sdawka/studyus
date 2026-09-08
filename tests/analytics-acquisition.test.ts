@@ -110,7 +110,7 @@ describe('public demo analytics correlation', () => {
     const replay = await insertDemoFunnelBatch(db, body(), occurredAt);
     expect(first).toMatchObject({ accepted: 1 });
     expect(first.inserted).toHaveLength(1);
-    expect(replay).toMatchObject({ accepted: 1, inserted: [] });
+    expect(replay).toMatchObject({ accepted: 0, inserted: [] });
     expect(await db.select().from(demoFunnelEvents).where(eq(demoFunnelEvents.id, eventId))).toHaveLength(1);
 
     const mirrored = demoRowsToBehavioralEvents(first.inserted, appSessionId);
@@ -122,6 +122,33 @@ describe('public demo analytics correlation', () => {
       surface: '/try',
     }]);
     expect(replayed).toEqual([]);
+  });
+
+  it('prunes funnel rows older than 30 days during ingestion', async () => {
+    const now = 1_800_000_000_000;
+    const oldId = crypto.randomUUID();
+    const retainedId = crypto.randomUUID();
+    await db.insert(demoFunnelEvents).values([
+      {
+        id: oldId,
+        sessionId: crypto.randomUUID(),
+        name: 'demo_entered',
+        occurredAt: now - 31 * 24 * 60 * 60 * 1000,
+        createdAt: now - 31 * 24 * 60 * 60 * 1000,
+      },
+      {
+        id: retainedId,
+        sessionId: crypto.randomUUID(),
+        name: 'demo_entered',
+        occurredAt: now - 29 * 24 * 60 * 60 * 1000,
+        createdAt: now - 29 * 24 * 60 * 60 * 1000,
+      },
+    ]);
+
+    await insertDemoFunnelBatch(db, body(), now);
+
+    expect(await db.select().from(demoFunnelEvents).where(eq(demoFunnelEvents.id, oldId))).toHaveLength(0);
+    expect(await db.select().from(demoFunnelEvents).where(eq(demoFunnelEvents.id, retainedId))).toHaveLength(1);
   });
 
   it('forces demo mirror delivery through /batch/ with the stable anonymous distinct id', async () => {
@@ -151,14 +178,15 @@ describe('public demo analytics correlation', () => {
     });
   });
 
-  it('does not write D1 when the endpoint receives DNT', async () => {
+  it('returns before parsing or writing when the endpoint receives DNT', async () => {
     const request = new Request('https://studyus.app/api/public/demo-events', {
       method: 'POST',
       headers: { 'content-type': 'application/json', DNT: '1' },
-      body: JSON.stringify(body()),
+      body: '{invalid-json',
     });
     const response = await demoEventsRoute.POST({
       request,
+      clientAddress: '198.51.100.21',
       locals: { cfContext: { waitUntil: vi.fn() } },
     } as never);
     expect(await response.json()).toEqual({ data: { accepted: 0 } });

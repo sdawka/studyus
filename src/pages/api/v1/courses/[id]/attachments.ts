@@ -3,13 +3,26 @@ import { env } from 'cloudflare:workers';
 import { getDb } from '../../../../../db/client';
 import { apiError, apiOk } from '../../../../../lib/api';
 import { withServiceErrors } from '../../../../../lib/apiErrors';
-import { createAttachment } from '../../../../../lib/services/attachments';
+import { createAttachment, listAttachments } from '../../../../../lib/services/attachments';
+import { parseBoundedMultipartFile } from '../../../../../lib/uploads/multipart';
+
+export const GET: APIRoute = async ({ params, locals }) =>
+  withServiceErrors(async () => {
+    const rows = await listAttachments(getDb(env.DB), locals.user!.id, params.id!);
+    return apiOk({
+      attachments: rows.map((attachment) => ({
+        attachment_id: attachment.id,
+        filename: attachment.filename,
+        size_bytes: attachment.sizeBytes,
+        mime_type: attachment.contentType,
+      })),
+    });
+  });
 
 export const POST: APIRoute = async ({ params, request, locals }) =>
   withServiceErrors(async () => {
-    const formData = await request.formData().catch(() => null);
-    const file = formData?.get('file');
-    if (!file || !(file instanceof File)) {
+    const file = await parseBoundedMultipartFile(request);
+    if (!file) {
       return apiError('invalid_input', 'A `file` field is required', 400);
     }
 

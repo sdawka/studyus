@@ -8,9 +8,10 @@ import type { CreateConversationInput, EndConversationInput, ListConversationsQu
 import { createRuntimeTutorSessionEvent } from '../services/events';
 import { buildTutorSystemPrompt, ConversationCapReachedError, messageCapForMode } from '../services/tutor/conversations';
 import { modeForKcType } from '../services/tutor/prompts';
-import { NotFoundError, requireOwnedKc } from '../services/util';
-import { createLearnerReplyStreamRequest, createLearnerTutorTurnAcceptanceRequest, getLearnerAgentForUser, type AcceptedLearnerTutorTurn, type LearnerConversation } from './learnerAgent';
+import { ConflictError, NotFoundError, requireOwnedKc } from '../services/util';
+import { AiBudgetExceededError, createLearnerReplyStreamRequest, createLearnerTutorTurnAcceptanceRequest, getLearnerAgentForUser, type AcceptedLearnerTutorTurn, type LearnerConversation } from './learnerAgent';
 import { requireAiFeature } from '../ai/capabilities';
+import { ensureActiveRuntimeRegistry } from '../services/accountLifecycle';
 import { analyticsGate, resolveAnalyticsConfig } from '../analytics/config';
 import { analyticsRequestCorrelation, queueBehavioralEvent, type AnalyticsWaitUntil } from '../analytics/server';
 import type { TutorTurnAnalyticsCorrelation } from './learnerAgent';
@@ -34,6 +35,7 @@ async function findConversation(agent: Awaited<ReturnType<typeof getLearnerAgent
 }
 
 async function agentFor(db: Db, env: RuntimeEnv, userId: string) {
+  await ensureActiveRuntimeRegistry(db, userId);
   const agent = await getLearnerAgentForUser(env, userId);
   // A one-way import preserves pre-runtime transcript history without
   // retaining D1 as the ongoing conversation store.
@@ -47,6 +49,7 @@ async function agentFor(db: Db, env: RuntimeEnv, userId: string) {
     list.push(message);
     messagesByConversation.set(message.conversationId, list);
   }
+  await ensureActiveRuntimeRegistry(db, userId);
   await agent.importLegacyConversations({
     source: 'd1-tutor-conversations-v1',
     conversations: legacy.map((conversation) => ({
@@ -268,7 +271,12 @@ export async function streamRuntimeTutorReply(
       ...(analyticsAllowed ? { analytics: { sessionId: correlation.session_id!, surface: analyticsRequest!.surface } } : {}),
     }),
   );
-  if (!acceptanceResponse.ok) throw new Error(await acceptanceResponse.text());
+  if (!acceptanceResponse.ok) {
+    const failure = await acceptanceResponse.json<{code?:string;error?:string}>().catch(()=>null);
+    if (failure?.code === 'daily_limit' || failure?.code === 'concurrent_limit') throw new AiBudgetExceededError(failure.code);
+    if (acceptanceResponse.status === 409) throw new ConflictError(typeof failure?.error==='string' && failure.error.trim() && failure.error.length<=300 ? failure.error : 'This conversation changed. Refresh and try again.');
+    throw new Error('Tutor request was not accepted');
+  }
   const accepted = await acceptanceResponse.json<AcceptedLearnerTutorTurn>();
   if (analyticsAllowed) {
     queueBehavioralEvent(
@@ -292,7 +300,7 @@ export async function streamRuntimeTutorReply(
   }
   let response: Response;
   try {
-    response = await agent.fetch(createLearnerReplyStreamRequest({ conversationId, turnId: accepted.turnId, systemPrompt, messageCap }));
+    response = await agent.fetch(createLearnerReplyStreamRequest({ conversationId, turnId: accepted.turnId, providerLeaseId: accepted.providerLeaseId, systemPrompt, messageCap }));
   } catch (error) {
     await agent.cancelStreamingReply(conversationId);
     throw error;

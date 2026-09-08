@@ -23,5 +23,7 @@ declare namespace Cloudflare {
     POSTHOG_PROJECT_TOKEN?: string;
     ANALYTICS_EXCLUDED_USER_IDS?: string;
     CLERK_SECRET_KEY: string;
+    CLERK_WEBHOOK_SIGNING_SECRET?: string;
+    GROUP_INVITE_HMAC_SECRET?: string;
   }
 }

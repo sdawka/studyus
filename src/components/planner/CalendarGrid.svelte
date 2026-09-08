@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { CalendarItem } from '../../lib/types/calendar';
   import { courseForItem, hueForItem } from '../../lib/courseHue';
+  import { formatZonedDate, zonedDateKey } from '../../lib/plannerDates';
 
   interface CourseInfo {
     code: string;
@@ -14,6 +15,8 @@
     selectedId = null,
     onSelect,
     onDayTap,
+    timezone = Intl.DateTimeFormat().resolvedOptions().timeZone,
+    initialNow = Date.now(),
   }: {
     cells: { date: Date | null; items: CalendarItem[] }[];
     courseById: Map<string, CourseInfo>;
@@ -24,13 +27,15 @@
     // trying to cram event detail into a ~4-row cell. PlannerView only wires
     // this up when $isMobile — desktop keeps today's "chips only" behavior.
     onDayTap?: (date: Date) => void;
+    timezone?: string;
+    initialNow?: number;
   } = $props();
 
-  const today = new Date();
+  const todayKey = $derived(zonedDateKey(initialNow, timezone));
 
   function isToday(d: Date | null): boolean {
     if (!d) return false;
-    return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+    return zonedDateKey(d, timezone) === todayKey;
   }
   function labelFor(item: CalendarItem): string {
     const code = courseForItem(item, courseById)?.code;
@@ -68,12 +73,12 @@
       class:tappable={cell.date && onDayTap}
       role={cell.date && onDayTap ? 'button' : undefined}
       tabindex={cell.date && onDayTap ? 0 : undefined}
-      aria-label={cell.date && onDayTap ? `Jump to agenda for ${cell.date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}` : undefined}
+      aria-label={cell.date && onDayTap ? `Jump to agenda for ${formatZonedDate(cell.date, timezone, { weekday: 'long', month: 'short', day: 'numeric' })}` : undefined}
       onclick={(e) => handleCellClick(e, cell.date)}
       onkeydown={(e) => handleCellKeydown(e, cell.date)}
     >
       {#if cell.date}
-        <div class="day-number num">{cell.date.getDate()}</div>
+        <div class="day-number num">{Number(zonedDateKey(cell.date, timezone).slice(8, 10))}</div>
         {#each cell.items as item (item.id)}
           <button
             type="button"

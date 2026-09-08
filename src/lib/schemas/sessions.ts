@@ -62,10 +62,24 @@ export type DiscardStudySessionInput = z.infer<typeof discardStudySessionSchema>
 // rejects with ConflictError once the session has an ended_at — a completed
 // session's time/duration is history, not a plan to move around.
 export const updateSessionSchema = z.strictObject({
+  locked: z.boolean().optional(),
   scheduled_at: isoDatetimeSchema.optional(),
   planned_minutes: z.number().int().min(1).optional(),
 });
 export type UpdateSessionInput = z.infer<typeof updateSessionSchema>;
+
+const timerDeviceSchema = z.string().min(8).max(200);
+const timerLeaseSchema = z.string().uuid();
+const timerSequenceSchema = z.number().int().min(1);
+const timerRevisionSchema = z.number().int().min(0);
+
+export const sessionTimerCommandSchema = z.discriminatedUnion('operation', [
+  z.strictObject({ operation: z.literal('resume'), device_id: timerDeviceSchema, lease_token: timerLeaseSchema.optional() }),
+  z.strictObject({ operation: z.literal('heartbeat'), device_id: timerDeviceSchema, lease_token: timerLeaseSchema, sequence: timerSequenceSchema, revision: timerRevisionSchema }),
+  z.strictObject({ operation: z.literal('pause'), device_id: timerDeviceSchema, lease_token: timerLeaseSchema, sequence: timerSequenceSchema, revision: timerRevisionSchema }),
+  z.strictObject({ operation: z.literal('takeover'), device_id: timerDeviceSchema }),
+]);
+export type SessionTimerCommand = z.infer<typeof sessionTimerCommandSchema>;
 
 export const listSessionsQuerySchema = z.strictObject({
   course: idSchema.optional(),

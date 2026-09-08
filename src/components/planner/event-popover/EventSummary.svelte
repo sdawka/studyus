@@ -6,7 +6,7 @@
   import { calendarItemTimeLabel } from '../../../lib/plannerDates';
   import type { CourseOption } from './types';
 
-  let { item, course }: { item: CalendarItem; course: CourseOption | undefined } = $props();
+  let { item, course, timezone = Intl.DateTimeFormat().resolvedOptions().timeZone }: { item: CalendarItem; course: CourseOption | undefined; timezone?: string } = $props();
 
   // A Record rather than a switch: TypeScript fails the build when a new
   // CalendarItemType is added without a label here, which a switch with no
@@ -18,13 +18,14 @@
     event_logged: 'Logged event',
     class_session: 'Class session',
     external_event: 'Imported event',
+    group_session: 'Group session',
   };
   const typeLabel = $derived(TYPE_LABELS[item.type]);
 
   // all_day items have no meaningful clock time — the ISO date is a noon
   // anchor, not an instant — so rendering a range would be a fabrication.
   // AgendaList and dashboard/WeekView already suppress the time for these.
-  const whenLabel = $derived(item.all_day ? 'All day' : calendarItemTimeLabel(item));
+  const whenLabel = $derived(item.all_day ? 'All day' : calendarItemTimeLabel(item, timezone));
 
   const detailLines = $derived.by(() => {
     const d = item.details ?? {};

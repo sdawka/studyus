@@ -8,6 +8,7 @@ import { getLearnerAgentForUser } from '../src/lib/runtime/learnerAgent';
 import { verifyRuntimeConversationProvenance } from '../src/lib/runtime/tutorRuntime';
 import { createCorrectionSchema } from '../src/lib/schemas/corrections';
 import { ForbiddenError, NotFoundError } from '../src/lib/services/util';
+import { ensureActiveRuntimeRegistry } from '../src/lib/services/accountLifecycle';
 
 const db = getDb(env.DB);
 
@@ -22,6 +23,7 @@ beforeEach(async () => {
   branchId = crypto.randomUUID();
   kcId = crypto.randomUUID();
   await db.insert(users).values({ id: userId, email: `${userId}@test.local`, passwordHash: 'x' });
+  await ensureActiveRuntimeRegistry(db, userId);
   await db.insert(courses).values({ id: courseId, userId, code: 'CHEE 310', slug: `chee-310-${courseId}`, title: 'Fluid Mechanics' });
   await db.insert(branches).values({ id: branchId, courseId, name: 'Branch' });
   await db.insert(kcs).values({ id: kcId, branchId, courseId, name: 'Bernoulli equation', kcType: 'concept', slug: 'bernoulli-equation' });
@@ -115,6 +117,8 @@ describe('createCorrection', () => {
 
   it('does not verify a conversation ID from another learner Durable Object', async () => {
     const otherUserId = crypto.randomUUID();
+    await db.insert(users).values({ id: otherUserId, email: `${otherUserId}@test.local`, passwordHash: 'x' });
+    await ensureActiveRuntimeRegistry(db, otherUserId);
     const otherLearner = await getLearnerAgentForUser(env, otherUserId);
     const otherConversation = await otherLearner.createConversation({ kcId, mode: 'absorb' });
 

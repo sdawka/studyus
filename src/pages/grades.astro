@@ -31,17 +31,39 @@ const courseData = await Promise.all(
     <strong>{gradesSummary.overall_weighted_grade !== null ? `${gradesSummary.overall_weighted_grade}%` : '—'}</strong>
   </p>
 
+  {courseData.length > 0 && (
+    <div class="grade-toolbar">
+      <label for="course-filter">Course view</label>
+      <select id="course-filter">
+        <option value="all">All courses</option>
+        {courseData.map((course) => <option value={course.id}>{course.code} — {course.title}</option>)}
+      </select>
+      <span>Choose one course when you want to focus on a single set of assessments.</span>
+    </div>
+  )}
+
   {courseData.map((course) => (
-    <GradeTable
-      client:visible
-      courseId={course.id}
-      courseCode={course.code}
-      courseTitle={course.title}
-      weightedGrade={course.weightedGrade}
-      initialAssessments={course.assessments}
-    />
+    <section class="course-panel-wrap" data-course-panel data-course-id={course.id}>
+      <GradeTable
+        client:visible
+        courseId={course.id}
+        courseCode={course.code}
+        courseTitle={course.title}
+        weightedGrade={course.weightedGrade}
+        initialAssessments={course.assessments}
+      />
+    </section>
   ))}
 </AppShell>
+
+<script>
+  const filter = document.querySelector('#course-filter') as HTMLSelectElement | null;
+  const panels = Array.from(document.querySelectorAll<HTMLElement>('[data-course-panel]'));
+  filter?.addEventListener('change', () => {
+    const selected = filter.value;
+    for (const panel of panels) panel.hidden = selected !== 'all' && panel.dataset.courseId !== selected;
+  });
+</script>
 
 <style>
   .overall {
@@ -52,4 +74,22 @@ const courseData = await Promise.all(
     margin-bottom: 1.5rem;
   }
   .overall strong { font-size: 1.2rem; }
+  .grade-toolbar {
+    display: grid;
+    grid-template-columns: auto minmax(180px, 320px) 1fr;
+    align-items: center;
+    gap: .65rem 1rem;
+    margin: 0 0 1.5rem;
+    padding: .85rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+  .grade-toolbar label { font-weight: 650; }
+  .grade-toolbar select { min-width: 0; }
+  .grade-toolbar span { color: var(--muted); font-size: .82rem; }
+  .course-panel-wrap[hidden] { display: none; }
+  @media (max-width: 640px) {
+    .grade-toolbar { grid-template-columns: 1fr; gap: .45rem; }
+  }
 </style>

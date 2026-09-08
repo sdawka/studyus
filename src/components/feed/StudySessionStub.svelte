@@ -4,36 +4,17 @@
 <div class="study-session-stub">
   <div class="stub-header">
     <h3>Study Session Organizer</h3>
-    <span class="coming-soon-badge">Coming soon</span>
+    <span class="groups-badge">Shared groups</span>
   </div>
 
   <p class="stub-description">
-    Organize and schedule collaborative study sessions with other students in your courses. Share notes, solve problems together, and reinforce learning as a group.
+    Plan shared sessions, invite your group, and keep the session details together.
   </p>
 
-  <form class="stub-form" disabled>
-    <div class="form-group">
-      <label for="stub-course">Select a course</label>
-      <select id="stub-course" disabled>
-        <option>Choose a course...</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="stub-date">Proposed date & time</label>
-      <input id="stub-date" type="datetime-local" disabled />
-    </div>
-
-    <div class="form-group">
-      <label for="stub-duration">Duration (minutes)</label>
-      <input id="stub-duration" type="number" min="15" max="180" placeholder="30" disabled />
-    </div>
-
-    <button type="button" disabled class="cta-button">Schedule session</button>
-  </form>
+  <a class="cta-button" href="/groups">Open study groups <span aria-hidden="true">→</span></a>
 
   <p class="stub-note">
-    Multi-user collaboration features are being developed. In the meantime, use the /study flow to log your solo study sessions.
+    For solo sessions, use the <a href="/study">study flow</a>.
   </p>
 </div>
 
@@ -61,7 +42,7 @@
     color: var(--text);
   }
 
-  .coming-soon-badge {
+  .groups-badge {
     background: var(--accent);
     color: var(--surface);
     padding: 0.25rem 0.75rem;
@@ -79,47 +60,26 @@
     line-height: 1.5;
   }
 
-  .stub-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    opacity: 0.6;
-    pointer-events: none;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-
-  .form-group label {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--muted);
-  }
-
-  .form-group input,
-  .form-group select {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-size: 0.9rem;
-    background: var(--surface);
-    color: var(--text);
-    font-family: inherit;
-  }
-
   .cta-button {
+    align-self: flex-start;
     background: var(--accent);
     color: var(--surface);
-    border: none;
+    border: 1px solid var(--accent);
     border-radius: var(--radius-sm);
-    padding: 0.6rem;
+    padding: 0.6rem 0.85rem;
     font-size: 0.95rem;
     font-weight: 500;
-    cursor: not-allowed;
-    opacity: 0.5;
+    text-decoration: none;
+  }
+
+  .cta-button:hover {
+    filter: brightness(0.96);
+  }
+
+  .cta-button:focus-visible,
+  .stub-note a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 
   .stub-note {
@@ -127,5 +87,9 @@
     font-size: 0.85rem;
     color: var(--muted);
     font-style: italic;
+  }
+
+  .stub-note a {
+    color: var(--accent);
   }
 </style>

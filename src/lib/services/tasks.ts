@@ -1,9 +1,16 @@
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
+import type { BatchItem } from 'drizzle-orm/batch';
 import type { Db } from '../../db/client';
-import { classSessions, courses, taskCourses, tasks } from '../../db/schema';
+import { classSessions, courses, taskCourses, tasks, users } from '../../db/schema';
 import type { CreateTaskInput, UpdateTaskInput } from '../schemas/tasks';
-import { ConflictError, NotFoundError } from './util';
+import { ConflictError, NotFoundError, runBatch } from './util';
 import { sweepTasks } from './taskSweep';
+
+async function requireActiveTaskUser(db: Db, userId: string): Promise<void> {
+  const row = await db.select({ id: users.id }).from(users)
+    .where(and(eq(users.id, userId), eq(users.accountState, 'active'))).limit(1);
+  if (!row[0]) throw new NotFoundError('User');
+}
 
 // IDOR guard for task_courses writes: every id in `courseIds` must belong to
 // `userId`, or the whole request 404s (mirrors requireKcsInCourse in
@@ -66,6 +73,7 @@ async function requireOwnedTask(db: Db, userId: string, taskId: string) {
 // several list/read calls) skip the redundant re-sweep. Every other caller
 // keeps the old always-sweep default.
 export async function listTasks(db: Db, userId: string, opts: { sweep?: boolean } = {}) {
+  await requireActiveTaskUser(db, userId);
   if (opts.sweep ?? true) await sweepTasks(db, userId);
 
   const rows = await db
@@ -79,6 +87,7 @@ export async function listTasks(db: Db, userId: string, opts: { sweep?: boolean 
 }
 
 export async function createTask(db: Db, userId: string, input: CreateTaskInput) {
+  await requireActiveTaskUser(db, userId);
   if (input.parent_task_id) {
     const parent = await requireOwnedTask(db, userId, input.parent_task_id);
     // One level of subtasks only: a parent that itself has a parent can't
@@ -86,31 +95,43 @@ export async function createTask(db: Db, userId: string, input: CreateTaskInput)
     if (parent.parentTaskId) throw new ConflictError('Subtasks cannot be nested');
   }
 
-  const id = crypto.randomUUID();
-  await db.insert(tasks).values({
-    id,
-    userId,
-    title: input.title,
-    description: input.description ?? null,
-    dueDate: input.due_date ? Date.parse(input.due_date) : null,
-    parentTaskId: input.parent_task_id ?? null,
-  });
+  const courseIds = [...new Set(input.course_ids ?? [])];
+  await requireOwnedCourses(db, userId, courseIds);
 
-  if (input.course_ids?.length) {
-    const dedupedIds = [...new Set(input.course_ids)];
-    await requireOwnedCourses(db, userId, dedupedIds);
-    await db.insert(taskCourses).values(dedupedIds.map((courseId) => ({ id: crypto.randomUUID(), taskId: id, courseId })));
+  const id = crypto.randomUUID();
+  const statements: BatchItem<'sqlite'>[] = [
+    db.insert(tasks).values({
+      id,
+      userId,
+      title: input.title,
+      estimatedMinutes: input.estimated_minutes ?? 25,
+      priority: input.priority ?? 1,
+      description: input.description ?? null,
+      dueDate: input.due_date ? Date.parse(input.due_date) : null,
+      parentTaskId: input.parent_task_id ?? null,
+    }),
+  ];
+  if (courseIds.length > 0) {
+    statements.push(
+      db.insert(taskCourses).values(courseIds.map((courseId) => ({ id: crypto.randomUUID(), taskId: id, courseId }))),
+    );
   }
+  await runBatch(db, statements);
 
   const rows = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1);
   return shapeTask(rows[0], await attachCourses(db, id));
 }
 
 export async function updateTask(db: Db, userId: string, taskId: string, input: UpdateTaskInput) {
+  await requireActiveTaskUser(db, userId);
   const existing = await requireOwnedTask(db, userId, taskId);
+  const courseIds = input.course_ids === undefined ? undefined : [...new Set(input.course_ids)];
+  if (courseIds) await requireOwnedCourses(db, userId, courseIds);
 
   const patch: Partial<typeof tasks.$inferInsert> = {};
   if (input.title !== undefined) patch.title = input.title;
+  if (input.estimated_minutes !== undefined) patch.estimatedMinutes = input.estimated_minutes;
+  if (input.priority !== undefined) patch.priority = input.priority;
   if (input.description !== undefined) patch.description = input.description;
   if (input.due_date !== undefined) patch.dueDate = input.due_date ? Date.parse(input.due_date) : null;
   if (input.completion_note !== undefined) patch.completionNote = input.completion_note;
@@ -124,18 +145,15 @@ export async function updateTask(db: Db, userId: string, taskId: string, input: 
   // A course_ids-only PATCH (no other fields) leaves `patch` empty —
   // Drizzle's .set({}) throws "No values to set" on SQLite, so skip the
   // no-op update (mirrors the same guard in services/assessments.ts).
-  if (Object.keys(patch).length > 0) {
-    await db.update(tasks).set(patch).where(eq(tasks.id, taskId));
-  }
+  const statements: BatchItem<'sqlite'>[] = [];
+  if (Object.keys(patch).length > 0) statements.push(db.update(tasks).set(patch).where(eq(tasks.id, taskId)));
 
-  if (input.course_ids !== undefined) {
-    const dedupedIds = [...new Set(input.course_ids)];
-    // Ownership is verified before anything is deleted, so a request with a
-    // foreign course id 404s without touching the task's existing links.
-    await requireOwnedCourses(db, userId, dedupedIds);
-    await db.delete(taskCourses).where(eq(taskCourses.taskId, taskId));
-    if (dedupedIds.length) {
-      await db.insert(taskCourses).values(dedupedIds.map((courseId) => ({ id: crypto.randomUUID(), taskId, courseId })));
+  if (courseIds !== undefined) {
+    statements.push(db.delete(taskCourses).where(eq(taskCourses.taskId, taskId)));
+    if (courseIds.length > 0) {
+      statements.push(
+        db.insert(taskCourses).values(courseIds.map((courseId) => ({ id: crypto.randomUUID(), taskId, courseId }))),
+      );
     }
   }
 
@@ -144,17 +162,22 @@ export async function updateTask(db: Db, userId: string, taskId: string, input: 
   // classSessions.ts's updateClassSessionStatus — that would recurse back
   // into a task sync from the other direction).
   if (existing.type === 'attend_class' && existing.classSessionId && input.completed !== undefined) {
-    await db
-      .update(classSessions)
-      .set({ status: input.completed ? 'attended' : null })
-      .where(eq(classSessions.id, existing.classSessionId));
+    statements.push(
+      db
+        .update(classSessions)
+        .set({ status: input.completed ? 'attended' : null })
+        .where(eq(classSessions.id, existing.classSessionId)),
+    );
   }
+
+  await runBatch(db, statements);
 
   const rows = await db.select().from(tasks).where(eq(tasks.id, taskId)).limit(1);
   return shapeTask(rows[0], await attachCourses(db, taskId));
 }
 
 export async function deleteTask(db: Db, userId: string, taskId: string) {
+  await requireActiveTaskUser(db, userId);
   const task = await requireOwnedTask(db, userId, taskId);
 
   if (task.source === 'system') {
