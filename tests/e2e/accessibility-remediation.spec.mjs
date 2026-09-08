@@ -1,5 +1,4 @@
 import { expect, test } from './authenticated-fixture.mjs';
-import { CLERK_AUTH_STATE_PATH } from '../../scripts/lib/clerk-e2e-auth.mjs';
 
 const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -51,7 +50,6 @@ async function openSeededPlannerEvent(page, item) {
 
 test.describe('authenticated accessibility remediation journey', () => {
   test.skip(process.env.STUDYUS_ISOLATED_AUDIT !== '1', 'Set STUDYUS_ISOLATED_AUDIT=1 for the isolated authenticated journey');
-  test.use({ storageState: CLERK_AUTH_STATE_PATH });
 
   test.beforeEach(async ({ baseURL }) => {
     const hostname = baseURL ? new URL(baseURL).hostname : '';
@@ -162,5 +160,16 @@ test.describe('authenticated accessibility remediation journey', () => {
     await expect(page.getByRole('textbox', { name: 'Session title' })).toBeAttached();
     await expect(page.getByRole('textbox', { name: 'Starts' })).toBeAttached();
     await expect(page.getByRole('textbox', { name: 'Ends' })).toBeAttached();
+  });
+
+  for (const width of [320, 390, 430]) test(`account profile fits a ${width}px viewport`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/account', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText('Profile details', { exact: true })).toBeVisible();
+    const bounds = await page.locator('.cl-cardBox').boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
   });
 });

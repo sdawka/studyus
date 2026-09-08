@@ -145,7 +145,7 @@ and versioned planning claims now have regression coverage. Additive migrations
 0014–0029 preserve retained account data. Real local D1/DO/R2 boundaries are used;
 external provider adapters are controlled fakes, not claims of live integration.
 Review also reproduced and fixed overlapping planning workers and stale calendar
-delete retries after Undo. The integrated suite passed 1,230 tests across 152
+delete retries after Undo. The integrated suite passed 1,232 tests across 152
 files. Types, build and clean two-user seed passed.
 The complete unauthenticated HTTP method inventory passed on the built preview.
 
@@ -164,4 +164,6 @@ The final API inventory contains 121 methods across 85 route files. Authenticate
 test contexts sign in afresh through the supported development helper; stale
 cloned-session refresh produced handshake loops and remains unverified. The
 ordinary Clerk UI regression receives neither the custom auth fixture nor a
-testing-token bypass.
+testing-token bypass. A CI timeout in the combined absorb-cap test was resolved
+by testing its three independent boundaries separately, retaining all real
+Durable Object writes, rejection checks and finalization-event assertions.

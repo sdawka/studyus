@@ -1,5 +1,4 @@
 import { expect, test } from './authenticated-fixture.mjs';
-import { CLERK_AUTH_STATE_PATH } from '../../scripts/lib/clerk-e2e-auth.mjs';
 
 async function waitForClientHydration(page) {
   await expect(page.locator('astro-island[ssr]')).toHaveCount(0);
@@ -10,7 +9,6 @@ async function waitForClientHydration(page) {
 // of a production or default browser run.
 test.describe('authenticated groups remediation journey', () => {
   test.skip(process.env.STUDYUS_ISOLATED_AUDIT !== '1', 'Set STUDYUS_ISOLATED_AUDIT=1 for the isolated authenticated journey');
-  test.use({ storageState: CLERK_AUTH_STATE_PATH });
 
   test.beforeEach(async ({ baseURL }) => {
     const hostname = baseURL ? new URL(baseURL).hostname : '';

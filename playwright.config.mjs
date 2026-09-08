@@ -1,5 +1,5 @@
 import { defineConfig } from '@playwright/test';
-import { loadClerkE2EEnv, CLERK_AUTH_STATE_PATH } from './scripts/lib/clerk-e2e-auth.mjs';
+import { loadClerkE2EEnv } from './scripts/lib/clerk-e2e-auth.mjs';
 
 const baseURL = process.env.E2E_BASE_URL || 'http://127.0.0.1:4321';
 const baseHostname = new URL(baseURL).hostname;
@@ -27,7 +27,6 @@ export default defineConfig({
       name: 'authenticated',
       testMatch: /(?:browser-checks|authenticated-audit|remediation|planning-remediation|accessibility-remediation|planner-overflow)\.spec\.mjs/,
       dependencies: ['setup'],
-      use: { storageState: CLERK_AUTH_STATE_PATH },
     },
     {
       name: 'security-boundaries',
@@ -42,7 +41,7 @@ export default defineConfig({
       // Playwright trace duplicates every page snapshot and can consume
       // hundreds of MB before `retain-on-failure` decides whether to keep it,
       // which is disproportionate for this deliberately broad matrix.
-      use: { storageState: CLERK_AUTH_STATE_PATH, trace: 'off' },
+      use: { trace: 'off' },
     },
   ],
   webServer: shouldStartLocalServer ? {

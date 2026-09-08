@@ -213,25 +213,25 @@ describe('runtime tutor cap finalization', () => {
     expect(await tutorSessionEvents()).toHaveLength(1);
   });
 
-  it('uses the absorb cap independently at one below, exact, and over-cap boundaries', async () => {
-    const below = await createRuntimeConversation(db, env, userId, { kc_id: kcId, mode: 'absorb' });
-    await fillConversation(below.id, MAX_MESSAGES_PER_CONVERSATION_ABSORB - 3);
+  // Each boundary has its own real Durable Object history. Keeping the three
+  // independent cases separate avoids charging ~180 sequential RPCs to one
+  // five-second test deadline on a shared CI runner.
+  it.each([
+    { boundary: 'one below', offset: -3, status: 'active', eventCount: 0 },
+    { boundary: 'exact', offset: -2, status: 'ended', eventCount: 1 },
+    { boundary: 'over cap', offset: 1, status: 'ended', eventCount: 1 },
+  ])('enforces the absorb cap at $boundary', async ({ offset, status, eventCount }) => {
+    const conversation = await createRuntimeConversation(db, env, userId, { kc_id: kcId, mode: 'absorb' });
+    await fillConversation(conversation.id, MAX_MESSAGES_PER_CONVERSATION_ABSORB + offset);
     mockReply();
-    await drain(await streamRuntimeTutorReply(db, env, userId, below.id, 'almost there'));
-    expect((await (await getLearnerAgentForUser(env, userId)).getConversation(below.id)).status).toBe('active');
-
-    const exact = await createRuntimeConversation(db, env, userId, { kc_id: kcId, mode: 'absorb' });
-    await fillConversation(exact.id, MAX_MESSAGES_PER_CONVERSATION_ABSORB - 2);
-    mockReply();
-    await drain(await streamRuntimeTutorReply(db, env, userId, exact.id, 'finish it'));
-    expect((await (await getLearnerAgentForUser(env, userId)).getConversation(exact.id)).status).toBe('ended');
-
-    const over = await createRuntimeConversation(db, env, userId, { kc_id: kcId, mode: 'absorb' });
-    await fillConversation(over.id, MAX_MESSAGES_PER_CONVERSATION_ABSORB + 1);
-    await expect(streamRuntimeTutorReply(db, env, userId, over.id, 'over cap')).rejects.toThrow(ConversationCapReachedError);
-    expect((await (await getLearnerAgentForUser(env, userId)).getConversation(over.id)).status).toBe('ended');
-
-    expect(await tutorSessionEvents()).toHaveLength(2);
+    if (offset > 0) {
+      await expect(streamRuntimeTutorReply(db, env, userId, conversation.id, 'over cap')).rejects.toThrow(ConversationCapReachedError);
+      expect(fetch).not.toHaveBeenCalled();
+    } else {
+      await drain(await streamRuntimeTutorReply(db, env, userId, conversation.id, 'continue'));
+    }
+    expect((await (await getLearnerAgentForUser(env, userId)).getConversation(conversation.id)).status).toBe(status);
+    expect(await tutorSessionEvents()).toHaveLength(eventCount);
   });
 
   it('deduplicates explicit end retries and preserves the first finalized event', async () => {
