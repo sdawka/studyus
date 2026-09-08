@@ -145,7 +145,7 @@ and versioned planning claims now have regression coverage. Additive migrations
 0014–0029 preserve retained account data. Real local D1/DO/R2 boundaries are used;
 external provider adapters are controlled fakes, not claims of live integration.
 Review also reproduced and fixed overlapping planning workers and stale calendar
-delete retries after Undo. The integrated suite passed 1,232 tests across 152
+delete retries after Undo. The integrated suite passed 1,234 tests across 153
 files. Types, build and clean two-user seed passed.
 The complete unauthenticated HTTP method inventory passed on the built preview.
 
@@ -168,3 +168,13 @@ ordinary Clerk UI regression receives neither the custom auth fixture nor a
 testing-token bypass. A CI timeout in the combined absorb-cap test was resolved
 by testing its three independent boundaries separately, retaining all real
 Durable Object writes, rejection checks and finalization-event assertions.
+
+Agent Tasks follow-up: official SDK/BAPI consumption created real delegated
+sessions, but localhost and 127.0.0.1 both failed browser handoff with repeated
+Clerk/local 307 responses. Exact-task cleanup revoked the final delegated
+session. The opt-in diagnostic remains failing and is excluded from release CI.
+The final visual adapter run passed with 127 captures and no console/page errors.
+Production readiness reads confirmed migrations 0014–0029 and two new secrets
+are pending; migration 0014 backfills the runtime registry. No production changes
+were performed. Automatic review blocked Clerk dashboard setup, the GitHub E2E
+environment and production smoke; deployment remains pending those prerequisites.

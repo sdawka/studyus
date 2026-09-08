@@ -16,6 +16,12 @@ export default defineConfig({
   use: { baseURL, trace: 'retain-on-failure' },
   projects: [
     {
+      // Explicit diagnostic only: local development Agent Task handoff is
+      // currently blocked; do not count ticket creation as authenticated E2E.
+      name: 'agent-tasks',
+      testMatch: /agent-remediation\.spec\.mjs/,
+    },
+    {
       name: 'clerk-ui',
       testMatch: /clerk-ui\.spec\.mjs/,
     },

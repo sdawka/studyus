@@ -90,3 +90,24 @@ development deletion event and its background job before release. Staging
 currently has no cron trigger: its request-time account fence is active, but
 background tombstoning and reconciliation need an explicitly invoked isolated
 scheduled run or an approved schedule before that lifecycle can be certified.
+
+## Agent Tasks E2E status
+
+The explicit `agent-tasks` Playwright diagnostic uses Clerk's official
+`createAgentTestingTask`, never the ordinary sign-in helper. Run locally with
+`STUDYUS_AGENT_TASK_DIAGNOSTIC=1 STUDYUS_ISOLATED_AUDIT=1 E2E_BASE_URL=http://localhost:4357 E2E_BUILT_APP=1 npx playwright test --project=agent-tasks`.
+It currently fails: Clerk consumes the ticket and creates a real delegated
+session, but both localhost and 127.0.0.1 enter development handshake loops and
+finish signed out. Testing-token interception initially consumed the redirect
+twice; installing it after navigation removes that first failure, not the
+remaining handoff failure. Failed-run cleanup revokes only sessions matching
+the exact Agent Task. No task-capable Clerk MCP was available; these attempts
+used the official SDK/Backend API. This diagnostic is excluded from release CI
+and is not passing authenticated coverage.
+
+The ordinary authenticated CI job is restricted to manual dispatch on `main`.
+Its GitHub `clerk-e2e` environment, three development secrets and repository
+`CLERK_E2E_ENABLED` variable are not configured: automatic approval review
+rejected environment creation. Production Clerk dashboard access and browser
+smoke were also rejected. Merge/deploy authorization has been recorded, but
+the production webhook/group secrets and smoke remain separate blocked steps.
