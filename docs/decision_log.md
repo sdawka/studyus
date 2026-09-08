@@ -11,3 +11,5 @@
 - 2026-09-07T20:38:53-04:00 — Groups support shared links/files and scheduled sessions/RSVPs; invitations are single-use and bound to verified email. Personal notes, grades, mastery and tutor history remain private.
 
 - 2026-09-08T07:49:15-04:00 — Approve the CSP-compatible Clerk UI wrapper replacement and continued Agent Tasks E2E testing; authorize merging after all CI checks pass and deploying the remediation.
+
+- 2026-09-08T08:48:22-04:00 — Approve Clerk webhook and Worker-secret setup, a main-only GitHub E2E environment with development secrets, and production smoke testing using disposable test data to complete deployment.

@@ -156,11 +156,9 @@ job against a built preview; it does not expose secrets to pull-request code.
 
 The approved CSP-compatible Clerk wrapper passes both ordinary built auth UI
 regressions; manual development sign-in preserves the requested return, and
-Account renders without CSP errors. Production/staging secrets,
-signed webhook delivery, scheduled lifecycle processing, live provider failure
-paths and edge TLS/HSTS remain deployment verification gates. Staging has no cron
-trigger. No production settings, data, deployment or third-party security probes
-were changed. See authentication documentation for the two required new secrets.
+Account renders without CSP errors. Live provider failure paths, staging setup
+and edge TLS/HSTS remain unverified. Staging has no cron trigger. See authentication
+documentation for the required secrets and the production release evidence below.
 The final API inventory contains 121 methods across 85 route files. Authenticated
 test contexts sign in afresh through the supported development helper; stale
 cloned-session refresh produced handshake loops and remains unverified. The
@@ -174,7 +172,18 @@ sessions, but localhost and 127.0.0.1 both failed browser handoff with repeated
 Clerk/local 307 responses. Exact-task cleanup revoked the final delegated
 session. The opt-in diagnostic remains failing and is excluded from release CI.
 The final visual adapter run passed with 127 captures and no console/page errors.
-Production readiness reads confirmed migrations 0014–0029 and two new secrets
-are pending; migration 0014 backfills the runtime registry. No production changes
-were performed. Automatic review blocked Clerk dashboard setup, the GitHub E2E
-environment and production smoke; deployment remains pending those prerequisites.
+The user's September 8 approval superseded the earlier setup/smoke blocks.
+Merged commit `8e933ba` is deployed as Worker version
+`1f664e22-8ac2-4120-8e02-4fa906f5e688`. Production migrations 0014–0029 applied
+with no foreign-key violations or missing runtime-registry entries. Management
+readback verified both new secret names, AI disabled, the five-minute schedule,
+and the `studyus.app` domain. The Clerk `user.deleted` endpoint is enabled.
+Fresh production sign-in rendered without console errors; sampled sign-in and
+unauthenticated API responses carry CSP, private/no-store, nosniff and frame-denial
+headers. This is limited release verification, not production attack testing.
+The authorized disposable-learner Agent Task smoke subsequently passed onboarding,
+task persistence, Planner/Account rendering, and group/file creation/listing.
+Exact Clerk deletion produced a successful signed webhook delivery, an immediate
+D1 deletion fence, and scheduled account/runtime tombstoning with a completed job
+and zero retries. The retained group/file were deidentified as specified, and the
+old browser context received 401. No production failure injection was performed.
