@@ -1,16 +1,18 @@
 import { test as base, expect } from '@playwright/test';
-import { setupClerkTestingContext, setupClerkTestingWorker } from '../../scripts/lib/clerk-e2e-auth.mjs';
+import { authenticateClerkContext, setupClerkTestingContext, setupClerkTestingWorker } from '../../scripts/lib/clerk-e2e-auth.mjs';
 
-// A saved Clerk storage state contains a short-lived session token. Every new
-// Playwright context must also install Clerk's supported testing-token route so
-// the frontend API can refresh that session during longer serial suites.
+// Cloning an expired development session can enter Clerk's handshake loop.
+// Sign in each isolated test context with the supported development helper;
+// this deliberately does not claim coverage of ordinary session refresh.
 export const test = base.extend({
   clerkTestingWorker: [async ({}, use) => {
     await setupClerkTestingWorker();
     await use();
   }, { scope: 'worker', auto: true }],
-  clerkTestingContext: [async ({ context, clerkTestingWorker: _ready }, use) => {
+  clerkTestingContext: [async ({ context, page, baseURL, clerkTestingWorker: _ready }, use) => {
     await setupClerkTestingContext(context);
+    await context.clearCookies();
+    await authenticateClerkContext({ context, page, baseUrl: baseURL });
     await use();
   }, { auto: true }],
 });

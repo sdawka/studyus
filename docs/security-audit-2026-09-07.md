@@ -160,3 +160,8 @@ signed webhook delivery, scheduled lifecycle processing, live provider failure
 paths and edge TLS/HSTS remain deployment verification gates. Staging has no cron
 trigger. No production settings, data, deployment or third-party security probes
 were changed. See authentication documentation for the two required new secrets.
+The final API inventory contains 121 methods across 85 route files. Authenticated
+test contexts sign in afresh through the supported development helper; stale
+cloned-session refresh produced handshake loops and remains unverified. The
+ordinary Clerk UI regression receives neither the custom auth fixture nor a
+testing-token bypass.
