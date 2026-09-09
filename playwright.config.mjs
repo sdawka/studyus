@@ -16,8 +16,8 @@ export default defineConfig({
   use: { baseURL, trace: 'retain-on-failure' },
   projects: [
     {
-      // Explicit diagnostic only: local development Agent Task handoff is
-      // currently blocked; do not count ticket creation as authenticated E2E.
+      // Explicit isolated run: consumes a real one-use Agent Task and verifies
+      // its delegated session against the protected Worker application.
       name: 'agent-tasks',
       testMatch: /agent-remediation\.spec\.mjs/,
     },

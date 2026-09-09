@@ -1,16 +1,38 @@
 import { createClerkClient } from '@clerk/backend';
-import { createAgentTestingTask } from '@clerk/testing/playwright';
 
 import {
   ensureClerkE2EUser,
   loadClerkE2EEnv,
-  setupClerkTestingContext,
-  setupClerkTestingWorker,
 } from './clerk-e2e-auth.mjs';
+import { consumeClerkDevelopmentAgentTask } from './clerk-development-cookie.mjs';
 
 const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
 const WORKERS_E2E_HOST = 'studyus-agent-e2e.dawka.workers.dev';
 const USED_TASK_CODE = 'agent_task_cannot_be_revoked';
+
+export async function revokeDelegatedSessionsForAgentTask({ client, userId, agentTaskId }) {
+  const limit = 100;
+  const matches = [];
+  let offset = 0;
+
+  while (true) {
+    const page = await client.sessions.getSessionList({ userId, limit, offset });
+    matches.push(...page.data.filter(session =>
+      session.status === 'active' &&
+      session.actor?.type === 'agent' &&
+      session.actor?.task_id === agentTaskId
+    ));
+    offset += page.data.length;
+    if (page.data.length < limit || offset >= page.totalCount) break;
+  }
+
+  const revocations = await Promise.allSettled(
+    matches.map(session => client.sessions.revokeSession(session.id)),
+  );
+  const failed = revocations.filter(result => result.status === 'rejected').length;
+  if (failed) throw new Error(`Failed to revoke ${failed} exact Agent Task session(s).`);
+  return matches.length;
+}
 
 function assertIsolatedDevelopmentTarget(baseUrl) {
   const target = new URL(baseUrl);
@@ -28,8 +50,12 @@ function assertIsolatedDevelopmentTarget(baseUrl) {
 function safeNavigationHop(response, target) {
   if (!response.request().isNavigationRequest()) return null;
   const url = new URL(response.url());
-  if (url.origin === target.origin) return `local:${response.status()}:${url.pathname}`;
-  if (url.hostname.endsWith('.accounts.dev')) return `clerk:${response.status()}`;
+  const queryKeys = [...new Set(url.searchParams.keys())].sort();
+  const queryShape = queryKeys.length ? `?${queryKeys.join(',')}` : '';
+  if (url.origin === target.origin) return `local:${response.status()}:${url.pathname}${queryShape}`;
+  if (url.hostname.endsWith('.accounts.dev')) {
+    return `clerk:${url.hostname}:${response.status()}:${url.pathname}${queryShape}`;
+  }
   return `external:${response.status()}`;
 }
 
@@ -40,63 +66,54 @@ function safeNavigationHop(response, target) {
 export async function authenticateWithClerkAgentTask({ context, page, baseUrl }) {
   const target = assertIsolatedDevelopmentTarget(baseUrl);
   const env = loadClerkE2EEnv();
-  await setupClerkTestingWorker();
   await context.clearCookies();
 
   const user = await ensureClerkE2EUser();
-  const redirectUrl = new URL('/planner?agent_task_e2e=1', target).href;
-  const agentTask = await createAgentTestingTask({
-    secretKey: env.secretKey,
+  const client = createClerkClient({ secretKey: env.secretKey });
+  const domains = await client.domains.list();
+  const isRegisteredSatellite = domains.data.some(domain => domain.isSatellite && domain.name === target.host);
+  if (!isRegisteredSatellite) {
+    throw new Error('The isolated Agent Task target is not registered as a Clerk satellite domain.');
+  }
+  const protectedPath = '/planner?agent_task_e2e=1';
+  const agentTask = await client.agentTasks.create({
     onBehalfOf: { userId: user.id },
     permissions: '*',
     agentName: 'studyus-e2e',
     taskDescription: 'Verify the protected Studyus learner journey',
-    redirectUrl,
+    redirectUrl: new URL(protectedPath, target).href,
     sessionMaxDurationInSeconds: 300,
   });
-
-  const client = createClerkClient({ secretKey: env.secretKey });
   const revoke = () => client.agentTasks.revoke(agentTask.agentTaskId);
-  const revokeDelegatedSessionsForTask = async () => {
-    const sessions = await client.sessions.getSessionList({ userId: user.id, limit: 100 });
-    const matches = sessions.data.filter(session =>
-      session.status === 'active' &&
-      session.actor?.type === 'agent' &&
-      session.actor?.task_id === agentTask.agentTaskId
-    );
-    if (matches.length > 1) {
-      throw new Error('Refusing Agent Task cleanup: multiple active sessions matched one task.');
-    }
-    if (matches[0]) await client.sessions.revokeSession(matches[0].id);
-    return matches.length;
-  };
   const navigationHops = [];
+  let handoff = { installedCookieCount: 0 };
   const recordHop = response => {
     const hop = safeNavigationHop(response, target);
     if (hop) navigationHops.push(hop);
   };
   page.on('response', recordHop);
   try {
-    // setupClerkTestingToken's route handler assumes every FAPI response is
-    // JSON. Agent Task URLs redirect to app HTML, so installing that handler
-    // before this navigation consumes the one-use URL once in route.fetch()
-    // and then retries it. Add the testing token directly for this navigation.
-    const consumptionUrl = new URL(agentTask.url);
-    if (process.env.CLERK_TESTING_TOKEN) {
-      consumptionUrl.searchParams.set('__clerk_testing_token', process.env.CLERK_TESTING_TOKEN);
-    }
-    await page.goto(consumptionUrl.href, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+    handoff = await consumeClerkDevelopmentAgentTask({
+      context,
+      target,
+      agentTaskUrl: agentTask.url,
+    });
+    await page.goto(handoff.finalUrl.href, { waitUntil: 'domcontentloaded', timeout: 60_000 });
     await page.waitForURL(url => url.origin === target.origin && url.pathname === '/planner', {
       timeout: 60_000,
     });
-    await setupClerkTestingContext(context);
     await page.waitForFunction(() => window.Clerk?.loaded && Boolean(window.Clerk.session?.id));
     const sessionId = await page.evaluate(() => window.Clerk.session.id);
+    const session = await client.sessions.getSession(sessionId);
+    if (session.actor?.type !== 'agent' || session.actor.task_id !== agentTask.agentTaskId) {
+      throw new Error('Clerk session did not preserve the expected Agent Task actor.');
+    }
 
     const profile = await context.request.get(new URL('/api/v1/user', target).href);
     return {
       agentTaskId: agentTask.agentTaskId,
       agentId: agentTask.agentId,
+      sessionActorTaskId: session.actor.task_id,
       expectedLocalUserId: env.externalId,
       profile,
       async revokeDelegatedSession() {
@@ -129,14 +146,19 @@ export async function authenticateWithClerkAgentTask({ context, page, baseUrl })
     }
     let delegatedSessionCleanup = 'failed';
     try {
-      const count = await revokeDelegatedSessionsForTask();
-      delegatedSessionCleanup = count === 1 ? 'revoked one exact session' : 'found no active exact session';
+      const count = await revokeDelegatedSessionsForAgentTask({
+        client,
+        userId: user.id,
+        agentTaskId: agentTask.agentTaskId,
+      });
+      delegatedSessionCleanup = count > 0 ? `revoked ${count} exact session(s)` : 'found no active exact session';
     } catch {
       // The fixed label keeps Clerk identifiers and provider errors out of output.
     }
     throw new Error(
       `Clerk Agent Task did not establish the local protected session; task revocation ${revocationState}; ` +
         `delegated session cleanup ${delegatedSessionCleanup}; ` +
+        `secured development cookies: ${handoff.installedCookieCount}; ` +
         `sanitized navigation: ${navigationHops.join(' > ') || 'none'}.`,
     );
   } finally {
