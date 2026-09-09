@@ -14,4 +14,6 @@
 
 - 2026-09-08T08:48:22-04:00 — Approve Clerk webhook and Worker-secret setup, a main-only GitHub E2E environment with development secrets, and production smoke testing using disposable test data to complete deployment.
 
+- 2026-09-08T09:44:00-04:00 — Use the identity specialist to investigate the remaining Clerk Agent Tasks localhost diagnostic. Keep the investigation isolated to development credentials and environments; production smoke remains the release evidence.
+
 - 2026-09-08T10:18:00-04:00 — Use an isolated Cloudflare workers.dev deployment for real Clerk Agent Tasks E2E, keeping production unchanged.
