@@ -13,6 +13,7 @@ test('a consumed Clerk Agent Task reaches the protected learner journey', async 
   try {
     expect(result.agentTaskId).toMatch(/^agttsk_/);
     expect(result.agentId).toBeTruthy();
+    expect(result.sessionActorTaskId).toBe(result.agentTaskId);
     expect(result.profile.ok()).toBe(true);
     const profile = await result.profile.json();
     expect(profile.data?.id).toBe(result.expectedLocalUserId);
@@ -32,8 +33,8 @@ test('a consumed Clerk Agent Task reaches the protected learner journey', async 
         expect.arrayContaining([expect.objectContaining({ id: task.id, title })]),
       );
     } finally {
-      const deleted = await context.request.delete(`/api/v1/tasks/${task.id}`);
-      expect(deleted.ok()).toBe(true);
+      const deleted = await context.request.delete(`/api/v1/tasks/${task.id}`, { data: {} });
+      expect(deleted.ok(), `synthetic task cleanup returned ${deleted.status()}`).toBe(true);
     }
   } finally {
     await result.revokeDelegatedSession();

@@ -93,17 +93,20 @@ scheduled run or an approved schedule before that lifecycle can be certified.
 
 ## Agent Tasks E2E status
 
-The explicit `agent-tasks` Playwright diagnostic uses Clerk's official
-`createAgentTestingTask`, never the ordinary sign-in helper. Run locally with
-`STUDYUS_AGENT_TASK_DIAGNOSTIC=1 STUDYUS_ISOLATED_AUDIT=1 E2E_BASE_URL=http://localhost:4357 E2E_BUILT_APP=1 npx playwright test --project=agent-tasks`.
-It currently fails: Clerk consumes the ticket and creates a real delegated
-session, but both localhost and 127.0.0.1 enter development handshake loops and
-finish signed out. Testing-token interception initially consumed the redirect
-twice; installing it after navigation removes that first failure, not the
-remaining handoff failure. Failed-run cleanup revokes only sessions matching
-the exact Agent Task. No task-capable Clerk MCP was available; these attempts
-used the official SDK/Backend API. This diagnostic is excluded from release CI
-and is not passing authenticated coverage.
+The explicit `agent-tasks` Playwright project uses Clerk's Agent Tasks Backend
+API, never the ordinary sign-in helper. Run it against the isolated Worker with
+`STUDYUS_AGENT_TASK_DIAGNOSTIC=1 STUDYUS_ISOLATED_AUDIT=1 STUDYUS_AGENT_TASK_WORKERS=1 E2E_BASE_URL=https://studyus-agent-e2e.dawka.workers.dev npx playwright test --project=agent-tasks`.
+It consumes one real task, verifies the delegated session's `actor.task_id`,
+loads protected Planner and profile data, exercises task create/list/delete,
+revokes the exact session, and verifies that the profile API returns 401.
+
+Clerk's development handoff currently returns affected cross-site cookies as
+`SameSite=None` without `Secure`, which Chromium rejects. The isolated harness
+therefore consumes the two validated redirect responses once and installs only
+those Clerk-issued cookies with `Secure`; it does not alter cookie values or
+disable browser protections. This proves the delegated session and Studyus
+authorization path, but not Clerk's native development-cookie transport. The
+project remains opt-in and excluded from release CI.
 
 A separately authorized production smoke on September 8 did consume real Agent
 Tasks successfully. One disposable learner completed onboarding, protected task
@@ -121,8 +124,9 @@ smoke on September 8, superseding the earlier automatic-review blocks.
 The `clerk-e2e` environment now restricts deployments to `main`, with administrative
 bypass disabled. Its three development secrets and `CLERK_E2E_ENABLED=true` are
 configured. Manual CI run `34229603733` passed all jobs: the authenticated job
-reported 21 passed and two skipped (Agent Tasks diagnostic and a missing seeded
-group-detail fixture). This does not count as passing Agent Tasks coverage.
+reported 21 passed and two skipped (the then-blocked Agent Tasks diagnostic and
+a missing seeded group-detail fixture). The isolated Worker result above
+supersedes that Agent Tasks status without changing the historical CI result.
 
 Production version `1f664e22-8ac2-4120-8e02-4fa906f5e688` deploys merged commit
 `8e933ba`. Migrations 0014–0029 applied; the foreign-key check and runtime-registry
