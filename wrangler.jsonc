@@ -105,6 +105,55 @@
           }
         }
       ]
+    },
+    "agent-e2e": {
+      "workers_dev": true,
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "studyus-agent-e2e",
+          "database_id": "93a381d0-53dc-4101-b9b1-3c41ec1950c6",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "UPLOADS",
+          "bucket_name": "studyus-agent-e2e-uploads"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "LEARNER_AGENT",
+            "class_name": "LearnerAgent"
+          }
+        ]
+      },
+      "vars": {
+        "OPENROUTER_MODEL": "openrouter/auto",
+        "AI_FEATURES_ENABLED": "false",
+        "ANALYTICS_ENABLED": "false",
+        "POSTHOG_HOST": "https://us.i.posthog.com"
+      },
+      "observability": {
+        "traces": {
+          "enabled": false
+        }
+      },
+      "triggers": {
+        "crons": []
+      },
+      "ratelimits": [
+        {
+          "name": "DEMO_INGEST_LIMITER",
+          "namespace_id": "2026090702",
+          "simple": {
+            "limit": 10,
+            "period": 60
+          }
+        }
+      ]
     }
   },
   "ratelimits": [

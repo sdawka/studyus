@@ -11,7 +11,7 @@ import { createHash } from 'node:crypto';
 // module graph. Remove this import and the array entry to retire the layer.
 import { docsOverlayIntegration } from './src/lib/docs-overlay/integration.mjs';
 
-const buildEnv=loadEnv(process.env.CLOUDFLARE_ENV==='staging'?'e2e':'production',process.cwd(),'PUBLIC_');
+const buildEnv=loadEnv(['staging', 'agent-e2e'].includes(process.env.CLOUDFLARE_ENV ?? '') ? 'e2e' : 'production',process.cwd(),'PUBLIC_');
 // Astro does not collect is:inline scripts. Authorize only this fixed,
 // repository-owned pre-paint theme initializer, never response-supplied code.
 const themeInitializer = readFileSync(new URL('./src/components/shell/ThemeScript.astro', import.meta.url), 'utf8').match(/<script is:inline>([\s\S]*?)<\/script>/)?.[1];
