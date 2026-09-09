@@ -13,6 +13,8 @@
     "deploy": "astro build && wrangler deploy",
     "build:staging": "CLOUDFLARE_ENV=staging astro build --mode e2e",
     "deploy:staging": "npm run build:staging && wrangler deploy --env staging",
+    "build:agent-e2e": "CLOUDFLARE_ENV=agent-e2e astro build --mode e2e",
+    "deploy:agent-e2e": "npm run build:agent-e2e && wrangler deploy --env agent-e2e --keep-vars",
     "deploy:demo": "PUBLIC_DOCS_OVERLAY=true astro build && wrangler deploy",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply studyus --local",

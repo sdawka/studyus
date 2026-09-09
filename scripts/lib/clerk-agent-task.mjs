@@ -9,12 +9,18 @@ import {
 } from './clerk-e2e-auth.mjs';
 
 const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
+const WORKERS_E2E_HOST = 'studyus-agent-e2e.dawka.workers.dev';
 const USED_TASK_CODE = 'agent_task_cannot_be_revoked';
 
 function assertIsolatedDevelopmentTarget(baseUrl) {
   const target = new URL(baseUrl);
-  if (!LOCAL_HOSTS.has(target.hostname)) {
-    throw new Error('Clerk Agent Task E2E is restricted to an isolated local target.');
+  const localTarget = LOCAL_HOSTS.has(target.hostname);
+  const explicitWorkersTarget =
+    process.env.STUDYUS_AGENT_TASK_WORKERS === '1' &&
+    target.protocol === 'https:' &&
+    target.hostname === WORKERS_E2E_HOST;
+  if (!localTarget && !explicitWorkersTarget) {
+    throw new Error('Clerk Agent Task E2E is restricted to localhost or the explicit isolated Worker.');
   }
   return target;
 }
