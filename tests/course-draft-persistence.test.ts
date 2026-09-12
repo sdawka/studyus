@@ -18,7 +18,7 @@ import {
   outcomeKcs,
   users,
 } from '../src/db/schema';
-import { getCourseDomain, persistCourseDraft } from '../src/lib/services/courseDraft';
+import { getCourseDomain, persistCourseDraft, reviseCourseDraft } from '../src/lib/services/courseDraft';
 import type { CourseDraftV2 } from '../src/lib/schemas/courseDraft';
 
 const db = getDb(env.DB);
@@ -128,6 +128,14 @@ beforeEach(async () => {
 });
 
 describe('course draft persistence', () => {
+  it('saves a V2 edit as a detached revision and archives the prior aggregate', async () => {
+    const first = await persistCourseDraft(db, userId, draft);
+    const edited = structuredClone(draft); edited.spec.title = 'Edited learning course';
+    const revised = await reviseCourseDraft(db, userId, first.courseId, edited);
+    expect(revised.courseId).not.toBe(first.courseId);
+    expect((await db.select().from(courses).where(eq(courses.id, first.courseId)))[0].archived).toBe(true);
+    expect((await getCourseDomain(db, userId, revised.courseId)).spec.title).toBe('Edited learning course');
+  });
   it('removes MCQ answers and explanations from the browser-safe read model', async () => {
     const saved = await persistCourseDraft(db, userId, draft);
     const domain = await getCourseDomain(db, userId, saved.courseId);

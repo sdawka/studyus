@@ -8,6 +8,8 @@ import { getCourseMap } from '../../../lib/services/courseMap';
 import { toApi } from '../../../lib/serialize';
 import CourseMapManager from '../../../components/course/CourseMapManager.svelte';
 import { getCourseDomain } from '../../../lib/services/courseDraft';
+import CourseDomainEditor from '../../../components/course/CourseDomainEditor.svelte';
+import { courseDraftV2Schema } from '../../../lib/schemas/courseDraft';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
@@ -18,7 +20,7 @@ let courseMap;
 let courseDomain = null;
 try {
   course = await getCourseBySlug(db, userId, slug);
-  if (course.domainVersion === 2) courseDomain = await getCourseDomain(db, userId, course.id);
+  if (course.domainVersion === 2) courseDomain = courseDraftV2Schema.parse(await getCourseDomain(db, userId, course.id));
   else courseMap = await getCourseMap(db, userId, course.id);
 } catch (err) {
   if (err instanceof NotFoundError) return notFound(Astro);
@@ -29,13 +31,8 @@ try {
   {courseDomain ? (
     <section aria-labelledby="v2-concepts-heading">
       <p class="eyebrow">Course structure</p>
-      <h2 id="v2-concepts-heading">Ideas and skills by module</h2>
-      {courseDomain.modules.map((module) => (
-        <article>
-          <h3>{module.title}</h3>
-          <ul>{module.kc_ids.map((id) => <li>{courseDomain.kcs.find((kc) => kc.id === id)?.name}</li>)}</ul>
-        </article>
-      ))}
+      <h2 id="v2-concepts-heading">Edit course knowledge</h2>
+      <CourseDomainEditor client:load courseId={course.id} initialDraft={courseDomain} />
     </section>
   ) : <CourseMapManager client:load initialMap={toApi(courseMap)} courseSlug={course.slug} />}
 </CourseLayout>
@@ -43,7 +40,4 @@ try {
 <style>
   section { display: grid; gap: 12px; }
   section > h2 { margin: 0; font-size: 20px; }
-  article { padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
-  article h3 { margin: 0 0 8px; font-size: 16px; }
-  article ul { margin: 0; padding-left: 20px; color: var(--muted); }
 </style>

@@ -70,6 +70,15 @@ describe('bundled Learning How to Learn course', () => {
     expect(tags).toEqual(expect.arrayContaining(['spacing', 'retention', 'transfer']));
   });
 
+  it('gives every module a high-support instructional scaffold', () => {
+    const course = loadDefaultCourse();
+    for (const module of course.modules) {
+      const moduleExperiences = course.experiences.filter((experience) => module.experience_ids.includes(experience.id));
+      expect(moduleExperiences.some((experience) => experience.kind === 'scaffold'
+        && experience.content.kind === 'scaffold' && experience.content.level === 1), module.title).toBe(true);
+    }
+  });
+
   it('returns isolated nested copies', () => {
     const first = loadDefaultCourse();
     const second = loadDefaultCourse();

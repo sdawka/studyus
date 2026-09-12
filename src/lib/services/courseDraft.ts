@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import type { Db } from '../../db/client';
 import {
@@ -36,6 +36,10 @@ export type PersistCourseDraftOptions = {
   sourceTemplateKey?: string;
   sourceTemplateVersion?: string;
   bootstrapKey?: string;
+  term?: string;
+  credits?: number;
+  instructor?: string;
+  color?: string;
 };
 
 const legacyKcType = {
@@ -229,6 +233,10 @@ export async function buildCourseDraftStatements(
     level: draft.spec.level,
     project: draft.spec.project,
     constraints: draft.spec.constraints,
+    term: options.term,
+    credits: options.credits,
+    instructor: options.instructor,
+    color: options.color,
     sourceTemplateKey: options.sourceTemplateKey,
     sourceTemplateVersion: options.sourceTemplateVersion,
     bootstrapKey: options.bootstrapKey,
@@ -395,6 +403,15 @@ export async function persistCourseDraft(
 ): Promise<{ courseId: string; slug: string }> {
   const batch = await buildCourseDraftStatements(db, userId, input, options);
   await runBatch(db, batch.statements);
+  return { courseId: batch.courseId, slug: batch.slug };
+}
+
+/** Saves an edited V2 aggregate as a fresh owned revision and archives its predecessor atomically. */
+export async function reviseCourseDraft(db: Db, userId: string, courseId: string, input: CourseDraftV2) {
+  const existing = await requireOwnedCourse(db, userId, courseId);
+  if (existing.domainVersion !== 2) throw new CourseDomainVersionError();
+  const batch = await buildCourseDraftStatements(db, userId, input);
+  await runBatch(db, [db.update(courses).set({ archived: true }).where(and(eq(courses.id, courseId), eq(courses.userId, userId))), ...batch.statements]);
   return { courseId: batch.courseId, slug: batch.slug };
 }
 

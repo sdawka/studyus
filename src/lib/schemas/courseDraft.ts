@@ -247,6 +247,17 @@ export const courseDraftV2Schema = z.strictObject({
 }).refine((draft) => (
   draft.outcomes.length + draft.kcs.length + draft.examples.length + draft.misconceptions.length
   + draft.experiences.length + draft.references.length + draft.modules.length <= 1_000
-), { message: 'Course aggregate exceeds 1000 records' });
+), { message: 'Course aggregate exceeds 1000 records' }).refine((draft) => {
+  const relationshipCount = draft.outcomes.reduce((sum, row) => sum + row.kc_ids.length, 0)
+    + draft.kcs.reduce((sum, row) => sum + row.prerequisite_kc_ids.length, 0)
+    + draft.examples.reduce((sum, row) => sum + row.kc_ids.length, 0)
+    + draft.misconceptions.reduce((sum, row) => sum + row.kc_ids.length, 0)
+    + draft.experiences.reduce((sum, row) => sum + row.target_kc_ids.length
+      + (row.evidence?.target_kc_ids.length ?? 0) + (row.evidence?.diagnostic_misconception_ids.length ?? 0), 0)
+    + draft.references.reduce((sum, row) => sum + row.kc_ids.length + row.example_ids.length
+      + row.experience_ids.length + row.misconception_ids.length, 0)
+    + draft.modules.reduce((sum, row) => sum + row.outcome_ids.length + row.kc_ids.length + row.experience_ids.length, 0);
+  return relationshipCount <= 1_000;
+}, { message: 'Course relationship complexity exceeds 1000 links' });
 
 export type CourseDraftV2 = z.infer<typeof courseDraftV2Schema>;

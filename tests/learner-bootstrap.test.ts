@@ -72,6 +72,13 @@ describe('learner bootstrap', () => {
     expect(domain.modules).toHaveLength(5);
     expect(domain.kcs).toHaveLength(14);
     expect(domain.experiences).toHaveLength(10);
+    for (const module of domain.modules) {
+      const moduleTargets = new Set(module.kc_ids);
+      const moduleExperiences = domain.experiences.filter((experience) => module.experience_ids.includes(experience.id));
+      const scaffold = moduleExperiences.find((experience) => experience.kind === 'scaffold')!;
+      expect(scaffold.target_kc_ids.every((id) => moduleTargets.has(id))).toBe(true);
+      expect(scaffold.target_kc_ids).toHaveLength(module.kc_ids.length);
+    }
     expect(domain.modules.map((module) => module.title)).toEqual([
       'How do you know you’ve learned something?',
       'How do you access what you’ve learned?',
@@ -88,7 +95,9 @@ describe('learner bootstrap', () => {
       type: 'quiz_taken', kc_id: scaffold.target_kc_ids[0], experience_id: weakEvidence.id,
       payload: { correct: false },
     });
-    expect((await getNextExperience(db, result.user.id)).experience.id).toBe(scaffold.id);
+    const supported = await getNextExperience(db, result.user.id);
+    expect(supported.experience.kind).toBe('scaffold');
+    expect(domain.experiences.find((experience) => experience.id === supported.experience.id)?.target_kc_ids).toContain(scaffold.target_kc_ids[0]);
   });
 
   it('returns the same learner and course on sequential retries', async () => {

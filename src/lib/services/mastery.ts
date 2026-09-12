@@ -223,7 +223,7 @@ export async function getNextExperience(db: Db, userId: string, now: number = Da
   const [edges, links, diagnostics, scaffoldRows, exerciseRows, stateEntries] = await Promise.all([
     db.select({ kcId: kcEdges.kcId, prerequisiteKcId: kcEdges.prereqKcId }).from(kcEdges)
       .where(and(inArray(kcEdges.kcId, kcIds), inArray(kcEdges.prereqKcId, kcIds))),
-    db.select({ experienceId: experienceKcs.experienceId, kcId: experienceKcs.kcId, isEvidenceTarget: experienceKcs.isEvidenceTarget }).from(experienceKcs)
+    db.select({ experienceId: experienceKcs.experienceId, kcId: experienceKcs.kcId, isEvidenceTarget: experienceKcs.isEvidenceTarget, sortOrder: experienceKcs.sortOrder }).from(experienceKcs)
       .where(and(
         inArray(experienceKcs.experienceId, experienceIds),
         inArray(experienceKcs.kcId, kcIds),
@@ -252,8 +252,8 @@ export async function getNextExperience(db: Db, userId: string, now: number = Da
     experiences: experienceRows.map((experience) => ({
       id: experience.id,
       learnerId: userId,
-      targetKcIds: links.filter((link) => link.experienceId === experience.id
-        && (link.isEvidenceTarget || experience.kind === 'scaffold')).map((link) => link.kcId),
+      targetKcIds: links.filter((link) => link.experienceId === experience.id)
+        .sort((left, right) => left.sortOrder - right.sortOrder).map((link) => link.kcId),
       kind: experience.kind,
       supportLevel: support.get(experience.id),
       evidenceTags: selectionTags(experience.content),

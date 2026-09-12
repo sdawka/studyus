@@ -204,8 +204,11 @@ they own. Save is one atomic snapshot guarded by `courses.map_revision`, so a
 stale browser receives a conflict instead of overwriting newer work.
 
 V2 courses render their ordered modules and linked KCs from the aggregate read
-model. The legacy snapshot editor rejects V2 writes so it cannot create bare
-KCs that violate the aggregate's example and evidence invariants.
+model. Modules expose examples, explanations, practice, evidence checks, and
+the selector recommendation; completion writes the existing event stream.
+Learners create V2 courses from Add course and edit by saving a detached
+revision. The legacy snapshot editor rejects V2 writes so it cannot create bare
+KCs that violate aggregate invariants.
 
 Archiving is reversible and preserves events, mastery, notes, assessment links,
 and other history. Active study, exercise, misconception, course, and ZPD reads

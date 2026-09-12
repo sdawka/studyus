@@ -17,16 +17,25 @@ import { hueFor } from '../../../lib/courseHue';
 import { NotFoundError, notFound } from '../../../lib/handleNotFound';
 import CourseHome from '../../../components/course/CourseHome.svelte';
 import { getCourseDomain } from '../../../lib/services/courseDraft';
+import { getNextExperience } from '../../../lib/services/mastery';
+import CourseModules from '../../../components/course/CourseModules.svelte';
+import { courseDraftV2Schema, type CourseDraftV2 } from '../../../lib/schemas/courseDraft';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
 const slug = Astro.params.slug!;
 
 let course;
-let courseDomain = null;
+let courseDomain: CourseDraftV2 | null = null;
+let recommendedExperienceId = null;
 try {
   course = await getCourseBySlug(db, userId, slug);
-  if (course.domainVersion === 2) courseDomain = await getCourseDomain(db, userId, course.id);
+  if (course.domainVersion === 2) {
+    courseDomain = courseDraftV2Schema.parse(await getCourseDomain(db, userId, course.id));
+    recommendedExperienceId = await getNextExperience(db, userId).then((result) =>
+      courseDomain!.experiences.some((experience) => experience.id === result.experience.id) ? result.experience.id : null,
+    ).catch(() => null);
+  }
 } catch (err) {
   if (err instanceof NotFoundError) return notFound(Astro);
   throw err;
@@ -56,13 +65,7 @@ const branches = course.branches.map((b) => ({
 }));
 ---
 <CourseLayout course={course} active="overview">
-  {courseDomain && courseDomain.modules.length > 0 && (
-    <section class="domain-modules" aria-labelledby="course-modules-heading">
-      <p class="eyebrow">Your learning path</p>
-      <h2 id="course-modules-heading">Course modules</h2>
-      <ol>{courseDomain.modules.map((module) => <li><h3>{module.title}</h3></li>)}</ol>
-    </section>
-  )}
+  {courseDomain && courseDomain.modules.length > 0 && <CourseModules client:load courseId={course.id} draft={courseDomain} {recommendedExperienceId} />}
   <CourseHome
     client:load
     courseId={course.id}
@@ -75,13 +78,6 @@ const branches = course.branches.map((b) => ({
     initialTasks={toApi(allTasks)}
   />
 </CourseLayout>
-
-<style>
-  .domain-modules { margin-bottom: 24px; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
-  .domain-modules h2 { margin: 2px 0 14px; font-size: 18px; }
-  .domain-modules ol { display: grid; gap: 8px; margin: 0; padding-left: 24px; }
-  .domain-modules h3 { margin: 0; font-size: 15px; font-weight: 600; }
-</style>
 
 <script>
   // Legacy hash-tab redirects from the pre-subroute course page

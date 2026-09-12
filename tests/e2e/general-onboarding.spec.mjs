@@ -68,6 +68,10 @@ test.describe('isolated general onboarding journeys', () => {
       'What helps you learn best?',
       'How can you keep getting better at learning?',
     ]);
+    await expect(page.getByRole('button', { name: 'I got it' }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'I need support' }).first()).toBeVisible();
+    await page.goto('/courses/learning-how-to-learn/concepts');
+    await expect(page.getByRole('button', { name: 'Save as revised course' })).toBeVisible();
   });
 
   test('mobile keyboard flow creates a non-academic course', async ({ page }) => {

@@ -157,7 +157,7 @@ describe('getNextExperience', () => {
     expect(result.reasons).toEqual([`ready unmet KC ${kcId}`]);
   });
 
-  it('ignores archived graph content and context-only KC links', async () => {
+  it('ignores archived graph content while preserving context-only KC targets', async () => {
     const db = getDb(env.DB);
     const learnerId = crypto.randomUUID();
     const courseId = crypto.randomUUID();
@@ -184,14 +184,13 @@ describe('getNextExperience', () => {
       { id: archivedKcId, branchId, courseId, name: 'Archived KC', archivedAt: now },
       { id: archivedBranchKcId, branchId: archivedBranchId, courseId, name: 'KC on archived branch' },
     ]);
-    await db.insert(kcEdges).values({ kcId: contextKcId, prereqKcId: missingPrereqId, source: 'user' });
     await db.insert(experiences).values({
       id: experienceId, courseId, kind: 'exercise', intendedProcesses: ['memory_fluency'],
       content: { schema_version: 1, kind: 'worked', prompt: 'Try', solution: 'Answer' }, evidenceResponseType: 'constructed_response',
     });
     await db.insert(experienceKcs).values([
-      { experienceId, kcId, courseId, isEvidenceTarget: true },
-      { experienceId, kcId: contextKcId, courseId, isEvidenceTarget: false, sortOrder: 1 },
+      { experienceId, kcId, courseId, isEvidenceTarget: true, sortOrder: 1 },
+      { experienceId, kcId: contextKcId, courseId, isEvidenceTarget: false, sortOrder: 0 },
     ]);
     await db.insert(courses).values({
       id: archivedCourseId, userId: learnerId, code: 'OLD', slug: `old-${archivedCourseId}`, title: 'Archived', archived: true,
@@ -208,6 +207,6 @@ describe('getNextExperience', () => {
 
     const result = await getNextExperience(db, learnerId, now);
     expect(result.experience.id).toBe(experienceId);
-    expect(result.reasons).toEqual([`ready unmet KC ${kcId}`]);
+    expect(result.reasons).toEqual([`ready unmet KC ${contextKcId}`]);
   });
 });

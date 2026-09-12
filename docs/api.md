@@ -104,8 +104,15 @@ references, and optional modules. Validation rejects unknown fields, dangling
 or duplicate links, prerequisite cycles, empty outcome/experience targets,
 active KCs without examples or evidence-producing experiences, oversized
 collections/relationships/strings/content, and invalid mastery-rule fields.
+Relationship materialization is capped at 1,000 links before statements are built.
 MasteryRule fields are optional. Draft-local IDs are replaced with fresh
 learner-owned IDs; a persisted aggregate is detached from its source.
+
+`POST /course-drafts` accepts `{ course: CourseDraftV2, context: { term?,
+credits?, instructor?, color_hue? } }` and creates a learner-owned aggregate. `GET
+/courses/:id/domain` returns its browser-safe editable form; `PUT` validates a
+revision, atomically archives the prior aggregate, and creates a fresh detached
+revision so existing learning history is retained.
 
 Model-backed generation is not implemented. Future template, extraction, or
 generation adapters must emit this same validated contract and may never write

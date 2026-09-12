@@ -187,6 +187,21 @@ describe('CourseDraftV2 schema', () => {
     expect(() => courseDraftV2Schema.parse(oversized)).toThrow(/aggregate/i);
   });
 
+  it('rejects valid-shaped aggregates whose relationships would materialize too many statements', () => {
+    const ids = Array.from({ length: 300 }, (_, index) => `kc-${index}`);
+    const oversized = { ...validDraft,
+      outcomes: [{ ...validDraft.outcomes[0], kc_ids: ids }],
+      kcs: ids.map((id) => ({ ...validDraft.kcs[0], id, name: id })),
+      examples: ids.map((id, index) => ({ ...validDraft.examples[0], id: `example-${index}`, kc_ids: ids })),
+      experiences: ids.map((id, index) => ({ ...validDraft.experiences[0], id: `experience-${index}`, target_kc_ids: ids,
+        evidence: { ...validDraft.experiences[0].evidence, target_kc_ids: ids, diagnostic_misconception_ids: [] } })),
+      misconceptions: [], references: [], modules: [],
+    };
+    const result = courseDraftV2Schema.safeParse(oversized);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues.some((issue) => issue.message.includes('relationship complexity'))).toBe(true);
+  });
+
   it('keeps observation evidence unscored', () => {
     const observation = invalidDraft((value) => {
       value.experiences[0].evidence.response_type = 'observation';
