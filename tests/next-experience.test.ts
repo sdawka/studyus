@@ -135,6 +135,35 @@ describe('selectNextExperience', () => {
 });
 
 describe('getNextExperience', () => {
+  it('loads learner state with a constant number of database queries as KC count grows', async () => {
+    const realDb = getDb(env.DB);
+    const learnerId = crypto.randomUUID();
+    const courseId = crypto.randomUUID();
+    const branchId = crypto.randomUUID();
+    await realDb.insert(users).values({ id: learnerId, email: `${learnerId}@test.local`, passwordHash: 'x' });
+    await realDb.insert(courses).values({ id: courseId, userId: learnerId, code: 'BATCH', slug: `batch-${courseId}`, title: 'Batch' });
+    await realDb.insert(branches).values({ id: branchId, courseId, name: 'General' });
+    const kcIds = Array.from({ length: 120 }, () => crypto.randomUUID());
+    for (const [index, id] of kcIds.entries()) {
+      await realDb.insert(kcs).values({ id, branchId, courseId, name: `KC ${index}` });
+    }
+    const experienceId = crypto.randomUUID();
+    await realDb.insert(experiences).values({
+      id: experienceId, courseId, kind: 'exercise', intendedProcesses: ['memory_fluency'],
+      content: { schema_version: 1, kind: 'worked', prompt: 'Try', solution: 'Answer' }, evidenceResponseType: 'constructed_response',
+    });
+    for (const [sortOrder, kcId] of kcIds.entries()) {
+      await realDb.insert(experienceKcs).values({ experienceId, kcId, courseId, isEvidenceTarget: true, sortOrder });
+    }
+    let selects = 0;
+    const measuredDb = new Proxy(realDb, { get(target, property) {
+      if (property === 'select') return (...args: Parameters<typeof realDb.select>) => { selects += 1; return target.select(...args); };
+      const value = Reflect.get(target, property, target);
+      return typeof value === 'function' ? value.bind(target) : value;
+    } });
+    await getNextExperience(measuredDb, learnerId, now);
+    expect(selects).toBeLessThanOrEqual(12);
+  });
   it('assembles learner-owned graph/state and resolves the pure selector result', async () => {
     const db = getDb(env.DB);
     const learnerId = crypto.randomUUID();

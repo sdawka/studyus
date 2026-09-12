@@ -33,3 +33,5 @@
 - 2026-09-12T01:39:55-04:00 — Frame every “Learning How to Learn” module as a learner-facing question, progressing from evidence of learning through access, experience, effective practice, and continued improvement.
 
 - 2026-09-12T06:08:34-04:00 — Update V2 course content atomically in place with stable course, KC, and experience IDs and an optimistic revision fence. Reject structural ID-set changes in this editor; new courses continue through the aggregate create path.
+
+- 2026-09-12T08:48:41-04:00 — Fix all release-blocking review findings before opening or merging the general-learning PR: score supported rubric/numeric evidence, make experience responses idempotent, and batch next-experience state loading within Worker limits.

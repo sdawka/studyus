@@ -7,6 +7,7 @@
   let message = $state('');
   let busy = $state(false);
   let responses = $state<Record<string, string>>({});
+  let requestKeys = $state<Record<string, string>>({});
   const experienceById = (id: string) => draft.experiences.find((row) => row.id === id);
   const examplesFor = (kcIds: string[]) => draft.examples.filter((row) => row.kc_ids.some((id) => kcIds.includes(id)));
   const contentRecord = (content: unknown): Record<string, unknown> =>
@@ -24,10 +25,13 @@
   async function record(experience: Experience) {
     busy = true; message = '';
     const response = responses[experience.id] ?? '';
-    const result = await apiFetch(`/api/v1/experiences/${experience.id}/respond`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(
-      experience.evidence?.response_type === 'selected_response' ? { selected_index: Number(response) } : { response: experience.evidence ? response : 'Explanation read' },
+    const requestKey = requestKeys[experience.id] ??= crypto.randomUUID();
+    const result = await apiFetch(`/api/v1/experiences/${experience.id}/respond`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': requestKey }, body: JSON.stringify(
+      experience.evidence?.response_type === 'selected_response' ? { selected_index: Number(response) }
+        : { response: experience.evidence ? response : 'Explanation read' },
     ) }, 'Could not save this learning step');
     busy = false;
+    if (result.ok) delete requestKeys[experience.id];
     message = result.ok ? 'Progress saved.' : result.error;
   }
 </script>

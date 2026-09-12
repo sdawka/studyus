@@ -135,7 +135,7 @@ describe('learner bootstrap', () => {
     expect(selectedContent.selection_policy?.evidence_tags).toContain('retention');
   });
 
-  it('records trusted default-course policy and diagnostics without manufacturing mastery from unscored responses', async () => {
+  it('records default-course rubric responses without trusting learner self-grading', async () => {
     const learner = await resolveLocalUser(db, { id: 'clerk-bootstrap-observation', primaryEmailAddress: 'observation@example.test' });
     const domain = await getCourseDomain(db, learner.user.id, learner.defaultCourse!.id);
     const experience = domain.experiences.find((row) => {
@@ -144,7 +144,7 @@ describe('learner bootstrap', () => {
     })!;
     const kcId = experience.evidence!.target_kc_ids[0];
     const before = await getKcState(db, learner.user.id, kcId);
-    for (const response of ['First observation', 'Second observation', 'Third observation']) {
+    for (const response of ['First response', 'Second response', 'Third response']) {
       await respondToExperience(db, learner.user.id, experience.id, { response });
     }
     const recorded = await db.select().from(events).where(eq(events.experienceId, experience.id));
@@ -155,7 +155,6 @@ describe('learner bootstrap', () => {
       evidence_tags: ['retention', 'transfer'],
       diagnostic_misconception_ids: experience.evidence!.diagnostic_misconception_ids,
     });
-    expect(recorded[0].payload).not.toHaveProperty('correct');
     expect(await getKcState(db, learner.user.id, kcId)).toMatchObject({ masteryEstimate: before.masteryEstimate, masteryStatus: before.masteryStatus });
   });
 

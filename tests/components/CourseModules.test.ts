@@ -18,6 +18,7 @@ describe('CourseModules', () => {
     const init = fetch.mock.calls[0][1] as RequestInit;
     expect(fetch.mock.calls[0][0]).toBe(`/api/v1/experiences/${experience.id}/respond`);
     expect(JSON.parse(String(init.body))).toEqual({ response: 'My retrieval plan' });
+    expect((init.headers as Record<string, string>)['Idempotency-Key']).toMatch(/^[0-9a-f-]{36}$/);
   });
 
   it('keeps selected-response answers hidden and submits only the learner selection', async () => {

@@ -197,6 +197,50 @@ describe('course draft persistence', () => {
     expect(event.payload).toMatchObject({ response: 'I will attempt first.', observation: true });
     expect(event.payload).not.toHaveProperty('correct');
   });
+  it('scores numeric responses from persisted answer details', async () => {
+    const numeric = structuredClone(draft) as CourseDraftV2;
+    numeric.experiences[0].evidence = {
+      response_type: 'constructed_response', target_kc_ids: ['kc-evidence'], diagnostic_misconception_ids: [],
+      scoring: { kind: 'numeric', details: { schema_version: 1, answer: { value: 10, unit: null, tolerance_pct: 5 } } },
+    };
+    numeric.experiences[0].content = {
+      schema_version: 1, kind: 'numeric', prompt: 'Estimate the value.', answer: { value: 10, unit: null, tolerance_pct: 5 },
+      solution: 'Ten, within five percent.',
+    };
+    const saved = await persistCourseDraft(db, userId, numeric);
+    const experience = (await getCourseAuthoringDomain(db, userId, saved.courseId)).experiences[0];
+    const correct = await respondToExperience(db, userId, experience.id, { response: '10.4' });
+    const incorrect = await respondToExperience(db, userId, experience.id, { response: '11' });
+    expect(correct.event.payload).toMatchObject({ response: '10.4', correct: true, correctness: 1 });
+    expect(incorrect.event.payload).toMatchObject({ response: '11', correct: false, correctness: 0 });
+  });
+  it('records rubric responses as observations until a trusted evaluator scores them', async () => {
+    const rubric = structuredClone(draft) as CourseDraftV2;
+    rubric.experiences[0].evidence = {
+      response_type: 'constructed_response', target_kc_ids: ['kc-evidence'], diagnostic_misconception_ids: [],
+      scoring: { kind: 'rubric', details: { schema_version: 1, criteria: [
+        { id: 'reason', label: 'Gives a reason', max_points: 2 },
+        { id: 'example', label: 'Uses an example', max_points: 1 },
+      ] } },
+    };
+    rubric.experiences[0].content = { schema_version: 1, kind: 'worked', prompt: 'Explain it.', solution: 'A reason and example.' };
+    const saved = await persistCourseDraft(db, userId, rubric);
+    const experience = (await getCourseAuthoringDomain(db, userId, saved.courseId)).experiences[0];
+    const result = await respondToExperience(db, userId, experience.id, { response: 'Because it works; for example...' });
+    expect(result.event.payload).toMatchObject({ response: 'Because it works; for example...', observation: true });
+    expect(result.event.payload).not.toHaveProperty('correctness');
+    expect((await getKcState(db, userId, experience.evidence!.target_kc_ids[0])).evidenceIds).not.toContain(result.event.id);
+  });
+  it('replays an experience response idempotently and rejects key reuse with different evidence', async () => {
+    const saved = await persistCourseDraft(db, userId, draft);
+    const experience = (await getCourseAuthoringDomain(db, userId, saved.courseId)).experiences[0];
+    const key = crypto.randomUUID();
+    const first = await respondToExperience(db, userId, experience.id, { selected_index: 1 }, key);
+    const replay = await respondToExperience(db, userId, experience.id, { selected_index: 1 }, key);
+    expect(replay).toMatchObject({ wasCreated: false, event: { id: first.event.id } });
+    expect(await db.select().from(events).where(eq(events.experienceId, experience.id))).toHaveLength(1);
+    await expect(respondToExperience(db, userId, experience.id, { selected_index: 0 }, key)).rejects.toThrow('Idempotency key');
+  });
   it('edits in place while preserving metadata, provenance, KC IDs, and event history', async () => {
     const first = await persistCourseDraft(db, userId, draft, { sourceTemplateKey: 'source', sourceTemplateVersion: '9', bootstrapKey: 'bootstrap', term: 'Fall', instructor: 'Teacher' });
     const edited = await getCourseAuthoringDomain(db, userId, first.courseId);

@@ -309,12 +309,13 @@ export async function createEvent(
 }
 
 /** Scores supported authored responses server-side; unscored responses never claim correctness. */
-export async function respondToExperience(db: Db, userId: string, experienceId: string, input: ExperienceResponseInput) {
+export async function respondToExperience(db: Db, userId: string, experienceId: string, input: ExperienceResponseInput, idempotencyKey?: string) {
   const owned = await db.select({
     courseId: experiences.courseId,
     content: experiences.content,
     responseType: experiences.evidenceResponseType,
     scoringKind: experiences.evidenceScoringKind,
+    scoringDetails: experiences.evidenceScoringDetails,
   })
     .from(experiences).innerJoin(courses, eq(experiences.courseId, courses.id))
     .where(and(eq(experiences.id, experienceId), eq(courses.userId, userId))).limit(1);
@@ -335,11 +336,25 @@ export async function respondToExperience(db: Db, userId: string, experienceId: 
     if (input.selected_index === undefined || !Array.isArray(content.options) || input.selected_index >= content.options.length) throw new ConflictError('Select one available answer.');
     const scored = owned[0].scoringKind === 'binary';
     return createEvent(db, userId, { type: scored ? 'quiz_taken' : 'practice_done', course_id: owned[0].courseId, experience_id: experienceId,
-      kc_id: targets[0]?.kcId, payload: { selected_index: input.selected_index, ...trustedContext, ...(scored ? { correct: input.selected_index === content.correct_index } : { observation: true }) } }, 'system');
+      kc_id: targets[0]?.kcId, payload: { selected_index: input.selected_index, ...trustedContext, ...(scored ? { correct: input.selected_index === content.correct_index } : { observation: true }) } }, 'system', idempotencyKey);
   }
   if (!input.response) throw new ConflictError('Write a response before saving.');
+  if (owned[0].scoringKind === 'numeric') {
+    const details = owned[0].scoringDetails && typeof owned[0].scoringDetails === 'object'
+      ? owned[0].scoringDetails as Record<string, unknown> : {};
+    const answer = details.answer && typeof details.answer === 'object' ? details.answer as Record<string, unknown> : {};
+    const expected = answer.value;
+    const tolerancePct = answer.tolerance_pct ?? 0;
+    const actual = Number(input.response);
+    if (typeof expected !== 'number' || typeof tolerancePct !== 'number' || !Number.isFinite(actual)) {
+      throw new ConflictError('Enter a valid numeric response.');
+    }
+    const correct = Math.abs(actual - expected) <= Math.abs(expected) * tolerancePct / 100;
+    return createEvent(db, userId, { type: 'quiz_taken', course_id: owned[0].courseId, experience_id: experienceId,
+      kc_id: targets[0]?.kcId, payload: { response: input.response, correct, correctness: correct ? 1 : 0, ...trustedContext } }, 'system', idempotencyKey);
+  }
   return createEvent(db, userId, { type: targets.length ? 'practice_done' : 'reading_done', course_id: owned[0].courseId,
-    experience_id: experienceId, kc_id: targets[0]?.kcId, payload: { response: input.response, ...trustedContext, observation: true } }, 'system');
+    experience_id: experienceId, kc_id: targets[0]?.kcId, payload: { response: input.response, ...trustedContext, observation: true } }, 'system', idempotencyKey);
 }
 
 export type AtomicEventInput = CreateEventInput & {

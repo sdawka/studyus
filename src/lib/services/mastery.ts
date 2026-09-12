@@ -215,52 +215,75 @@ export async function getNextExperience(db: Db, userId: string, now: number = Da
       isNull(kcs.archivedAt),
     ))
     .then((rows) => rows.map((row) => row.kc));
-  const kcIds = kcRows.map((kc) => kc.id);
+  const kcIds = new Set(kcRows.map((kc) => kc.id));
   const experienceRows = await db.select({ experience: experiences }).from(experiences)
     .innerJoin(courses, eq(experiences.courseId, courses.id))
     .where(and(eq(courses.userId, userId), eq(courses.archived, false)))
     .then((rows) => rows.map((row) => row.experience));
-  const experienceIds = experienceRows.map((experience) => experience.id);
-  if (kcIds.length === 0 || experienceIds.length === 0) throw new Error('No eligible learner-owned experience');
+  const experienceIds = new Set(experienceRows.map((experience) => experience.id));
+  if (kcIds.size === 0 || experienceIds.size === 0) throw new Error('No eligible learner-owned experience');
 
-  const [edges, links, diagnostics, scaffoldRows, exerciseRows, stateEntries] = await Promise.all([
+  const [edges, links, diagnostics, scaffoldRows, exerciseRows] = await Promise.all([
     db.select({ kcId: kcEdges.kcId, prerequisiteKcId: kcEdges.prereqKcId }).from(kcEdges)
-      .where(and(inArray(kcEdges.kcId, kcIds), inArray(kcEdges.prereqKcId, kcIds))),
+      .innerJoin(kcs, eq(kcEdges.kcId, kcs.id)).innerJoin(courses, eq(kcs.courseId, courses.id))
+      .where(eq(courses.userId, userId)),
     db.select({ experienceId: experienceKcs.experienceId, kcId: experienceKcs.kcId, isEvidenceTarget: experienceKcs.isEvidenceTarget, sortOrder: experienceKcs.sortOrder }).from(experienceKcs)
-      .where(and(
-        inArray(experienceKcs.experienceId, experienceIds),
-        inArray(experienceKcs.kcId, kcIds),
-      )),
+      .innerJoin(courses, eq(experienceKcs.courseId, courses.id)).where(eq(courses.userId, userId)),
     db.select({ experienceId: experienceMisconceptions.experienceId, misconceptionId: experienceMisconceptions.misconceptionId })
-      .from(experienceMisconceptions).where(inArray(experienceMisconceptions.experienceId, experienceIds)),
+      .from(experienceMisconceptions).innerJoin(courses, eq(experienceMisconceptions.courseId, courses.id)).where(eq(courses.userId, userId)),
     db.select({ experienceId: scaffolds.experienceId, level: scaffolds.level }).from(scaffolds)
-      .where(inArray(scaffolds.experienceId, experienceIds)),
+      .innerJoin(kcs, eq(scaffolds.kcId, kcs.id)).innerJoin(courses, eq(kcs.courseId, courses.id)).where(eq(courses.userId, userId)),
     db.select({ experienceId: exercises.experienceId, difficulty: exercises.difficulty }).from(exercises)
-      .where(inArray(exercises.experienceId, experienceIds)),
-    Promise.all(kcIds.map(async (kcId) => [kcId, await getKcState(db, userId, kcId, now)] as const)),
+      .innerJoin(kcs, eq(exercises.kcId, kcs.id)).innerJoin(courses, eq(kcs.courseId, courses.id)).where(eq(courses.userId, userId)),
   ]);
+  const scopedEdges = edges.filter((edge) => kcIds.has(edge.kcId) && kcIds.has(edge.prerequisiteKcId));
+  const scopedLinks = links.filter((link) => experienceIds.has(link.experienceId) && kcIds.has(link.kcId));
+  const scopedDiagnostics = diagnostics.filter((row) => experienceIds.has(row.experienceId));
+  const scopedScaffolds = scaffoldRows.filter((row) => row.experienceId !== null && experienceIds.has(row.experienceId));
+  const scopedExercises = exerciseRows.filter((row) => row.experienceId !== null && experienceIds.has(row.experienceId));
+  const evidenceLinks = scopedLinks.filter((link) => link.isEvidenceTarget);
+  const activeCourseIds = db.select({ id: courses.id }).from(courses)
+    .where(and(eq(courses.userId, userId), eq(courses.archived, false)));
+  const activeKcIds = db.select({ id: kcs.id }).from(kcs)
+    .innerJoin(branches, eq(kcs.branchId, branches.id)).innerJoin(courses, eq(kcs.courseId, courses.id))
+    .where(and(eq(courses.userId, userId), eq(courses.archived, false), isNull(branches.archivedAt), isNull(kcs.archivedAt)));
+  const activeExperienceIds = db.select({ id: experiences.id }).from(experiences)
+    .innerJoin(courses, eq(experiences.courseId, courses.id))
+    .where(and(eq(courses.userId, userId), eq(courses.archived, false)));
+  const eventRows = await db.select({
+    id: events.id, ts: events.ts, type: events.type, isInstructional: events.isInstructional,
+    isAssessment: events.isAssessment, kcId: events.kcId, experienceId: events.experienceId, payload: events.payload,
+  }).from(events).where(and(eq(events.userId, userId), or(
+    inArray(events.courseId, activeCourseIds),
+    inArray(events.kcId, activeKcIds),
+    inArray(events.experienceId, activeExperienceIds),
+  )!));
   const support = new Map<string, number>();
-  for (const row of scaffoldRows) if (row.experienceId) support.set(row.experienceId, row.level);
-  for (const row of exerciseRows) if (row.experienceId) support.set(row.experienceId, row.difficulty);
-  const states = Object.fromEntries(stateEntries);
+  for (const row of scopedScaffolds) if (row.experienceId) support.set(row.experienceId, row.level);
+  for (const row of scopedExercises) if (row.experienceId) support.set(row.experienceId, row.difficulty);
+  const states = Object.fromEntries(kcRows.map((kc) => {
+    const linkedExperienceIds = new Set(evidenceLinks.filter((link) => link.kcId === kc.id).map((link) => link.experienceId));
+    const relevant = eventRows.filter((event) => event.kcId === kc.id || (event.experienceId !== null && linkedExperienceIds.has(event.experienceId)));
+    return [kc.id, deriveKcState(relevant, kc.masteryRule, now)];
+  }));
   const selection = selectNextExperience({
     learnerId: userId,
     kcs: kcRows.map((kc) => ({
       id: kc.id,
       learnerId: userId,
-      prerequisiteKcIds: edges.filter((edge) => edge.kcId === kc.id).map((edge) => edge.prerequisiteKcId),
+      prerequisiteKcIds: scopedEdges.filter((edge) => edge.kcId === kc.id).map((edge) => edge.prerequisiteKcId),
       masteryRule: kc.masteryRule,
       kcForm: kc.kcForm,
     })),
     experiences: experienceRows.map((experience) => ({
       id: experience.id,
       learnerId: userId,
-      targetKcIds: links.filter((link) => link.experienceId === experience.id)
+      targetKcIds: scopedLinks.filter((link) => link.experienceId === experience.id)
         .sort((left, right) => left.sortOrder - right.sortOrder).map((link) => link.kcId),
       kind: experience.kind,
       supportLevel: support.get(experience.id),
       evidenceTags: selectionTags(experience.content),
-      diagnosticMisconceptionIds: diagnostics.filter((row) => row.experienceId === experience.id).map((row) => row.misconceptionId),
+      diagnosticMisconceptionIds: scopedDiagnostics.filter((row) => row.experienceId === experience.id).map((row) => row.misconceptionId),
       intendedProcesses: experience.intendedProcesses,
       sortOrder: experience.sortOrder,
     })).filter((experience) => experience.targetKcIds.length > 0),
