@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { courseDraftV2Schema } from './courseDraft';
 
 // Several bounds below are reachable from the onboarding form, so a learner
 // reads the failure, not a developer. serviceErrorResponse joins issue messages
@@ -131,6 +132,8 @@ export const onboardingReviewMetricsSchema = z.strictObject({
 });
 
 export const onboardingCommitSchema = demoImportSchema.extend({
+  /** A complete manually-authored course. Legacy `courses` remain accepted during migration. */
+  course: courseDraftV2Schema.optional(),
   review_metrics: onboardingReviewMetricsSchema,
 });
 export type OnboardingCommitInput = z.infer<typeof onboardingCommitSchema>;

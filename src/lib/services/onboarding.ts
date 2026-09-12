@@ -21,10 +21,12 @@ import {
 import { parseKcRef, type ContentAssessment } from '../content/courseContent';
 import { getAssessmentTemplateRef, getReviewedTemplate, getReviewedTemplateRevision, templateBaseline, type ReviewedTemplate, type TemplateBaseline } from '../content/templateCatalog';
 import { exerciseDetails } from '../content/exercises';
+import type { CourseDraftV2 } from '../schemas/courseDraft';
 import type { CourseSetupProposal, DemoImportInput } from '../schemas/onboarding';
 import { ConflictError, runBatch } from './util';
 import { courseSlugAllocator } from './courses';
-import { hasUsableCourse, isPlaceholderKcName } from './usableCourse';
+import { getProvisionedDefaultCourse, hasUsableCourse, isPlaceholderKcName } from './usableCourse';
+import { persistCourseDraft } from './courseDraft';
 // Re-exported because middleware.ts and the onboarding tests import it from
 // here; the implementation lives in the leaf module so courseMap and courses
 // can share it without importing this one.
@@ -49,7 +51,9 @@ export async function getOnboardingState(db: Db, userId: string) {
   const user = userRows[0];
   const term = termRows[0] ?? null;
   return {
-    complete: Boolean(user?.onboardedAt && usableCourse),
+    // Completion is a one-way onboarding decision. Course availability is a
+    // separate state so an archived workspace renders the ordinary empty UI.
+    complete: Boolean(user?.onboardedAt),
     has_usable_course: usableCourse,
     profile: user ? {
       institution_name: user.institutionName,
@@ -172,7 +176,82 @@ async function settledImport(db: Db, userId: string, draftId: string) {
   };
 }
 
-export async function importDemoSetup(db: Db, userId: string, input: DemoImportInput) {
+type GeneralOnboardingInput = DemoImportInput & { course?: CourseDraftV2 };
+
+async function commitGeneralOnboarding(db: Db, userId: string, input: GeneralOnboardingInput) {
+  const prior = await settledImport(db, userId, input.draft_id);
+  if (prior) return prior;
+
+  const user = (await db.select().from(users).where(eq(users.id, userId)).limit(1))[0];
+  if (!user) throw new Error('Learner not found');
+
+  let destination = await getProvisionedDefaultCourse(db, userId);
+  let imported = false;
+  if (input.course) {
+    const bootstrapKey = `onboarding:${input.draft_id}`;
+    try {
+      const saved = await persistCourseDraft(db, userId, input.course, { bootstrapKey });
+      destination = { id: saved.courseId, slug: saved.slug };
+      imported = true;
+    } catch (cause) {
+      const winner = (await db.select({ id: courses.id, slug: courses.slug }).from(courses)
+        .where(and(eq(courses.userId, userId), eq(courses.bootstrapKey, bootstrapKey))).limit(1))[0];
+      if (!winner) throw cause;
+      destination = winner;
+      imported = true;
+    }
+  }
+  if (!destination) throw new ConflictError('Your account has no default course. Add a course before finishing setup.');
+
+  const now = Date.now();
+  const settings = resolveSettings(user.settings);
+  const statements: BatchItem<'sqlite'>[] = [];
+  let termId: string | null = null;
+  if (input.context) {
+    termId = crypto.randomUUID();
+    statements.push(db.update(academicTerms).set({ isCurrent: false }).where(eq(academicTerms.userId, userId)));
+    statements.push(db.insert(academicTerms).values({
+      id: termId, userId, label: input.context.term_label, startsOn: dateEpoch(input.context.starts_on),
+      endsOn: dateEpoch(input.context.ends_on), timezone: input.context.timezone, isCurrent: true, createdAt: now,
+    }));
+  }
+  statements.push(db.update(users).set({
+    institutionName: input.context?.institution_name ?? user.institutionName,
+    programName: input.context?.program_name ?? user.programName,
+    currentTerm: input.context?.term_label ?? user.currentTerm,
+    settings: { ...settings, learning_preferences: input.preferences },
+    onboardedAt: now,
+  }).where(eq(users.id, userId)));
+  statements.push(db.insert(onboardingImports).values({
+    id: crypto.randomUUID(), userId, sourceDraftId: input.draft_id, courseId: destination.id, createdAt: now,
+  }));
+  try {
+    await runBatch(db, statements);
+  } catch (cause) {
+    const settled = await settledImport(db, userId, input.draft_id);
+    if (!settled) throw cause;
+    return settled;
+  }
+
+  return {
+    ...(await getOnboardingState(db, userId)),
+    course_id: destination.id,
+    course_slug: destination.slug,
+    imported,
+    behavioral: imported ? {
+      completed_at: now,
+      path: 'manual' as const,
+      course_count: 1,
+      kc_count: input.course?.kcs.length ?? 0,
+    } : null,
+  };
+}
+
+export async function importDemoSetup(db: Db, userId: string, input: GeneralOnboardingInput) {
+  // New clients submit a V2 aggregate directly. An empty legacy list is Skip.
+  // Non-empty legacy proposals stay on the compatibility path below until
+  // template and document callers move to CourseDraftV2.
+  if (input.course || input.courses.length === 0) return commitGeneralOnboarding(db, userId, input);
   const prior = await settledImport(db, userId, input.draft_id);
   if (prior) return prior;
 

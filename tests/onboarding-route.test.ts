@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { needsUsableCourseCheck, onboardingRedirect } from '../src/lib/onboardingRoute';
 
 const NEW_USER = { onboarded: false, hasUsableCourse: false };
-const HALF_SET_UP = { onboarded: true, hasUsableCourse: false };
+const FINISHED_WITHOUT_COURSES = { onboarded: true, hasUsableCourse: false };
 const SET_UP = { onboarded: true, hasUsableCourse: true };
 
 describe('onboardingRedirect: unfinished learners are sent to setup', () => {
@@ -12,10 +12,8 @@ describe('onboardingRedirect: unfinished learners are sent to setup', () => {
     expect(onboardingRedirect('/planner', NEW_USER)).toBe('/onboarding');
   });
 
-  it('pushes a learner who lost their last usable course, even though onboarded', () => {
-    // This is the state the archive guard now prevents, but the rule must still
-    // handle it: onboardedAt is set, yet there is nothing usable to show.
-    expect(onboardingRedirect('/dashboard', HALF_SET_UP)).toBe('/onboarding');
+  it('does not reopen onboarding after a finished learner archives every course', () => {
+    expect(onboardingRedirect('/courses', FINISHED_WITHOUT_COURSES)).toBeNull();
   });
 
   it('leaves the escape hatches reachable while unfinished', () => {
@@ -26,7 +24,7 @@ describe('onboardingRedirect: unfinished learners are sent to setup', () => {
 
   it('lets an unfinished learner stay on /onboarding', () => {
     expect(onboardingRedirect('/onboarding', NEW_USER)).toBeNull();
-    expect(onboardingRedirect('/onboarding', HALF_SET_UP)).toBeNull();
+    expect(onboardingRedirect('/onboarding', FINISHED_WITHOUT_COURSES)).toBe('/courses');
   });
 });
 

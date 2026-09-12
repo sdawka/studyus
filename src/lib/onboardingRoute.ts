@@ -34,11 +34,14 @@ export interface OnboardingRouteState {
  * hasUsableCourse query.
  */
 export function onboardingRedirect(pathname: string, state: OnboardingRouteState): string | null {
-  const setUp = state.onboarded && state.hasUsableCourse;
+  // Provisioning guarantees a default course for new learners. Completion is
+  // deliberately one-way: archiving every course later belongs to the normal
+  // course empty state and must never reopen setup.
+  const setUp = state.onboarded;
 
   // Finished learners have no business in setup: /onboarding would happily
   // build them a second course.
-  if (pathname === '/onboarding') return setUp ? '/dashboard' : null;
+  if (pathname === '/onboarding') return setUp ? (state.hasUsableCourse ? '/dashboard' : '/courses') : null;
 
   // Unfinished learners get pushed back to setup, except on the few pages that
   // must stay reachable (account, settings, auth).

@@ -18,6 +18,16 @@ import { isPlaceholderKcName } from '../placeholderKc';
 // onboarding form can import the browser-safe module directly.
 export { PLACEHOLDER_KC_NAMES, isPlaceholderKcName } from '../placeholderKc';
 
+/** Returns the detached course created with a new learner, without backfilling older accounts. */
+export async function getProvisionedDefaultCourse(db: Db, userId: string) {
+  const rows = await db.select({ id: courses.id, slug: courses.slug }).from(courses)
+    // Kept local to this leaf module to avoid a service cycle through
+    // learnerBootstrap -> courseDraft -> courses -> usableCourse.
+    .where(and(eq(courses.userId, userId), eq(courses.bootstrapKey, 'first-party:learning-how-to-learn')))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 /**
  * Whether `userId` has at least one active, non-archived course carrying a
  * concept that is not a placeholder.

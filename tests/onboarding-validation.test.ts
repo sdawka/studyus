@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { courseSetupProposalSchema, learnerContextSchema } from '../src/lib/schemas/onboarding';
+import { courseSetupProposalSchema, learnerContextSchema, onboardingCommitSchema } from '../src/lib/schemas/onboarding';
 import { onboardingSetupProblems, type OnboardingSetupState } from '../src/lib/onboardingValidation';
 
 const CLEAN: OnboardingSetupState = {
@@ -105,5 +105,31 @@ describe('problems name the field that is wrong', () => {
   it('flags a semester that ends before it starts', () => {
     expect(onboardingSetupProblems({ ...CLEAN, termStart: '2026-12-22', termEnd: '2026-08-31' }))
       .toEqual(['Semester end must be on or after its start.']);
+  });
+});
+
+describe('general onboarding commit validation', () => {
+  it('accepts a skip without academic context or another course', () => {
+    const parsed = onboardingCommitSchema.parse({
+      schema_version: 1,
+      draft_id: crypto.randomUUID(),
+      preferences: { weekly_hours: 7, guidance: 'balanced', depth: 'understand' },
+      courses: [],
+      review_metrics: { renamed: 0, reordered: 0, excluded: 0 },
+    });
+
+    expect(parsed.context).toBeUndefined();
+    expect(parsed.course).toBeUndefined();
+  });
+
+  it('keeps simulated evidence outside the account import boundary', () => {
+    expect(() => onboardingCommitSchema.parse({
+      schema_version: 1,
+      draft_id: crypto.randomUUID(),
+      preferences: { weekly_hours: 7, guidance: 'balanced', depth: 'understand' },
+      courses: [],
+      simulated: true,
+      review_metrics: { renamed: 0, reordered: 0, excluded: 0 },
+    })).toThrow();
   });
 });
