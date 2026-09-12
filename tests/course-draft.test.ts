@@ -85,6 +85,13 @@ describe('CourseDraftV2 schema', () => {
     expect(courseDraftV2Schema.parse(validDraft).spec.topic).toBe('Learning how to learn');
   });
 
+  it('accepts a mastery rule with every optional field omitted', () => {
+    expect(courseDraftV2Schema.parse({
+      ...validDraft,
+      kcs: [{ ...validDraft.kcs[0], mastery_rule: {} }],
+    }).kcs[0].mastery_rule).toEqual({});
+  });
+
   it('rejects unknown keys', () => {
     expect(() => courseDraftV2Schema.parse({ ...validDraft, surprise: true })).toThrow();
   });

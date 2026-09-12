@@ -27,12 +27,7 @@ export const masteryRuleSchema = z.strictObject({
   minimum_evidence: z.number().int().min(1).optional(),
   requires_transfer: z.boolean().optional(),
   requires_retention: z.boolean().optional(),
-}).refine((rule) => (
-  rule.threshold !== undefined
-  || rule.minimum_evidence !== undefined
-  || rule.requires_transfer === true
-  || rule.requires_retention === true
-), { message: 'A mastery rule needs a threshold, evidence minimum, transfer, or retention requirement' });
+});
 
 export const courseSpecSchema = z.strictObject({
   title: z.string().trim().min(1),

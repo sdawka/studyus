@@ -218,7 +218,7 @@ export async function createEvent(
   const explicitKc = input.kc_id ? await requireOwnedKc(db, userId, input.kc_id) : null;
   const experience = input.experience_id ? await ownedExperienceEvidenceTargets(db, userId, input.experience_id) : null;
   if (experience && input.course_id && input.course_id !== experience.courseId) throw new NotFoundError('Experience');
-  if (experience && explicitKc && explicitKc.courseId !== experience.courseId) throw new NotFoundError('Experience');
+  if (experience && explicitKc && !experience.kcIds.includes(explicitKc.id)) throw new NotFoundError('Experience');
 
   const { isInstructional, isAssessment } = EVENT_ROLE_FLAGS[input.type];
   const now = Date.now();
@@ -340,10 +340,7 @@ export async function appendEventsAtomically(
   for (const input of inputs) {
     const linked = input.experience_id ? experienceTargets.get(input.experience_id)! : null;
     if (linked && input.course_id && input.course_id !== linked.courseId) throw new NotFoundError('Experience');
-    if (linked && input.kc_id) {
-      const explicitKc = await requireOwnedKc(db, userId, input.kc_id);
-      if (explicitKc.courseId !== linked.courseId) throw new NotFoundError('Experience');
-    }
+    if (linked && input.kc_id && !linked.kcIds.includes(input.kc_id)) throw new NotFoundError('Experience');
   }
 
   const now = Date.now();

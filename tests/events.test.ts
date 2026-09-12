@@ -19,6 +19,30 @@ let userId: string;
 let courseId: string;
 let kcId: string;
 
+async function experienceTargetFixture() {
+  const contextKcId = crypto.randomUUID();
+  const unrelatedKcId = crypto.randomUUID();
+  const experienceId = crypto.randomUUID();
+  const branch = (await db.select().from(branches).where(eq(branches.courseId, courseId)))[0];
+  await db.insert(kcs).values([
+    { id: contextKcId, branchId: branch.id, courseId, name: 'Context-only KC' },
+    { id: unrelatedKcId, branchId: branch.id, courseId, name: 'Unrelated KC' },
+  ]);
+  await db.insert(experiences).values({
+    id: experienceId,
+    courseId,
+    kind: 'exercise',
+    intendedProcesses: ['understanding_sensemaking'],
+    content: { schema_version: 1, kind: 'worked', prompt: 'Apply the target', solution: 'Use the target KC' },
+    evidenceResponseType: 'constructed_response',
+  });
+  await db.insert(experienceKcs).values([
+    { experienceId, kcId, courseId, isEvidenceTarget: true },
+    { experienceId, kcId: contextKcId, courseId, isEvidenceTarget: false, sortOrder: 1 },
+  ]);
+  return { contextKcId, unrelatedKcId, experienceId };
+}
+
 beforeEach(async () => {
   userId = crypto.randomUUID();
   courseId = crypto.randomUUID();
@@ -82,6 +106,43 @@ describe('events service', () => {
     await expect(createEvent(db, userId, { type: 'practice_done', experience_id: foreignExperienceId }))
       .rejects.toThrow('Experience not found');
   });
+
+  it('rejects an explicit context-only or unrelated KC for an experience event', async () => {
+    const { contextKcId, unrelatedKcId, experienceId } = await experienceTargetFixture();
+
+    for (const invalidKcId of [contextKcId, unrelatedKcId]) {
+      await expect(createEvent(db, userId, {
+        type: 'practice_done',
+        kc_id: invalidKcId,
+        experience_id: experienceId,
+      })).rejects.toThrow('Experience not found');
+    }
+
+    expect(await db.select().from(events)).toHaveLength(0);
+  });
+
+  it('rejects an explicit context-only or unrelated KC in an atomic experience append', async () => {
+    const { contextKcId, unrelatedKcId, experienceId } = await experienceTargetFixture();
+
+    for (const invalidKcId of [contextKcId, unrelatedKcId]) {
+      await expect(appendEventsAtomically(db, userId, [{
+        type: 'practice_done',
+        kc_id: invalidKcId,
+        experience_id: experienceId,
+      }], 'session', [])).rejects.toThrow('Experience not found');
+    }
+
+    expect(await db.select().from(events)).toHaveLength(0);
+
+    const valid = await appendEventsAtomically(db, userId, [{
+      type: 'practice_done',
+      kc_id: kcId,
+      experience_id: experienceId,
+    }], 'session', []);
+    expect(valid.events).toHaveLength(1);
+    expect(valid.masteryDeltas.map((delta) => delta.kc_id)).toEqual([kcId]);
+  });
+
   it('creates an event with role flags derived from type, and updates the KC mastery cache atomically', async () => {
     const { event, masteryDeltas } = await createEvent(db, userId, {
       type: 'quiz_taken',

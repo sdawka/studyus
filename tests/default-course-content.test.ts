@@ -61,9 +61,6 @@ describe('bundled Learning How to Learn course', () => {
         `${kc.id} needs a threshold, evidence minimum, transfer, or retention requirement`,
       ).toBe(true);
     }
-
-    course.kcs[0].mastery_rule = {};
-    expect(() => validateCourseDraft(course)).toThrow();
   });
 
   it('returns isolated nested copies', () => {

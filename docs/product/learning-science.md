@@ -79,8 +79,9 @@ This document is the source of truth for the public `/how-it-works` page. It pre
 
 - [x] `CourseDraftV2` separates a learning goal, KCs, examples, intended
   processes, experiences, evidence contracts, and mastery rules.
-- [x] Every active authored KC needs an example, a meaningful mastery rule, and
-  an evidence-producing experience before persistence.
+- [x] Every active authored KC needs an example and an evidence-producing
+  experience before persistence. Mastery-rule fields are optional authoring
+  policy; the bundled default course independently supplies meaningful rules.
 - [x] Evidence events may point to one experience and update only its declared,
   learner-owned KC targets.
 - [x] KC state is recomputed from evidence with a deterministic mastery

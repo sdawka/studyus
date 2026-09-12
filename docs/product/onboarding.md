@@ -110,8 +110,9 @@ Implemented general-learning additions:
 
 `CourseDraftV2` is the strict authoring boundary for current manual creation,
 the bundled first-party course, and future adapters. One validator enforces
-links, acyclic prerequisites, meaningful mastery rules, and teachable/evidence-
-producing KCs; one statement builder deep-copies the aggregate with fresh IDs.
+links, acyclic prerequisites, valid optional mastery-rule fields, and
+teachable/evidence-producing KCs; one statement builder deep-copies the
+aggregate with fresh IDs.
 `CourseSetupProposal` remains the compatibility contract for reviewed templates
 and local extraction until those adapters emit V2.
 
