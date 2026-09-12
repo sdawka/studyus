@@ -64,6 +64,7 @@ export const createEventSchema = z.strictObject({
   type: z.enum(EVENT_TYPES),
   kc_id: idSchema.optional(),
   course_id: idSchema.optional(),
+  experience_id: idSchema.optional(),
   ts: isoDatetimeSchema.optional(),
   payload: eventPayloadSchema.optional(),
 });

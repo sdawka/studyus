@@ -22,9 +22,22 @@
 // Recomputation is just re-folding: because this function is pure and takes
 // the full event list, "edit an event" and "delete an event" both reduce to
 // "re-run this fold over what remains."
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray, or } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { events, kcs } from '../../db/schema';
+import {
+  courses,
+  events,
+  experienceKcs,
+  experienceMisconceptions,
+  experiences,
+  exercises,
+  kcEdges,
+  kcs,
+  scaffolds,
+} from '../../db/schema';
+import { deriveKcState } from '../domain/kcState';
+import { selectNextExperience } from '../domain/nextExperience';
+import { requireOwnedKc } from './util';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -133,10 +146,16 @@ export function foldMastery(events: FoldEvent[], now: number = Date.now()): Mast
  *  the pure `foldMastery` directly inside its own db.batch instead, since it
  *  needs the write to be atomic with the event insert/update/delete. */
 export async function recomputeKcMastery(db: Db, kcId: string, now: number = Date.now()): Promise<MasteryResult> {
+  const linked = await db.select({ experienceId: experienceKcs.experienceId })
+    .from(experienceKcs)
+    .where(and(eq(experienceKcs.kcId, kcId), eq(experienceKcs.isEvidenceTarget, true)));
+  const target = linked.length > 0
+    ? or(eq(events.kcId, kcId), inArray(events.experienceId, linked.map((row) => row.experienceId)))!
+    : eq(events.kcId, kcId);
   const rows = await db
     .select({ ts: events.ts, isInstructional: events.isInstructional, isAssessment: events.isAssessment, payload: events.payload })
     .from(events)
-    .where(eq(events.kcId, kcId));
+    .where(target);
 
   const result = foldMastery(rows, now);
   await db
@@ -144,4 +163,91 @@ export async function recomputeKcMastery(db: Db, kcId: string, now: number = Dat
     .set({ mastery: result.mastery, status: result.status, lastEventAt: result.lastEventAt })
     .where(eq(kcs.id, kcId));
   return result;
+}
+
+/** Recomputes the auditable learner-owned KC read model from the event stream. */
+export async function getKcState(db: Db, userId: string, kcId: string, now: number = Date.now()) {
+  const kc = await requireOwnedKc(db, userId, kcId);
+  const linked = await db.select({ experienceId: experienceKcs.experienceId })
+    .from(experienceKcs)
+    .where(and(eq(experienceKcs.kcId, kcId), eq(experienceKcs.isEvidenceTarget, true)));
+  const target = linked.length > 0
+    ? or(eq(events.kcId, kcId), inArray(events.experienceId, linked.map((row) => row.experienceId)))!
+    : eq(events.kcId, kcId);
+  const rows = await db.select({
+    id: events.id,
+    ts: events.ts,
+    type: events.type,
+    isInstructional: events.isInstructional,
+    isAssessment: events.isAssessment,
+    experienceId: events.experienceId,
+    payload: events.payload,
+  }).from(events).where(and(eq(events.userId, userId), target));
+  return deriveKcState(rows, kc.masteryRule, now);
+}
+
+function selectionTags(content: unknown): string[] {
+  if (!content || typeof content !== 'object') return [];
+  const value = content as Record<string, unknown>;
+  const candidates = [value.evidence_type, value.evidence_kind, value.purpose];
+  for (const key of ['evidence_tags', 'tags']) {
+    if (Array.isArray(value[key])) candidates.push(...value[key]);
+  }
+  return candidates.filter((candidate): candidate is string => typeof candidate === 'string');
+}
+
+/** Owner-scoped query boundary: assemble data, invoke the pure policy, then resolve its row. */
+export async function getNextExperience(db: Db, userId: string, now: number = Date.now()) {
+  const kcRows = await db.select({ kc: kcs }).from(kcs)
+    .innerJoin(courses, eq(kcs.courseId, courses.id))
+    .where(eq(courses.userId, userId))
+    .then((rows) => rows.map((row) => row.kc));
+  const kcIds = kcRows.map((kc) => kc.id);
+  const experienceRows = await db.select({ experience: experiences }).from(experiences)
+    .innerJoin(courses, eq(experiences.courseId, courses.id))
+    .where(eq(courses.userId, userId))
+    .then((rows) => rows.map((row) => row.experience));
+  const experienceIds = experienceRows.map((experience) => experience.id);
+  if (kcIds.length === 0 || experienceIds.length === 0) throw new Error('No eligible learner-owned experience');
+
+  const [edges, links, diagnostics, scaffoldRows, exerciseRows, stateEntries] = await Promise.all([
+    db.select({ kcId: kcEdges.kcId, prerequisiteKcId: kcEdges.prereqKcId }).from(kcEdges).where(inArray(kcEdges.kcId, kcIds)),
+    db.select({ experienceId: experienceKcs.experienceId, kcId: experienceKcs.kcId }).from(experienceKcs)
+      .where(inArray(experienceKcs.experienceId, experienceIds)),
+    db.select({ experienceId: experienceMisconceptions.experienceId, misconceptionId: experienceMisconceptions.misconceptionId })
+      .from(experienceMisconceptions).where(inArray(experienceMisconceptions.experienceId, experienceIds)),
+    db.select({ experienceId: scaffolds.experienceId, level: scaffolds.level }).from(scaffolds)
+      .where(inArray(scaffolds.experienceId, experienceIds)),
+    db.select({ experienceId: exercises.experienceId, difficulty: exercises.difficulty }).from(exercises)
+      .where(inArray(exercises.experienceId, experienceIds)),
+    Promise.all(kcIds.map(async (kcId) => [kcId, await getKcState(db, userId, kcId, now)] as const)),
+  ]);
+  const support = new Map<string, number>();
+  for (const row of scaffoldRows) if (row.experienceId) support.set(row.experienceId, row.level);
+  for (const row of exerciseRows) if (row.experienceId) support.set(row.experienceId, row.difficulty);
+  const states = Object.fromEntries(stateEntries);
+  const selection = selectNextExperience({
+    learnerId: userId,
+    kcs: kcRows.map((kc) => ({
+      id: kc.id,
+      learnerId: userId,
+      prerequisiteKcIds: edges.filter((edge) => edge.kcId === kc.id).map((edge) => edge.prerequisiteKcId),
+      masteryRule: kc.masteryRule,
+      kcForm: kc.kcForm,
+    })),
+    experiences: experienceRows.map((experience) => ({
+      id: experience.id,
+      learnerId: userId,
+      targetKcIds: links.filter((link) => link.experienceId === experience.id).map((link) => link.kcId),
+      kind: experience.kind,
+      supportLevel: support.get(experience.id),
+      evidenceTags: selectionTags(experience.content),
+      diagnosticMisconceptionIds: diagnostics.filter((row) => row.experienceId === experience.id).map((row) => row.misconceptionId),
+      intendedProcesses: experience.intendedProcesses,
+      sortOrder: experience.sortOrder,
+    })),
+  }, states, now);
+  const experience = experienceRows.find((row) => row.id === selection.experienceId);
+  if (!experience) throw new Error('Selected experience is no longer learner-owned');
+  return { experience, reasons: selection.reasons };
 }
