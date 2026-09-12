@@ -26,7 +26,7 @@ import type { CourseSetupProposal, DemoImportInput } from '../schemas/onboarding
 import { ConflictError, runBatch } from './util';
 import { courseSlugAllocator } from './courses';
 import { getProvisionedDefaultCourse, hasUsableCourse, isPlaceholderKcName } from './usableCourse';
-import { persistCourseDraft } from './courseDraft';
+import { buildCourseDraftStatements } from './courseDraft';
 // Re-exported because middleware.ts and the onboarding tests import it from
 // here; the implementation lives in the leaf module so courseMap and courses
 // can share it without importing this one.
@@ -187,38 +187,35 @@ async function commitGeneralOnboarding(db: Db, userId: string, input: GeneralOnb
 
   let destination = await getProvisionedDefaultCourse(db, userId);
   let imported = false;
+  let courseBatch: Awaited<ReturnType<typeof buildCourseDraftStatements>> | null = null;
   if (input.course) {
     const bootstrapKey = `onboarding:${input.draft_id}`;
-    try {
-      const saved = await persistCourseDraft(db, userId, input.course, { bootstrapKey });
-      destination = { id: saved.courseId, slug: saved.slug };
-      imported = true;
-    } catch (cause) {
-      const winner = (await db.select({ id: courses.id, slug: courses.slug }).from(courses)
-        .where(and(eq(courses.userId, userId), eq(courses.bootstrapKey, bootstrapKey))).limit(1))[0];
-      if (!winner) throw cause;
-      destination = winner;
-      imported = true;
-    }
+    courseBatch = await buildCourseDraftStatements(db, userId, input.course, { bootstrapKey });
+    destination = { id: courseBatch.courseId, slug: courseBatch.slug };
+    imported = true;
   }
   if (!destination) throw new ConflictError('Your account has no default course. Add a course before finishing setup.');
 
   const now = Date.now();
   const settings = resolveSettings(user.settings);
-  const statements: BatchItem<'sqlite'>[] = [];
+  const statements: BatchItem<'sqlite'>[] = [...(courseBatch?.statements ?? [])];
   let termId: string | null = null;
-  if (input.context) {
+  // No authored course means Skip. Academic fields are optional scratch input
+  // in that path and are discarded even if partially or fully populated.
+  const submittedContext = input.course ? input.context : undefined;
+  if (submittedContext) {
     termId = crypto.randomUUID();
     statements.push(db.update(academicTerms).set({ isCurrent: false }).where(eq(academicTerms.userId, userId)));
     statements.push(db.insert(academicTerms).values({
-      id: termId, userId, label: input.context.term_label, startsOn: dateEpoch(input.context.starts_on),
-      endsOn: dateEpoch(input.context.ends_on), timezone: input.context.timezone, isCurrent: true, createdAt: now,
+      id: termId, userId, label: submittedContext.term_label, startsOn: dateEpoch(submittedContext.starts_on),
+      endsOn: dateEpoch(submittedContext.ends_on), timezone: submittedContext.timezone, isCurrent: true, createdAt: now,
     }));
+    if (courseBatch) statements.push(db.update(courses).set({ term: submittedContext.term_label, termId }).where(eq(courses.id, courseBatch.courseId)));
   }
   statements.push(db.update(users).set({
-    institutionName: input.context?.institution_name ?? user.institutionName,
-    programName: input.context?.program_name ?? user.programName,
-    currentTerm: input.context?.term_label ?? user.currentTerm,
+    institutionName: submittedContext?.institution_name ?? user.institutionName,
+    programName: submittedContext?.program_name ?? user.programName,
+    currentTerm: submittedContext?.term_label ?? user.currentTerm,
     settings: { ...settings, learning_preferences: input.preferences },
     onboardedAt: now,
   }).where(eq(users.id, userId)));

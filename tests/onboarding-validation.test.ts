@@ -122,6 +122,18 @@ describe('general onboarding commit validation', () => {
     expect(parsed.course).toBeUndefined();
   });
 
+  it('discards incomplete optional context on Skip', () => {
+    const parsed = onboardingCommitSchema.parse({
+      schema_version: 1,
+      draft_id: crypto.randomUUID(),
+      preferences: { weekly_hours: 7, guidance: 'balanced', depth: 'understand' },
+      courses: [],
+      context: { institution_name: 'Partially entered' },
+      review_metrics: { renamed: 0, reordered: 0, excluded: 0 },
+    });
+    expect(parsed.context).toBeUndefined();
+  });
+
   it('keeps simulated evidence outside the account import boundary', () => {
     expect(() => onboardingCommitSchema.parse({
       schema_version: 1,

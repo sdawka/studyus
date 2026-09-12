@@ -131,10 +131,20 @@ export const onboardingReviewMetricsSchema = z.strictObject({
   excluded: z.number().int().min(0).max(100_000),
 });
 
-export const onboardingCommitSchema = demoImportSchema.extend({
+const onboardingCommitBaseSchema = demoImportSchema.omit({ context: true }).extend({
+  // Parsed conditionally below: Skip discards unfinished optional context,
+  // while Finish validates any context it supplies.
+  context: z.unknown().optional(),
   /** A complete manually-authored course. Legacy `courses` remain accepted during migration. */
   course: courseDraftV2Schema.optional(),
   review_metrics: onboardingReviewMetricsSchema,
+});
+export const onboardingCommitSchema = onboardingCommitBaseSchema.transform((input) => {
+  const skipping = !input.course && input.courses.length === 0;
+  return {
+    ...input,
+    context: skipping || input.context === undefined ? undefined : learnerContextSchema.parse(input.context),
+  };
 });
 export type OnboardingCommitInput = z.infer<typeof onboardingCommitSchema>;
 

@@ -3,7 +3,9 @@
 
   let { draft, onchange } = $props<{ draft: CourseDraftV2; onchange: (draft: CourseDraftV2) => void }>();
   const id = (kind: string) => `${kind}-${crypto.randomUUID()}`;
-  const emit = () => onchange(structuredClone(draft));
+  // `$state.snapshot` unwraps Svelte's deep proxy before crossing the child ->
+  // parent boundary. `structuredClone(draft)` throws DataCloneError on proxies.
+  const emit = () => onchange($state.snapshot(draft));
 
   function addOutcome() {
     draft.outcomes.push({ id: id('outcome'), title: 'Another learning outcome', kc_ids: [draft.kcs[0].id] });

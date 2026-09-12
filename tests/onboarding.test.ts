@@ -81,6 +81,35 @@ describe('onboarding import', () => {
     expect(await db.select().from(academicTerms).where(eq(academicTerms.userId, userId))).toHaveLength(0);
   });
 
+  it('rolls back a V2 course, profile, context, and stamp on a late ledger failure, then retries idempotently', async () => {
+    await provisionDefaultCourse();
+    const course = loadDefaultCourse();
+    course.spec = { title: 'Field recording', topic: 'Recording natural sound', level: 'beginner', constraints: [] };
+    const payload = { ...input(), courses: [], course };
+    await env.DB.exec("CREATE TRIGGER fail_general_onboarding BEFORE INSERT ON onboarding_imports BEGIN SELECT RAISE(ABORT, 'late onboarding failure'); END");
+
+    let failure: unknown;
+    try { await importDemoSetup(db, userId, payload); } catch (cause) { failure = cause; }
+    const coursesAfterFailure = await db.select().from(courses).where(eq(courses.userId, userId));
+    const termsAfterFailure = await db.select().from(academicTerms).where(eq(academicTerms.userId, userId));
+    const userAfterFailure = (await db.select().from(users).where(eq(users.id, userId)))[0];
+    await env.DB.exec('DROP TRIGGER fail_general_onboarding');
+
+    expect(failure).toBeTruthy();
+    expect(coursesAfterFailure).toHaveLength(1);
+    expect(coursesAfterFailure[0].bootstrapKey).toBe(BOOTSTRAP_COURSE_KEY);
+    expect(termsAfterFailure).toHaveLength(0);
+    expect(userAfterFailure.onboardedAt).toBeNull();
+    expect(userAfterFailure.institutionName).toBeNull();
+
+    const retry = await importDemoSetup(db, userId, payload);
+    const replay = await importDemoSetup(db, userId, payload);
+    expect(retry).toMatchObject({ complete: true, imported: true });
+    expect(replay).toMatchObject({ complete: true, imported: false, course_id: retry.course_id });
+    expect(await db.select().from(courses).where(eq(courses.userId, userId))).toHaveLength(2);
+    expect(await db.select().from(onboardingImports).where(eq(onboardingImports.userId, userId))).toHaveLength(1);
+  });
+
   it('atomically creates learner context, a real course, KCs, and completion state', async () => {
     const result = await importDemoSetup(db, userId, input());
 

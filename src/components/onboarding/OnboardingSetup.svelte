@@ -42,7 +42,9 @@
   async function commit(course?: CourseDraftV2) {
     saving = true; error = null;
     try {
-      const academic = context();
+      // Skip is intentionally lossy for optional scratch fields. Only Finish
+      // validates and submits academic context.
+      const academic = course ? context() : undefined;
       const response = await fetch('/api/v1/onboarding/import-demo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ schema_version: 1, draft_id: draftId, preferences: { weekly_hours: 7, guidance: 'balanced', depth: 'understand' }, courses: [], ...(academic ? { context: academic } : {}), ...(course ? { course } : {}), review_metrics: { renamed: 0, reordered: 0, excluded: 0 } }) });
       const payload = await response.json() as { data?: { course_slug: string | null }; error?: { message: string } };
       if (!response.ok || !payload.data?.course_slug) throw new Error(payload.error?.message ?? 'Could not finish setup.');
