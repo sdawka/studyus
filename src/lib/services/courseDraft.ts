@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import type { Db } from '../../db/client';
 import {
@@ -28,9 +28,9 @@ import {
   scaffolds,
 } from '../../db/schema';
 import { validateCourseDraft } from '../domain/courseDraft';
-import type { CourseDraftV2 } from '../schemas/courseDraft';
+import { courseDraftV2Schema, type CourseDraftV2 } from '../schemas/courseDraft';
 import { courseSlugAllocator } from './courses';
-import { requireOwnedCourse, runBatch } from './util';
+import { ConflictError, requireOwnedCourse, runBatch } from './util';
 
 export type PersistCourseDraftOptions = {
   sourceTemplateKey?: string;
@@ -241,6 +241,7 @@ export async function buildCourseDraftStatements(
     sourceTemplateVersion: options.sourceTemplateVersion,
     bootstrapKey: options.bootstrapKey,
     domainVersion: 2,
+    mapRevision: 0,
   }));
   statements.push(db.insert(branches).values({ id: branchId, courseId, name: 'General', sortOrder: 0 }));
 
@@ -406,17 +407,82 @@ export async function persistCourseDraft(
   return { courseId: batch.courseId, slug: batch.slug };
 }
 
-/** Saves an edited V2 aggregate as a fresh owned revision and archives its predecessor atomically. */
-export async function reviseCourseDraft(db: Db, userId: string, courseId: string, input: CourseDraftV2) {
-  const existing = await requireOwnedCourse(db, userId, courseId);
-  if (existing.domainVersion !== 2) throw new CourseDomainVersionError();
-  const batch = await buildCourseDraftStatements(db, userId, input);
-  await runBatch(db, [db.update(courses).set({ archived: true }).where(and(eq(courses.id, courseId), eq(courses.userId, userId))), ...batch.statements]);
-  return { courseId: batch.courseId, slug: batch.slug };
+function sameAggregateStructure(left: CourseDraftV2, right: CourseDraftV2) {
+  const shape = (draft: CourseDraftV2) => ({
+    outcomes: draft.outcomes.map((row) => [row.id, row.kc_ids]),
+    kcs: draft.kcs.map((row) => [row.id, row.prerequisite_kc_ids]),
+    examples: draft.examples.map((row) => [row.id, row.kc_ids]),
+    misconceptions: draft.misconceptions.map((row) => [row.id, row.kc_ids]),
+    experiences: draft.experiences.map((row) => [
+      row.id,
+      row.target_kc_ids,
+      row.evidence?.target_kc_ids ?? [],
+      row.evidence?.diagnostic_misconception_ids ?? [],
+    ]),
+    references: draft.references.map((row) => [
+      row.id,
+      row.kc_ids,
+      row.example_ids,
+      row.experience_ids,
+      row.misconception_ids,
+    ]),
+    modules: draft.modules.map((row) => [row.id, row.outcome_ids, row.kc_ids, row.experience_ids]),
+  });
+  return JSON.stringify(shape(left)) === JSON.stringify(shape(right));
 }
 
-/** Returns an owner-scoped, browser-safe draft-shaped view with database IDs. */
-export async function getCourseDomain(db: Db, userId: string, courseId: string) {
+/** Atomically updates the editable content of a V2 aggregate while preserving its stable graph IDs. */
+export async function reviseCourseDraft(
+  db: Db,
+  userId: string,
+  courseId: string,
+  input: CourseDraftV2,
+  expectedRevision: number,
+) {
+  const existing = await requireOwnedCourse(db, userId, courseId);
+  if (existing.domainVersion !== 2) throw new CourseDomainVersionError();
+  const draft = validateCourseDraft(input);
+  const current = await getCourseAuthoringDomain(db, userId, courseId);
+  if (!sameAggregateStructure(current, draft)) {
+    throw new ConflictError('Structural edits require a version-aware aggregate migration.');
+  }
+
+  // `title` is NOT NULL. A stale revision deliberately assigns NULL, causing
+  // D1 to roll the entire batch back before any child row can be changed.
+  const statements: BatchItem<'sqlite'>[] = [db.update(courses).set({
+    title: sql`case when ${courses.mapRevision} = ${expectedRevision} and ${courses.archived} = false then ${draft.spec.title} else null end`,
+    code: draft.spec.title,
+    overview: draft.spec.topic,
+    topic: draft.spec.topic,
+    level: draft.spec.level,
+    project: draft.spec.project ?? null,
+    constraints: draft.spec.constraints,
+    mapRevision: expectedRevision + 1,
+  }).where(eq(courses.id, courseId))];
+  draft.outcomes.forEach((row) => statements.push(db.update(courseOutcomes).set({ title: row.title, description: row.description ?? null }).where(eq(courseOutcomes.id, row.id))));
+  draft.kcs.forEach((row) => statements.push(db.update(kcs).set({ name: row.name, description: row.description ?? null, kcForm: row.kc_form, rationaleLevel: row.rationale_level, masteryRule: row.mastery_rule }).where(eq(kcs.id, row.id))));
+  draft.examples.forEach((row) => statements.push(db.update(kcExamples).set({ content: row.content }).where(eq(kcExamples.id, row.id))));
+  draft.misconceptions.forEach((row) => statements.push(db.update(misconceptions).set({ name: row.name, diagnosticProbe: row.diagnostic_probe, correction: row.correction }).where(eq(misconceptions.id, row.id))));
+  draft.experiences.forEach((row) => statements.push(db.update(experiences).set({
+    kind: row.kind,
+    intendedProcesses: row.intended_processes,
+    content: row.content,
+    evidenceResponseType: row.evidence?.response_type ?? null,
+    evidenceScoringKind: row.evidence?.scoring?.kind ?? null,
+    evidenceScoringDetails: row.evidence?.scoring?.details ?? null,
+  }).where(eq(experiences.id, row.id))));
+  draft.references.forEach((row) => statements.push(db.update(courseReferences).set({ citation: row.citation, url: row.url ?? null }).where(eq(courseReferences.id, row.id))));
+  draft.modules.forEach((row) => statements.push(db.update(courseModules).set({ title: row.title, sortOrder: row.sort_order }).where(eq(courseModules.id, row.id))));
+
+  try {
+    await runBatch(db, statements);
+  } catch {
+    throw new ConflictError('The course changed. Reload before saving.');
+  }
+  return { courseId, slug: existing.slug, revision: expectedRevision + 1 };
+}
+
+async function loadCourseDomain(db: Db, userId: string, courseId: string, authoring: boolean) {
   const course = await requireOwnedCourse(db, userId, courseId);
   if (course.domainVersion !== 2) throw new CourseDomainVersionError();
   const [outcomeRows, kcRows, edgeRows, exampleRows, exampleLinkRows, misconceptionRows, misconceptionLinkRows,
@@ -474,7 +540,7 @@ export async function getCourseDomain(db: Db, userId: string, courseId: string) 
     examples: exampleRows.map((example) => ({
       id: example.id,
       kc_ids: by(exampleLinkRows, 'exampleId')(example.id).sort((a, b) => a.sortOrder - b.sortOrder).map((link) => link.kcId),
-      content: browserSafeExampleContent(example.content),
+      content: authoring ? example.content : browserSafeExampleContent(example.content),
     })),
     misconceptions: misconceptionRows.map((misconception) => ({
       id: misconception.id,
@@ -500,13 +566,13 @@ export async function getCourseDomain(db: Db, userId: string, courseId: string) 
               scoring: {
                 kind: experience.evidenceScoringKind,
                 ...(experience.evidenceScoringDetails === null ? {} : {
-                  details: browserSafeScoringDetails(experience.evidenceScoringKind, experience.evidenceScoringDetails),
+                  details: authoring ? experience.evidenceScoringDetails : browserSafeScoringDetails(experience.evidenceScoringKind, experience.evidenceScoringDetails),
                 }),
               },
             } : {}),
           },
         } : {}),
-        content: browserSafeExperienceContent(experience.content),
+        content: authoring ? experience.content : browserSafeExperienceContent(experience.content),
       };
     }),
     references: referenceRows.map((reference) => ({
@@ -527,4 +593,19 @@ export async function getCourseDomain(db: Db, userId: string, courseId: string) 
       sort_order: module.sortOrder,
     })),
   };
+}
+
+/** Owner-scoped learner projection; intentionally omits answer keys. */
+export async function getCourseDomain(db: Db, userId: string, courseId: string) {
+  return loadCourseDomain(db, userId, courseId, false);
+}
+
+/** Owner-scoped complete aggregate for the explicit authoring surface. */
+export async function getCourseAuthoringDomain(db: Db, userId: string, courseId: string): Promise<CourseDraftV2> {
+  return courseDraftV2Schema.parse(await loadCourseDomain(db, userId, courseId, true));
+}
+
+export async function getCourseAuthoringState(db: Db, userId: string, courseId: string) {
+  const course = await requireOwnedCourse(db, userId, courseId);
+  return { course: await getCourseAuthoringDomain(db, userId, courseId), revision: course.mapRevision };
 }

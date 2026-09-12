@@ -1,25 +1,34 @@
 <script lang="ts">
   import { apiFetch } from '../../lib/apiClient';
-  import type { CourseDraftV2 } from '../../lib/schemas/courseDraft';
-  let { courseId, draft, recommendedExperienceId = null } = $props<{ courseId: string; draft: CourseDraftV2; recommendedExperienceId?: string | null }>();
+  import type { getCourseDomain } from '../../lib/services/courseDraft';
+  type LearnerDraft = Pick<Awaited<ReturnType<typeof getCourseDomain>>, 'modules' | 'examples' | 'experiences'>;
+  type Experience = LearnerDraft['experiences'][number];
+  let { draft, recommendedExperienceId = null } = $props<{ courseId: string; draft: LearnerDraft; recommendedExperienceId?: string | null }>();
   let message = $state('');
   let busy = $state(false);
+  let responses = $state<Record<string, string>>({});
   const experienceById = (id: string) => draft.experiences.find((row) => row.id === id);
   const examplesFor = (kcIds: string[]) => draft.examples.filter((row) => row.kc_ids.some((id) => kcIds.includes(id)));
-  const text = (content: CourseDraftV2['experiences'][number]['content']) => {
-    if (content.kind === 'scaffold') return { title: content.title, body: content.body };
-    if (content.kind === 'project') return { title: content.title, body: content.brief };
-    return { title: content.kind === 'mcq' ? content.prompt : content.prompt, body: content.kind === 'mcq' ? content.explanation : content.solution };
+  const contentRecord = (content: unknown): Record<string, unknown> =>
+    typeof content === 'object' && content !== null && !Array.isArray(content) ? content as Record<string, unknown> : {};
+  const options = (content: unknown) => {
+    const value = contentRecord(content).options;
+    return Array.isArray(value) ? value.map(String) : [];
   };
-  async function record(experience: CourseDraftV2['experiences'][number], correct?: boolean) {
+  const text = (content: unknown) => {
+    const value = contentRecord(content);
+    if (value.kind === 'scaffold') return { title: String(value.title ?? 'Explanation'), body: String(value.body ?? '') };
+    if (value.kind === 'project') return { title: String(value.title ?? 'Project'), body: String(value.brief ?? '') };
+    return { title: String(value.prompt ?? 'Practice'), body: '' };
+  };
+  async function record(experience: Experience) {
     busy = true; message = '';
-    const evidenceKc = experience.evidence?.target_kc_ids[0];
-    const result = await apiFetch('/api/v1/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-      type: evidenceKc ? 'retrieval_practice' : 'reading_done', course_id: courseId, experience_id: experience.id,
-      ...(evidenceKc ? { kc_id: evidenceKc, payload: { correct } } : {}),
-    }) }, 'Could not save this learning step');
+    const response = responses[experience.id] ?? '';
+    const result = await apiFetch(`/api/v1/experiences/${experience.id}/respond`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(
+      contentRecord(experience.content).kind === 'mcq' ? { selected_index: Number(response) } : { response: experience.evidence ? response : 'Explanation read' },
+    ) }, 'Could not save this learning step');
     busy = false;
-    message = result.ok ? (correct === false ? 'Saved. Support will be prioritized next.' : 'Progress saved.') : result.error;
+    message = result.ok ? 'Progress saved.' : result.error;
   }
 </script>
 
@@ -29,7 +38,8 @@
     <details open={index === 0}>
       <summary>{module.title}</summary>
       {#each examplesFor(module.kc_ids) as example (example.id)}
-        <div class="example">{example.content.kind === 'text' ? example.content.body : example.content.kind === 'contrast' ? `${example.content.positive} — ${example.content.explanation ?? example.content.negative}` : 'Interactive example'}</div>
+        {@const exampleContent = contentRecord(example.content)}
+        <div class="example">{exampleContent.kind === 'text' ? exampleContent.body : exampleContent.kind === 'contrast' ? `${exampleContent.positive} — ${exampleContent.explanation ?? exampleContent.negative}` : 'Interactive example'}</div>
       {/each}
       {#each module.experience_ids.map(experienceById).filter(Boolean) as experience (experience!.id)}
         {@const item = experience!}{@const copy = text(item.content)}
@@ -37,7 +47,10 @@
           {#if item.id === recommendedExperienceId}<span>Recommended next</span>{/if}
           <h3>{copy.title}</h3><p>{copy.body}</p>
           {#if item.evidence}
-            <div class="actions"><button disabled={busy} onclick={() => record(item, true)}>I got it</button><button disabled={busy} onclick={() => record(item, false)}>I need support</button></div>
+            {#if contentRecord(item.content).kind === 'mcq'}
+              <label>Choose an answer<select value={responses[item.id] ?? ''} onchange={(event) => { responses[item.id] = event.currentTarget.value; }}><option value="">Select…</option>{#each options(item.content) as option, optionIndex}<option value={optionIndex}>{option}</option>{/each}</select></label>
+            {:else}<label>Your response<textarea bind:value={responses[item.id]} rows="3"></textarea></label>{/if}
+            <button disabled={busy || !responses[item.id]} onclick={() => record(item)}>Save response</button>
           {:else}<button disabled={busy} onclick={() => record(item)}>Mark explanation read</button>{/if}
         </article>
       {/each}
@@ -47,5 +60,5 @@
 </section>
 
 <style>
-  .modules{display:grid;gap:12px;margin-bottom:24px}.modules>h2{margin:0}details,article,.example{padding:14px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface)}summary{cursor:pointer;font-weight:750}article{margin-top:10px}article.recommended{border-color:var(--accent)}article span{color:var(--accent);font-size:12px;font-weight:700}h3{margin:6px 0}p{color:var(--muted)}.example{margin-top:10px}.actions{display:flex;gap:8px}button{padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--text);cursor:pointer}
+  .modules{display:grid;gap:12px;margin-bottom:24px}.modules>h2{margin:0}details,article,.example{padding:14px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface)}summary{cursor:pointer;font-weight:750}article{margin-top:10px}article.recommended{border-color:var(--accent)}article span{color:var(--accent);font-size:12px;font-weight:700}h3{margin:6px 0}p{color:var(--muted)}.example{margin-top:10px}label{display:grid;gap:6px;margin:8px 0}textarea,select{padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)}button{padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--text);cursor:pointer}
 </style>

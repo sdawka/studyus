@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CourseDraftV2 } from '../../lib/schemas/courseDraft';
 
-  let { draft, onchange } = $props<{ draft: CourseDraftV2; onchange: (draft: CourseDraftV2) => void }>();
+  let { draft, onchange, allowStructural = true } = $props<{ draft: CourseDraftV2; onchange: (draft: CourseDraftV2) => void; allowStructural?: boolean }>();
   const id = (kind: string) => `${kind}-${crypto.randomUUID()}`;
   // `$state.snapshot` unwraps Svelte's deep proxy before crossing the child ->
   // parent boundary. `structuredClone(draft)` throws DataCloneError on proxies.
@@ -33,7 +33,7 @@
 
 <div class="editor">
   <section>
-    <div class="section-heading"><div><h3>Outcomes</h3><p>What will you be able to do?</p></div><button type="button" onclick={addOutcome}>Add outcome</button></div>
+    <div class="section-heading"><div><h3>Outcomes</h3><p>What will you be able to do?</p></div>{#if allowStructural}<button type="button" onclick={addOutcome}>Add outcome</button>{/if}</div>
     {#each draft.outcomes as outcome (outcome.id)}
       <label>Learning outcome<input value={outcome.title} oninput={(event) => { outcome.title = event.currentTarget.value; emit(); }} /></label>
     {/each}
@@ -48,14 +48,14 @@
         <label>Mastery threshold<input type="number" min="0" max="1" step="0.05" value={kc.mastery_rule.threshold ?? 0.8} oninput={(event) => { kc.mastery_rule.threshold = Number(event.currentTarget.value); emit(); }} /></label>
       </div>
     {/each}
-    <button type="button" onclick={addKnowledgeComponent}>Add idea or skill</button>
+    {#if allowStructural}<button type="button" onclick={addKnowledgeComponent}>Add idea or skill</button>{/if}
   </details>
   <details>
     <summary>Examples</summary><p>Use cases, contrasts, or concrete instances that make the knowledge visible.</p>
     {#each draft.examples as example (example.id)}
       {#if example.content.kind === 'text'}<label>Example<textarea rows="2" value={example.content.body} oninput={(event) => { example.content.body = event.currentTarget.value; emit(); }}></textarea></label>{/if}
     {/each}
-    <button type="button" onclick={addExample}>Add example</button>
+    {#if allowStructural}<button type="button" onclick={addExample}>Add example</button>{/if}
   </details>
   <details>
     <summary>Learning experiences</summary><p>Choose the mental work the learner should do and what counts as evidence.</p>
@@ -65,7 +65,7 @@
         {#if experience.content.kind === 'worked'}<label>Experience prompt<input value={experience.content.prompt} oninput={(event) => { experience.content.prompt = event.currentTarget.value; emit(); }} /></label>{/if}
       </div>
     {/each}
-    <button type="button" onclick={addExperience}>Add experience</button>
+    {#if allowStructural}<button type="button" onclick={addExperience}>Add experience</button>{/if}
   </details>
 </div>
 

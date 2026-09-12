@@ -7,9 +7,8 @@ import { NotFoundError, notFound } from '../../../lib/handleNotFound';
 import { getCourseMap } from '../../../lib/services/courseMap';
 import { toApi } from '../../../lib/serialize';
 import CourseMapManager from '../../../components/course/CourseMapManager.svelte';
-import { getCourseDomain } from '../../../lib/services/courseDraft';
+import { getCourseAuthoringDomain } from '../../../lib/services/courseDraft';
 import CourseDomainEditor from '../../../components/course/CourseDomainEditor.svelte';
-import { courseDraftV2Schema } from '../../../lib/schemas/courseDraft';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
@@ -20,7 +19,7 @@ let courseMap;
 let courseDomain = null;
 try {
   course = await getCourseBySlug(db, userId, slug);
-  if (course.domainVersion === 2) courseDomain = courseDraftV2Schema.parse(await getCourseDomain(db, userId, course.id));
+  if (course.domainVersion === 2) courseDomain = await getCourseAuthoringDomain(db, userId, course.id);
   else courseMap = await getCourseMap(db, userId, course.id);
 } catch (err) {
   if (err instanceof NotFoundError) return notFound(Astro);
@@ -32,7 +31,7 @@ try {
     <section aria-labelledby="v2-concepts-heading">
       <p class="eyebrow">Course structure</p>
       <h2 id="v2-concepts-heading">Edit course knowledge</h2>
-      <CourseDomainEditor client:load courseId={course.id} initialDraft={courseDomain} />
+      <CourseDomainEditor client:load courseId={course.id} initialDraft={courseDomain} initialRevision={course.mapRevision} />
     </section>
   ) : <CourseMapManager client:load initialMap={toApi(courseMap)} courseSlug={course.slug} />}
 </CourseLayout>

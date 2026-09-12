@@ -19,19 +19,18 @@ import CourseHome from '../../../components/course/CourseHome.svelte';
 import { getCourseDomain } from '../../../lib/services/courseDraft';
 import { getNextExperience } from '../../../lib/services/mastery';
 import CourseModules from '../../../components/course/CourseModules.svelte';
-import { courseDraftV2Schema, type CourseDraftV2 } from '../../../lib/schemas/courseDraft';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
 const slug = Astro.params.slug!;
 
 let course;
-let courseDomain: CourseDraftV2 | null = null;
+let courseDomain: Awaited<ReturnType<typeof getCourseDomain>> | null = null;
 let recommendedExperienceId = null;
 try {
   course = await getCourseBySlug(db, userId, slug);
   if (course.domainVersion === 2) {
-    courseDomain = courseDraftV2Schema.parse(await getCourseDomain(db, userId, course.id));
+    courseDomain = await getCourseDomain(db, userId, course.id);
     recommendedExperienceId = await getNextExperience(db, userId).then((result) =>
       courseDomain!.experiences.some((experience) => experience.id === result.experience.id) ? result.experience.id : null,
     ).catch(() => null);

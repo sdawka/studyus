@@ -31,3 +31,5 @@
 - 2026-09-11T16:34:33-04:00 — Permanently detach each enrolled “Learning How to Learn” course from its source template. Later revisions apply only to new accounts.
 
 - 2026-09-12T01:39:55-04:00 — Frame every “Learning How to Learn” module as a learner-facing question, progressing from evidence of learning through access, experience, effective practice, and continued improvement.
+
+- 2026-09-12T06:08:34-04:00 — Update V2 course content atomically in place with stable course, KC, and experience IDs and an optimistic revision fence. Reject structural ID-set changes in this editor; new courses continue through the aggregate create path.

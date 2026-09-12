@@ -5,7 +5,7 @@ import { getDb } from '../src/db/client';
 import { accountDeletionEvents, accountDeletionJobs, courses, experiences, kcs, learnerRuntimeRegistry, users } from '../src/db/schema';
 import { resolveLocalUser } from '../src/lib/auth/local-user';
 import { DEFAULT_COURSE_KEY, DEFAULT_COURSE_VERSION, loadDefaultCourse } from '../src/lib/content/defaultCourse';
-import { getCourseDomain } from '../src/lib/services/courseDraft';
+import { getCourseAuthoringDomain, getCourseDomain } from '../src/lib/services/courseDraft';
 import { BOOTSTRAP_COURSE_KEY, provisionLearner } from '../src/lib/services/learnerBootstrap';
 import { AccountInactiveError, enqueueAccountDeletion } from '../src/lib/services/accountLifecycle';
 import { hasUsableCourse } from '../src/lib/services/onboarding';
@@ -69,6 +69,9 @@ describe('learner bootstrap', () => {
     });
     expect(await hasUsableCourse(db, result.user.id)).toBe(true);
     const domain = await getCourseDomain(db, result.user.id, result.defaultCourse!.id);
+    const authoring = await getCourseAuthoringDomain(db, result.user.id, result.defaultCourse!.id);
+    expect(authoring.experiences.some((experience) => experience.content.kind === 'worked' && 'solution' in experience.content)).toBe(true);
+    expect(domain.experiences.some((experience) => typeof experience.content === 'object' && experience.content !== null && 'solution' in experience.content)).toBe(false);
     expect(domain.modules).toHaveLength(5);
     expect(domain.kcs).toHaveLength(14);
     expect(domain.experiences).toHaveLength(10);

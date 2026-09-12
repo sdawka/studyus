@@ -10,6 +10,7 @@ import {
   experienceKcs,
   experienceMisconceptions,
   experiences,
+  events,
   moduleExperiences,
   referenceExperiences,
   scaffolds,
@@ -18,12 +19,29 @@ import {
   outcomeKcs,
   users,
 } from '../src/db/schema';
-import { getCourseDomain, persistCourseDraft, reviseCourseDraft } from '../src/lib/services/courseDraft';
+import { getCourseAuthoringDomain, getCourseDomain, persistCourseDraft, reviseCourseDraft } from '../src/lib/services/courseDraft';
+import { respondToExperience } from '../src/lib/services/events';
 import type { CourseDraftV2 } from '../src/lib/schemas/courseDraft';
 
 const db = getDb(env.DB);
 let userId: string;
 let otherUserId: string;
+
+function holdNextBatch() {
+  let release!: () => void; let started!: () => void;
+  const releasePromise = new Promise<void>((resolve) => { release = resolve; });
+  const startedPromise = new Promise<void>((resolve) => { started = resolve; });
+  let held = false;
+  const heldDb = new Proxy(db, { get(target, property) {
+    if (property === 'batch') return async (...args: Parameters<typeof db.batch>) => {
+      if (!held) { held = true; started(); await releasePromise; }
+      return target.batch(...args);
+    };
+    const value = Reflect.get(target, property, target);
+    return typeof value === 'function' ? value.bind(target) : value;
+  } });
+  return { heldDb, started: startedPromise, release };
+}
 
 const draft = {
   schema_version: 2 as const,
@@ -76,10 +94,10 @@ const draft = {
         target_kc_ids: ['kc-evidence'],
         diagnostic_misconception_ids: ['misconception-fluency'],
         scoring: {
-          kind: 'rubric' as const,
+          kind: 'binary' as const,
           details: {
             schema_version: 1,
-            criteria: [{ id: 'evidence', label: 'Uses evidence', description: 'Names delayed retrieval.' }],
+            correct_response: 1,
           },
         },
       },
@@ -128,13 +146,91 @@ beforeEach(async () => {
 });
 
 describe('course draft persistence', () => {
-  it('saves a V2 edit as a detached revision and archives the prior aggregate', async () => {
-    const first = await persistCourseDraft(db, userId, draft);
-    const edited = structuredClone(draft); edited.spec.title = 'Edited learning course';
-    const revised = await reviseCourseDraft(db, userId, first.courseId, edited);
-    expect(revised.courseId).not.toBe(first.courseId);
-    expect((await db.select().from(courses).where(eq(courses.id, first.courseId)))[0].archived).toBe(true);
-    expect((await getCourseDomain(db, userId, revised.courseId)).spec.title).toBe('Edited learning course');
+  it('separates learner-safe content from full authoring content and scores MCQ responses server-side', async () => {
+    const saved = await persistCourseDraft(db, userId, draft);
+    const learner = await getCourseDomain(db, userId, saved.courseId);
+    const author = await getCourseAuthoringDomain(db, userId, saved.courseId);
+    expect(learner.experiences[0].content).not.toHaveProperty('correct_index');
+    expect(author.experiences[0].content).toMatchObject({ kind: 'mcq', correct_index: 1 });
+    await respondToExperience(db, userId, author.experiences[0].id, { selected_index: 1 });
+    expect((await db.select().from(events).where(eq(events.experienceId, author.experiences[0].id)))[0].payload).toMatchObject({ correct: true, selected_index: 1 });
+  });
+  it('does not score a selected response whose evidence contract has no supported scorer', async () => {
+    const unscored = structuredClone(draft) as CourseDraftV2;
+    unscored.experiences[0].evidence!.scoring = {
+      kind: 'rubric',
+      details: { schema_version: 1, criteria: [{ id: 'reason', label: 'Gives a reason' }] },
+    };
+    const saved = await persistCourseDraft(db, userId, unscored);
+    const experience = (await getCourseAuthoringDomain(db, userId, saved.courseId)).experiences[0];
+    await respondToExperience(db, userId, experience.id, { selected_index: 1 });
+    const event = (await db.select().from(events).where(eq(events.experienceId, experience.id)))[0];
+    expect(event.type).toBe('practice_done');
+    expect(event.payload).toEqual({ selected_index: 1 });
+    expect(event.payload).not.toHaveProperty('correct');
+  });
+  it('records unsupported scoring formats without manufacturing correctness', async () => {
+    const unscored = structuredClone(draft) as CourseDraftV2;
+    unscored.experiences[0].evidence!.response_type = 'observation';
+    delete unscored.experiences[0].evidence!.scoring;
+    unscored.experiences[0].content = {
+      schema_version: 1,
+      kind: 'worked',
+      prompt: 'Describe a retrieval plan.',
+      solution: 'Attempt before reviewing, then return later.',
+    };
+    const saved = await persistCourseDraft(db, userId, unscored);
+    const experience = (await getCourseAuthoringDomain(db, userId, saved.courseId)).experiences[0];
+    await respondToExperience(db, userId, experience.id, { response: 'I will attempt first.' });
+    const event = (await db.select().from(events).where(eq(events.experienceId, experience.id)))[0];
+    expect(event.type).toBe('practice_done');
+    expect(event.payload).toEqual({ response: 'I will attempt first.' });
+    expect(event.payload).not.toHaveProperty('correct');
+  });
+  it('edits in place while preserving metadata, provenance, KC IDs, and event history', async () => {
+    const first = await persistCourseDraft(db, userId, draft, { sourceTemplateKey: 'source', sourceTemplateVersion: '9', bootstrapKey: 'bootstrap', term: 'Fall', instructor: 'Teacher' });
+    const edited = await getCourseAuthoringDomain(db, userId, first.courseId);
+    const stableKcId = edited.kcs[0].id;
+    await respondToExperience(db, userId, edited.experiences[0].id, { selected_index: 1 });
+    edited.spec.title = 'Edited learning course'; edited.kcs[0].name = 'Edited evidence';
+    delete edited.experiences[0].evidence!.scoring;
+    const revised = await reviseCourseDraft(db, userId, first.courseId, edited, 0);
+    expect(revised.courseId).toBe(first.courseId);
+    const row = (await db.select().from(courses).where(eq(courses.id, first.courseId)))[0];
+    expect(row).toMatchObject({ archived: false, term: 'Fall', instructor: 'Teacher', sourceTemplateKey: 'source', sourceTemplateVersion: '9', bootstrapKey: 'bootstrap' });
+    const updated = await getCourseAuthoringDomain(db, userId, first.courseId);
+    expect(updated.kcs[0]).toMatchObject({ id: stableKcId, name: 'Edited evidence' });
+    expect(updated.experiences[0].evidence!.scoring).toBeUndefined();
+    expect((await db.select().from(events).where(eq(events.kcId, stableKcId)))).toHaveLength(1);
+    await expect(reviseCourseDraft(db, userId, first.courseId, edited, 0)).rejects.toThrow();
+  });
+  it('lets only one concurrent writer commit the expected revision', async () => {
+    const saved = await persistCourseDraft(db, userId, draft);
+    const left = await getCourseAuthoringDomain(db, userId, saved.courseId); left.spec.title = 'Left edit';
+    const right = structuredClone(left); right.spec.title = 'Right edit';
+    const held = holdNextBatch();
+    const delayed = reviseCourseDraft(held.heldDb, userId, saved.courseId, left, 0);
+    await held.started;
+    await reviseCourseDraft(db, userId, saved.courseId, right, 0);
+    held.release();
+    await expect(delayed).rejects.toThrow();
+    expect((await getCourseAuthoringDomain(db, userId, saved.courseId)).spec.title).toBe('Right edit');
+  });
+  it('rejects structural ID-set changes on the in-place authoring path', async () => {
+    const saved = await persistCourseDraft(db, userId, draft);
+    const edited = await getCourseAuthoringDomain(db, userId, saved.courseId);
+    const priorId = edited.kcs[0].id;
+    const replacementId = 'replacement-kc';
+    edited.kcs[0].id = replacementId;
+    edited.outcomes[0].kc_ids = [replacementId];
+    edited.examples[0].kc_ids = [replacementId];
+    edited.misconceptions[0].kc_ids = [replacementId];
+    edited.experiences[0].target_kc_ids = [replacementId];
+    edited.experiences[0].evidence!.target_kc_ids = [replacementId];
+    edited.references[0].kc_ids = [replacementId];
+    edited.modules[0].kc_ids = [replacementId];
+    await expect(reviseCourseDraft(db, userId, saved.courseId, edited, 0)).rejects.toThrow(/Structural edits/);
+    expect((await getCourseAuthoringDomain(db, userId, saved.courseId)).kcs[0].id).toBe(priorId);
   });
   it('removes MCQ answers and explanations from the browser-safe read model', async () => {
     const saved = await persistCourseDraft(db, userId, draft);
@@ -228,10 +324,7 @@ describe('course draft persistence', () => {
       difficulty: 2,
     });
     expect(domain.experiences[0].content).not.toHaveProperty('explanation');
-    expect(domain.experiences[0].evidence?.scoring?.details).toEqual({
-      schema_version: 1,
-      criteria: [{ id: 'evidence', label: 'Uses evidence', description: 'Names delayed retrieval.' }],
-    });
+    expect(domain.experiences[0].evidence?.scoring?.details).toEqual({ schema_version: 1 });
   });
 
   it('rolls back the whole batch when any statement fails', async () => {

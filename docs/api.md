@@ -109,10 +109,19 @@ MasteryRule fields are optional. Draft-local IDs are replaced with fresh
 learner-owned IDs; a persisted aggregate is detached from its source.
 
 `POST /course-drafts` accepts `{ course: CourseDraftV2, context: { term?,
-credits?, instructor?, color_hue? } }` and creates a learner-owned aggregate. `GET
-/courses/:id/domain` returns its browser-safe editable form; `PUT` validates a
-revision, atomically archives the prior aggregate, and creates a fresh detached
-revision so existing learning history is retained.
+credits?, instructor?, color_hue? } }` and creates a learner-owned aggregate.
+The course overview uses a separate browser-safe learner projection that omits
+answer keys. Owner-scoped `GET /courses/:id/domain` returns `{ course, revision
+}` with the complete aggregate for the editor. `PUT /courses/:id/domain`
+accepts `{ course: CourseDraftV2, expected_revision }`; it rejects structural ID
+or relationship changes and atomically updates editable content in place only
+when the revision matches. Stable course, KC, and experience IDs preserve
+metadata and learning history; a stale writer receives a conflict.
+
+`POST /experiences/:id/respond` accepts a selected option or written response.
+Supported selected-response questions are scored from the server-held answer;
+rubric, observational, and otherwise unscored responses append practice or
+reading observations without claiming correctness.
 
 Model-backed generation is not implemented. Future template, extraction, or
 generation adapters must emit this same validated contract and may never write

@@ -12,6 +12,7 @@ import { toEpochMs } from '../schemas/common';
 import { foldMastery } from './mastery';
 import { ConflictError, NotFoundError, requireOwnedCourse, requireOwnedKc, runBatch } from './util';
 import { withSpan } from '../tracing';
+import type { ExperienceResponseInput } from '../schemas/experienceResponse';
 
 type EventRow = typeof events.$inferSelect;
 type EventIdempotencyRow = typeof eventIdempotencyKeys.$inferSelect;
@@ -305,6 +306,31 @@ export async function createEvent(
   }
 
   return { event: newEvent, masteryDeltas, wasCreated: true };
+}
+
+/** Scores supported authored responses server-side; unscored responses never claim correctness. */
+export async function respondToExperience(db: Db, userId: string, experienceId: string, input: ExperienceResponseInput) {
+  const owned = await db.select({
+    courseId: experiences.courseId,
+    content: experiences.content,
+    responseType: experiences.evidenceResponseType,
+    scoringKind: experiences.evidenceScoringKind,
+  })
+    .from(experiences).innerJoin(courses, eq(experiences.courseId, courses.id))
+    .where(and(eq(experiences.id, experienceId), eq(courses.userId, userId))).limit(1);
+  if (!owned[0]) throw new NotFoundError('Experience');
+  const targets = await db.select({ kcId: experienceKcs.kcId }).from(experienceKcs)
+    .where(and(eq(experienceKcs.experienceId, experienceId), eq(experienceKcs.isEvidenceTarget, true)));
+  const content = owned[0].content && typeof owned[0].content === 'object' ? owned[0].content as Record<string, unknown> : {};
+  if (owned[0].responseType === 'selected_response' && content.kind === 'mcq') {
+    if (input.selected_index === undefined || !Array.isArray(content.options) || input.selected_index >= content.options.length) throw new ConflictError('Select one available answer.');
+    const scored = owned[0].scoringKind === 'binary';
+    return createEvent(db, userId, { type: scored ? 'quiz_taken' : 'practice_done', course_id: owned[0].courseId, experience_id: experienceId,
+      kc_id: targets[0]?.kcId, payload: { selected_index: input.selected_index, ...(scored ? { correct: input.selected_index === content.correct_index } : {}) } });
+  }
+  if (!input.response) throw new ConflictError('Write a response before saving.');
+  return createEvent(db, userId, { type: targets.length ? 'practice_done' : 'reading_done', course_id: owned[0].courseId,
+    experience_id: experienceId, kc_id: targets[0]?.kcId, payload: { response: input.response } });
 }
 
 export type AtomicEventInput = CreateEventInput & {
