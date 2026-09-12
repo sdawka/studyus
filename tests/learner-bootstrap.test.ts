@@ -2,15 +2,15 @@ import { env } from 'cloudflare:test';
 import { and, eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
-import { accountDeletionEvents, accountDeletionJobs, courses, experiences, kcs, learnerRuntimeRegistry, users } from '../src/db/schema';
+import { accountDeletionEvents, accountDeletionJobs, courses, events, experiences, kcs, learnerRuntimeRegistry, users } from '../src/db/schema';
 import { resolveLocalUser } from '../src/lib/auth/local-user';
 import { DEFAULT_COURSE_KEY, DEFAULT_COURSE_VERSION, loadDefaultCourse } from '../src/lib/content/defaultCourse';
 import { getCourseAuthoringDomain, getCourseDomain } from '../src/lib/services/courseDraft';
 import { BOOTSTRAP_COURSE_KEY, provisionLearner } from '../src/lib/services/learnerBootstrap';
 import { AccountInactiveError, enqueueAccountDeletion } from '../src/lib/services/accountLifecycle';
 import { hasUsableCourse } from '../src/lib/services/onboarding';
-import { getNextExperience } from '../src/lib/services/mastery';
-import { createEvent } from '../src/lib/services/events';
+import { getKcState, getNextExperience } from '../src/lib/services/mastery';
+import { createEvent, respondToExperience } from '../src/lib/services/events';
 
 const db = getDb(env.DB);
 
@@ -133,6 +133,30 @@ describe('learner bootstrap', () => {
     expect(next.reasons[0], JSON.stringify(next)).toMatch(/^spaced review due for /);
     const selectedContent = next.experience.content as { selection_policy?: { evidence_tags: string[] } };
     expect(selectedContent.selection_policy?.evidence_tags).toContain('retention');
+  });
+
+  it('records trusted default-course policy and diagnostics without manufacturing mastery from unscored responses', async () => {
+    const learner = await resolveLocalUser(db, { id: 'clerk-bootstrap-observation', primaryEmailAddress: 'observation@example.test' });
+    const domain = await getCourseDomain(db, learner.user.id, learner.defaultCourse!.id);
+    const experience = domain.experiences.find((row) => {
+      const content = row.content as { selection_policy?: { evidence_tags?: string[] } };
+      return row.evidence?.diagnostic_misconception_ids.length && content.selection_policy?.evidence_tags?.includes('retention') && content.selection_policy.evidence_tags.includes('transfer');
+    })!;
+    const kcId = experience.evidence!.target_kc_ids[0];
+    const before = await getKcState(db, learner.user.id, kcId);
+    for (const response of ['First observation', 'Second observation', 'Third observation']) {
+      await respondToExperience(db, learner.user.id, experience.id, { response });
+    }
+    const recorded = await db.select().from(events).where(eq(events.experienceId, experience.id));
+    expect(recorded).toHaveLength(3);
+    expect(recorded[0].source).toBe('system');
+    expect(recorded[0].payload).toMatchObject({
+      observation: true,
+      evidence_tags: ['retention', 'transfer'],
+      diagnostic_misconception_ids: experience.evidence!.diagnostic_misconception_ids,
+    });
+    expect(recorded[0].payload).not.toHaveProperty('correct');
+    expect(await getKcState(db, learner.user.id, kcId)).toMatchObject({ masteryEstimate: before.masteryEstimate, masteryStatus: before.masteryStatus });
   });
 
   it('recovers the delayed resolver from a real bootstrap conflict', async () => {

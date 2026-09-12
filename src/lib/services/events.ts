@@ -2,10 +2,10 @@
 // create/update/delete recomputes the affected KC's mastery cache in the
 // same db.batch as the event mutation, so the cache is never observably
 // stale relative to the log it's derived from.
-import { and, desc, eq, gte, inArray, lte, ne, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lte, ne, or, sql } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import type { Db } from '../../db/client';
-import { courses, eventIdempotencyKeys, events, experienceKcs, experiences, kcs, runtimeTutorSessionEvents, users } from '../../db/schema';
+import { courses, eventIdempotencyKeys, events, experienceKcs, experienceMisconceptions, experiences, kcs, runtimeTutorSessionEvents, users } from '../../db/schema';
 import type { CreateEventInput, EventSource, ListEventsQuery, UpdateEventInput } from '../schemas/events';
 import { EVENT_ROLE_FLAGS } from '../schemas/events';
 import { toEpochMs } from '../schemas/common';
@@ -321,16 +321,25 @@ export async function respondToExperience(db: Db, userId: string, experienceId: 
   if (!owned[0]) throw new NotFoundError('Experience');
   const targets = await db.select({ kcId: experienceKcs.kcId }).from(experienceKcs)
     .where(and(eq(experienceKcs.experienceId, experienceId), eq(experienceKcs.isEvidenceTarget, true)));
+  const diagnosticMisconceptionIds = await db.select({ id: experienceMisconceptions.misconceptionId }).from(experienceMisconceptions)
+    .where(eq(experienceMisconceptions.experienceId, experienceId)).orderBy(asc(experienceMisconceptions.sortOrder))
+    .then((rows) => rows.map((row) => row.id));
   const content = owned[0].content && typeof owned[0].content === 'object' ? owned[0].content as Record<string, unknown> : {};
+  const selectionPolicy = content.selection_policy && typeof content.selection_policy === 'object'
+    ? content.selection_policy as Record<string, unknown> : {};
+  const evidenceTags = Array.isArray(selectionPolicy.evidence_tags)
+    ? selectionPolicy.evidence_tags.filter((tag): tag is string => typeof tag === 'string' && ['spacing', 'retention', 'transfer'].includes(tag))
+    : [];
+  const trustedContext = { evidence_tags: evidenceTags, diagnostic_misconception_ids: diagnosticMisconceptionIds };
   if (owned[0].responseType === 'selected_response' && content.kind === 'mcq') {
     if (input.selected_index === undefined || !Array.isArray(content.options) || input.selected_index >= content.options.length) throw new ConflictError('Select one available answer.');
     const scored = owned[0].scoringKind === 'binary';
     return createEvent(db, userId, { type: scored ? 'quiz_taken' : 'practice_done', course_id: owned[0].courseId, experience_id: experienceId,
-      kc_id: targets[0]?.kcId, payload: { selected_index: input.selected_index, ...(scored ? { correct: input.selected_index === content.correct_index } : {}) } });
+      kc_id: targets[0]?.kcId, payload: { selected_index: input.selected_index, ...trustedContext, ...(scored ? { correct: input.selected_index === content.correct_index } : { observation: true }) } }, 'system');
   }
   if (!input.response) throw new ConflictError('Write a response before saving.');
   return createEvent(db, userId, { type: targets.length ? 'practice_done' : 'reading_done', course_id: owned[0].courseId,
-    experience_id: experienceId, kc_id: targets[0]?.kcId, payload: { response: input.response } });
+    experience_id: experienceId, kc_id: targets[0]?.kcId, payload: { response: input.response, ...trustedContext, observation: true } }, 'system');
 }
 
 export type AtomicEventInput = CreateEventInput & {

@@ -25,7 +25,7 @@
     busy = true; message = '';
     const response = responses[experience.id] ?? '';
     const result = await apiFetch(`/api/v1/experiences/${experience.id}/respond`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(
-      contentRecord(experience.content).kind === 'mcq' ? { selected_index: Number(response) } : { response: experience.evidence ? response : 'Explanation read' },
+      experience.evidence?.response_type === 'selected_response' ? { selected_index: Number(response) } : { response: experience.evidence ? response : 'Explanation read' },
     ) }, 'Could not save this learning step');
     busy = false;
     message = result.ok ? 'Progress saved.' : result.error;
@@ -47,8 +47,9 @@
           {#if item.id === recommendedExperienceId}<span>Recommended next</span>{/if}
           <h3>{copy.title}</h3><p>{copy.body}</p>
           {#if item.evidence}
-            {#if contentRecord(item.content).kind === 'mcq'}
+            {#if item.evidence.response_type === 'selected_response'}
               <label>Choose an answer<select value={responses[item.id] ?? ''} onchange={(event) => { responses[item.id] = event.currentTarget.value; }}><option value="">Select…</option>{#each options(item.content) as option, optionIndex}<option value={optionIndex}>{option}</option>{/each}</select></label>
+            {:else if contentRecord(item.content).kind === 'numeric'}<label>Your response<input type="number" value={responses[item.id] ?? ''} oninput={(event) => { responses[item.id] = event.currentTarget.value; }} /></label>
             {:else}<label>Your response<textarea bind:value={responses[item.id]} rows="3"></textarea></label>{/if}
             <button disabled={busy || !responses[item.id]} onclick={() => record(item)}>Save response</button>
           {:else}<button disabled={busy} onclick={() => record(item)}>Mark explanation read</button>{/if}
@@ -60,5 +61,5 @@
 </section>
 
 <style>
-  .modules{display:grid;gap:12px;margin-bottom:24px}.modules>h2{margin:0}details,article,.example{padding:14px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface)}summary{cursor:pointer;font-weight:750}article{margin-top:10px}article.recommended{border-color:var(--accent)}article span{color:var(--accent);font-size:12px;font-weight:700}h3{margin:6px 0}p{color:var(--muted)}.example{margin-top:10px}label{display:grid;gap:6px;margin:8px 0}textarea,select{padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)}button{padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--text);cursor:pointer}
+  .modules{display:grid;gap:12px;margin-bottom:24px}.modules>h2{margin:0}details,article,.example{padding:14px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface)}summary{cursor:pointer;font-weight:750}article{margin-top:10px}article.recommended{border-color:var(--accent)}article span{color:var(--accent);font-size:12px;font-weight:700}h3{margin:6px 0}p{color:var(--muted)}.example{margin-top:10px}label{display:grid;gap:6px;margin:8px 0}textarea,select,input{padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)}button{padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--text);cursor:pointer}
 </style>

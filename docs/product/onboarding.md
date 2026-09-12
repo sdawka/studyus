@@ -208,8 +208,10 @@ model. Modules expose examples, explanations, practice, evidence checks, and
 the selector recommendation; completion writes the existing event stream.
 Learners create V2 courses from Add course. The V2 editor updates non-structural
 content in place behind an optimistic revision check, preserving stable IDs,
-metadata, and learning history. The legacy snapshot editor rejects V2 writes so
-it cannot create bare KCs that violate aggregate invariants.
+metadata, learning history, and the specialized scaffold/exercise rows used by
+selection. Experience category changes are structural and rejected. The legacy
+snapshot editor rejects V2 writes so it cannot create bare KCs that violate
+aggregate invariants.
 
 Archiving is reversible and preserves events, mastery, notes, assessment links,
 and other history. Active study, exercise, misconception, course, and ZPD reads

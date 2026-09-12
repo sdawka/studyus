@@ -48,4 +48,20 @@ describe('CourseModules', () => {
     await waitFor(() => expect(fetch).toHaveBeenCalled());
     expect(JSON.parse(String((fetch.mock.calls[0][1] as RequestInit).body))).toEqual({ selected_index: 1 });
   });
+
+  it('submits accepted numeric evidence through a numeric response control', async () => {
+    const fetch = vi.fn(async (_path: string, _init?: RequestInit) => new Response(JSON.stringify({ data: {} }), { status: 201 }));
+    vi.stubGlobal('fetch', fetch);
+    const draft = loadDefaultCourse();
+    const experience = draft.experiences.find((row) => row.evidence)!;
+    experience.evidence!.response_type = 'constructed_response';
+    experience.evidence!.scoring = { kind: 'numeric', details: { schema_version: 1, answer: { value: 42, tolerance_pct: 0 } } };
+    experience.content = { schema_version: 1, kind: 'numeric', prompt: 'What is six times seven?', answer: { value: 42, unit: null, tolerance_pct: 0 }, solution: '42' };
+    render(CourseModules, { courseId: 'course-id', draft });
+    const input = screen.getByRole('spinbutton', { name: 'Your response' });
+    await fireEvent.input(input, { target: { value: '42' } });
+    await fireEvent.click(within(input.closest('article')!).getByRole('button', { name: 'Save response' }));
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    expect(JSON.parse(String((fetch.mock.calls[0][1] as RequestInit).body))).toEqual({ response: '42' });
+  });
 });

@@ -105,6 +105,15 @@ export function validateCourseDraft(draft: unknown): CourseDraftV2 {
     if (!experience.evidence) return;
     const evidenceTargetPath = ['experiences', position, 'evidence', 'target_kc_ids'];
     const evidenceDiagnosticPath = ['experiences', position, 'evidence', 'diagnostic_misconception_ids'];
+    const selectedResponse = experience.evidence.response_type === 'selected_response';
+    const multipleChoice = experience.content.kind === 'mcq';
+    if (selectedResponse !== multipleChoice) {
+      issues.push({
+        path: ['experiences', position, 'evidence', 'response_type'],
+        code: 'incompatible_evidence_response',
+        message: 'Selected-response evidence requires MCQ content, and MCQ content requires the selected-response type',
+      });
+    }
     validateLinks(experience.evidence.target_kc_ids, kcs, evidenceTargetPath, 'KC', issues);
     validateLinks(experience.evidence.diagnostic_misconception_ids, misconceptions, evidenceDiagnosticPath, 'misconception', issues);
 

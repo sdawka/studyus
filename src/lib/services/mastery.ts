@@ -104,7 +104,10 @@ export function foldMastery(events: FoldEvent[], now: number = Date.now()): Mast
   // The domain stream also holds a small number of durable context facts. Only
   // learning evidence may establish freshness or contribute to mastery; product
   // usage belongs in the separate behavioral stream.
-  const evidenceEvents = events.filter((event) => event.isInstructional || event.isAssessment);
+  const evidenceEvents = events.filter((event) => {
+    const payload = event.payload && typeof event.payload === 'object' ? event.payload as Record<string, unknown> : {};
+    return payload.observation !== true && (event.isInstructional || event.isAssessment);
+  });
 
   if (evidenceEvents.length === 0) {
     return { mastery: 0, status: 'not-started', lastEventAt: null };

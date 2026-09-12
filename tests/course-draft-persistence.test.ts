@@ -10,6 +10,7 @@ import {
   experienceKcs,
   experienceMisconceptions,
   experiences,
+  exercises,
   events,
   moduleExperiences,
   referenceExperiences,
@@ -22,6 +23,7 @@ import {
 import { getCourseAuthoringDomain, getCourseDomain, persistCourseDraft, reviseCourseDraft } from '../src/lib/services/courseDraft';
 import { respondToExperience } from '../src/lib/services/events';
 import type { CourseDraftV2 } from '../src/lib/schemas/courseDraft';
+import { loadDefaultCourse } from '../src/lib/content/defaultCourse';
 
 const db = getDb(env.DB);
 let userId: string;
@@ -166,7 +168,7 @@ describe('course draft persistence', () => {
     await respondToExperience(db, userId, experience.id, { selected_index: 1 });
     const event = (await db.select().from(events).where(eq(events.experienceId, experience.id)))[0];
     expect(event.type).toBe('practice_done');
-    expect(event.payload).toEqual({ selected_index: 1 });
+    expect(event.payload).toMatchObject({ selected_index: 1, observation: true });
     expect(event.payload).not.toHaveProperty('correct');
   });
   it('records unsupported scoring formats without manufacturing correctness', async () => {
@@ -184,7 +186,7 @@ describe('course draft persistence', () => {
     await respondToExperience(db, userId, experience.id, { response: 'I will attempt first.' });
     const event = (await db.select().from(events).where(eq(events.experienceId, experience.id)))[0];
     expect(event.type).toBe('practice_done');
-    expect(event.payload).toEqual({ response: 'I will attempt first.' });
+    expect(event.payload).toMatchObject({ response: 'I will attempt first.', observation: true });
     expect(event.payload).not.toHaveProperty('correct');
   });
   it('edits in place while preserving metadata, provenance, KC IDs, and event history', async () => {
@@ -231,6 +233,30 @@ describe('course draft persistence', () => {
     edited.modules[0].kc_ids = [replacementId];
     await expect(reviseCourseDraft(db, userId, saved.courseId, edited, 0)).rejects.toThrow(/Structural edits/);
     expect((await getCourseAuthoringDomain(db, userId, saved.courseId)).kcs[0].id).toBe(priorId);
+  });
+  it('keeps specialized scaffold and exercise rows synchronized during stable-ID edits', async () => {
+    const saved = await persistCourseDraft(db, userId, loadDefaultCourse());
+    const edited = await getCourseAuthoringDomain(db, userId, saved.courseId);
+    const scaffold = edited.experiences.find((row) => row.kind === 'scaffold')!;
+    const exercise = edited.experiences.find((row) => row.kind === 'exercise')!;
+    const [priorScaffold] = await db.select().from(scaffolds).where(eq(scaffolds.experienceId, scaffold.id));
+    const [priorExercise] = await db.select().from(exercises).where(eq(exercises.experienceId, exercise.id));
+    if (scaffold.content.kind !== 'scaffold' || exercise.content.kind !== 'worked') throw new Error('Expected default specialized content');
+    scaffold.content.scaffold_kind = 'mnemonic';
+    scaffold.content.level = 3;
+    scaffold.content.title = 'Edited scaffold';
+    scaffold.content.body = 'Edited scaffold body.';
+    exercise.content.prompt = 'Edited exercise prompt.';
+    exercise.content.difficulty = 3;
+    exercise.content.source = 'Edited author';
+    exercise.content.selection_policy = { evidence_tags: ['transfer'] };
+
+    await reviseCourseDraft(db, userId, saved.courseId, edited, 0);
+    const [updatedScaffold] = await db.select().from(scaffolds).where(eq(scaffolds.experienceId, scaffold.id));
+    const [updatedExercise] = await db.select().from(exercises).where(eq(exercises.experienceId, exercise.id));
+    expect(updatedScaffold).toMatchObject({ id: priorScaffold.id, kind: 'mnemonic', level: 3, title: 'Edited scaffold', body: 'Edited scaffold body.' });
+    expect(updatedExercise).toMatchObject({ id: priorExercise.id, kind: 'worked', difficulty: 3, prompt: 'Edited exercise prompt.', source: 'Edited author' });
+    expect(updatedExercise.details).toMatchObject({ selection_policy: { evidence_tags: ['transfer'] } });
   });
   it('removes MCQ answers and explanations from the browser-safe read model', async () => {
     const saved = await persistCourseDraft(db, userId, draft);

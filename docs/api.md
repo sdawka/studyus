@@ -119,9 +119,13 @@ when the revision matches. Stable course, KC, and experience IDs preserve
 metadata and learning history; a stale writer receives a conflict.
 
 `POST /experiences/:id/respond` accepts a selected option or written response.
-Supported selected-response questions are scored from the server-held answer;
-rubric, observational, and otherwise unscored responses append practice or
-reading observations without claiming correctness.
+Selected-response evidence is valid only with MCQ content; all other accepted
+content uses a written or numeric response control. Supported binary MCQs are
+scored from the server-held answer. The server adds persisted selection-policy
+tags and diagnostic misconception IDs; the client cannot supply them. Rubric,
+observational, and otherwise unscored responses append system-authored practice
+or reading observations without claiming correctness, and observation-marked
+events remain in history but are excluded from mastery inference.
 
 Model-backed generation is not implemented. Future template, extraction, or
 generation adapters must emit this same validated contract and may never write

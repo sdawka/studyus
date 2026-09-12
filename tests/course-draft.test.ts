@@ -219,6 +219,20 @@ function invalidDraft(mutator: (draft: typeof validDraft) => void): typeof valid
 
 describe('validateCourseDraft', () => {
   it.each([
+    ['selected-response evidence on non-MCQ content', invalidDraft((draft) => { draft.experiences[0].evidence.response_type = 'selected_response'; })],
+    ['MCQ content without selected-response evidence', invalidDraft((draft) => {
+      draft.experiences[0].content = { schema_version: 1, kind: 'mcq', prompt: 'Choose.', options: ['A', 'B'], correct_index: 1, explanation: 'B' } as never;
+    })],
+  ])('rejects incompatible %s', (_label, incompatible) => {
+    expect(() => validateCourseDraft(incompatible)).toThrow(CourseDraftValidationError);
+    try { validateCourseDraft(incompatible); } catch (error) {
+      expect((error as CourseDraftValidationError).issues).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'incompatible_evidence_response' }),
+      ]));
+    }
+  });
+
+  it.each([
     ['requires every outcome to target a KC', invalidDraft((draft) => { draft.outcomes[0].kc_ids = []; }), ['outcomes', 0, 'kc_ids']],
     ['requires a non-empty example collection', invalidDraft((draft) => { draft.examples = []; }), ['examples']],
     ['requires evidence-producing experience for every KC', invalidDraft((draft) => { delete (draft.experiences[0] as { evidence?: unknown }).evidence; }), ['kcs', 0]],

@@ -415,6 +415,7 @@ function sameAggregateStructure(left: CourseDraftV2, right: CourseDraftV2) {
     misconceptions: draft.misconceptions.map((row) => [row.id, row.kc_ids]),
     experiences: draft.experiences.map((row) => [
       row.id,
+      row.kind,
       row.target_kc_ids,
       row.evidence?.target_kc_ids ?? [],
       row.evidence?.diagnostic_misconception_ids ?? [],
@@ -463,14 +464,34 @@ export async function reviseCourseDraft(
   draft.kcs.forEach((row) => statements.push(db.update(kcs).set({ name: row.name, description: row.description ?? null, kcForm: row.kc_form, rationaleLevel: row.rationale_level, masteryRule: row.mastery_rule }).where(eq(kcs.id, row.id))));
   draft.examples.forEach((row) => statements.push(db.update(kcExamples).set({ content: row.content }).where(eq(kcExamples.id, row.id))));
   draft.misconceptions.forEach((row) => statements.push(db.update(misconceptions).set({ name: row.name, diagnosticProbe: row.diagnostic_probe, correction: row.correction }).where(eq(misconceptions.id, row.id))));
-  draft.experiences.forEach((row) => statements.push(db.update(experiences).set({
-    kind: row.kind,
-    intendedProcesses: row.intended_processes,
-    content: row.content,
-    evidenceResponseType: row.evidence?.response_type ?? null,
-    evidenceScoringKind: row.evidence?.scoring?.kind ?? null,
-    evidenceScoringDetails: row.evidence?.scoring?.details ?? null,
-  }).where(eq(experiences.id, row.id))));
+  draft.experiences.forEach((row) => {
+    statements.push(db.update(experiences).set({
+      kind: row.kind,
+      intendedProcesses: row.intended_processes,
+      content: row.content,
+      evidenceResponseType: row.evidence?.response_type ?? null,
+      evidenceScoringKind: row.evidence?.scoring?.kind ?? null,
+      evidenceScoringDetails: row.evidence?.scoring?.details ?? null,
+    }).where(eq(experiences.id, row.id)));
+    const content = contentRecord(row.content);
+    if (row.kind === 'scaffold') {
+      statements.push(db.update(scaffolds).set({
+        kind: scaffoldKind(content.scaffold_kind),
+        level: intValue(content, 'level', 1),
+        title: textValue(content, 'title', 'Learning experience'),
+        body: textValue(content, 'body', JSON.stringify(row.content)),
+        details: content.details ?? row.content,
+      }).where(eq(scaffolds.experienceId, row.id)));
+    } else if (row.kind === 'exercise') {
+      statements.push(db.update(exercises).set({
+        kind: exerciseKind(content.kind),
+        difficulty: intValue(content, 'difficulty', 2),
+        prompt: textValue(content, 'prompt', 'Learning experience'),
+        details: content.details ?? row.content,
+        source: textValue(content, 'source', 'Course draft'),
+      }).where(eq(exercises.experienceId, row.id)));
+    }
+  });
   draft.references.forEach((row) => statements.push(db.update(courseReferences).set({ citation: row.citation, url: row.url ?? null }).where(eq(courseReferences.id, row.id))));
   draft.modules.forEach((row) => statements.push(db.update(courseModules).set({ title: row.title, sortOrder: row.sort_order }).where(eq(courseModules.id, row.id))));
 
