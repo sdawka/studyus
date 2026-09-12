@@ -25,25 +25,26 @@ A ninth situation — **absorbing a new KC** (§9, v1.7) — runs orthogonally t
 
 ## 1. Onboarding
 
-**Target contract; not fully implemented yet.** Clerk authentication and local learner provisioning are built, but a new Clerk learner currently lands on the dashboard with no course content unless they separately visit `/onboarding`. The replacement flow is specified in `docs/product/onboarding.md`: collect institution/semester context, create or import one real course, review its proposed knowledge map, and only then mark onboarding complete. The hard postcondition is at least one active course with at least one KC; repository seed courses remain demo/template sources rather than automatic per-user enrollment.
+Clerk identity resolution atomically creates a new local learner and a detached,
+editable copy of **Learning How to Learn**. Onboarding is optional
+personalization: Skip stamps `onboarded_at` and opens that course, while Finish
+may commit another validated `CourseDraftV2`. Institution, program, term, and
+dates are optional academic context and are validated only when submitted with
+Finish. Existing learners are not silently backfilled.
 
 ```mermaid
 flowchart TD
     A["Clerk sign-in / sign-up"] --> B["Resolve immutable local learner id"]
-    B --> C{"onboarded_at set<br/>and active course has a KC?"}
-    C -->|"yes"| H["Dashboard"]
-    C -->|"no"| D["University + semester"]
-    D --> E["Add/select a course"]
-    E --> F{"Course source"}
-    F -->|"known template"| G["Clone reviewed course map"]
-    F -->|"upload"| I["Store syllabus/lesson plan<br/>extract suggestions"]
-    F -->|"manual"| J["Enter module + at least one topic"]
-    I --> K["Review/edit proposed branches, KCs,<br/>assessments and schedule"]
-    G --> L["Atomic commit: course + >=1 KC<br/>then stamp onboarded_at"]
-    J --> L
-    K --> L
-    L --> M["Run class/task sweeps"]
-    M --> H
+    B --> C["Atomic bootstrap:<br/>learner + detached default course"]
+    C --> D{"Personalize?"}
+    D -->|"Skip"| E["Stamp onboarded_at"]
+    D -->|"Create another"| F["Topic + level + outcome"]
+    F --> G["Review V2 outcomes, KCs,<br/>examples and experiences"]
+    G --> H["Atomic V2 course commit<br/>and stamp onboarded_at"]
+    D -->|"Optional"| I["Academic context"]
+    I --> G
+    E --> J["Open Learning How to Learn"]
+    H --> K["Open authored course"]
 ```
 
 ## 2. Before Class

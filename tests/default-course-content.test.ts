@@ -48,4 +48,40 @@ describe('bundled Learning How to Learn course', () => {
     expect(course.examples.some((example) => example.content.kind === 'contrast')).toBe(true);
     expect(course.references.some((reference) => reference.citation.includes('Koedinger'))).toBe(true);
   });
+
+  it('requires every KC to define a meaningful mastery rule', () => {
+    const course = loadDefaultCourse();
+
+    for (const kc of course.kcs) {
+      expect(
+        kc.mastery_rule.threshold !== undefined
+          || kc.mastery_rule.minimum_evidence !== undefined
+          || kc.mastery_rule.requires_transfer === true
+          || kc.mastery_rule.requires_retention === true,
+        `${kc.id} needs a threshold, evidence minimum, transfer, or retention requirement`,
+      ).toBe(true);
+    }
+
+    course.kcs[0].mastery_rule = {};
+    expect(() => validateCourseDraft(course)).toThrow();
+  });
+
+  it('returns isolated nested copies', () => {
+    const first = loadDefaultCourse();
+    const second = loadDefaultCourse();
+    const firstEvidence = first.experiences.find((experience) => experience.evidence)?.evidence;
+    const secondEvidence = second.experiences.find((experience) => experience.evidence)?.evidence;
+    const originalTitle = second.modules[0].title;
+    const originalTarget = secondEvidence!.target_kc_ids[0];
+
+    first.spec.constraints.push('A learner-only constraint');
+    first.modules[0].title = 'A learner-only module title';
+    firstEvidence!.target_kc_ids[0] = 'learner-only-kc';
+    first.references[0].kc_ids.push('learner-only-reference');
+
+    expect(second.spec.constraints).not.toContain('A learner-only constraint');
+    expect(second.modules[0].title).toBe(originalTitle);
+    expect(secondEvidence!.target_kc_ids[0]).toBe(originalTarget);
+    expect(second.references[0].kc_ids).not.toContain('learner-only-reference');
+  });
 });

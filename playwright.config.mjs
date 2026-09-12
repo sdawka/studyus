@@ -31,7 +31,7 @@ export default defineConfig({
     },
     {
       name: 'authenticated',
-      testMatch: /(?:^|\/)(?:browser-checks|authenticated-audit|remediation|planning-remediation|accessibility-remediation|planner-overflow)\.spec\.mjs$/,
+      testMatch: /(?:^|\/)(?:browser-checks|general-onboarding|authenticated-audit|remediation|planning-remediation|accessibility-remediation|planner-overflow)\.spec\.mjs$/,
       dependencies: ['setup'],
     },
     {

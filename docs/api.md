@@ -43,7 +43,10 @@ These are page routes, not JSON authentication endpoints. `POST /auth/login` and
 ```json
 { "data": { "id": "uuid", "email": "string", "name": "string|null", "current_term": "string|null", "onboarded_at": "iso|null" } }
 ```
-`onboarded_at` is set only when the learner has an active, non-archived course with at least one meaningful KC. Middleware enforces that invariant for authenticated product pages.
+For newly provisioned learners, `onboarded_at` records completion of optional
+personalization; the usable detached default course already exists. Legacy
+rows retain the meaningful-course compatibility check. Archiving all courses
+after completion does not reopen onboarding.
 
 ### PATCH /user
 **Request**: `{ "name": "string?", "current_term": "string?", "onboarded": true? }`
@@ -57,16 +60,25 @@ These are page routes, not JSON authentication endpoints. `POST /auth/login` and
 ### GET /onboarding
 
 Returns the server-evaluated completion state, usable-course flag, learner
-institution/program/preferences, and current dated academic term. `complete` is
-true only when `onboarded_at` and the meaningful-KC invariant both hold.
+institution/program/preferences, and current dated academic term. A newly
+resolved Clerk account already owns a detached `Learning How to Learn` course;
+the response does not create or synchronize it.
 
 ### POST /onboarding/import-demo
 
-Accepts the strict version-1 browser draft subset: `draft_id`, optional learner
-context, learning preferences, up to five `CourseSetupProposal` objects, and
-bounded structural `review_metrics` counts (`renamed`, `reordered`, `excluded`).
-Proposals marked `source.kind = simulated` are ignored. A single idempotent D1
-batch creates the real term/course content and returns
+Accepts `draft_id`, learning preferences, bounded structural `review_metrics`
+counts (`renamed`, `reordered`, `excluded`), optional complete learner context,
+and either:
+
+- `course`: one strict `CourseDraftV2` aggregate for current manual authoring;
+- `courses`: up to five legacy `CourseSetupProposal` objects for reviewed-
+  template/local-extraction compatibility; or
+- an empty `courses` array with no `course` to Skip.
+
+Skip discards incomplete optional context, stamps onboarding, and returns the
+default course. Finish validates any supplied context and commits the V2 course
+in the same idempotent batch. A valid course plus partial context is rejected.
+Legacy proposals marked `source.kind = simulated` are ignored. The response is
 `{ complete, course_id, course_slug, imported }`; repeated learner/draft pairs
 return the existing result with `imported: false`. That replay also covers two
 submits racing each other: both can pass the idempotency read before either
@@ -82,6 +94,21 @@ server re-resolves the authored template, enforces selected prerequisites and
 in-term confirmed dates, then clones its graph, scaffolds, misconceptions,
 exercise bank, resources, and assessments. Rich authored answers and teaching
 bodies are not accepted from the browser.
+
+### CourseDraftV2 authoring boundary
+
+The version-2 aggregate contains `spec` (`title`, `topic`, `level`, optional
+project/constraints), outcomes, KCs with form/rationale/mastery rules, examples,
+misconceptions, experiences with intended processes and evidence contracts,
+references, and optional modules. Validation rejects unknown fields, dangling
+or duplicate links, prerequisite cycles, empty outcome/experience targets,
+active KCs without examples or evidence-producing experiences, and mastery
+rules with no meaningful requirement. Draft-local IDs are replaced with fresh
+learner-owned IDs; a persisted aggregate is detached from its source.
+
+Model-backed generation is not implemented. Future template, extraction, or
+generation adapters must emit this same validated contract and may never write
+domain tables or learner evidence directly.
 
 ### GET /onboarding/templates?q=&level=&limit=
 
@@ -179,9 +206,14 @@ Single source of truth for the type → role-flag (`is_instructional`/`is_assess
 ### POST /events
 **Request**:
 ```json
-{ "type": "<one of the 16 types above>", "kc_id": "uuid?", "course_id": "uuid?", "ts": "iso?", "payload": {}? }
+{ "type": "<one of the 16 types above>", "kc_id": "uuid?", "course_id": "uuid?", "experience_id": "uuid?", "ts": "iso?", "payload": {}? }
 ```
 `is_instructional`/`is_assessment` are **always derived server-side from `type`** — they are not client-settable (this differs from the draft's request shape, which listed them as request fields; they're response-only). `source` is always `"manual"` for events created through this endpoint.
+
+`experience_id` must identify a learner-owned Experience. Its course is
+inferred when `course_id` is omitted, and any supplied `kc_id` must be one of
+that Experience's declared evidence targets. An experience-linked event
+recomputes every declared evidence target; a context-only event recomputes none.
 
 Maintained clients send an optional UUID-shaped `Idempotency-Key` header. The first
 use creates the event and returns `201`. Repeating the same normalized request under
@@ -194,8 +226,9 @@ ledger tombstone, so a late retry conflicts instead of recreating deleted eviden
 Omitting the header remains accepted for v1 clients but has no retry guarantee.
 
 **Response** (201 first creation; 200 replay): `{ ...event, "mastery_deltas": [...] }`.
-For a first creation, `mastery_deltas` has zero or one entries — one iff `kc_id` was
-provided (each event has at most one KC). Replays always return an empty array.
+For a first creation, `mastery_deltas` contains the distinct targeted KCs: zero
+for context-only evidence, one for a direct `kc_id`, or several for a multi-KC
+Experience. Replays always return an empty array.
 
 ### GET /events
 **Query**: `course=uuid?`, `kc=uuid?`, `limit` (default 20, max 200). Response: array of event objects, newest first.

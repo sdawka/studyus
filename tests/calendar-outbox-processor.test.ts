@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:test';
 import { eq } from 'drizzle-orm';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../src/db/client';
 import {
   calendarConnections,
@@ -31,12 +31,14 @@ describe('calendar outbox processor', () => {
   let scheduledAt: number;
 
   beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2040-01-15T14:00:00Z'));
     userId = crypto.randomUUID();
     clerkUserId = `user_${userId}`;
     connectionId = crypto.randomUUID();
     calendarId = crypto.randomUUID();
     sessionId = crypto.randomUUID();
-    scheduledAt = Date.parse('2026-09-10T14:00:00Z');
+    scheduledAt = Date.now() + 60_000;
     const courseId = crypto.randomUUID();
 
     await db.insert(users).values({
@@ -89,6 +91,10 @@ describe('calendar outbox processor', () => {
       startedAt: scheduledAt,
       scheduledAt,
     });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   function dependencies(adapterOverrides: Partial<CalendarProviderAdapter> = {}) {
@@ -150,8 +156,8 @@ describe('calendar outbox processor', () => {
         localId: sessionId,
         source: 'study_session',
         title: 'Study: CHEM 101',
-        start: '2026-09-10T14:00:00.000Z',
-        end: '2026-09-10T14:45:00.000Z',
+        start: new Date(scheduledAt).toISOString(),
+        end: new Date(scheduledAt + 45 * 60_000).toISOString(),
         timezone: 'America/Toronto',
         transactionId: expect.stringMatching(/^stud1[0-9a-f]+$/),
       }),
@@ -473,7 +479,7 @@ describe('calendar outbox processor', () => {
   });
 
   it('records a non-writable connection as a terminal failure without stranding its claim', async () => {
-    const now = Date.parse('2026-09-10T14:00:00Z');
+    const now = Date.now();
     const operation = await enqueueCalendarOperation(db, userId, connectionId, {
       action: 'upsert', entity_type: 'study_session', entity_id: sessionId, revision: 'reconnect-required',
     });
@@ -490,7 +496,7 @@ describe('calendar outbox processor', () => {
   });
 
   it('prunes completed outbox history after seven days and retains a capped failed operation for owner retry', async () => {
-    const now = Date.parse('2026-09-10T14:00:00Z');
+    const now = Date.now();
     const oldDone = await enqueueCalendarOperation(db, userId, connectionId, {
       action: 'upsert', entity_type: 'study_session', entity_id: sessionId, revision: 'old-done',
     });
@@ -508,7 +514,7 @@ describe('calendar outbox processor', () => {
   });
 
   it('prunes terminal failures after the thirty-day owner-retry window', async () => {
-    const now = Date.parse('2026-10-11T14:00:00Z');
+    const now = Date.now() + 31 * 86_400_000;
     const operation = await enqueueCalendarOperation(db, userId, connectionId, {
       action: 'upsert', entity_type: 'study_session', entity_id: sessionId, revision: 'expired-failure',
     });
@@ -529,7 +535,7 @@ describe('calendar outbox processor', () => {
     const operation = await enqueueCalendarOperation(db, userId, connectionId, {
       action: 'upsert', entity_type: 'study_session', entity_id: sessionId, revision: 'lease-race',
     });
-    const now = Date.parse('2026-09-10T14:00:00Z');
+    const now = Date.now();
     let firstStarted!: () => void;
     let rejectFirst!: () => void;
     const firstStart = new Promise<void>((resolve) => { firstStarted = resolve; });
@@ -575,7 +581,7 @@ describe('calendar outbox processor', () => {
     const operation = await enqueueCalendarOperation(db, userId, connectionId, {
       action: 'upsert', entity_type: 'study_session', entity_id: sessionId, revision: 'token-lease-race',
     });
-    const now = Date.parse('2026-09-10T14:00:00Z');
+    const now = Date.now();
     let firstTokenStarted!: () => void;
     let rejectFirstToken!: () => void;
     const firstStart = new Promise<void>((resolve) => { firstTokenStarted = resolve; });

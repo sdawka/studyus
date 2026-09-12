@@ -134,6 +134,33 @@ describe('general onboarding commit validation', () => {
     expect(parsed.context).toBeUndefined();
   });
 
+  it('rejects partial academic context when finishing a valid V2 course', () => {
+    const course = {
+      schema_version: 2 as const,
+      spec: { title: 'Documentary filmmaking', topic: 'Documentary filmmaking', level: 'First project', constraints: [] },
+      outcomes: [{ id: 'outcome-story', title: 'Plan a coherent short documentary', kc_ids: ['kc-story'] }],
+      kcs: [{ id: 'kc-story', name: 'Visual story structure', kc_form: 'variable_constant' as const, rationale_level: 2, mastery_rule: { threshold: 0.8, minimum_evidence: 2 }, prerequisite_kc_ids: [] }],
+      examples: [{ id: 'example-story', kc_ids: ['kc-story'], content: { schema_version: 1 as const, kind: 'text' as const, body: 'A sequence connects subject, tension, and change.' } }],
+      misconceptions: [],
+      experiences: [{
+        id: 'experience-story', kind: 'exercise' as const, target_kc_ids: ['kc-story'], intended_processes: ['understanding_sensemaking' as const],
+        evidence: { response_type: 'constructed_response' as const, target_kc_ids: ['kc-story'], diagnostic_misconception_ids: [] },
+        content: { schema_version: 1 as const, kind: 'worked' as const, prompt: 'Outline a three-scene documentary.', solution: 'Each scene advances the same question.' },
+      }],
+      references: [], modules: [],
+    };
+
+    expect(() => onboardingCommitSchema.parse({
+      schema_version: 1,
+      draft_id: crypto.randomUUID(),
+      preferences: { weekly_hours: 7, guidance: 'balanced', depth: 'understand' },
+      courses: [],
+      course,
+      context: { institution_name: 'Partially entered' },
+      review_metrics: { renamed: 0, reordered: 0, excluded: 0 },
+    })).toThrow();
+  });
+
   it('keeps simulated evidence outside the account import boundary', () => {
     expect(() => onboardingCommitSchema.parse({
       schema_version: 1,

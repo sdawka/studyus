@@ -1,6 +1,6 @@
 # studyus Documentation Map
 
-This directory holds product and architecture documentation for studyus, a KLI-grounded study platform for university students. Docs follow a **fractal structure**: high-level conceptual docs first, each ending with a `## TODO` section that defers lower-level details to later iterations without breaking abstraction.
+This directory holds product and architecture documentation for studyus, a KLI-grounded platform for learners pursuing bounded goals, including formal courses. Docs follow a **fractal structure**: high-level conceptual docs first, each ending with a `## TODO` section that defers lower-level details to later iterations without breaking abstraction.
 
 ## Structure
 
@@ -42,7 +42,7 @@ This directory holds product and architecture documentation for studyus, a KLI-g
   - ADR-006-r2-uploads.md
 
 ### Roadmap
-- **todo.md** — Current implementation gaps and intentional deferrals. Durable course ingestion/map maintenance, external channels, a real social feed, native iPad, advanced mastery inference, and the optional Learning to Learn course remain later work.
+- **todo.md** — Current implementation gaps and intentional deferrals. Durable course ingestion/map maintenance, external channels, a real social feed, native iPad, advanced mastery inference, and first-use orientation remain later work; the bundled Learning How to Learn course now ships for new learners.
 
 ## Reading Guide
 

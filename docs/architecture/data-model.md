@@ -1,6 +1,6 @@
 # studyus Data Model
 
-**Re-derived from `src/db/schema.ts`, with remediation additions through migration0029 (2026-09-07).** The repository uses additive migrations. ADR-003's pre-v0.1 single-baseline preference is historical policy.
+**Re-derived from `src/db/schema.ts`, including the additive general-learning domain migration and remediation additions through migration 0029.** The repository uses additive migrations. ADR-003's pre-v0.1 single-baseline preference is historical policy.
 
 **Glossary note**: "capability" means two different things in this codebase, deliberately not unified. The `capabilities` table (below) is a **domain noun** — a competency a learner is building. Elsewhere (`docs/architecture/overview.md`, `agentic-channels.md`), "capability" was used loosely to mean *a pure service function* — those two docs were reworded to say "service function" instead once the domain table landed, to kill the collision at the source rather than footnote around it. Column names below are the actual snake_case DB names; `src/db/schema.ts` uses camelCase Drizzle field names that map onto them (e.g. `userId` → `user_id`). Every table's primary key is `id` (text, UUID from `crypto.randomUUID()`) unless noted otherwise; every table has `created_at` (integer epoch ms) unless noted.
 
@@ -37,7 +37,9 @@ guard concurrent atomic evidence/mastery updates.
 - `name` (text, nullable)
 - `current_term` (text, nullable) — default term filter for calendar/courses (e.g., `"Winter 2025"`)
 - `settings` (text, JSON mode, default `'{}'`) — resolved via `resolveSettings`/`DEFAULT_SETTINGS` in `src/lib/services/user.ts`; holds `theme`, `scheme`, `sidebar_collapsed`, `task_generators` (see `docs/api.md`)
-- `onboarded_at` (integer, nullable) — completion marker checked with usable-course existence by application middleware.
+- `onboarded_at` (integer, nullable) — completion marker for optional
+  personalization. New learners already own their detached default course;
+  archiving every course later does not clear this marker or reopen onboarding.
 - `created_at`
 
 No `updated_at`. Not user-scoped by a `user_id` FK (it's the root of the ownership graph).
@@ -53,7 +55,8 @@ No `updated_at`. Not user-scoped by a `user_id` FK (it's the root of the ownersh
 
 - `id` (text, pk)
 - `user_id` → `users.id`, **ON DELETE CASCADE**
-- `code` (text) — e.g., `"CHEM 213"`
+- `code` (text) — compatibility/display label; V2 general courses currently use
+  their title here, while academic courses may use a catalog code
 - `template_id` (text, nullable) — stable reviewed-catalog provenance for cloned
   courses; null for manual and document-derived courses
 - `map_revision` (integer, default `1`) — optimistic-concurrency token for the
@@ -68,6 +71,16 @@ No `updated_at`. Not user-scoped by a `user_id` FK (it's the root of the ownersh
 - `prereqs` (text, nullable)
 - `overview` (text, nullable)
 - `source_url` (text, nullable)
+- `topic`, `level`, `project` (text, nullable) — general-learning intent fields;
+  topic and level are required by `CourseDraftV2`, while legacy rows may be null
+- `constraints` (JSON text array, default `[]`) — learner-supplied boundaries
+  on the goal or project
+- `source_template_key`, `source_template_version` (text, nullable) — passive
+  provenance for detached first-party copies; never a synchronization pointer
+- `bootstrap_key` (text, nullable, unique per learner) — stable idempotency key
+  for automatic enrollment (`first-party:learning-how-to-learn`)
+- `domain_version` (integer, nullable) — `2` for aggregates persisted through
+  the V2 authoring boundary
 - `color` (text, nullable) — stores an OKLCH hue as text (`color_hue` at the API boundary); falls back client-side to a hash of the slug when absent (`src/lib/courseHue.ts`)
 - `meeting_days` (text, nullable) — JSON array of ISO weekday numbers (Mon=1..Sun=7), e.g. `"[1,3,5]"`; `null` = no fixed meeting schedule. Drives the class-sessions generation sweep.
 - `archived` (integer/boolean, default `false`) — soft-delete; excluded by default from `listCourses` and every picker
@@ -94,6 +107,14 @@ No `updated_at`. Not user-scoped by a `user_id` FK (it's the root of the ownersh
 - `course_id` → `courses.id`, **ON DELETE CASCADE**
 - `name` (text) — e.g., "SN2 Mechanism"
 - `kc_type` (text enum: `fact | association | concept | rule | principle`, default `concept`)
+- `kc_form` (text enum: `constant_constant | variable_constant |
+  variable_variable`, nullable for legacy rows) — canonical application/response
+  form for V2 content
+- `rationale_level` (integer, nullable) — how much explicit rationale the KC
+  calls for, 1–3 in V2 drafts
+- `mastery_rule` (JSON text, default `{}` for legacy compatibility) — optional
+  threshold/evidence-count/retention/transfer requirements. New V2 drafts must
+  supply at least one meaningful requirement.
 - `description` (text, nullable)
 - `practice_notes` (text, nullable)
 - `sort_order` (integer, default `0`)
@@ -105,6 +126,26 @@ No `updated_at`. Not user-scoped by a `user_id` FK (it's the root of the ownersh
 - `created_at`
 
 **No `user_id` column** (ownership is via `course_id`). Indexes: `kcs_course_id_idx` on (`course_id`); `kcs_course_slug_unique` (unique, v1.7) on (`course_id`, `slug`) — SQLite's multi-NULL unique semantics let every legacy `NULL` slug coexist fine.
+
+### V2 course aggregate
+
+`course_outcomes`, `kc_examples`, `experiences`, `course_modules`, and
+`course_references` are first-class learner-owned records under `courses`.
+Their join tables connect outcomes, examples, experiences, modules,
+misconceptions, references, and KCs while repeating `course_id` in composite
+foreign keys so links cannot cross course ownership accidentally.
+
+An Experience stores its `kind`, intended learning processes, strict versioned
+content, and optional evidence response/scoring contract. `experience_kcs`
+distinguishes ordinary targets from evidence targets;
+`experience_misconceptions` records diagnostic contracts. Existing `scaffolds`
+and `exercises` remain specialized one-to-one payload rows through nullable
+`experience_id` links.
+
+Modules are ordered views over outcomes, KCs, and experiences. Reordering them
+does not change KC identity or historical evidence. `CourseDraftV2` validation
+and `buildCourseDraftStatements` are the only complete aggregate authoring path;
+they replace draft-local IDs with fresh learner-owned IDs in one D1 batch.
 
 ### course_template_decisions
 

@@ -75,6 +75,22 @@ This document is the source of truth for the public `/how-it-works` page. It pre
 - [ ] Studyus does not monitor sleep, circadian rhythm, room conditions, or device distraction.
 - [ ] Do not score rest or turn well-being into a compliance metric.
 
+### 9. Authored experiences and inferred KC state — Implemented
+
+- [x] `CourseDraftV2` separates a learning goal, KCs, examples, intended
+  processes, experiences, evidence contracts, and mastery rules.
+- [x] Every active authored KC needs an example, a meaningful mastery rule, and
+  an evidence-producing experience before persistence.
+- [x] Evidence events may point to one experience and update only its declared,
+  learner-owned KC targets.
+- [x] KC state is recomputed from evidence with a deterministic mastery
+  estimate, bounded confidence, evidence IDs, retention/transfer flags, and
+  misconception state (`src/lib/domain/kcState.ts`).
+- [ ] Confidence is an audit-friendly heuristic, not a probability that the
+  learner knows the KC.
+- [ ] The deterministic next-experience selector is not a personalized spaced
+  scheduler or a model-generated curriculum.
+
 ## Adjacent Advice That Is Not a Product Claim
 
 The following may be useful study guidance, but is not currently implemented as a distinct Studyus workflow:

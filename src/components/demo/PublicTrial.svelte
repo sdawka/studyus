@@ -29,22 +29,22 @@
     action: string;
   }> = [
     { id: 'overloaded', eyebrow: 'Too much at once', title: 'Too much to fit into one sitting.', description: 'Use the topics and weekly capacity you supplied to choose one concrete next step.', action: 'Choose my one priority' },
-    { id: 'missed_lecture', eyebrow: 'Life happened', title: 'I missed a lecture.', description: 'Start from the first topic in your supplied map, with a small local preview you can adjust.', action: 'Build my catch-up path' },
-    { id: 'after_class', eyebrow: 'Before it fades', title: 'Class just ended.', description: 'Turn one supplied topic into a short local retrieval session without claiming what you already know.', action: 'Capture and schedule it' },
+    { id: 'missed_lecture', eyebrow: 'Life happened', title: 'I missed a lesson or class.', description: 'Start from the first topic in your supplied map, with a small local preview you can adjust.', action: 'Build my catch-up path' },
+    { id: 'after_class', eyebrow: 'Before it fades', title: 'A lesson just ended.', description: 'Turn one supplied topic into a short local retrieval session without claiming what you already know.', action: 'Capture it' },
     { id: 'false_fluency', eyebrow: 'Recognition is not recall', title: 'I reread it, but cannot solve it.', description: 'Choose a topic from your map for a focused practice session; no performance signal was supplied here.', action: 'Find the missing step' },
     { id: 'prerequisite_gap', eyebrow: 'Find the blocker', title: 'This topic makes no sense.', description: 'Follow a prerequisite only when your supplied course map explicitly lists that relationship.', action: 'Trace the prerequisite' },
     { id: 'recurring_mistake', eyebrow: 'Fix the model', title: 'I keep making the same mistake.', description: 'Pick a supplied topic to revisit; this preview does not invent a misconception or diagnosis.', action: 'Choose a correction session' },
-    { id: 'exam_close', eyebrow: 'Exam mode', title: 'My exam is close.', description: 'Use your supplied topics and any dated assessments you add later; no deadline is assumed in this preview.', action: 'Build my exam plan' },
-    { id: 'grade_landed', eyebrow: 'Use the signal', title: 'A grade just landed.', description: 'Choose from your supplied map; this local preview has no grade or mastery evidence to interpret.', action: 'Use the signal to replan' },
+    { id: 'exam_close', eyebrow: 'Deadline mode', title: 'A test or milestone is close.', description: 'Use your supplied topics and any dated assessments you add later; no deadline is assumed in this preview.', action: 'Build my focused plan' },
+    { id: 'grade_landed', eyebrow: 'Use the signal', title: 'I got a result back.', description: 'Choose from your supplied map; this local preview has no score or mastery evidence to interpret.', action: 'Use the signal to replan' },
     { id: 'week_disrupted', eyebrow: 'Plans should bend', title: 'My week blew up.', description: 'Keep the preview within the weekly capacity you supplied and leave overflow visible instead of dropping it.', action: 'Replan around my week' },
   ];
 
   let mode = $state<'setup' | 'demo'>(initialMode);
   let step = $state(0);
   let draft = $derived($demoDraft);
-  let university = $state('McGill University');
+  let university = $state('Other');
   let otherUniversity = $state('');
-  let program = $state('Chemical Engineering');
+  let program = $state('');
   let termIndex = $state(0);
   let customTermLabel = $state('Fall 2026');
   let customStartsOn = $state('2026-08-31');
@@ -235,29 +235,21 @@
   }
 
   function simulateAll() {
-    const term = MCGILL_TERMS[0];
-    const proposal = proposalFromTemplate('chee-314-fluid-mechanics', true);
+    const proposal = { ...manualProposal('SPANISH', 'Conversational Spanish', ['Introducing yourself', 'Asking follow-up questions', 'Past-tense stories']), source: { kind: 'simulated' as const } };
     persist({
-      context: {
-        institution_name: DEMO_CATALOG_META.institution,
-        program_name: DEMO_CATALOG_META.program,
-        term_label: term.label,
-        starts_on: term.starts_on,
-        ends_on: term.ends_on,
-        timezone: term.timezone,
-      },
+      context: undefined,
       preferences: { weekly_hours: 7, guidance: 'tell_me_next', depth: 'understand' },
-      courses: proposal ? [proposal] : [],
+      courses: [proposal],
       simulated: true,
     });
-    // The public trial should lead with a real topic from the reviewed sample,
-    // while keeping every score and action local to the browser.
+    // Lead with a general learning goal; formal course examples remain in the
+    // optional catalog and situation list.
     markScenario('overloaded');
-    previewPlan = proposal ? planDemo({
+    previewPlan = planDemo({
       course: demoCourseFromProposal(proposal),
       weeklyHours: 7,
-      timezone: term.timezone,
-    }) : null;
+      timezone: 'UTC',
+    });
     void trackTransition([
       { name: 'setup_step_skipped', step: 'context' },
       { name: 'setup_step_skipped', step: 'preferences' },
@@ -321,7 +313,7 @@
         <div class="setup-card hero-card">
           <p class="eyebrow">No account · instant preview</p>
           <h1 id="setup-title">See Studyus make one decision.</h1>
-          <p>Start with a sample student week and see exactly what Studyus puts first—and why. Personalize it afterward if it feels useful.</p>
+          <p>Start with a conversational-language goal and see exactly what Studyus puts first—and why. Formal courses still work when that is what you are learning.</p>
           <div class="actions">
             <button class="primary" type="button" onclick={simulateAll}>Show my next move</button>
             <button class="secondary" type="button" onclick={() => step = 1}>Use my courses</button>
@@ -331,8 +323,8 @@
       {:else if step === 1}
         <div class="setup-card">
           <button class="back-button" type="button" onclick={backSetup}>← Back</button>
-          <p class="eyebrow">Your academic context</p>
-          <h1 id="setup-title">Where are you studying?</h1>
+          <p class="eyebrow">Academic context · optional</p>
+          <h1 id="setup-title">Add school details only if they help.</h1>
           <div class="field-grid">
             <label>University<select bind:value={university}><option>McGill University</option><option>Other</option></select></label>
             {#if university === 'Other'}<label>University name<input bind:value={otherUniversity} placeholder="Your institution" /></label>{/if}
@@ -346,7 +338,7 @@
               <label>Semester<select bind:value={termIndex}>{#each MCGILL_TERMS as term, index}<option value={index}>{term.label}</option>{/each}</select></label>
             {/if}
           </div>
-          <p class="source-note">McGill coverage is intentionally limited to the reviewed Chemical Engineering catalog for now.</p>
+          <p class="source-note">You can skip this. Reviewed academic examples currently cover McGill Chemical Engineering.</p>
           <div class="actions split"><button class="secondary" type="button" onclick={() => saveContext(true)}>Skip and simulate</button><button class="primary" type="button" onclick={() => saveContext(false)}>Continue</button></div>
         </div>
       {:else if step === 2}
@@ -362,11 +354,11 @@
       {:else}
         <div class="setup-card wide">
           <button class="back-button" type="button" onclick={backSetup}>← Back</button>
-          <p class="eyebrow">Your first course</p>
-          <h1 id="setup-title">Give studyus something real to organize.</h1>
+          <p class="eyebrow">Your learning goal</p>
+          <h1 id="setup-title">Give studyus something real to help you learn.</h1>
           <div class="course-columns">
             <section>
-              <h2>Search reviewed courses</h2>
+              <h2>Optional academic examples</h2>
               <label class="field-label" for="course-search">Search reviewed courses</label>
               <input id="course-search" class="search" aria-label="Search reviewed courses" bind:value={courseQuery} placeholder="Search code or title" />
               <div class="course-results">
@@ -384,10 +376,10 @@
             <section>
               <h2>Enter or upload</h2>
               <div class="mini-grid">
-                <div class="field-stack"><label for="manual-code">Course code</label><input id="manual-code" aria-label="Course code" bind:value={manualCode} placeholder="e.g. CHEE 314" /></div>
-                <div class="field-stack"><label for="manual-title">Course title</label><input id="manual-title" aria-label="Course title" bind:value={manualTitle} placeholder="e.g. Fluid Mechanics" /></div>
+                <div class="field-stack"><label for="manual-code">Short label</label><input id="manual-code" aria-label="Course code" bind:value={manualCode} placeholder="e.g. SPANISH" /></div>
+                <div class="field-stack"><label for="manual-title">Learning goal</label><input id="manual-title" aria-label="Course title" bind:value={manualTitle} placeholder="e.g. Conversational Spanish" /></div>
               </div>
-              <label class="field-stack" for="manual-topics">Course topics<textarea id="manual-topics" aria-label="Course topics" bind:value={manualTopics} rows="3" placeholder="One per line: Bernoulli equation&#10;Control-volume balance"></textarea></label>
+              <label class="field-stack" for="manual-topics">Ideas or skills<textarea id="manual-topics" aria-label="Course topics" bind:value={manualTopics} rows="3" placeholder="One per line: Introducing yourself&#10;Asking follow-up questions"></textarea></label>
               <button class="small-button" type="button" onclick={useManualCourse}>Use this course map</button>
               <label class="upload">{parsing ? 'Reading file…' : 'Upload syllabus or lesson plan'}<input type="file" accept=".pdf,.docx,.txt,.md" disabled={parsing} onchange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void extractFile(file); }} /></label>
               {#if parseMessage}<p class="source-note" role="status">{parseMessage}</p>{/if}
@@ -410,7 +402,7 @@
       <button type="button" class="reset mobile-reset" onclick={resetTrial}>Reset trial</button>
     </header>
     <aside class="demo-sidebar">
-      <div><p class="eyebrow">Try a situation</p><strong>{draft.context?.term_label ?? 'Demo semester'}</strong><small>{activeCourse?.course.code ?? 'CHEE 314'} · {draft.preferences.weekly_hours} h/week</small></div>
+      <div><p class="eyebrow">Try a situation</p><strong>{draft.context?.term_label ?? 'Flexible learning week'}</strong><small>{activeCourse?.course.code ?? 'SPANISH'} · {draft.preferences.weekly_hours} h/week</small></div>
       <nav aria-label="Demo situations">
         {#each SCENARIOS as scenario, index}
           <button type="button" class:active={selectedScenario === scenario.id} onclick={() => chooseScenario(scenario.id)} aria-pressed={selectedScenario === scenario.id}>
@@ -422,7 +414,7 @@
     </aside>
     <main class="demo-main">
       <div class="demo-intro">
-        <div><p class="eyebrow">Interactive preview · {draft.context?.institution_name ?? 'McGill University'}</p><h1>Watch the plan make a decision.</h1><p class="intro-copy">Pick what happened. Studyus will use your supplied topics and weekly capacity to build a local preview you can inspect before signing up.</p></div>
+        <div><p class="eyebrow">Interactive preview · {draft.context?.institution_name ?? 'Independent learning'}</p><h1>Watch the plan make a decision.</h1><p class="intro-copy">Pick what happened. Studyus will use your supplied topics and weekly capacity to build a local preview you can inspect before signing up.</p></div>
         <div class="metrics">
           {#if draft.simulated}
             <span><strong>Sample</strong> evidence is simulated</span>
@@ -462,7 +454,7 @@
           {#if draft.completed_scenarios.includes(activeScenario.id) && previewPlan?.recommendation}
             <p class="eyebrow">Step 2 · Your next study session</p>
             <span class="duration">{previewPlan.recommendation.minutes} min</span>
-            <small class="course-code">{activeCourse?.course.code ?? 'CHEE 314'}</small>
+            <small class="course-code">{activeCourse?.course.code ?? 'SPANISH'}</small>
             <h2>{previewPlan.recommendation.title}</h2>
             <div class="why-next"><span>Why this is next</span><p>{previewPlan.rationale}</p></div>
             <div class="preview-schedule">

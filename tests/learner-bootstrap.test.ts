@@ -2,19 +2,51 @@ import { env } from 'cloudflare:test';
 import { and, eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
-import { courses, experiences, kcs, learnerRuntimeRegistry, users } from '../src/db/schema';
+import { accountDeletionEvents, accountDeletionJobs, courses, experiences, kcs, learnerRuntimeRegistry, users } from '../src/db/schema';
 import { resolveLocalUser } from '../src/lib/auth/local-user';
 import { DEFAULT_COURSE_KEY, DEFAULT_COURSE_VERSION, loadDefaultCourse } from '../src/lib/content/defaultCourse';
 import { getCourseDomain } from '../src/lib/services/courseDraft';
 import { BOOTSTRAP_COURSE_KEY, provisionLearner } from '../src/lib/services/learnerBootstrap';
+import { AccountInactiveError, enqueueAccountDeletion } from '../src/lib/services/accountLifecycle';
 import { hasUsableCourse } from '../src/lib/services/onboarding';
 
 const db = getDb(env.DB);
 
 beforeEach(async () => {
+  await db.delete(accountDeletionJobs);
+  await db.delete(accountDeletionEvents);
   await db.delete(learnerRuntimeRegistry);
   await db.delete(users);
 });
+
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((next) => { resolve = next; });
+  return { promise, resolve };
+}
+
+function holdNextBatch() {
+  const started = deferred();
+  const release = deferred();
+  let held = false;
+  const heldDb = new Proxy(db, {
+    get(target, property) {
+      if (property === 'batch') {
+        return async (...args: Parameters<typeof db.batch>) => {
+          if (!held) {
+            held = true;
+            started.resolve();
+            await release.promise;
+          }
+          return target.batch(...args);
+        };
+      }
+      const value = Reflect.get(target, property, target);
+      return typeof value === 'function' ? value.bind(target) : value;
+    },
+  });
+  return { heldDb, started: started.promise, release: release.resolve };
+}
 
 describe('learner bootstrap', () => {
   it('atomically creates a new learner with one complete usable default course', async () => {
@@ -40,21 +72,43 @@ describe('learner bootstrap', () => {
     expect(domain.experiences).toHaveLength(10);
   });
 
-  it('returns the same learner and course on sequential and concurrent retries', async () => {
+  it('returns the same learner and course on sequential retries', async () => {
     const identity = { id: 'clerk-bootstrap-repeat', primaryEmailAddress: 'bootstrap-repeat@example.test' };
     const first = await provisionLearner(db, identity);
     const sequential = await resolveLocalUser(db, identity);
-    const concurrentIdentity = { id: 'clerk-bootstrap-concurrent', primaryEmailAddress: 'bootstrap-concurrent@example.test' };
-    const [concurrentA, concurrentB] = await Promise.all([
-      provisionLearner(db, concurrentIdentity),
-      provisionLearner(db, concurrentIdentity),
-    ]);
 
     expect(sequential).toMatchObject({ wasCreated: false, user: { id: first.user.id }, defaultCourse: { id: first.defaultCourse.id } });
-    expect(concurrentA.user.id).toBe(concurrentB.user.id);
-    expect(concurrentA.defaultCourse.id).toBe(concurrentB.defaultCourse.id);
-    expect([concurrentA.wasCreated, concurrentB.wasCreated].sort()).toEqual([false, true]);
-    expect(await db.select().from(courses).where(eq(courses.userId, concurrentA.user.id))).toHaveLength(1);
+  });
+
+  it('recovers the delayed resolver from a real bootstrap conflict', async () => {
+    const identity = { id: 'clerk-bootstrap-concurrent', primaryEmailAddress: 'bootstrap-concurrent@example.test' };
+    const held = holdNextBatch();
+    const delayed = resolveLocalUser(held.heldDb, identity);
+    await held.started;
+
+    const winner = await resolveLocalUser(db, identity);
+    held.release();
+    const recovered = await delayed;
+
+    expect(winner.wasCreated).toBe(true);
+    expect(winner.defaultCourse).not.toBeNull();
+    expect(recovered).toMatchObject({ wasCreated: false, user: { id: winner.user.id }, defaultCourse: { id: winner.defaultCourse!.id } });
+    expect(await db.select().from(courses).where(eq(courses.userId, winner.user.id))).toHaveLength(1);
+  });
+
+  it('fails a delayed bootstrap closed when deletion is fenced before its commit', async () => {
+    const identity = { id: 'clerk-bootstrap-delete-race', primaryEmailAddress: 'bootstrap-delete-race@example.test' };
+    const held = holdNextBatch();
+    const delayed = resolveLocalUser(held.heldDb, identity);
+    await held.started;
+
+    await enqueueAccountDeletion(db, { eventId: 'evt-bootstrap-delete-race', clerkUserId: identity.id }, 1_000);
+    held.release();
+
+    await expect(delayed).rejects.toBeInstanceOf(AccountInactiveError);
+    expect(await db.select().from(users).where(eq(users.clerkUserId, identity.id))).toEqual([]);
+    expect(await db.select().from(courses)).toEqual([]);
+    expect(await db.select().from(learnerRuntimeRegistry)).toEqual([]);
   });
 
   it('rolls back the learner when a course statement fails and creates no runtime registry', async () => {
