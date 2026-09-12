@@ -75,10 +75,11 @@ export function deriveKcState(allEvents: KcEvidence[], rule: MasteryRule = {}, n
   const folded = foldMastery(evidence, now);
   const firstAt = evidence[0]?.ts ?? null;
   const threshold = Math.max(0, Math.min(1, rule.threshold ?? 0.8));
-  const hasLaterTagged = (tag: string, minimumDelay: number) => firstAt !== null && evidence.some((event) =>
-    event.isAssessment && event.ts >= firstAt + minimumDelay && evidenceTags(event).has(tag)
-      && eventSuccess(event.payload) >= threshold,
-  );
+  const hasLaterTagged = (tag: string, minimumDelay: number) => firstAt !== null && evidence.some((event) => {
+    const success = eventSuccess(event.payload);
+    return event.isAssessment && event.ts >= firstAt + minimumDelay && evidenceTags(event).has(tag)
+      && success > 0 && success >= threshold;
+  });
   const hasTransferEvidence = hasLaterTagged('transfer', 1);
   const hasRetentionEvidence = hasLaterTagged('retention', RETENTION_DELAY_MS);
 

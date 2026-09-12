@@ -73,4 +73,26 @@ describe('deriveKcState', () => {
     expect(state.hasTransferEvidence).toBe(false);
     expect(state.meetsMasteryRule).toBe(false);
   });
+
+  it('requires positive success for retention and transfer even when the mastery threshold is zero', () => {
+    const first = evidence({ id: 'first-zero-threshold', ts: now - 3 * DAY });
+    const failed = evidence({
+      id: 'failed-zero-threshold',
+      ts: now,
+      payload: { correct: false, evidence_tags: ['retention', 'transfer'] },
+    });
+    const rule = { threshold: 0, requires_retention: true, requires_transfer: true };
+
+    const failedState = deriveKcState([first, failed], rule, now);
+    expect(failedState.hasRetentionEvidence).toBe(false);
+    expect(failedState.hasTransferEvidence).toBe(false);
+
+    const successfulState = deriveKcState([first, failed, evidence({
+      id: 'successful-zero-threshold',
+      ts: now + 1,
+      payload: { correct: true, evidence_tags: ['retention', 'transfer'] },
+    })], rule, now + 1);
+    expect(successfulState.hasRetentionEvidence).toBe(true);
+    expect(successfulState.hasTransferEvidence).toBe(true);
+  });
 });
