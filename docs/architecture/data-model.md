@@ -113,8 +113,8 @@ No `updated_at`. Not user-scoped by a `user_id` FK (it's the root of the ownersh
 - `rationale_level` (integer, nullable) — how much explicit rationale the KC
   calls for, 1–3 in V2 drafts
 - `mastery_rule` (JSON text, default `{}` for legacy compatibility) — optional
-  threshold/evidence-count/retention/transfer requirements. New V2 drafts must
-  supply at least one meaningful requirement.
+  threshold/evidence-count/retention/transfer requirements. Every field is
+  optional; the bundled default course separately supplies meaningful rules.
 - `description` (text, nullable)
 - `practice_notes` (text, nullable)
 - `sort_order` (integer, default `0`)

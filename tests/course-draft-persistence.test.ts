@@ -173,7 +173,9 @@ describe('course draft persistence', () => {
   });
 
   it('deep-copies the complete aggregate with fresh relational IDs', async () => {
-    const saved = await persistCourseDraft(db, userId, draft, {
+    const policyDraft = structuredClone(draft) as CourseDraftV2;
+    policyDraft.experiences[0].content.selection_policy = { evidence_tags: ['spacing', 'retention'] };
+    const saved = await persistCourseDraft(db, userId, policyDraft, {
       sourceTemplateKey: 'learning-how-to-learn',
       sourceTemplateVersion: '2026-09-12',
       bootstrapKey: 'default:2026-09-12',
@@ -211,6 +213,7 @@ describe('course draft persistence', () => {
     expect(domain.experiences[0].content).toEqual({
       schema_version: 1,
       kind: 'mcq',
+      selection_policy: { evidence_tags: ['spacing', 'retention'] },
       prompt: 'Which action provides stronger evidence?',
       options: ['Reread', 'Retrieve later'],
       source: 'Course author',

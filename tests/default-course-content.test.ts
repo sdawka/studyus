@@ -63,6 +63,13 @@ describe('bundled Learning How to Learn course', () => {
     }
   });
 
+  it('ships reachable instructional support and retention/transfer policy metadata', () => {
+    const course = loadDefaultCourse();
+    expect(course.experiences.some((experience) => experience.kind === 'scaffold' && !experience.evidence)).toBe(true);
+    const tags = course.experiences.flatMap((experience) => experience.content.selection_policy?.evidence_tags ?? []);
+    expect(tags).toEqual(expect.arrayContaining(['spacing', 'retention', 'transfer']));
+  });
+
   it('returns isolated nested copies', () => {
     const first = loadDefaultCourse();
     const second = loadDefaultCourse();

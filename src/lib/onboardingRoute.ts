@@ -1,12 +1,9 @@
 // Where an authenticated learner belongs relative to onboarding.
 //
 // Extracted from middleware.ts so the rule can be unit-tested: it decides
-// whether someone can reach the app at all, and it has to be symmetric. The
-// original only enforced one direction — a learner without a usable course was
-// pushed to /onboarding, but a learner who had already finished was never
-// pushed back out, so revisiting /onboarding ran the whole setup again and
-// created a duplicate course (clearDemoDraft() wipes the draft id on success,
-// so the per-draft idempotency check cannot catch that).
+// whether someone can reach the app at all. Completion is a one-way stamp:
+// signed-in learners may later empty their workspace without being sent back
+// through setup, while revisiting /onboarding must not create a duplicate.
 
 /** Paths a learner may visit while they still have no usable course. */
 export function isOnboardingAllowed(pathname: string): boolean {

@@ -101,6 +101,17 @@ export function selectNextExperience(
       reasons.push(`repairs misconception ${misconception}`);
     }
 
+    const weak = targets.find((kc) => {
+      const state = stateFor(states, kc.id);
+      return Boolean(state?.evidenceIds.length) && state?.lastEvidenceSucceeded === false;
+    });
+    if (weak && candidate.kind === 'scaffold' && candidate.supportLevel === 1) {
+      hasExplicitReason = true;
+      score += 650;
+      reasons.length = 0;
+      reasons.push(`adds support after weak evidence for ${weak.id}`);
+    }
+
     const tags = new Set((candidate.evidenceTags ?? []).map((tag) => tag.toLowerCase()));
     const due = targets.find((kc) => {
       const state = stateFor(states, kc.id);

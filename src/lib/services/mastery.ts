@@ -190,7 +190,10 @@ export async function getKcState(db: Db, userId: string, kcId: string, now: numb
 function selectionTags(content: unknown): string[] {
   if (!content || typeof content !== 'object') return [];
   const value = content as Record<string, unknown>;
+  const policy = value.selection_policy && typeof value.selection_policy === 'object'
+    ? value.selection_policy as Record<string, unknown> : {};
   const candidates = [value.evidence_type, value.evidence_kind, value.purpose];
+  if (Array.isArray(policy.evidence_tags)) candidates.push(...policy.evidence_tags);
   for (const key of ['evidence_tags', 'tags']) {
     if (Array.isArray(value[key])) candidates.push(...value[key]);
   }
@@ -220,11 +223,10 @@ export async function getNextExperience(db: Db, userId: string, now: number = Da
   const [edges, links, diagnostics, scaffoldRows, exerciseRows, stateEntries] = await Promise.all([
     db.select({ kcId: kcEdges.kcId, prerequisiteKcId: kcEdges.prereqKcId }).from(kcEdges)
       .where(and(inArray(kcEdges.kcId, kcIds), inArray(kcEdges.prereqKcId, kcIds))),
-    db.select({ experienceId: experienceKcs.experienceId, kcId: experienceKcs.kcId }).from(experienceKcs)
+    db.select({ experienceId: experienceKcs.experienceId, kcId: experienceKcs.kcId, isEvidenceTarget: experienceKcs.isEvidenceTarget }).from(experienceKcs)
       .where(and(
         inArray(experienceKcs.experienceId, experienceIds),
         inArray(experienceKcs.kcId, kcIds),
-        eq(experienceKcs.isEvidenceTarget, true),
       )),
     db.select({ experienceId: experienceMisconceptions.experienceId, misconceptionId: experienceMisconceptions.misconceptionId })
       .from(experienceMisconceptions).where(inArray(experienceMisconceptions.experienceId, experienceIds)),
@@ -250,7 +252,8 @@ export async function getNextExperience(db: Db, userId: string, now: number = Da
     experiences: experienceRows.map((experience) => ({
       id: experience.id,
       learnerId: userId,
-      targetKcIds: links.filter((link) => link.experienceId === experience.id).map((link) => link.kcId),
+      targetKcIds: links.filter((link) => link.experienceId === experience.id
+        && (link.isEvidenceTarget || experience.kind === 'scaffold')).map((link) => link.kcId),
       kind: experience.kind,
       supportLevel: support.get(experience.id),
       evidenceTags: selectionTags(experience.content),

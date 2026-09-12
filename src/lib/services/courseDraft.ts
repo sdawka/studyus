@@ -67,6 +67,12 @@ function safeStrings(value: unknown): string[] | undefined {
   return Array.isArray(value) && value.every((item) => typeof item === 'string') ? value : undefined;
 }
 
+function browserSafeSelectionPolicy(content: Record<string, unknown>) {
+  const policy = contentRecord(content.selection_policy);
+  const tags = safeStrings(policy.evidence_tags)?.filter((tag) => ['spacing', 'retention', 'transfer'].includes(tag));
+  return tags ? { selection_policy: { evidence_tags: tags } } : {};
+}
+
 function browserSafeExampleContent(value: unknown): unknown {
   const content = contentRecord(value);
   if (content.schema_version !== 1) return {};
@@ -92,6 +98,7 @@ function browserSafeExperienceContent(value: unknown): unknown {
     return {
       schema_version: 1,
       kind: 'scaffold',
+      ...browserSafeSelectionPolicy(content),
       ...(safeString(content.scaffold_kind) === undefined ? {} : { scaffold_kind: content.scaffold_kind }),
       ...(safeNumber(content.level) === undefined ? {} : { level: content.level }),
       ...(safeString(content.title) === undefined ? {} : { title: content.title }),
@@ -102,6 +109,7 @@ function browserSafeExperienceContent(value: unknown): unknown {
     return {
       schema_version: 1,
       kind: 'mcq',
+      ...browserSafeSelectionPolicy(content),
       ...(safeString(content.prompt) === undefined ? {} : { prompt: content.prompt }),
       ...(safeStrings(content.options) === undefined ? {} : { options: content.options }),
       ...(safeNumber(content.difficulty) === undefined ? {} : { difficulty: content.difficulty }),
@@ -112,6 +120,7 @@ function browserSafeExperienceContent(value: unknown): unknown {
     return {
       schema_version: 1,
       kind: content.kind,
+      ...browserSafeSelectionPolicy(content),
       ...(safeString(content.prompt) === undefined ? {} : { prompt: content.prompt }),
       ...(safeNumber(content.difficulty) === undefined ? {} : { difficulty: content.difficulty }),
       ...(safeString(content.source) === undefined ? {} : { source: content.source }),
@@ -121,6 +130,7 @@ function browserSafeExperienceContent(value: unknown): unknown {
     return {
       schema_version: 1,
       kind: 'project',
+      ...browserSafeSelectionPolicy(content),
       ...(safeString(content.title) === undefined ? {} : { title: content.title }),
       ...(safeString(content.brief) === undefined ? {} : { brief: content.brief }),
       ...(safeString(content.deliverable) === undefined ? {} : { deliverable: content.deliverable }),

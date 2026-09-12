@@ -67,6 +67,15 @@ describe('selectNextExperience', () => {
     expect(choice.reasons).toContain('fades support after success on kc');
   });
 
+  it('returns to stronger instructional support after weak evidence', () => {
+    const input = graph({ experiences: [
+      { id: 'practice', learnerId: 'learner', targetKcIds: ['kc'], kind: 'exercise', sortOrder: 0 },
+      { id: 'support', learnerId: 'learner', targetKcIds: ['kc'], kind: 'scaffold', supportLevel: 1, sortOrder: 1 },
+    ] });
+    const choice = selectNextExperience(input, { kc: state({ evidenceIds: ['e1'], lastEvidenceSucceeded: false }) }, now);
+    expect(choice).toEqual({ experienceId: 'support', reasons: ['adds support after weak evidence for kc'] });
+  });
+
   it('prioritizes a matching diagnostic repair after misconception evidence', () => {
     const input = graph({ experiences: [
       { id: 'ordinary', learnerId: 'learner', targetKcIds: ['kc'], kind: 'exercise', sortOrder: 0 },

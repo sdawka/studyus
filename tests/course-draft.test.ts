@@ -156,6 +156,37 @@ describe('CourseDraftV2 schema', () => {
     expect(courseDraftV2Schema.parse(withVariants).experiences).toHaveLength(3);
   });
 
+  it('accepts strict machine-readable experience selection policy', () => {
+    const withPolicy = invalidDraft((value) => {
+      value.experiences[0].content = {
+        ...value.experiences[0].content,
+        selection_policy: { evidence_tags: ['spacing', 'retention', 'transfer'] },
+      } as never;
+    });
+    expect(courseDraftV2Schema.parse(withPolicy).experiences[0].content).toMatchObject({
+      selection_policy: { evidence_tags: ['spacing', 'retention', 'transfer'] },
+    });
+  });
+
+  it.each([
+    ['top-level collection', invalidDraft((value) => { value.outcomes = Array.from({ length: 101 }, (_, index) => ({ ...value.outcomes[0], id: `outcome-${index}` })); })],
+    ['relationship collection', invalidDraft((value) => { value.outcomes[0].kc_ids = Array.from({ length: 301 }, () => 'kc-evidence'); })],
+    ['string field', invalidDraft((value) => { value.spec.title = 'x'.repeat(201); })],
+    ['generic content payload', invalidDraft((value) => { value.examples[0].content = { schema_version: 1, kind: 'generic', data: { body: 'x'.repeat(65_537) } } as never; })],
+  ])('rejects an oversized %s at the authenticated draft boundary', (_label, oversized) => {
+    expect(() => courseDraftV2Schema.parse(oversized)).toThrow();
+  });
+
+  it('rejects an oversized aggregate even when each collection is under its own cap', () => {
+    const oversized = invalidDraft((value) => {
+      value.outcomes = Array.from({ length: 100 }, (_, index) => ({ ...value.outcomes[0], id: `outcome-${index}` }));
+      value.kcs = Array.from({ length: 300 }, (_, index) => ({ ...value.kcs[0], id: `kc-${index}` }));
+      value.examples = Array.from({ length: 500 }, (_, index) => ({ ...value.examples[0], id: `example-${index}` }));
+      value.experiences = Array.from({ length: 101 }, (_, index) => ({ ...value.experiences[0], id: `experience-${index}` }));
+    });
+    expect(() => courseDraftV2Schema.parse(oversized)).toThrow(/aggregate/i);
+  });
+
   it('keeps observation evidence unscored', () => {
     const observation = invalidDraft((value) => {
       value.experiences[0].evidence.response_type = 'observation';

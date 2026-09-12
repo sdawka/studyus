@@ -24,7 +24,6 @@ import {
 } from '../content/templateCatalog';
 import type { ApplyTemplateUpdatesInput, UpdateCourseMapInput } from '../schemas/courseMap';
 import { chunk, ConflictError, requireOwnedCourse, runBatch } from './util';
-import { isPlaceholderKcName } from './usableCourse';
 
 
 const D1_MAX_BOUND_PARAMS = 100;
@@ -162,6 +161,7 @@ export async function getCourseMap(db: Db, userId: string, courseId: string) {
 export async function updateCourseMap(db: Db, userId: string, courseId: string, input: UpdateCourseMapInput) {
   const course = await requireOwnedCourse(db, userId, courseId);
   if (course.mapRevision !== input.expected_revision) throw new ConflictError('The course map changed in another tab. Reload before saving.');
+  if (course.domainVersion === 2) throw new ConflictError('Version 2 courses must be edited through the aggregate authoring boundary.');
 
   const [existingBranches, existingKcs, graph] = await Promise.all([
     db.select().from(branches).where(eq(branches.courseId, courseId)),
@@ -216,10 +216,6 @@ export async function updateCourseMap(db: Db, userId: string, courseId: string, 
       throw new ConflictError('Archive dependent concepts before archiving one of their prerequisites.');
     }
   }
-  if (![...activeIds].some((id) => !isPlaceholderKcName(namesById.get(id) ?? graph.nodes.find((row) => row.kc.id === id)?.kc.name ?? ''))) {
-    throw new ConflictError('Keep at least one meaningful active concept.');
-  }
-
   const now = Date.now();
   const statements: BatchItem<'sqlite'>[] = [];
   for (const branch of input.branches) {
@@ -261,6 +257,7 @@ function richTemplateStatements(db: Db, userId: string, courseId: string, kcId: 
 
 export async function syncReviewedTemplateContent(db: Db, userId: string, courseId: string) {
   const course = await requireOwnedCourse(db, userId, courseId);
+  if (course.domainVersion === 2) return false;
   if (!course.templateId) return false;
   const template = await getReviewedTemplate(db, course.templateId);
   if (!template) return false;
@@ -344,6 +341,7 @@ export async function syncReviewedTemplateContent(db: Db, userId: string, course
 export async function applyTemplateUpdateActions(db: Db, userId: string, courseId: string, input: ApplyTemplateUpdatesInput) {
   const course = await requireOwnedCourse(db, userId, courseId);
   if (course.mapRevision !== input.expected_revision) throw new ConflictError('The course map changed in another tab. Reload before continuing.');
+  if (course.domainVersion === 2) throw new ConflictError('Version 2 courses must be edited through the aggregate authoring boundary.');
   if (!course.templateId) throw new ConflictError('This course is not linked to a reviewed template.');
   const template = await getReviewedTemplate(db, course.templateId);
   const revision = await getReviewedTemplateRevision(db, course.templateId);
@@ -399,8 +397,6 @@ export async function applyTemplateUpdateActions(db: Db, userId: string, courseI
       if (graph.edges.some((edge) => edge.prereqKcId === kc.id && activeNodeIds.has(edge.kcId))) {
         throw new ConflictError('Archive dependent concepts before archiving this prerequisite.');
       }
-      const meaningfulRemaining = graph.nodes.filter((row) => row.kc.id !== kc.id && row.kc.archivedAt === null && row.branchArchivedAt === null && !isPlaceholderKcName(row.kc.name));
-      if (meaningfulRemaining.length === 0) throw new ConflictError('Keep at least one meaningful active concept.');
       statements.push(db.update(kcs).set({ archivedAt: now }).where(eq(kcs.id, kc.id)));
       statements.push(db.insert(courseTemplateDecisions).values({ id: crypto.randomUUID(), courseId, itemKind: 'kc', templateRef: action.template_ref, decision: 'dismissed', templateRevision: revision, createdAt: now, updatedAt: now }).onConflictDoUpdate({ target: [courseTemplateDecisions.courseId, courseTemplateDecisions.itemKind, courseTemplateDecisions.templateRef], set: { decision: 'dismissed', templateRevision: revision, updatedAt: now } }));
       structural = true;

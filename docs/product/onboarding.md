@@ -191,22 +191,27 @@ Implemented and covered by automated checks:
   before any course is written;
 - the browser-safe template detail contains no authored answers or teaching
   bodies;
-- the route gate reopens legacy stamped learners who have no usable course;
+- onboarding completion is one-way; an onboarded learner may archive every
+  course and sees ordinary empty-workspace UI rather than being forced back;
 - manual onboarding works without OpenRouter or an uploaded file.
 
 ## Post-onboarding course-map maintenance
 
-The course Concepts page now has an explicit edit mode. A learner can add,
+For legacy courses, the Concepts page has an explicit edit mode. A learner can add,
 rename, move, reorder, archive, and restore branches and KCs; edit KLI type,
 description, and practice notes; and choose prerequisites from any active KC
 they own. Save is one atomic snapshot guarded by `courses.map_revision`, so a
 stale browser receives a conflict instead of overwriting newer work.
 
+V2 courses render their ordered modules and linked KCs from the aggregate read
+model. The legacy snapshot editor rejects V2 writes so it cannot create bare
+KCs that violate the aggregate's example and evidence invariants.
+
 Archiving is reversible and preserves events, mastery, notes, assessment links,
 and other history. Active study, exercise, misconception, course, and ZPD reads
-exclude archived/retired content. The service rejects graph cycles, foreign
-prerequisites, archiving a prerequisite with an active dependent, and removing
-the learner's final meaningful active KC.
+exclude archived/retired content. The legacy service rejects graph cycles,
+foreign prerequisites, and archiving a prerequisite with an active dependent;
+it permits an owner to archive the final active KC.
 
 Reviewed courses store a content hash and baseline. Course access performs a
 best-effort revision check: untouched template fields, prerequisite edges, and

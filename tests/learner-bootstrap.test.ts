@@ -9,6 +9,8 @@ import { getCourseDomain } from '../src/lib/services/courseDraft';
 import { BOOTSTRAP_COURSE_KEY, provisionLearner } from '../src/lib/services/learnerBootstrap';
 import { AccountInactiveError, enqueueAccountDeletion } from '../src/lib/services/accountLifecycle';
 import { hasUsableCourse } from '../src/lib/services/onboarding';
+import { getNextExperience } from '../src/lib/services/mastery';
+import { createEvent } from '../src/lib/services/events';
 
 const db = getDb(env.DB);
 
@@ -70,6 +72,23 @@ describe('learner bootstrap', () => {
     expect(domain.modules).toHaveLength(5);
     expect(domain.kcs).toHaveLength(14);
     expect(domain.experiences).toHaveLength(10);
+    expect(domain.modules.map((module) => module.title)).toEqual([
+      'How do you know you’ve learned something?',
+      'How do you access what you’ve learned?',
+      'What does learning feel like?',
+      'What helps you learn best?',
+      'How can you keep getting better at learning?',
+    ]);
+    const scaffold = domain.experiences.find((experience) => {
+      const content = experience.content as { kind?: string; level?: number };
+      return experience.kind === 'scaffold' && content.kind === 'scaffold' && content.level === 1;
+    })!;
+    const weakEvidence = domain.experiences.find((experience) => experience.evidence?.target_kc_ids.includes(scaffold.target_kc_ids[0]))!;
+    await createEvent(db, result.user.id, {
+      type: 'quiz_taken', kc_id: scaffold.target_kc_ids[0], experience_id: weakEvidence.id,
+      payload: { correct: false },
+    });
+    expect((await getNextExperience(db, result.user.id)).experience.id).toBe(scaffold.id);
   });
 
   it('returns the same learner and course on sequential retries', async () => {
@@ -78,6 +97,30 @@ describe('learner bootstrap', () => {
     const sequential = await resolveLocalUser(db, identity);
 
     expect(sequential).toMatchObject({ wasCreated: false, user: { id: first.user.id }, defaultCourse: { id: first.defaultCourse.id } });
+  });
+
+  it('offers a persisted default-course retention experience when review is due', async () => {
+    const now = Date.now();
+    const learner = await resolveLocalUser(db, { id: 'clerk-bootstrap-retention', primaryEmailAddress: 'retention@example.test' });
+    const domain = await getCourseDomain(db, learner.user.id, learner.defaultCourse!.id);
+    const retention = domain.experiences.find((experience) => {
+      const content = experience.content as { selection_policy?: { evidence_tags: string[] } };
+      return content.selection_policy?.evidence_tags.includes('spacing');
+    })!;
+    const targetKcId = retention.evidence!.target_kc_ids[0];
+    await createEvent(db, learner.user.id, {
+      type: 'quiz_taken', kc_id: targetKcId, experience_id: retention.id,
+      ts: new Date(now - 3 * 86_400_000).toISOString(), payload: { correct: true },
+    });
+    await createEvent(db, learner.user.id, {
+      type: 'quiz_taken', kc_id: targetKcId, experience_id: retention.id,
+      ts: new Date(now - 2 * 86_400_000).toISOString(), payload: { correct: true, evidence_tags: ['transfer'] },
+    });
+
+    const next = await getNextExperience(db, learner.user.id, now);
+    expect(next.reasons[0], JSON.stringify(next)).toMatch(/^spaced review due for /);
+    const selectedContent = next.experience.content as { selection_policy?: { evidence_tags: string[] } };
+    expect(selectedContent.selection_policy?.evidence_tags).toContain('retention');
   });
 
   it('recovers the delayed resolver from a real bootstrap conflict', async () => {

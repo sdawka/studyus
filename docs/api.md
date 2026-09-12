@@ -102,8 +102,9 @@ project/constraints), outcomes, KCs with form/rationale/mastery rules, examples,
 misconceptions, experiences with intended processes and evidence contracts,
 references, and optional modules. Validation rejects unknown fields, dangling
 or duplicate links, prerequisite cycles, empty outcome/experience targets,
-active KCs without examples or evidence-producing experiences, and mastery
-rules with no meaningful requirement. Draft-local IDs are replaced with fresh
+active KCs without examples or evidence-producing experiences, oversized
+collections/relationships/strings/content, and invalid mastery-rule fields.
+MasteryRule fields are optional. Draft-local IDs are replaced with fresh
 learner-owned IDs; a persisted aggregate is detached from its source.
 
 Model-backed generation is not implemented. Future template, extraction, or
@@ -1019,7 +1020,7 @@ Replaces the editable map snapshot atomically. Body:
 New nodes use `client_id` instead of `id`. Existing nodes must remain in the
 snapshot and use `archived: true` rather than being omitted. Returns `409` for
 a stale revision, graph cycle, non-owned prerequisite, active dependent of an
-archived prerequisite, or removal of the final meaningful active KC.
+archived prerequisite, or an attempted structural edit to a version 2 course.
 
 ### `POST /courses/:id/template-updates`
 

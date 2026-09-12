@@ -34,29 +34,18 @@ async function onboardWith(code: string, title: string, topic: string) {
   return result.course_id!;
 }
 
-// src/middleware.ts:118-120 redirects an authenticated user to /onboarding
-// whenever hasUsableCourse() is false, and that check applies to users who
-// already finished onboarding, not only new ones. isOnboardingAllowed()
-// (middleware.ts:44-52) permits only /onboarding, /account, /settings,
-// /sign-in and /sign-up — so /courses and /dashboard both redirect. That makes
-// hasUsableCourse() the predicate for "can this learner reach the app at all",
-// and anything able to flip it to false is an access-control change.
-describe('losing your last usable course locks you out of the app', () => {
+describe('an onboarded learner may empty and rebuild their workspace', () => {
   it('an onboarded learner with one real course can reach the app', async () => {
     await onboardWith('CHEE 314', 'Fluid Mechanics', 'Bernoulli equation');
     expect(await hasUsableCourse(db, userId)).toBe(true);
   });
 
-  it('refuses to archive the only course, which would revoke app access', async () => {
+  it('allows archiving the only course without reopening onboarding', async () => {
     const courseId = await onboardWith('CHEE 314', 'Fluid Mechanics', 'Bernoulli equation');
     expect(await hasUsableCourse(db, userId)).toBe(true);
 
-    // FIXED: updateCourse now refuses this, matching updateCourseMap's existing
-    // 'Keep at least one meaningful active concept.' guard one level down.
-    // Previously it succeeded and stranded the learner on /onboarding, with
-    // /courses — the only place to unarchive — also redirecting there.
-    await expect(updateCourse(db, userId, courseId, { archived: true })).rejects.toThrow(/lock you out/i);
-    expect(await hasUsableCourse(db, userId)).toBe(true);
+    await updateCourse(db, userId, courseId, { archived: true });
+    expect(await hasUsableCourse(db, userId)).toBe(false);
   });
 
   it('archiving one of two courses is fine and must keep working', async () => {

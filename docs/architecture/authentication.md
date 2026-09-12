@@ -28,11 +28,12 @@ returns `409 identity_conflict`; do not overwrite the binding manually.
 
 ## Onboarding boundary
 
-Authentication provisioning creates only the local `users` row. It does not
-enroll a new learner in seed courses. Middleware requires completed onboarding
-and a usable course before ordinary application pages; sign-in preserves a
-validated same-origin return path and the explicit demo-import handoff.
-`docs/product/onboarding.md` defines the atomic course/KC completion invariant.
+Authentication provisioning creates the local `users` row and the bundled
+default course as one recoverable bootstrap. Middleware requires completed
+onboarding before ordinary application pages; after that one-way transition,
+an empty workspace is handled by the courses UI rather than reopening setup.
+Sign-in preserves a validated same-origin return path and the explicit
+demo-import handoff. `docs/product/onboarding.md` defines that boundary.
 
 ## Retained account deletion
 

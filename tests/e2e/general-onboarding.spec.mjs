@@ -60,6 +60,14 @@ test.describe('isolated general onboarding journeys', () => {
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/courses\/learning-how-to-learn$/);
     await expect(page.getByRole('heading', { name: 'Learning How to Learn' })).toBeVisible();
+    const modules = page.getByRole('region', { name: 'Course modules' }).getByRole('heading', { level: 3 });
+    await expect(modules).toHaveText([
+      'How do you know you’ve learned something?',
+      'How do you access what you’ve learned?',
+      'What does learning feel like?',
+      'What helps you learn best?',
+      'How can you keep getting better at learning?',
+    ]);
   });
 
   test('mobile keyboard flow creates a non-academic course', async ({ page }) => {

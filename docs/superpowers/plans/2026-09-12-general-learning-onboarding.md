@@ -78,7 +78,7 @@ Commit: `Add course draft domain contract`
 ### Task 2: Relational course-domain persistence
 
 **Files:**
-- Create: `migrations/0014_general_learning_domain.sql`
+- Create: `migrations/0030_general_learning_domain.sql`
 - Modify: `migrations/meta/_journal.json`
 - Modify: `src/db/schema.ts`
 - Create: `src/lib/services/courseDraft.ts`

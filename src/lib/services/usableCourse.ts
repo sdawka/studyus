@@ -1,14 +1,9 @@
 // One definition of "does this learner have a course they can actually use".
 //
-// middleware.ts gates every authenticated page on hasUsableCourse(), so this
-// predicate decides whether a learner can reach the app at all rather than
-// being bounced to /onboarding. Three separate guards depend on agreeing about
-// it — onboarding completion, the course-map editor's "keep at least one
-// meaningful active concept" rule, and course archiving — so the placeholder
-// list lives here instead of being redeclared per module. It was previously
-// declared identically in both onboarding.ts and courseMap.ts; if those copies
-// had drifted, the map editor would have allowed a state the middleware treats
-// as locked out.
+// One shared definition keeps bootstrap and onboarding validation aligned on
+// whether an imported course contains learner-authored substance. Completed
+// onboarding is deliberately one-way, so this predicate does not prevent a
+// learner from later archiving every course or concept.
 import { and, eq, isNull, ne } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import { branches, courses, kcs } from '../../db/schema';
@@ -32,9 +27,8 @@ export async function getProvisionedDefaultCourse(db: Db, userId: string) {
  * Whether `userId` has at least one active, non-archived course carrying a
  * concept that is not a placeholder.
  *
- * `excludeCourseId` answers the forward-looking question "would the learner
- * still have one if this course went away", which is what the archive guard
- * needs before letting a course be archived.
+ * `excludeCourseId` supports callers that need to evaluate a workspace without
+ * a particular course; it is not an archive authorization rule.
  */
 export async function hasUsableCourse(
   db: Db,
