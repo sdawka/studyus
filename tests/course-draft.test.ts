@@ -36,8 +36,12 @@ export const validDraft = {
       kind: 'exercise',
       target_kc_ids: ['kc-evidence'],
       intended_processes: ['induction_refinement'],
-      produces_evidence: true,
-      diagnostic_misconception_ids: ['misconception-fluency'],
+      evidence: {
+        response_type: 'constructed_response',
+        target_kc_ids: ['kc-evidence'],
+        diagnostic_misconception_ids: ['misconception-fluency'],
+        scoring: { kind: 'rubric', details: { rubric: 'Evidence-based explanation' } },
+      },
       content: { prompt: 'Predict, then retrieve.' },
     },
   ],
@@ -70,6 +74,12 @@ describe('CourseDraftV2 schema', () => {
   ])('rejects an invalid %s enum', (_label, draft) => {
     expect(() => courseDraftV2Schema.parse(draft)).toThrow();
   });
+
+  it('rejects an evidence contract without a target', () => {
+    expect(() => courseDraftV2Schema.parse(invalidDraft((draft) => {
+      draft.experiences[0].evidence.target_kc_ids = [];
+    }))).toThrow();
+  });
 });
 
 function invalidDraft(mutator: (draft: typeof validDraft) => void): typeof validDraft {
@@ -81,16 +91,16 @@ function invalidDraft(mutator: (draft: typeof validDraft) => void): typeof valid
 describe('validateCourseDraft', () => {
   it.each([
     ['requires every outcome to target a KC', invalidDraft((draft) => { draft.outcomes[0].kc_ids = []; }), ['outcomes', 0, 'kc_ids']],
-    ['requires an example for every KC', invalidDraft((draft) => { draft.examples = []; }), ['kcs', 0]],
-    ['requires evidence-producing experience for every KC', invalidDraft((draft) => { draft.experiences[0].produces_evidence = false; }), ['kcs', 0]],
+    ['requires a non-empty example collection', invalidDraft((draft) => { draft.examples = []; }), ['examples']],
+    ['requires evidence-producing experience for every KC', invalidDraft((draft) => { delete draft.experiences[0].evidence; }), ['kcs', 0]],
     ['requires intended processes on an experience', invalidDraft((draft) => { draft.experiences[0].intended_processes = []; }), ['experiences', 0, 'intended_processes']],
     ['rejects dangling references', invalidDraft((draft) => { draft.references[0].kc_ids = ['missing-kc']; }), ['references', 0, 'kc_ids', 0]],
     [
       'keeps diagnostic misconceptions within experience targets',
       invalidDraft((draft) => {
-        draft.misconceptions[0].kc_ids = ['another-kc'];
+        draft.experiences[0].evidence.target_kc_ids = ['another-kc'];
       }),
-      ['experiences', 0, 'diagnostic_misconception_ids', 0],
+      ['experiences', 0, 'evidence', 'target_kc_ids', 0],
     ],
     [
       'rejects prerequisite cycles',
@@ -112,5 +122,65 @@ describe('validateCourseDraft', () => {
 
   it('returns the parsed draft', () => {
     expect(validateCourseDraft(validDraft).spec.title).toBe('Learning how to learn');
+  });
+
+  it('rejects an empty course aggregate', () => {
+    const draft = invalidDraft((value) => {
+      value.outcomes = [];
+      value.kcs = [];
+      value.examples = [];
+      value.experiences = [];
+      value.misconceptions = [];
+      value.references = [];
+    });
+    expect(() => validateCourseDraft(draft)).toThrow(CourseDraftValidationError);
+  });
+
+  it.each([
+    ['outcomes', 'kc_ids'],
+    ['kcs', 'prerequisite_kc_ids'],
+    ['examples', 'kc_ids'],
+    ['misconceptions', 'kc_ids'],
+    ['experiences', 'target_kc_ids'],
+    ['experiences', 'evidence.target_kc_ids'],
+    ['experiences', 'evidence.diagnostic_misconception_ids'],
+    ['references', 'kc_ids'],
+    ['references', 'example_ids'],
+    ['references', 'experience_ids'],
+    ['references', 'misconception_ids'],
+  ])('rejects duplicate persistence links in %s.%s', (collection, relationship) => {
+    const draft = invalidDraft((value) => {
+      const entity = value[collection as 'outcomes' | 'kcs' | 'examples' | 'misconceptions' | 'experiences' | 'references'][0] as Record<string, unknown>;
+      const [parent, child] = relationship.split('.');
+      if (child) {
+        const evidence = entity[parent] as Record<string, unknown>;
+        const ids = evidence[child] as string[];
+        evidence[child] = [ids[0] ?? 'kc-evidence', ids[0] ?? 'kc-evidence'];
+      } else {
+        const ids = entity[parent] as string[];
+        entity[parent] = [ids[0] ?? 'kc-evidence', ids[0] ?? 'kc-evidence'];
+      }
+    });
+    try {
+      validateCourseDraft(draft);
+      throw new Error('Expected duplicate links to be rejected');
+    } catch (error) {
+      expect(error).toBeInstanceOf(CourseDraftValidationError);
+      expect((error as CourseDraftValidationError).issues.some((issue) => issue.code === 'duplicate_link')).toBe(true);
+    }
+  });
+
+  it('normalizes schema failures to stable paths and codes', () => {
+    try {
+      validateCourseDraft({});
+      throw new Error('Expected schema validation to fail');
+    } catch (error) {
+      expect(error).toBeInstanceOf(CourseDraftValidationError);
+      expect((error as CourseDraftValidationError).issues[0]).toMatchObject({
+        path: ['schema_version'],
+        code: 'schema_invalid',
+        message: 'Invalid course draft value',
+      });
+    }
   });
 });
