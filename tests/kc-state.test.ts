@@ -17,6 +17,35 @@ function evidence(overrides: Record<string, unknown> = {}) {
 }
 
 describe('deriveKcState', () => {
+  it('keeps observations in history but excludes them from every mastery probe', () => {
+    const first = evidence({ id: 'first', ts: now - 3 * DAY });
+    const baseline = deriveKcState([first], { threshold: 0.5, minimum_evidence: 2, requires_retention: true, requires_transfer: true }, now);
+    const observation = evidence({
+      id: 'observation',
+      ts: now,
+      type: 'practice_done',
+      isInstructional: true,
+      payload: { observation: true, evidence_tags: ['retention', 'transfer'], correct: true },
+    });
+    const state = deriveKcState([first, observation], { threshold: 0.5, minimum_evidence: 2, requires_retention: true, requires_transfer: true }, now);
+
+    expect(state.evidence.map((event) => event.id)).toEqual(['first', 'observation']);
+    expect(state.evidenceIds).toEqual(['first']);
+    expect(state.confidence).toBe(baseline.confidence);
+    expect(state.lastUpdatedAt).toBe(baseline.lastUpdatedAt);
+    expect(state.hasRetentionEvidence).toBe(false);
+    expect(state.hasTransferEvidence).toBe(false);
+    expect(state.meetsMasteryRule).toBe(false);
+  });
+
+  it('normalizes diagnostic misconception IDs from response evidence', () => {
+    const state = deriveKcState([evidence({
+      id: 'wrong-probe',
+      payload: { correct: false, diagnostic_misconception_ids: ['misconception-one'] },
+    })], {}, now);
+    expect(state.activeMisconceptionIds).toEqual(['misconception-one']);
+  });
+
   it('excludes context facts from evidence IDs, freshness, and the mastery estimate', () => {
     const assessed = evidence({ id: 'assessed', ts: now - 2 * DAY });
     const state = deriveKcState([

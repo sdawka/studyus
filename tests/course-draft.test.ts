@@ -219,6 +219,22 @@ function invalidDraft(mutator: (draft: typeof validDraft) => void): typeof valid
 
 describe('validateCourseDraft', () => {
   it.each([
+    ['MCQ', { schema_version: 1, kind: 'mcq', prompt: 'Choose.', options: ['A', 'B'], correct_index: 1, explanation: 'B' }],
+    ['numeric', { schema_version: 1, kind: 'numeric', prompt: 'Calculate.', answer: { value: 2, unit: null, tolerance_pct: 0 }, solution: '2' }],
+    ['constructed', { schema_version: 1, kind: 'worked', prompt: 'Explain.', solution: 'A complete explanation.' }],
+  ])('rejects an evidence-free %s assessment experience', (_label, content) => {
+    const invalid = invalidDraft((draft) => {
+      draft.experiences.push({ ...draft.experiences[0], id: 'evidence-free', evidence: undefined as never, content: content as never });
+    });
+    expect(() => validateCourseDraft(invalid)).toThrow(CourseDraftValidationError);
+    try { validateCourseDraft(invalid); } catch (error) {
+      expect((error as CourseDraftValidationError).issues).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'missing_experience_evidence' }),
+      ]));
+    }
+  });
+
+  it.each([
     ['selected-response evidence on non-MCQ content', invalidDraft((draft) => { draft.experiences[0].evidence.response_type = 'selected_response'; })],
     ['MCQ content without selected-response evidence', invalidDraft((draft) => {
       draft.experiences[0].content = { schema_version: 1, kind: 'mcq', prompt: 'Choose.', options: ['A', 'B'], correct_index: 1, explanation: 'B' } as never;

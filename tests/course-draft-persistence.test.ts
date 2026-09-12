@@ -22,6 +22,7 @@ import {
 } from '../src/db/schema';
 import { getCourseAuthoringDomain, getCourseDomain, persistCourseDraft, reviseCourseDraft } from '../src/lib/services/courseDraft';
 import { respondToExperience } from '../src/lib/services/events';
+import { getKcState } from '../src/lib/services/mastery';
 import type { CourseDraftV2 } from '../src/lib/schemas/courseDraft';
 import { loadDefaultCourse } from '../src/lib/content/defaultCourse';
 
@@ -156,6 +157,13 @@ describe('course draft persistence', () => {
     expect(author.experiences[0].content).toMatchObject({ kind: 'mcq', correct_index: 1 });
     await respondToExperience(db, userId, author.experiences[0].id, { selected_index: 1 });
     expect((await db.select().from(events).where(eq(events.experienceId, author.experiences[0].id)))[0].payload).toMatchObject({ correct: true, selected_index: 1 });
+  });
+  it('activates persisted diagnostic misconceptions after a wrong scored response', async () => {
+    const saved = await persistCourseDraft(db, userId, draft);
+    const author = await getCourseAuthoringDomain(db, userId, saved.courseId);
+    await respondToExperience(db, userId, author.experiences[0].id, { selected_index: 0 });
+    const state = await getKcState(db, userId, author.experiences[0].evidence!.target_kc_ids[0]);
+    expect(state.activeMisconceptionIds).toEqual(author.experiences[0].evidence!.diagnostic_misconception_ids);
   });
   it('does not score a selected response whose evidence contract has no supported scorer', async () => {
     const unscored = structuredClone(draft) as CourseDraftV2;

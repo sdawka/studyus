@@ -103,7 +103,8 @@ misconceptions, experiences with intended processes and evidence contracts,
 references, and optional modules. Validation rejects unknown fields, dangling
 or duplicate links, prerequisite cycles, empty outcome/experience targets,
 active KCs without examples or evidence-producing experiences, oversized
-collections/relationships/strings/content, and invalid mastery-rule fields.
+collections/relationships/strings/content, interactive exercises without an
+evidence contract, and invalid mastery-rule fields.
 Relationship materialization is capped at 1,000 links before statements are built.
 MasteryRule fields are optional. Draft-local IDs are replaced with fresh
 learner-owned IDs; a persisted aggregate is detached from its source.
@@ -125,7 +126,8 @@ scored from the server-held answer. The server adds persisted selection-policy
 tags and diagnostic misconception IDs; the client cannot supply them. Rubric,
 observational, and otherwise unscored responses append system-authored practice
 or reading observations without claiming correctness, and observation-marked
-events remain in history but are excluded from mastery inference.
+events remain in history but are excluded from mastery, confidence, evidence
+minimums, retention/transfer, misconception, and mastery-rule inference.
 
 Model-backed generation is not implemented. Future template, extraction, or
 generation adapters must emit this same validated contract and may never write

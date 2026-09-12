@@ -57,7 +57,11 @@ function misconceptionIds(events: KcEvidence[]): string[] {
   for (const event of events) {
     const payload = (event.payload ?? {}) as Record<string, unknown>;
     const succeeded = evidenceSuccess(payload);
-    const candidates = [payload.misconception_id, ...(Array.isArray(payload.misconception_ids) ? payload.misconception_ids : [])];
+    const candidates = [
+      payload.misconception_id,
+      ...(Array.isArray(payload.misconception_ids) ? payload.misconception_ids : []),
+      ...(Array.isArray(payload.diagnostic_misconception_ids) ? payload.diagnostic_misconception_ids : []),
+    ];
     for (const candidate of candidates) {
       if (typeof candidate !== 'string') continue;
       if (succeeded === true || payload.misconception_repaired === true) ids.delete(candidate);
@@ -68,10 +72,14 @@ function misconceptionIds(events: KcEvidence[]): string[] {
 }
 
 export function deriveKcState(allEvents: KcEvidence[], rule: MasteryRule = {}, now: number = Date.now()): KcState {
-  const evidence = allEvents
+  const history = allEvents
     .filter((event) => event.isInstructional || event.isAssessment)
     .slice()
     .sort((left, right) => left.ts - right.ts || left.id.localeCompare(right.id));
+  const evidence = history.filter((event) => {
+    const payload = event.payload && typeof event.payload === 'object' ? event.payload as Record<string, unknown> : {};
+    return payload.observation !== true;
+  });
   const folded = foldMastery(evidence, now);
   const firstAt = evidence[0]?.ts ?? null;
   const threshold = Math.max(0, Math.min(1, rule.threshold ?? 0.8));
@@ -105,6 +113,6 @@ export function deriveKcState(allEvents: KcEvidence[], rule: MasteryRule = {}, n
     lastEvidenceSucceeded: latest ? evidenceSuccess(latest.payload) : null,
     lastExperienceId: latest?.experienceId ?? null,
     activeMisconceptionIds: misconceptionIds(evidence),
-    evidence,
+    evidence: history,
   };
 }

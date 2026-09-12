@@ -102,6 +102,13 @@ export function validateCourseDraft(draft: unknown): CourseDraftV2 {
     }
     validateLinks(experience.target_kc_ids, kcs, targetPath, 'KC', issues);
 
+    if (!experience.evidence && experience.kind === 'exercise') {
+      issues.push({
+        path: ['experiences', position, 'evidence'],
+        code: 'missing_experience_evidence',
+        message: 'Interactive exercise content requires an evidence contract',
+      });
+    }
     if (!experience.evidence) return;
     const evidenceTargetPath = ['experiences', position, 'evidence', 'target_kc_ids'];
     const evidenceDiagnosticPath = ['experiences', position, 'evidence', 'diagnostic_misconception_ids'];
