@@ -181,13 +181,19 @@ function scaffoldKind(value: unknown): typeof scaffolds.$inferInsert.kind {
   return typeof value === 'string' && allowed.has(value) ? value as typeof scaffolds.$inferInsert.kind : 'worked_example';
 }
 
-/** Validates and atomically deep-copies one complete learner-owned course aggregate. */
-export async function persistCourseDraft(
+export type CourseDraftBatch = {
+  statements: BatchItem<'sqlite'>[];
+  courseId: string;
+  slug: string;
+};
+
+/** Validates and builds the statements for one complete learner-owned course aggregate. */
+export async function buildCourseDraftStatements(
   db: Db,
   userId: string,
   input: CourseDraftV2,
   options: PersistCourseDraftOptions = {},
-): Promise<{ courseId: string; slug: string }> {
+): Promise<CourseDraftBatch> {
   const draft = validateCourseDraft(input);
   const allocateSlug = await courseSlugAllocator(db, userId);
   const courseId = crypto.randomUUID();
@@ -367,8 +373,19 @@ export async function persistCourseDraft(
     })));
   });
 
-  await runBatch(db, statements);
-  return { courseId, slug };
+  return { statements, courseId, slug };
+}
+
+/** Validates and atomically deep-copies one complete learner-owned course aggregate. */
+export async function persistCourseDraft(
+  db: Db,
+  userId: string,
+  input: CourseDraftV2,
+  options: PersistCourseDraftOptions = {},
+): Promise<{ courseId: string; slug: string }> {
+  const batch = await buildCourseDraftStatements(db, userId, input, options);
+  await runBatch(db, batch.statements);
+  return { courseId: batch.courseId, slug: batch.slug };
 }
 
 /** Returns an owner-scoped, browser-safe draft-shaped view with database IDs. */

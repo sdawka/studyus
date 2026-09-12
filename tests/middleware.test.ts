@@ -28,6 +28,7 @@ describe('Clerk local learner bridge', () => {
     expect(first.user.name).toBe('New Learner');
     expect(first.wasCreated).toBe(true);
     expect(second.wasCreated).toBe(false);
+    expect(first.defaultCourse?.id).toBe(second.defaultCourse?.id);
   });
 
   it('binds an imported Clerk external id to its existing local learner', async () => {
@@ -47,6 +48,7 @@ describe('Clerk local learner bridge', () => {
     expect(resolution.user.clerkUserId).toBe('user_clerk_imported');
     expect(resolution.user.email).toBe('legacy@example.test');
     expect(resolution.wasCreated).toBe(false);
+    expect(resolution.defaultCourse).toBeNull();
   });
 
   it('refuses to relink a local learner to another Clerk account', async () => {
