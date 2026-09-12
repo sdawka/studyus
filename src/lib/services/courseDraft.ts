@@ -44,8 +44,6 @@ const legacyKcType = {
   variable_variable: 'principle',
 } as const;
 
-const redactedKeys = new Set(['answer', 'answer_key', 'correct_answer', 'correct_index', 'correct_response', 'explanation', 'solution']);
-
 export class CourseDomainVersionError extends Error {
   constructor() {
     super('Course domain version is not supported');
@@ -53,18 +51,102 @@ export class CourseDomainVersionError extends Error {
   }
 }
 
-function browserSafe(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(browserSafe);
-  if (!value || typeof value !== 'object') return value;
-  return Object.fromEntries(
-    Object.entries(value as Record<string, unknown>)
-      .filter(([key]) => !redactedKeys.has(key.toLowerCase()))
-      .map(([key, child]) => [key, browserSafe(child)]),
-  );
-}
-
 function contentRecord(content: unknown): Record<string, unknown> {
   return content && typeof content === 'object' && !Array.isArray(content) ? content as Record<string, unknown> : {};
+}
+
+function safeString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function safeNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function safeStrings(value: unknown): string[] | undefined {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string') ? value : undefined;
+}
+
+function browserSafeExampleContent(value: unknown): unknown {
+  const content = contentRecord(value);
+  if (content.schema_version !== 1) return {};
+  if (content.kind === 'text') {
+    return { schema_version: 1, kind: 'text', ...(safeString(content.body) === undefined ? {} : { body: content.body }) };
+  }
+  if (content.kind === 'contrast') {
+    return {
+      schema_version: 1,
+      kind: 'contrast',
+      ...(safeString(content.positive) === undefined ? {} : { positive: content.positive }),
+      ...(safeString(content.negative) === undefined ? {} : { negative: content.negative }),
+    };
+  }
+  if (content.kind === 'generic') return { schema_version: 1, kind: 'generic', data: {} };
+  return {};
+}
+
+function browserSafeExperienceContent(value: unknown): unknown {
+  const content = contentRecord(value);
+  if (content.schema_version !== 1) return {};
+  if (content.kind === 'scaffold') {
+    return {
+      schema_version: 1,
+      kind: 'scaffold',
+      ...(safeString(content.scaffold_kind) === undefined ? {} : { scaffold_kind: content.scaffold_kind }),
+      ...(safeNumber(content.level) === undefined ? {} : { level: content.level }),
+      ...(safeString(content.title) === undefined ? {} : { title: content.title }),
+      ...(safeString(content.body) === undefined ? {} : { body: content.body }),
+    };
+  }
+  if (content.kind === 'mcq') {
+    return {
+      schema_version: 1,
+      kind: 'mcq',
+      ...(safeString(content.prompt) === undefined ? {} : { prompt: content.prompt }),
+      ...(safeStrings(content.options) === undefined ? {} : { options: content.options }),
+      ...(safeNumber(content.difficulty) === undefined ? {} : { difficulty: content.difficulty }),
+      ...(safeString(content.source) === undefined ? {} : { source: content.source }),
+    };
+  }
+  if (content.kind === 'numeric' || content.kind === 'worked') {
+    return {
+      schema_version: 1,
+      kind: content.kind,
+      ...(safeString(content.prompt) === undefined ? {} : { prompt: content.prompt }),
+      ...(safeNumber(content.difficulty) === undefined ? {} : { difficulty: content.difficulty }),
+      ...(safeString(content.source) === undefined ? {} : { source: content.source }),
+    };
+  }
+  if (content.kind === 'project') {
+    return {
+      schema_version: 1,
+      kind: 'project',
+      ...(safeString(content.title) === undefined ? {} : { title: content.title }),
+      ...(safeString(content.brief) === undefined ? {} : { brief: content.brief }),
+      ...(safeString(content.deliverable) === undefined ? {} : { deliverable: content.deliverable }),
+      ...(safeStrings(content.rubric) === undefined ? {} : { rubric: content.rubric }),
+    };
+  }
+  return {};
+}
+
+function browserSafeScoringDetails(kind: string, value: unknown): unknown {
+  const details = contentRecord(value);
+  if (details.schema_version !== 1) return {};
+  if (kind === 'binary' || kind === 'numeric') return { schema_version: 1 };
+  if (kind !== 'rubric' || !Array.isArray(details.criteria)) return {};
+  return {
+    schema_version: 1,
+    criteria: details.criteria.map((value) => {
+      const criterion = contentRecord(value);
+      return {
+        ...(safeString(criterion.id) === undefined ? {} : { id: criterion.id }),
+        ...(safeString(criterion.label) === undefined ? {} : { label: criterion.label }),
+        ...(safeString(criterion.description) === undefined ? {} : { description: criterion.description }),
+        ...(safeNumber(criterion.max_points) === undefined ? {} : { max_points: criterion.max_points }),
+      };
+    }),
+  };
 }
 
 function textValue(content: Record<string, unknown>, key: string, fallback: string): string {
@@ -348,7 +430,7 @@ export async function getCourseDomain(db: Db, userId: string, courseId: string) 
     examples: exampleRows.map((example) => ({
       id: example.id,
       kc_ids: by(exampleLinkRows, 'exampleId')(example.id).sort((a, b) => a.sortOrder - b.sortOrder).map((link) => link.kcId),
-      content: browserSafe(example.content),
+      content: browserSafeExampleContent(example.content),
     })),
     misconceptions: misconceptionRows.map((misconception) => ({
       id: misconception.id,
@@ -373,12 +455,14 @@ export async function getCourseDomain(db: Db, userId: string, courseId: string) 
             ...(experience.evidenceScoringKind ? {
               scoring: {
                 kind: experience.evidenceScoringKind,
-                ...(experience.evidenceScoringDetails === null ? {} : { details: browserSafe(experience.evidenceScoringDetails) }),
+                ...(experience.evidenceScoringDetails === null ? {} : {
+                  details: browserSafeScoringDetails(experience.evidenceScoringKind, experience.evidenceScoringDetails),
+                }),
               },
             } : {}),
           },
         } : {}),
-        content: browserSafe(experience.content),
+        content: browserSafeExperienceContent(experience.content),
       };
     }),
     references: referenceRows.map((reference) => ({

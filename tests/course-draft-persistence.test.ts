@@ -135,6 +135,43 @@ describe('course draft persistence', () => {
     expect(domain.experiences[0].content).not.toHaveProperty('explanation');
   });
 
+  it('projects only explicit browser-safe fields from structured and generic content', async () => {
+    const riskyDraft = structuredClone(draft) as CourseDraftV2;
+    riskyDraft.examples[0].content = {
+      schema_version: 1,
+      kind: 'generic',
+      data: {
+        publicText: 'This generic payload has no declared browser-safe fields.',
+        answerKey: 'secret',
+        nested: { correctIndex: 1, unknownSecret: 'nested secret' },
+      },
+    };
+    const saved = await persistCourseDraft(db, userId, riskyDraft);
+    const [savedExperience] = await db.select().from(experiences).where(eq(experiences.courseId, saved.courseId));
+    await env.DB.prepare('UPDATE experiences SET content = ? WHERE id = ?').bind(JSON.stringify({
+      schema_version: 1,
+      kind: 'mcq',
+      prompt: 'Safe prompt',
+      options: ['First', 'Second'],
+      difficulty: 2,
+      source: 'Safe source',
+      answerKey: 'secret',
+      correctIndex: 1,
+      nested: { unknownSecret: 'nested secret', answerKey: 'nested answer' },
+    }), savedExperience.id).run();
+
+    const domain = await getCourseDomain(db, userId, saved.courseId);
+    expect(domain.examples[0].content).toEqual({ schema_version: 1, kind: 'generic', data: {} });
+    expect(domain.experiences[0].content).toEqual({
+      schema_version: 1,
+      kind: 'mcq',
+      prompt: 'Safe prompt',
+      options: ['First', 'Second'],
+      difficulty: 2,
+      source: 'Safe source',
+    });
+  });
+
   it('deep-copies the complete aggregate with fresh relational IDs', async () => {
     const saved = await persistCourseDraft(db, userId, draft, {
       sourceTemplateKey: 'learning-how-to-learn',
@@ -219,6 +256,34 @@ describe('course draft persistence', () => {
     });
   });
 
+  it('rejects an owned course explicitly marked as domain V1', async () => {
+    const legacyCourseId = crypto.randomUUID();
+    await db.insert(courses).values({
+      id: legacyCourseId,
+      userId,
+      code: 'V1',
+      slug: `v1-${legacyCourseId}`,
+      title: 'V1 course',
+      domainVersion: 1,
+    });
+    await expect(getCourseDomain(db, userId, legacyCourseId)).rejects.toMatchObject({
+      name: 'CourseDomainVersionError',
+      message: 'Course domain version is not supported',
+    });
+  });
+
+  it('rejects a prerequisite edge whose endpoints belong to different learners', async () => {
+    const first = await persistCourseDraft(db, userId, draft);
+    const second = await persistCourseDraft(db, otherUserId, draft);
+    const own = await getCourseDomain(db, userId, first.courseId);
+    const foreign = await getCourseDomain(db, otherUserId, second.courseId);
+
+    await expect(env.DB.prepare(
+      'INSERT INTO kc_edges(id,kc_id,prereq_kc_id,relation,source,created_at) VALUES(?,?,?,?,?,?)',
+    ).bind(crypto.randomUUID(), own.kcs[0].id, foreign.kcs[0].id, 'prerequisite', 'seed', Date.now()).run())
+      .rejects.toThrow('kc edge owner mismatch');
+  });
+
   it('rejects every cross-course aggregate link at the database boundary', async () => {
     const first = await persistCourseDraft(db, userId, draft);
     const second = await persistCourseDraft(db, userId, { ...draft, spec: { ...draft.spec, title: 'Second course' } });
@@ -243,6 +308,34 @@ describe('course draft persistence', () => {
     for (const [sql, bindings] of attempts) {
       await expect(env.DB.prepare(sql).bind(...bindings).run()).rejects.toThrow(/FOREIGN KEY constraint failed/);
     }
+  });
+
+  it('rejects cross-course scaffold, exercise, and event experience links', async () => {
+    const first = await persistCourseDraft(db, userId, draft);
+    const second = await persistCourseDraft(db, userId, { ...draft, spec: { ...draft.spec, title: 'Trigger course' } });
+    const own = await getCourseDomain(db, userId, first.courseId);
+    const foreignExperienceId = crypto.randomUUID();
+    await db.insert(experiences).values({
+      id: foreignExperienceId,
+      courseId: second.courseId,
+      kind: 'project',
+      intendedProcesses: ['understanding_sensemaking'],
+      content: { schema_version: 1, kind: 'project', title: 'Foreign', brief: 'Foreign' },
+    });
+    const now = Date.now();
+
+    await expect(env.DB.prepare(
+      'INSERT INTO scaffolds(id,kc_id,experience_id,kind,level,title,body,details,sort_order,source,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+    ).bind(crypto.randomUUID(), own.kcs[0].id, foreignExperienceId, 'retrieval_prompt', 1, 'Mismatch', 'Mismatch', '{}', 0, 'user', now).run())
+      .rejects.toThrow('scaffold experience course mismatch');
+    await expect(env.DB.prepare(
+      'INSERT INTO exercises(id,kc_id,experience_id,slug,kind,difficulty,prompt,details,source,origin,sort_order,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
+    ).bind(crypto.randomUUID(), own.kcs[0].id, foreignExperienceId, `mismatch-${crypto.randomUUID()}`, 'worked', 2, 'Mismatch', '{}', 'test', 'user', 0, now).run())
+      .rejects.toThrow('exercise experience course mismatch');
+    await expect(env.DB.prepare(
+      'INSERT INTO events(id,user_id,ts,type,course_id,experience_id,payload,source,created_at) VALUES(?,?,?,?,?,?,?,?,?)',
+    ).bind(crypto.randomUUID(), userId, now, 'mismatch', first.courseId, foreignExperienceId, '{}', 'system', now).run())
+      .rejects.toThrow('event experience course mismatch');
   });
 
   it('rolls back when a late module link statement fails', async () => {

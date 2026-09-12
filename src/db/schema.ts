@@ -260,10 +260,10 @@ export const capabilityKcs = sqliteTable(
   ],
 );
 
-// Prerequisite edges between KCs: (kcId) depends on (prereqKcId). No
-// user_id — ownership flows through kcId -> kcs.courseId -> courses.userId,
-// same as assessment_kcs. May cross courses (a cross-course prereq ref in
-// content.json), so no single course_id column either.
+// Prerequisite edges between KCs: (kcId) depends on (prereqKcId). Ownership
+// flows through kcId -> kcs.courseId -> courses.userId. Migration 0014
+// enforces equal endpoint owners with insert/update triggers, while preserving
+// supported cross-course prerequisites within one learner account.
 export const kcEdges = sqliteTable(
   'kc_edges',
   {

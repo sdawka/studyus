@@ -24,6 +24,28 @@ ALTER TABLE `kcs` ADD `mastery_rule` text DEFAULT '{}' NOT NULL;
 --> statement-breakpoint
 CREATE UNIQUE INDEX `kcs_id_course_unique` ON `kcs` (`id`,`course_id`);
 --> statement-breakpoint
+CREATE TRIGGER `kc_edges_same_owner_insert` BEFORE INSERT ON `kc_edges`
+WHEN NOT EXISTS (
+	SELECT 1 FROM `kcs` AS `dependent_kc`
+	JOIN `courses` AS `dependent_course` ON `dependent_course`.`id` = `dependent_kc`.`course_id`
+	JOIN `kcs` AS `prerequisite_kc` ON `prerequisite_kc`.`id` = NEW.`prereq_kc_id`
+	JOIN `courses` AS `prerequisite_course` ON `prerequisite_course`.`id` = `prerequisite_kc`.`course_id`
+	WHERE `dependent_kc`.`id` = NEW.`kc_id`
+	AND `dependent_course`.`user_id` = `prerequisite_course`.`user_id`
+)
+BEGIN SELECT RAISE(ABORT, 'kc edge owner mismatch'); END;
+--> statement-breakpoint
+CREATE TRIGGER `kc_edges_same_owner_update` BEFORE UPDATE OF `kc_id`,`prereq_kc_id` ON `kc_edges`
+WHEN NOT EXISTS (
+	SELECT 1 FROM `kcs` AS `dependent_kc`
+	JOIN `courses` AS `dependent_course` ON `dependent_course`.`id` = `dependent_kc`.`course_id`
+	JOIN `kcs` AS `prerequisite_kc` ON `prerequisite_kc`.`id` = NEW.`prereq_kc_id`
+	JOIN `courses` AS `prerequisite_course` ON `prerequisite_course`.`id` = `prerequisite_kc`.`course_id`
+	WHERE `dependent_kc`.`id` = NEW.`kc_id`
+	AND `dependent_course`.`user_id` = `prerequisite_course`.`user_id`
+)
+BEGIN SELECT RAISE(ABORT, 'kc edge owner mismatch'); END;
+--> statement-breakpoint
 ALTER TABLE `misconceptions` ADD `course_id` text REFERENCES `courses`(`id`) ON DELETE CASCADE;
 --> statement-breakpoint
 CREATE UNIQUE INDEX `misconceptions_id_course_unique` ON `misconceptions` (`id`,`course_id`);
