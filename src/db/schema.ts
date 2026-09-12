@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { sqliteTable, text, integer, real, index, primaryKey, uniqueIndex, type AnySQLiteColumn, check } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, index, primaryKey, uniqueIndex, foreignKey, type AnySQLiteColumn, check } from 'drizzle-orm/sqlite-core';
 import { TASK_TYPES } from '../lib/schemas/tasks';
 
 // Convention: text ids via crypto.randomUUID(); integer timestamps in epoch ms.
@@ -141,6 +141,7 @@ export const courses = sqliteTable(
     sourceTemplateKey: text('source_template_key'),
     sourceTemplateVersion: text('source_template_version'),
     bootstrapKey: text('bootstrap_key'),
+    domainVersion: integer('domain_version'),
     createdAt: createdAt(),
   },
   (table) => [
@@ -211,6 +212,7 @@ export const kcs = sqliteTable(
   (table) => [
     index('kcs_course_id_idx').on(table.courseId),
     uniqueIndex('kcs_course_slug_unique').on(table.courseId, table.slug),
+    uniqueIndex('kcs_id_course_unique').on(table.id, table.courseId),
     check('kcs_revision_nonnegative', sql`${table.revision} >= 0`),
   ],
 );
@@ -286,6 +288,7 @@ export const misconceptions = sqliteTable(
   'misconceptions',
   {
     id: id(),
+    courseId: text('course_id').references(() => courses.id, { onDelete: 'cascade' }),
     kcId: text('kc_id')
       .notNull()
       .references(() => kcs.id, { onDelete: 'cascade' }),
@@ -299,7 +302,10 @@ export const misconceptions = sqliteTable(
     retiredAt: integer('retired_at'),
     createdAt: createdAt(),
   },
-  (table) => [uniqueIndex('misconceptions_kc_slug_unique').on(table.kcId, table.slug)],
+  (table) => [
+    uniqueIndex('misconceptions_kc_slug_unique').on(table.kcId, table.slug),
+    uniqueIndex('misconceptions_id_course_unique').on(table.id, table.courseId),
+  ],
 );
 
 export const experiences = sqliteTable(
@@ -323,7 +329,7 @@ export const experiences = sqliteTable(
     sortOrder: integer('sort_order').notNull().default(0),
     createdAt: createdAt(),
   },
-  (table) => [index('experiences_course_id_idx').on(table.courseId)],
+  (table) => [index('experiences_course_id_idx').on(table.courseId), uniqueIndex('experiences_id_course_unique').on(table.id, table.courseId)],
 );
 
 // KLI-matched instructional scaffolds for a KC (worked examples, retrieval
@@ -423,7 +429,7 @@ export const courseOutcomes = sqliteTable(
     sortOrder: integer('sort_order').notNull().default(0),
     createdAt: createdAt(),
   },
-  (table) => [index('course_outcomes_course_id_idx').on(table.courseId)],
+  (table) => [index('course_outcomes_course_id_idx').on(table.courseId), uniqueIndex('course_outcomes_id_course_unique').on(table.id, table.courseId)],
 );
 
 export const outcomeKcs = sqliteTable(
@@ -431,10 +437,16 @@ export const outcomeKcs = sqliteTable(
   {
     outcomeId: text('outcome_id').notNull().references(() => courseOutcomes.id, { onDelete: 'cascade' }),
     kcId: text('kc_id').notNull().references(() => kcs.id, { onDelete: 'cascade' }),
+    courseId: text('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }),
     sortOrder: integer('sort_order').notNull().default(0),
     createdAt: createdAt(),
   },
-  (table) => [primaryKey({ columns: [table.outcomeId, table.kcId] }), index('outcome_kcs_kc_id_idx').on(table.kcId)],
+  (table) => [
+    primaryKey({ columns: [table.outcomeId, table.kcId] }),
+    foreignKey({ columns: [table.outcomeId, table.courseId], foreignColumns: [courseOutcomes.id, courseOutcomes.courseId] }).onDelete('cascade'),
+    foreignKey({ columns: [table.kcId, table.courseId], foreignColumns: [kcs.id, kcs.courseId] }).onDelete('cascade'),
+    index('outcome_kcs_kc_id_idx').on(table.kcId),
+  ],
 );
 
 export const kcExamples = sqliteTable(
@@ -446,7 +458,7 @@ export const kcExamples = sqliteTable(
     sortOrder: integer('sort_order').notNull().default(0),
     createdAt: createdAt(),
   },
-  (table) => [index('kc_examples_course_id_idx').on(table.courseId)],
+  (table) => [index('kc_examples_course_id_idx').on(table.courseId), uniqueIndex('kc_examples_id_course_unique').on(table.id, table.courseId)],
 );
 
 export const exampleKcs = sqliteTable(
@@ -454,10 +466,16 @@ export const exampleKcs = sqliteTable(
   {
     exampleId: text('example_id').notNull().references(() => kcExamples.id, { onDelete: 'cascade' }),
     kcId: text('kc_id').notNull().references(() => kcs.id, { onDelete: 'cascade' }),
+    courseId: text('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }),
     sortOrder: integer('sort_order').notNull().default(0),
     createdAt: createdAt(),
   },
-  (table) => [primaryKey({ columns: [table.exampleId, table.kcId] }), index('example_kcs_kc_id_idx').on(table.kcId)],
+  (table) => [
+    primaryKey({ columns: [table.exampleId, table.kcId] }),
+    foreignKey({ columns: [table.exampleId, table.courseId], foreignColumns: [kcExamples.id, kcExamples.courseId] }).onDelete('cascade'),
+    foreignKey({ columns: [table.kcId, table.courseId], foreignColumns: [kcs.id, kcs.courseId] }).onDelete('cascade'),
+    index('example_kcs_kc_id_idx').on(table.kcId),
+  ],
 );
 
 export const misconceptionKcs = sqliteTable(
@@ -465,11 +483,14 @@ export const misconceptionKcs = sqliteTable(
   {
     misconceptionId: text('misconception_id').notNull().references(() => misconceptions.id, { onDelete: 'cascade' }),
     kcId: text('kc_id').notNull().references(() => kcs.id, { onDelete: 'cascade' }),
+    courseId: text('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }),
     sortOrder: integer('sort_order').notNull().default(0),
     createdAt: createdAt(),
   },
   (table) => [
     primaryKey({ columns: [table.misconceptionId, table.kcId] }),
+    foreignKey({ columns: [table.misconceptionId, table.courseId], foreignColumns: [misconceptions.id, misconceptions.courseId] }).onDelete('cascade'),
+    foreignKey({ columns: [table.kcId, table.courseId], foreignColumns: [kcs.id, kcs.courseId] }).onDelete('cascade'),
     index('misconception_kcs_kc_id_idx').on(table.kcId),
   ],
 );
@@ -479,11 +500,17 @@ export const experienceKcs = sqliteTable(
   {
     experienceId: text('experience_id').notNull().references(() => experiences.id, { onDelete: 'cascade' }),
     kcId: text('kc_id').notNull().references(() => kcs.id, { onDelete: 'cascade' }),
+    courseId: text('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }),
     isEvidenceTarget: integer('is_evidence_target', { mode: 'boolean' }).notNull().default(false),
     sortOrder: integer('sort_order').notNull().default(0),
     createdAt: createdAt(),
   },
-  (table) => [primaryKey({ columns: [table.experienceId, table.kcId] }), index('experience_kcs_kc_id_idx').on(table.kcId)],
+  (table) => [
+    primaryKey({ columns: [table.experienceId, table.kcId] }),
+    foreignKey({ columns: [table.experienceId, table.courseId], foreignColumns: [experiences.id, experiences.courseId] }).onDelete('cascade'),
+    foreignKey({ columns: [table.kcId, table.courseId], foreignColumns: [kcs.id, kcs.courseId] }).onDelete('cascade'),
+    index('experience_kcs_kc_id_idx').on(table.kcId),
+  ],
 );
 
 export const experienceMisconceptions = sqliteTable(
@@ -491,11 +518,14 @@ export const experienceMisconceptions = sqliteTable(
   {
     experienceId: text('experience_id').notNull().references(() => experiences.id, { onDelete: 'cascade' }),
     misconceptionId: text('misconception_id').notNull().references(() => misconceptions.id, { onDelete: 'cascade' }),
+    courseId: text('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }),
     sortOrder: integer('sort_order').notNull().default(0),
     createdAt: createdAt(),
   },
   (table) => [
     primaryKey({ columns: [table.experienceId, table.misconceptionId] }),
+    foreignKey({ columns: [table.experienceId, table.courseId], foreignColumns: [experiences.id, experiences.courseId] }).onDelete('cascade'),
+    foreignKey({ columns: [table.misconceptionId, table.courseId], foreignColumns: [misconceptions.id, misconceptions.courseId] }).onDelete('cascade'),
     index('experience_misconceptions_misconception_id_idx').on(table.misconceptionId),
   ],
 );
@@ -510,7 +540,7 @@ export const courseReferences = sqliteTable(
     sortOrder: integer('sort_order').notNull().default(0),
     createdAt: createdAt(),
   },
-  (table) => [index('course_references_course_id_idx').on(table.courseId)],
+  (table) => [index('course_references_course_id_idx').on(table.courseId), uniqueIndex('course_references_id_course_unique').on(table.id, table.courseId)],
 );
 
 export const referenceKcs = sqliteTable(
@@ -518,8 +548,14 @@ export const referenceKcs = sqliteTable(
   {
     referenceId: text('reference_id').notNull().references(() => courseReferences.id, { onDelete: 'cascade' }),
     kcId: text('kc_id').notNull().references(() => kcs.id, { onDelete: 'cascade' }),
+    courseId: text('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }),
   },
-  (table) => [primaryKey({ columns: [table.referenceId, table.kcId] }), index('reference_kcs_kc_id_idx').on(table.kcId)],
+  (table) => [
+    primaryKey({ columns: [table.referenceId, table.kcId] }),
+    foreignKey({ columns: [table.referenceId, table.courseId], foreignColumns: [courseReferences.id, courseReferences.courseId] }).onDelete('cascade'),
+    foreignKey({ columns: [table.kcId, table.courseId], foreignColumns: [kcs.id, kcs.courseId] }).onDelete('cascade'),
+    index('reference_kcs_kc_id_idx').on(table.kcId),
+  ],
 );
 
 export const referenceExamples = sqliteTable(
@@ -527,9 +563,12 @@ export const referenceExamples = sqliteTable(
   {
     referenceId: text('reference_id').notNull().references(() => courseReferences.id, { onDelete: 'cascade' }),
     exampleId: text('example_id').notNull().references(() => kcExamples.id, { onDelete: 'cascade' }),
+    courseId: text('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }),
   },
   (table) => [
     primaryKey({ columns: [table.referenceId, table.exampleId] }),
+    foreignKey({ columns: [table.referenceId, table.courseId], foreignColumns: [courseReferences.id, courseReferences.courseId] }).onDelete('cascade'),
+    foreignKey({ columns: [table.exampleId, table.courseId], foreignColumns: [kcExamples.id, kcExamples.courseId] }).onDelete('cascade'),
     index('reference_examples_example_id_idx').on(table.exampleId),
   ],
 );
@@ -539,9 +578,12 @@ export const referenceExperiences = sqliteTable(
   {
     referenceId: text('reference_id').notNull().references(() => courseReferences.id, { onDelete: 'cascade' }),
     experienceId: text('experience_id').notNull().references(() => experiences.id, { onDelete: 'cascade' }),
+    courseId: text('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }),
   },
   (table) => [
     primaryKey({ columns: [table.referenceId, table.experienceId] }),
+    foreignKey({ columns: [table.referenceId, table.courseId], foreignColumns: [courseReferences.id, courseReferences.courseId] }).onDelete('cascade'),
+    foreignKey({ columns: [table.experienceId, table.courseId], foreignColumns: [experiences.id, experiences.courseId] }).onDelete('cascade'),
     index('reference_experiences_experience_id_idx').on(table.experienceId),
   ],
 );
@@ -551,9 +593,12 @@ export const referenceMisconceptions = sqliteTable(
   {
     referenceId: text('reference_id').notNull().references(() => courseReferences.id, { onDelete: 'cascade' }),
     misconceptionId: text('misconception_id').notNull().references(() => misconceptions.id, { onDelete: 'cascade' }),
+    courseId: text('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }),
   },
   (table) => [
     primaryKey({ columns: [table.referenceId, table.misconceptionId] }),
+    foreignKey({ columns: [table.referenceId, table.courseId], foreignColumns: [courseReferences.id, courseReferences.courseId] }).onDelete('cascade'),
+    foreignKey({ columns: [table.misconceptionId, table.courseId], foreignColumns: [misconceptions.id, misconceptions.courseId] }).onDelete('cascade'),
     index('reference_misconceptions_misconception_id_idx').on(table.misconceptionId),
   ],
 );
@@ -567,7 +612,7 @@ export const courseModules = sqliteTable(
     sortOrder: integer('sort_order').notNull().default(0),
     createdAt: createdAt(),
   },
-  (table) => [index('course_modules_course_id_idx').on(table.courseId)],
+  (table) => [index('course_modules_course_id_idx').on(table.courseId), uniqueIndex('course_modules_id_course_unique').on(table.id, table.courseId)],
 );
 
 export const moduleOutcomes = sqliteTable(
@@ -575,9 +620,14 @@ export const moduleOutcomes = sqliteTable(
   {
     moduleId: text('module_id').notNull().references(() => courseModules.id, { onDelete: 'cascade' }),
     outcomeId: text('outcome_id').notNull().references(() => courseOutcomes.id, { onDelete: 'cascade' }),
+    courseId: text('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }),
     sortOrder: integer('sort_order').notNull().default(0),
   },
-  (table) => [primaryKey({ columns: [table.moduleId, table.outcomeId] })],
+  (table) => [
+    primaryKey({ columns: [table.moduleId, table.outcomeId] }),
+    foreignKey({ columns: [table.moduleId, table.courseId], foreignColumns: [courseModules.id, courseModules.courseId] }).onDelete('cascade'),
+    foreignKey({ columns: [table.outcomeId, table.courseId], foreignColumns: [courseOutcomes.id, courseOutcomes.courseId] }).onDelete('cascade'),
+  ],
 );
 
 export const moduleKcs = sqliteTable(
@@ -585,9 +635,14 @@ export const moduleKcs = sqliteTable(
   {
     moduleId: text('module_id').notNull().references(() => courseModules.id, { onDelete: 'cascade' }),
     kcId: text('kc_id').notNull().references(() => kcs.id, { onDelete: 'cascade' }),
+    courseId: text('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }),
     sortOrder: integer('sort_order').notNull().default(0),
   },
-  (table) => [primaryKey({ columns: [table.moduleId, table.kcId] })],
+  (table) => [
+    primaryKey({ columns: [table.moduleId, table.kcId] }),
+    foreignKey({ columns: [table.moduleId, table.courseId], foreignColumns: [courseModules.id, courseModules.courseId] }).onDelete('cascade'),
+    foreignKey({ columns: [table.kcId, table.courseId], foreignColumns: [kcs.id, kcs.courseId] }).onDelete('cascade'),
+  ],
 );
 
 export const moduleExperiences = sqliteTable(
@@ -595,9 +650,14 @@ export const moduleExperiences = sqliteTable(
   {
     moduleId: text('module_id').notNull().references(() => courseModules.id, { onDelete: 'cascade' }),
     experienceId: text('experience_id').notNull().references(() => experiences.id, { onDelete: 'cascade' }),
+    courseId: text('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }),
     sortOrder: integer('sort_order').notNull().default(0),
   },
-  (table) => [primaryKey({ columns: [table.moduleId, table.experienceId] })],
+  (table) => [
+    primaryKey({ columns: [table.moduleId, table.experienceId] }),
+    foreignKey({ columns: [table.moduleId, table.courseId], foreignColumns: [courseModules.id, courseModules.courseId] }).onDelete('cascade'),
+    foreignKey({ columns: [table.experienceId, table.courseId], foreignColumns: [experiences.id, experiences.courseId] }).onDelete('cascade'),
+  ],
 );
 
 // ---------------------------------------------------------------------------

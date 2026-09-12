@@ -44,7 +44,14 @@ const legacyKcType = {
   variable_variable: 'principle',
 } as const;
 
-const redactedKeys = new Set(['answer', 'answer_key', 'correct_answer', 'correct_index', 'solution']);
+const redactedKeys = new Set(['answer', 'answer_key', 'correct_answer', 'correct_index', 'correct_response', 'explanation', 'solution']);
+
+export class CourseDomainVersionError extends Error {
+  constructor() {
+    super('Course domain version is not supported');
+    this.name = 'CourseDomainVersionError';
+  }
+}
 
 function browserSafe(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(browserSafe);
@@ -127,6 +134,7 @@ export async function persistCourseDraft(
     sourceTemplateKey: options.sourceTemplateKey,
     sourceTemplateVersion: options.sourceTemplateVersion,
     bootstrapKey: options.bootstrapKey,
+    domainVersion: 2,
   }));
   statements.push(db.insert(branches).values({ id: branchId, courseId, name: 'General', sortOrder: 0 }));
 
@@ -157,7 +165,7 @@ export async function persistCourseDraft(
     const outcomeId = mapped(outcomeIds, outcome.id);
     statements.push(db.insert(courseOutcomes).values({ id: outcomeId, courseId, title: outcome.title, description: outcome.description, sortOrder }));
     outcome.kc_ids.forEach((kcId, linkOrder) => statements.push(db.insert(outcomeKcs).values({
-      outcomeId, kcId: mapped(kcIds, kcId), sortOrder: linkOrder,
+      outcomeId, kcId: mapped(kcIds, kcId), courseId, sortOrder: linkOrder,
     })));
   });
 
@@ -165,7 +173,7 @@ export async function persistCourseDraft(
     const exampleId = mapped(exampleIds, example.id);
     statements.push(db.insert(kcExamples).values({ id: exampleId, courseId, content: example.content, sortOrder }));
     example.kc_ids.forEach((kcId, linkOrder) => statements.push(db.insert(exampleKcs).values({
-      exampleId, kcId: mapped(kcIds, kcId), sortOrder: linkOrder,
+      exampleId, kcId: mapped(kcIds, kcId), courseId, sortOrder: linkOrder,
     })));
   });
 
@@ -173,6 +181,7 @@ export async function persistCourseDraft(
     const misconceptionId = mapped(misconceptionIds, misconception.id);
     statements.push(db.insert(misconceptions).values({
       id: misconceptionId,
+      courseId,
       kcId: mapped(kcIds, misconception.kc_ids[0]),
       slug: `draft-${sortOrder + 1}-${misconceptionId.slice(0, 8)}`,
       name: misconception.name,
@@ -183,7 +192,7 @@ export async function persistCourseDraft(
       source: 'seed',
     }));
     misconception.kc_ids.forEach((kcId, linkOrder) => statements.push(db.insert(misconceptionKcs).values({
-      misconceptionId, kcId: mapped(kcIds, kcId), sortOrder: linkOrder,
+      misconceptionId, kcId: mapped(kcIds, kcId), courseId, sortOrder: linkOrder,
     })));
   });
 
@@ -204,6 +213,7 @@ export async function persistCourseDraft(
     experience.target_kc_ids.forEach((kcId, linkOrder) => statements.push(db.insert(experienceKcs).values({
       experienceId,
       kcId: mapped(kcIds, kcId),
+      courseId,
       isEvidenceTarget: evidenceTargets.has(kcId),
       sortOrder: linkOrder,
     })));
@@ -211,6 +221,7 @@ export async function persistCourseDraft(
       statements.push(db.insert(experienceMisconceptions).values({
         experienceId,
         misconceptionId: mapped(misconceptionIds, misconceptionId),
+        courseId,
         sortOrder: linkOrder,
       }));
     });
@@ -222,7 +233,7 @@ export async function persistCourseDraft(
         id: crypto.randomUUID(),
         experienceId,
         kcId: primaryKcId,
-        kind: scaffoldKind(content.kind),
+        kind: scaffoldKind(content.scaffold_kind),
         level: intValue(content, 'level', 1),
         title: textValue(content, 'title', `Learning experience ${sortOrder + 1}`),
         body: textValue(content, 'body', JSON.stringify(experience.content)),
@@ -252,11 +263,11 @@ export async function persistCourseDraft(
     statements.push(db.insert(courseReferences).values({
       id: referenceId, courseId, citation: reference.citation, url: reference.url, sortOrder,
     }));
-    reference.kc_ids.forEach((kcId) => statements.push(db.insert(referenceKcs).values({ referenceId, kcId: mapped(kcIds, kcId) })));
-    reference.example_ids.forEach((exampleId) => statements.push(db.insert(referenceExamples).values({ referenceId, exampleId: mapped(exampleIds, exampleId) })));
-    reference.experience_ids.forEach((experienceId) => statements.push(db.insert(referenceExperiences).values({ referenceId, experienceId: mapped(experienceIds, experienceId) })));
+    reference.kc_ids.forEach((kcId) => statements.push(db.insert(referenceKcs).values({ referenceId, kcId: mapped(kcIds, kcId), courseId })));
+    reference.example_ids.forEach((exampleId) => statements.push(db.insert(referenceExamples).values({ referenceId, exampleId: mapped(exampleIds, exampleId), courseId })));
+    reference.experience_ids.forEach((experienceId) => statements.push(db.insert(referenceExperiences).values({ referenceId, experienceId: mapped(experienceIds, experienceId), courseId })));
     reference.misconception_ids.forEach((misconceptionId) => statements.push(db.insert(referenceMisconceptions).values({
-      referenceId, misconceptionId: mapped(misconceptionIds, misconceptionId),
+      referenceId, misconceptionId: mapped(misconceptionIds, misconceptionId), courseId,
     })));
   });
 
@@ -264,13 +275,13 @@ export async function persistCourseDraft(
     const moduleId = mapped(moduleIds, module.id);
     statements.push(db.insert(courseModules).values({ id: moduleId, courseId, title: module.title, sortOrder: module.sort_order }));
     module.outcome_ids.forEach((outcomeId, sortOrder) => statements.push(db.insert(moduleOutcomes).values({
-      moduleId, outcomeId: mapped(outcomeIds, outcomeId), sortOrder,
+      moduleId, outcomeId: mapped(outcomeIds, outcomeId), courseId, sortOrder,
     })));
     module.kc_ids.forEach((kcId, sortOrder) => statements.push(db.insert(moduleKcs).values({
-      moduleId, kcId: mapped(kcIds, kcId), sortOrder,
+      moduleId, kcId: mapped(kcIds, kcId), courseId, sortOrder,
     })));
     module.experience_ids.forEach((experienceId, sortOrder) => statements.push(db.insert(moduleExperiences).values({
-      moduleId, experienceId: mapped(experienceIds, experienceId), sortOrder,
+      moduleId, experienceId: mapped(experienceIds, experienceId), courseId, sortOrder,
     })));
   });
 
@@ -281,6 +292,7 @@ export async function persistCourseDraft(
 /** Returns an owner-scoped, browser-safe draft-shaped view with database IDs. */
 export async function getCourseDomain(db: Db, userId: string, courseId: string) {
   const course = await requireOwnedCourse(db, userId, courseId);
+  if (course.domainVersion !== 2) throw new CourseDomainVersionError();
   const [outcomeRows, kcRows, edgeRows, exampleRows, exampleLinkRows, misconceptionRows, misconceptionLinkRows,
     experienceRows, experienceLinkRows, diagnosticRows, referenceRows, referenceKcRows, referenceExampleRows,
     referenceExperienceRows, referenceMisconceptionRows, moduleRows, moduleOutcomeRows, moduleKcRows, moduleExperienceRows] = await Promise.all([

@@ -20,7 +20,17 @@ export const validDraft = {
       prerequisite_kc_ids: [],
     },
   ],
-  examples: [{ id: 'example-evidence', kc_ids: ['kc-evidence'], content: { contrast: 'Recall versus rereading' } }],
+  examples: [{
+    id: 'example-evidence',
+    kc_ids: ['kc-evidence'],
+    content: {
+      schema_version: 1,
+      kind: 'contrast' as const,
+      positive: 'Recall an answer before checking it.',
+      negative: 'Reread until the answer feels familiar.',
+      explanation: 'Retrieval provides stronger evidence than familiarity.',
+    },
+  }],
   misconceptions: [
     {
       id: 'misconception-fluency',
@@ -40,9 +50,21 @@ export const validDraft = {
         response_type: 'constructed_response',
         target_kc_ids: ['kc-evidence'],
         diagnostic_misconception_ids: ['misconception-fluency'],
-        scoring: { kind: 'rubric', details: { rubric: 'Evidence-based explanation' } },
+        scoring: {
+          kind: 'rubric' as const,
+          details: {
+            schema_version: 1,
+            criteria: [{ id: 'evidence', label: 'Uses evidence', description: 'Names delayed retrieval as evidence.' }],
+          },
+        },
       },
-      content: { prompt: 'Predict, then retrieve.' },
+      content: {
+        schema_version: 1,
+        kind: 'worked' as const,
+        prompt: 'Predict, then retrieve.',
+        solution: 'Compare the prediction with delayed retrieval.',
+        source: 'Course author',
+      },
     },
   ],
   references: [
@@ -79,6 +101,60 @@ describe('CourseDraftV2 schema', () => {
     expect(() => courseDraftV2Schema.parse(invalidDraft((draft) => {
       draft.experiences[0].evidence.target_kc_ids = [];
     }))).toThrow();
+  });
+
+  it.each([
+    ['example content', invalidDraft((draft) => { draft.examples[0].content = { contrast: 'unversioned' } as never; })],
+    ['experience content', invalidDraft((draft) => { draft.experiences[0].content = { prompt: 'unversioned' } as never; })],
+    ['scoring details', invalidDraft((draft) => {
+      draft.experiences[0].evidence.scoring!.details = { rubric: 'unversioned' } as never;
+    })],
+  ])('rejects unversioned %s', (_label, invalid) => {
+    expect(() => courseDraftV2Schema.parse(invalid)).toThrow();
+  });
+
+  it('accepts strict scaffold, project, and explicitly generic versioned content', () => {
+    const withVariants = invalidDraft((value) => {
+      value.examples[0].content = { schema_version: 1, kind: 'generic', data: { caption: 'A bounded extension' } } as never;
+      value.experiences.push(
+        {
+          id: 'experience-scaffold',
+          kind: 'scaffold',
+          target_kc_ids: ['kc-evidence'],
+          intended_processes: ['memory_fluency'],
+          content: {
+            schema_version: 1,
+            kind: 'scaffold',
+            scaffold_kind: 'retrieval_prompt',
+            level: 1,
+            title: 'Recall first',
+            body: 'Try to recall the idea before looking.',
+          },
+        } as never,
+        {
+          id: 'experience-project',
+          kind: 'project',
+          target_kc_ids: ['kc-evidence'],
+          intended_processes: ['understanding_sensemaking'],
+          content: {
+            schema_version: 1,
+            kind: 'project',
+            title: 'Learning evidence plan',
+            brief: 'Plan a delayed check.',
+            deliverable: 'A one-week plan.',
+          },
+        } as never,
+      );
+    });
+    expect(courseDraftV2Schema.parse(withVariants).experiences).toHaveLength(3);
+  });
+
+  it('keeps observation evidence unscored', () => {
+    const observation = invalidDraft((value) => {
+      value.experiences[0].evidence.response_type = 'observation';
+      delete (value.experiences[0].evidence as { scoring?: unknown }).scoring;
+    });
+    expect(courseDraftV2Schema.parse(observation).experiences[0].evidence?.scoring).toBeUndefined();
   });
 });
 

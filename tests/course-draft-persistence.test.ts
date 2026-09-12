@@ -7,13 +7,19 @@ import {
   courseReferences,
   courses,
   exampleKcs,
+  experienceKcs,
+  experienceMisconceptions,
   experiences,
+  moduleExperiences,
+  referenceExperiences,
+  scaffolds,
   kcExamples,
   kcs,
   outcomeKcs,
   users,
 } from '../src/db/schema';
 import { getCourseDomain, persistCourseDraft } from '../src/lib/services/courseDraft';
+import type { CourseDraftV2 } from '../src/lib/schemas/courseDraft';
 
 const db = getDb(env.DB);
 let userId: string;
@@ -39,7 +45,17 @@ const draft = {
       prerequisite_kc_ids: [],
     },
   ],
-  examples: [{ id: 'example-evidence', kc_ids: ['kc-evidence'], content: { contrast: 'Recall versus rereading' } }],
+  examples: [{
+    id: 'example-evidence',
+    kc_ids: ['kc-evidence'],
+    content: {
+      schema_version: 1,
+      kind: 'contrast' as const,
+      positive: 'Recall before checking.',
+      negative: 'Reread until familiar.',
+      explanation: 'Retrieval produces stronger evidence.',
+    },
+  }],
   misconceptions: [
     {
       id: 'misconception-fluency',
@@ -56,16 +72,26 @@ const draft = {
       target_kc_ids: ['kc-evidence'],
       intended_processes: ['induction_refinement' as const],
       evidence: {
-        response_type: 'constructed_response' as const,
+        response_type: 'selected_response' as const,
         target_kc_ids: ['kc-evidence'],
         diagnostic_misconception_ids: ['misconception-fluency'],
-        scoring: { kind: 'rubric' as const, details: { answer: 'Use delayed retrieval', rubric: 'Evidence-based explanation' } },
+        scoring: {
+          kind: 'rubric' as const,
+          details: {
+            schema_version: 1,
+            criteria: [{ id: 'evidence', label: 'Uses evidence', description: 'Names delayed retrieval.' }],
+          },
+        },
       },
       content: {
-        kind: 'worked',
-        prompt: 'Predict, then retrieve.',
-        solution: 'Use delayed retrieval',
+        schema_version: 1,
+        kind: 'mcq' as const,
+        prompt: 'Which action provides stronger evidence?',
+        options: ['Reread', 'Retrieve later'],
+        correct_index: 1,
+        explanation: 'Delayed retrieval tests access without the answer visible.',
         source: 'Course author',
+        difficulty: 2,
       },
     },
   ],
@@ -90,7 +116,7 @@ const draft = {
       sort_order: 0,
     },
   ],
-};
+} satisfies CourseDraftV2;
 
 beforeEach(async () => {
   userId = crypto.randomUUID();
@@ -102,6 +128,13 @@ beforeEach(async () => {
 });
 
 describe('course draft persistence', () => {
+  it('removes MCQ answers and explanations from the browser-safe read model', async () => {
+    const saved = await persistCourseDraft(db, userId, draft);
+    const domain = await getCourseDomain(db, userId, saved.courseId);
+    expect(domain.experiences[0].content).not.toHaveProperty('correct_index');
+    expect(domain.experiences[0].content).not.toHaveProperty('explanation');
+  });
+
   it('deep-copies the complete aggregate with fresh relational IDs', async () => {
     const saved = await persistCourseDraft(db, userId, draft, {
       sourceTemplateKey: 'learning-how-to-learn',
@@ -111,7 +144,8 @@ describe('course draft persistence', () => {
 
     expect(saved.slug).toBe('learning-how-to-learn');
     expect(saved.courseId).not.toBe(draft.outcomes[0].id);
-    expect(await db.select().from(courses).where(and(eq(courses.id, saved.courseId), eq(courses.userId, userId)))).toHaveLength(1);
+    const [savedCourse] = await db.select().from(courses).where(and(eq(courses.id, saved.courseId), eq(courses.userId, userId)));
+    expect(savedCourse).toMatchObject({ domainVersion: 2 });
 
     const savedOutcomes = await db.select().from(courseOutcomes).where(eq(courseOutcomes.courseId, saved.courseId));
     const savedKcs = await db.select().from(kcs).where(eq(kcs.courseId, saved.courseId));
@@ -137,8 +171,19 @@ describe('course draft persistence', () => {
     expect(domain).toMatchObject({ schema_version: 2, spec: draft.spec });
     expect(domain.outcomes[0].kc_ids).toEqual([savedKcs[0].id]);
     expect(domain.modules[0].experience_ids).toEqual([savedExperiences[0].id]);
-    expect(domain.experiences[0].content).toEqual({ kind: 'worked', prompt: 'Predict, then retrieve.', source: 'Course author' });
-    expect(domain.experiences[0].evidence?.scoring?.details).toEqual({ rubric: 'Evidence-based explanation' });
+    expect(domain.experiences[0].content).toEqual({
+      schema_version: 1,
+      kind: 'mcq',
+      prompt: 'Which action provides stronger evidence?',
+      options: ['Reread', 'Retrieve later'],
+      source: 'Course author',
+      difficulty: 2,
+    });
+    expect(domain.experiences[0].content).not.toHaveProperty('explanation');
+    expect(domain.experiences[0].evidence?.scoring?.details).toEqual({
+      schema_version: 1,
+      criteria: [{ id: 'evidence', label: 'Uses evidence', description: 'Names delayed retrieval.' }],
+    });
   });
 
   it('rolls back the whole batch when any statement fails', async () => {
@@ -157,5 +202,105 @@ describe('course draft persistence', () => {
   it('does not expose one learner course domain to another learner', async () => {
     const saved = await persistCourseDraft(db, userId, draft);
     await expect(getCourseDomain(db, otherUserId, saved.courseId)).rejects.toThrow('Course not found');
+  });
+
+  it('rejects an owned legacy course that is not a V2 aggregate', async () => {
+    const legacyCourseId = crypto.randomUUID();
+    await db.insert(courses).values({
+      id: legacyCourseId,
+      userId,
+      code: 'LEGACY',
+      slug: `legacy-${legacyCourseId}`,
+      title: 'Legacy course',
+    });
+    await expect(getCourseDomain(db, userId, legacyCourseId)).rejects.toMatchObject({
+      name: 'CourseDomainVersionError',
+      message: 'Course domain version is not supported',
+    });
+  });
+
+  it('rejects every cross-course aggregate link at the database boundary', async () => {
+    const first = await persistCourseDraft(db, userId, draft);
+    const second = await persistCourseDraft(db, userId, { ...draft, spec: { ...draft.spec, title: 'Second course' } });
+    const own = await getCourseDomain(db, userId, first.courseId);
+    const foreign = await getCourseDomain(db, userId, second.courseId);
+    const now = Date.now();
+    const attempts: Array<[string, unknown[]]> = [
+      ['INSERT INTO outcome_kcs(outcome_id,kc_id,course_id,sort_order,created_at) VALUES(?,?,?,?,?)', [own.outcomes[0].id, foreign.kcs[0].id, first.courseId, 1, now]],
+      ['INSERT INTO example_kcs(example_id,kc_id,course_id,sort_order,created_at) VALUES(?,?,?,?,?)', [own.examples[0].id, foreign.kcs[0].id, first.courseId, 1, now]],
+      ['INSERT INTO misconception_kcs(misconception_id,kc_id,course_id,sort_order,created_at) VALUES(?,?,?,?,?)', [own.misconceptions[0].id, foreign.kcs[0].id, first.courseId, 1, now]],
+      ['INSERT INTO experience_kcs(experience_id,kc_id,course_id,is_evidence_target,sort_order,created_at) VALUES(?,?,?,?,?,?)', [own.experiences[0].id, foreign.kcs[0].id, first.courseId, 0, 1, now]],
+      ['INSERT INTO experience_misconceptions(experience_id,misconception_id,course_id,sort_order,created_at) VALUES(?,?,?,?,?)', [own.experiences[0].id, foreign.misconceptions[0].id, first.courseId, 1, now]],
+      ['INSERT INTO reference_kcs(reference_id,kc_id,course_id) VALUES(?,?,?)', [own.references[0].id, foreign.kcs[0].id, first.courseId]],
+      ['INSERT INTO reference_examples(reference_id,example_id,course_id) VALUES(?,?,?)', [own.references[0].id, foreign.examples[0].id, first.courseId]],
+      ['INSERT INTO reference_experiences(reference_id,experience_id,course_id) VALUES(?,?,?)', [own.references[0].id, foreign.experiences[0].id, first.courseId]],
+      ['INSERT INTO reference_misconceptions(reference_id,misconception_id,course_id) VALUES(?,?,?)', [own.references[0].id, foreign.misconceptions[0].id, first.courseId]],
+      ['INSERT INTO module_outcomes(module_id,outcome_id,course_id,sort_order) VALUES(?,?,?,?)', [own.modules[0].id, foreign.outcomes[0].id, first.courseId, 1]],
+      ['INSERT INTO module_kcs(module_id,kc_id,course_id,sort_order) VALUES(?,?,?,?)', [own.modules[0].id, foreign.kcs[0].id, first.courseId, 1]],
+      ['INSERT INTO module_experiences(module_id,experience_id,course_id,sort_order) VALUES(?,?,?,?)', [own.modules[0].id, foreign.experiences[0].id, first.courseId, 1]],
+    ];
+
+    for (const [sql, bindings] of attempts) {
+      await expect(env.DB.prepare(sql).bind(...bindings).run()).rejects.toThrow(/FOREIGN KEY constraint failed/);
+    }
+  });
+
+  it('rolls back when a late module link statement fails', async () => {
+    const before = await db.select().from(courses).where(eq(courses.userId, userId));
+    await env.DB.exec("CREATE TRIGGER fail_late_course_draft BEFORE INSERT ON module_experiences BEGIN SELECT RAISE(ABORT, 'late draft failure'); END");
+    try {
+      await expect(persistCourseDraft(db, userId, draft)).rejects.toThrow('late draft failure');
+    } finally {
+      await env.DB.exec('DROP TRIGGER fail_late_course_draft');
+    }
+    expect(await db.select().from(courses).where(eq(courses.userId, userId))).toHaveLength(before.length);
+  });
+
+  it('round-trips scaffold and project experiences with their links', async () => {
+    const expanded = structuredClone(draft);
+    expanded.experiences.push(
+      {
+        id: 'experience-scaffold',
+        kind: 'scaffold',
+        target_kc_ids: ['kc-evidence'],
+        intended_processes: ['memory_fluency'],
+        content: {
+          schema_version: 1,
+          kind: 'scaffold',
+          scaffold_kind: 'retrieval_prompt',
+          level: 1,
+          title: 'Recall first',
+          body: 'Try to recall the idea before looking.',
+        },
+      } as never,
+      {
+        id: 'experience-project',
+        kind: 'project',
+        target_kc_ids: ['kc-evidence'],
+        intended_processes: ['understanding_sensemaking'],
+        content: {
+          schema_version: 1,
+          kind: 'project',
+          title: 'Learning evidence plan',
+          brief: 'Plan a delayed check.',
+          deliverable: 'A one-week plan.',
+        },
+      } as never,
+    );
+    expanded.references[0].experience_ids.push('experience-scaffold', 'experience-project');
+    expanded.modules[0].experience_ids.push('experience-scaffold', 'experience-project');
+
+    const saved = await persistCourseDraft(db, userId, expanded);
+    const domain = await getCourseDomain(db, userId, saved.courseId);
+    expect(domain.experiences.map((experience) => experience.kind)).toEqual(['exercise', 'scaffold', 'project']);
+    expect(domain.references[0].experience_ids).toHaveLength(3);
+    expect(domain.modules[0].experience_ids).toHaveLength(3);
+    const [scaffold] = await db.select().from(scaffolds).innerJoin(experiences, eq(scaffolds.experienceId, experiences.id))
+      .where(eq(experiences.courseId, saved.courseId));
+    expect(scaffold.scaffolds).toMatchObject({ kind: 'retrieval_prompt', title: 'Recall first' });
+    expect(await db.select().from(experienceKcs).where(eq(experienceKcs.courseId, saved.courseId))).toHaveLength(3);
+    expect(await db.select().from(experienceMisconceptions).where(eq(experienceMisconceptions.courseId, saved.courseId))).toHaveLength(1);
+    expect(await db.select().from(referenceExperiences).where(eq(referenceExperiences.courseId, saved.courseId))).toHaveLength(3);
+    expect(await db.select().from(moduleExperiences).where(eq(moduleExperiences.courseId, saved.courseId))).toHaveLength(3);
   });
 });
