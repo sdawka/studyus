@@ -1,0 +1,390 @@
+import { asc, eq } from 'drizzle-orm';
+import type { BatchItem } from 'drizzle-orm/batch';
+import type { Db } from '../../db/client';
+import {
+  branches,
+  courseModules,
+  courseOutcomes,
+  courseReferences,
+  courses,
+  exampleKcs,
+  experienceKcs,
+  experienceMisconceptions,
+  experiences,
+  exercises,
+  kcEdges,
+  kcExamples,
+  kcs,
+  misconceptionKcs,
+  misconceptions,
+  moduleExperiences,
+  moduleKcs,
+  moduleOutcomes,
+  outcomeKcs,
+  referenceExamples,
+  referenceExperiences,
+  referenceKcs,
+  referenceMisconceptions,
+  scaffolds,
+} from '../../db/schema';
+import { validateCourseDraft } from '../domain/courseDraft';
+import type { CourseDraftV2 } from '../schemas/courseDraft';
+import { courseSlugAllocator } from './courses';
+import { requireOwnedCourse, runBatch } from './util';
+
+export type PersistCourseDraftOptions = {
+  sourceTemplateKey?: string;
+  sourceTemplateVersion?: string;
+  bootstrapKey?: string;
+};
+
+const legacyKcType = {
+  constant_constant: 'fact',
+  variable_constant: 'concept',
+  variable_variable: 'principle',
+} as const;
+
+const redactedKeys = new Set(['answer', 'answer_key', 'correct_answer', 'correct_index', 'solution']);
+
+function browserSafe(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(browserSafe);
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .filter(([key]) => !redactedKeys.has(key.toLowerCase()))
+      .map(([key, child]) => [key, browserSafe(child)]),
+  );
+}
+
+function contentRecord(content: unknown): Record<string, unknown> {
+  return content && typeof content === 'object' && !Array.isArray(content) ? content as Record<string, unknown> : {};
+}
+
+function textValue(content: Record<string, unknown>, key: string, fallback: string): string {
+  const value = content[key];
+  return typeof value === 'string' && value.trim() ? value : fallback;
+}
+
+function intValue(content: Record<string, unknown>, key: string, fallback: number): number {
+  const value = content[key];
+  return typeof value === 'number' && Number.isInteger(value) ? value : fallback;
+}
+
+function ids<T extends { id: string }>(records: T[]): Map<string, string> {
+  return new Map(records.map((record) => [record.id, crypto.randomUUID()]));
+}
+
+function mapped(map: Map<string, string>, draftId: string): string {
+  const value = map.get(draftId);
+  if (!value) throw new Error(`Validated course draft lost ID mapping for ${draftId}`);
+  return value;
+}
+
+function exerciseKind(value: unknown): 'mcq' | 'numeric' | 'worked' {
+  return value === 'mcq' || value === 'numeric' || value === 'worked' ? value : 'worked';
+}
+
+function scaffoldKind(value: unknown): typeof scaffolds.$inferInsert.kind {
+  const allowed = new Set([
+    'retrieval_prompt', 'mnemonic', 'matching_drill', 'classification_task', 'contrast_examples', 'worked_example',
+    'procedure_outline', 'self_explanation_prompt', 'derivation_walkthrough', 'interactive_model', 'analogy',
+  ]);
+  return typeof value === 'string' && allowed.has(value) ? value as typeof scaffolds.$inferInsert.kind : 'worked_example';
+}
+
+/** Validates and atomically deep-copies one complete learner-owned course aggregate. */
+export async function persistCourseDraft(
+  db: Db,
+  userId: string,
+  input: CourseDraftV2,
+  options: PersistCourseDraftOptions = {},
+): Promise<{ courseId: string; slug: string }> {
+  const draft = validateCourseDraft(input);
+  const allocateSlug = await courseSlugAllocator(db, userId);
+  const courseId = crypto.randomUUID();
+  const branchId = crypto.randomUUID();
+  const slug = allocateSlug(draft.spec.title);
+  const outcomeIds = ids(draft.outcomes);
+  const kcIds = ids(draft.kcs);
+  const exampleIds = ids(draft.examples);
+  const misconceptionIds = ids(draft.misconceptions);
+  const experienceIds = ids(draft.experiences);
+  const referenceIds = ids(draft.references);
+  const moduleIds = ids(draft.modules);
+  const statements: BatchItem<'sqlite'>[] = [];
+
+  statements.push(db.insert(courses).values({
+    id: courseId,
+    userId,
+    code: draft.spec.title,
+    slug,
+    title: draft.spec.title,
+    overview: draft.spec.topic,
+    topic: draft.spec.topic,
+    level: draft.spec.level,
+    project: draft.spec.project,
+    constraints: draft.spec.constraints,
+    sourceTemplateKey: options.sourceTemplateKey,
+    sourceTemplateVersion: options.sourceTemplateVersion,
+    bootstrapKey: options.bootstrapKey,
+  }));
+  statements.push(db.insert(branches).values({ id: branchId, courseId, name: 'General', sortOrder: 0 }));
+
+  draft.kcs.forEach((kc, sortOrder) => {
+    statements.push(db.insert(kcs).values({
+      id: mapped(kcIds, kc.id),
+      branchId,
+      courseId,
+      name: kc.name,
+      description: kc.description,
+      kcType: legacyKcType[kc.kc_form],
+      kcForm: kc.kc_form,
+      rationaleLevel: kc.rationale_level,
+      masteryRule: kc.mastery_rule,
+      sortOrder,
+    }));
+  });
+  draft.kcs.forEach((kc) => kc.prerequisite_kc_ids.forEach((prerequisiteId) => {
+    statements.push(db.insert(kcEdges).values({
+      id: crypto.randomUUID(),
+      kcId: mapped(kcIds, kc.id),
+      prereqKcId: mapped(kcIds, prerequisiteId),
+      source: 'seed',
+    }));
+  }));
+
+  draft.outcomes.forEach((outcome, sortOrder) => {
+    const outcomeId = mapped(outcomeIds, outcome.id);
+    statements.push(db.insert(courseOutcomes).values({ id: outcomeId, courseId, title: outcome.title, description: outcome.description, sortOrder }));
+    outcome.kc_ids.forEach((kcId, linkOrder) => statements.push(db.insert(outcomeKcs).values({
+      outcomeId, kcId: mapped(kcIds, kcId), sortOrder: linkOrder,
+    })));
+  });
+
+  draft.examples.forEach((example, sortOrder) => {
+    const exampleId = mapped(exampleIds, example.id);
+    statements.push(db.insert(kcExamples).values({ id: exampleId, courseId, content: example.content, sortOrder }));
+    example.kc_ids.forEach((kcId, linkOrder) => statements.push(db.insert(exampleKcs).values({
+      exampleId, kcId: mapped(kcIds, kcId), sortOrder: linkOrder,
+    })));
+  });
+
+  draft.misconceptions.forEach((misconception, sortOrder) => {
+    const misconceptionId = mapped(misconceptionIds, misconception.id);
+    statements.push(db.insert(misconceptions).values({
+      id: misconceptionId,
+      kcId: mapped(kcIds, misconception.kc_ids[0]),
+      slug: `draft-${sortOrder + 1}-${misconceptionId.slice(0, 8)}`,
+      name: misconception.name,
+      description: misconception.name,
+      rootCause: misconception.name,
+      diagnosticProbe: misconception.diagnostic_probe,
+      correction: misconception.correction,
+      source: 'seed',
+    }));
+    misconception.kc_ids.forEach((kcId, linkOrder) => statements.push(db.insert(misconceptionKcs).values({
+      misconceptionId, kcId: mapped(kcIds, kcId), sortOrder: linkOrder,
+    })));
+  });
+
+  draft.experiences.forEach((experience, sortOrder) => {
+    const experienceId = mapped(experienceIds, experience.id);
+    statements.push(db.insert(experiences).values({
+      id: experienceId,
+      courseId,
+      kind: experience.kind,
+      intendedProcesses: experience.intended_processes,
+      content: experience.content,
+      evidenceResponseType: experience.evidence?.response_type,
+      evidenceScoringKind: experience.evidence?.scoring?.kind,
+      evidenceScoringDetails: experience.evidence?.scoring?.details,
+      sortOrder,
+    }));
+    const evidenceTargets = new Set(experience.evidence?.target_kc_ids ?? []);
+    experience.target_kc_ids.forEach((kcId, linkOrder) => statements.push(db.insert(experienceKcs).values({
+      experienceId,
+      kcId: mapped(kcIds, kcId),
+      isEvidenceTarget: evidenceTargets.has(kcId),
+      sortOrder: linkOrder,
+    })));
+    experience.evidence?.diagnostic_misconception_ids.forEach((misconceptionId, linkOrder) => {
+      statements.push(db.insert(experienceMisconceptions).values({
+        experienceId,
+        misconceptionId: mapped(misconceptionIds, misconceptionId),
+        sortOrder: linkOrder,
+      }));
+    });
+
+    const content = contentRecord(experience.content);
+    const primaryKcId = mapped(kcIds, experience.target_kc_ids[0]);
+    if (experience.kind === 'scaffold') {
+      statements.push(db.insert(scaffolds).values({
+        id: crypto.randomUUID(),
+        experienceId,
+        kcId: primaryKcId,
+        kind: scaffoldKind(content.kind),
+        level: intValue(content, 'level', 1),
+        title: textValue(content, 'title', `Learning experience ${sortOrder + 1}`),
+        body: textValue(content, 'body', JSON.stringify(experience.content)),
+        details: content.details ?? experience.content,
+        sortOrder,
+        source: 'user',
+      }));
+    } else if (experience.kind === 'exercise') {
+      statements.push(db.insert(exercises).values({
+        id: crypto.randomUUID(),
+        experienceId,
+        kcId: primaryKcId,
+        slug: `draft-experience-${sortOrder + 1}`,
+        kind: exerciseKind(content.kind),
+        difficulty: intValue(content, 'difficulty', 2),
+        prompt: textValue(content, 'prompt', `Learning experience ${sortOrder + 1}`),
+        details: content.details ?? experience.content,
+        source: textValue(content, 'source', 'Course draft'),
+        origin: 'user',
+        sortOrder,
+      }));
+    }
+  });
+
+  draft.references.forEach((reference, sortOrder) => {
+    const referenceId = mapped(referenceIds, reference.id);
+    statements.push(db.insert(courseReferences).values({
+      id: referenceId, courseId, citation: reference.citation, url: reference.url, sortOrder,
+    }));
+    reference.kc_ids.forEach((kcId) => statements.push(db.insert(referenceKcs).values({ referenceId, kcId: mapped(kcIds, kcId) })));
+    reference.example_ids.forEach((exampleId) => statements.push(db.insert(referenceExamples).values({ referenceId, exampleId: mapped(exampleIds, exampleId) })));
+    reference.experience_ids.forEach((experienceId) => statements.push(db.insert(referenceExperiences).values({ referenceId, experienceId: mapped(experienceIds, experienceId) })));
+    reference.misconception_ids.forEach((misconceptionId) => statements.push(db.insert(referenceMisconceptions).values({
+      referenceId, misconceptionId: mapped(misconceptionIds, misconceptionId),
+    })));
+  });
+
+  draft.modules.forEach((module) => {
+    const moduleId = mapped(moduleIds, module.id);
+    statements.push(db.insert(courseModules).values({ id: moduleId, courseId, title: module.title, sortOrder: module.sort_order }));
+    module.outcome_ids.forEach((outcomeId, sortOrder) => statements.push(db.insert(moduleOutcomes).values({
+      moduleId, outcomeId: mapped(outcomeIds, outcomeId), sortOrder,
+    })));
+    module.kc_ids.forEach((kcId, sortOrder) => statements.push(db.insert(moduleKcs).values({
+      moduleId, kcId: mapped(kcIds, kcId), sortOrder,
+    })));
+    module.experience_ids.forEach((experienceId, sortOrder) => statements.push(db.insert(moduleExperiences).values({
+      moduleId, experienceId: mapped(experienceIds, experienceId), sortOrder,
+    })));
+  });
+
+  await runBatch(db, statements);
+  return { courseId, slug };
+}
+
+/** Returns an owner-scoped, browser-safe draft-shaped view with database IDs. */
+export async function getCourseDomain(db: Db, userId: string, courseId: string) {
+  const course = await requireOwnedCourse(db, userId, courseId);
+  const [outcomeRows, kcRows, edgeRows, exampleRows, exampleLinkRows, misconceptionRows, misconceptionLinkRows,
+    experienceRows, experienceLinkRows, diagnosticRows, referenceRows, referenceKcRows, referenceExampleRows,
+    referenceExperienceRows, referenceMisconceptionRows, moduleRows, moduleOutcomeRows, moduleKcRows, moduleExperienceRows] = await Promise.all([
+    db.select().from(courseOutcomes).where(eq(courseOutcomes.courseId, courseId)).orderBy(asc(courseOutcomes.sortOrder)),
+    db.select().from(kcs).where(eq(kcs.courseId, courseId)).orderBy(asc(kcs.sortOrder)),
+    db.select({ kcId: kcEdges.kcId, prereqKcId: kcEdges.prereqKcId }).from(kcEdges).innerJoin(kcs, eq(kcEdges.kcId, kcs.id)).where(eq(kcs.courseId, courseId)),
+    db.select().from(kcExamples).where(eq(kcExamples.courseId, courseId)).orderBy(asc(kcExamples.sortOrder)),
+    db.select({ exampleId: exampleKcs.exampleId, kcId: exampleKcs.kcId, sortOrder: exampleKcs.sortOrder }).from(exampleKcs).innerJoin(kcExamples, eq(exampleKcs.exampleId, kcExamples.id)).where(eq(kcExamples.courseId, courseId)),
+    db.select().from(misconceptions).innerJoin(kcs, eq(misconceptions.kcId, kcs.id)).where(eq(kcs.courseId, courseId)).then((rows) => rows.map((row) => row.misconceptions)),
+    db.select({ misconceptionId: misconceptionKcs.misconceptionId, kcId: misconceptionKcs.kcId, sortOrder: misconceptionKcs.sortOrder }).from(misconceptionKcs).innerJoin(kcs, eq(misconceptionKcs.kcId, kcs.id)).where(eq(kcs.courseId, courseId)),
+    db.select().from(experiences).where(eq(experiences.courseId, courseId)).orderBy(asc(experiences.sortOrder)),
+    db.select({ experienceId: experienceKcs.experienceId, kcId: experienceKcs.kcId, isEvidenceTarget: experienceKcs.isEvidenceTarget, sortOrder: experienceKcs.sortOrder }).from(experienceKcs).innerJoin(experiences, eq(experienceKcs.experienceId, experiences.id)).where(eq(experiences.courseId, courseId)),
+    db.select({ experienceId: experienceMisconceptions.experienceId, misconceptionId: experienceMisconceptions.misconceptionId, sortOrder: experienceMisconceptions.sortOrder }).from(experienceMisconceptions).innerJoin(experiences, eq(experienceMisconceptions.experienceId, experiences.id)).where(eq(experiences.courseId, courseId)),
+    db.select().from(courseReferences).where(eq(courseReferences.courseId, courseId)).orderBy(asc(courseReferences.sortOrder)),
+    db.select().from(referenceKcs).innerJoin(courseReferences, eq(referenceKcs.referenceId, courseReferences.id)).where(eq(courseReferences.courseId, courseId)).then((rows) => rows.map((row) => row.reference_kcs)),
+    db.select().from(referenceExamples).innerJoin(courseReferences, eq(referenceExamples.referenceId, courseReferences.id)).where(eq(courseReferences.courseId, courseId)).then((rows) => rows.map((row) => row.reference_examples)),
+    db.select().from(referenceExperiences).innerJoin(courseReferences, eq(referenceExperiences.referenceId, courseReferences.id)).where(eq(courseReferences.courseId, courseId)).then((rows) => rows.map((row) => row.reference_experiences)),
+    db.select().from(referenceMisconceptions).innerJoin(courseReferences, eq(referenceMisconceptions.referenceId, courseReferences.id)).where(eq(courseReferences.courseId, courseId)).then((rows) => rows.map((row) => row.reference_misconceptions)),
+    db.select().from(courseModules).where(eq(courseModules.courseId, courseId)).orderBy(asc(courseModules.sortOrder)),
+    db.select().from(moduleOutcomes).innerJoin(courseModules, eq(moduleOutcomes.moduleId, courseModules.id)).where(eq(courseModules.courseId, courseId)).then((rows) => rows.map((row) => row.module_outcomes)),
+    db.select().from(moduleKcs).innerJoin(courseModules, eq(moduleKcs.moduleId, courseModules.id)).where(eq(courseModules.courseId, courseId)).then((rows) => rows.map((row) => row.module_kcs)),
+    db.select().from(moduleExperiences).innerJoin(courseModules, eq(moduleExperiences.moduleId, courseModules.id)).where(eq(courseModules.courseId, courseId)).then((rows) => rows.map((row) => row.module_experiences)),
+  ]);
+
+  const by = <T extends Record<string, unknown>>(rows: T[], key: keyof T) => (id: string) => rows.filter((row) => row[key] === id);
+  const outcomeLinks = await db.select({ outcomeId: outcomeKcs.outcomeId, kcId: outcomeKcs.kcId, sortOrder: outcomeKcs.sortOrder })
+    .from(outcomeKcs).innerJoin(courseOutcomes, eq(outcomeKcs.outcomeId, courseOutcomes.id)).where(eq(courseOutcomes.courseId, courseId));
+
+  return {
+    schema_version: 2 as const,
+    spec: {
+      title: course.title,
+      topic: course.topic ?? course.overview ?? course.title,
+      level: course.level ?? 'unspecified',
+      ...(course.project ? { project: course.project } : {}),
+      constraints: course.constraints,
+    },
+    outcomes: outcomeRows.map((outcome) => ({
+      id: outcome.id,
+      title: outcome.title,
+      ...(outcome.description ? { description: outcome.description } : {}),
+      kc_ids: by(outcomeLinks, 'outcomeId')(outcome.id).sort((a, b) => a.sortOrder - b.sortOrder).map((link) => link.kcId),
+    })),
+    kcs: kcRows.map((kc) => ({
+      id: kc.id,
+      name: kc.name,
+      ...(kc.description ? { description: kc.description } : {}),
+      kc_form: kc.kcForm!,
+      rationale_level: kc.rationaleLevel!,
+      mastery_rule: kc.masteryRule,
+      prerequisite_kc_ids: edgeRows.filter((edge) => edge.kcId === kc.id).map((edge) => edge.prereqKcId),
+    })),
+    examples: exampleRows.map((example) => ({
+      id: example.id,
+      kc_ids: by(exampleLinkRows, 'exampleId')(example.id).sort((a, b) => a.sortOrder - b.sortOrder).map((link) => link.kcId),
+      content: browserSafe(example.content),
+    })),
+    misconceptions: misconceptionRows.map((misconception) => ({
+      id: misconception.id,
+      kc_ids: by(misconceptionLinkRows, 'misconceptionId')(misconception.id).sort((a, b) => a.sortOrder - b.sortOrder).map((link) => link.kcId),
+      name: misconception.name,
+      diagnostic_probe: misconception.diagnosticProbe,
+      correction: misconception.correction,
+    })),
+    experiences: experienceRows.map((experience) => {
+      const targets = by(experienceLinkRows, 'experienceId')(experience.id).sort((a, b) => a.sortOrder - b.sortOrder);
+      const evidenceTargets = targets.filter((target) => target.isEvidenceTarget).map((target) => target.kcId);
+      return {
+        id: experience.id,
+        kind: experience.kind,
+        target_kc_ids: targets.map((target) => target.kcId),
+        intended_processes: experience.intendedProcesses,
+        ...(experience.evidenceResponseType ? {
+          evidence: {
+            response_type: experience.evidenceResponseType,
+            target_kc_ids: evidenceTargets,
+            diagnostic_misconception_ids: by(diagnosticRows, 'experienceId')(experience.id).sort((a, b) => a.sortOrder - b.sortOrder).map((row) => row.misconceptionId),
+            ...(experience.evidenceScoringKind ? {
+              scoring: {
+                kind: experience.evidenceScoringKind,
+                ...(experience.evidenceScoringDetails === null ? {} : { details: browserSafe(experience.evidenceScoringDetails) }),
+              },
+            } : {}),
+          },
+        } : {}),
+        content: browserSafe(experience.content),
+      };
+    }),
+    references: referenceRows.map((reference) => ({
+      id: reference.id,
+      citation: reference.citation,
+      ...(reference.url ? { url: reference.url } : {}),
+      kc_ids: referenceKcRows.filter((row) => row.referenceId === reference.id).map((row) => row.kcId),
+      example_ids: referenceExampleRows.filter((row) => row.referenceId === reference.id).map((row) => row.exampleId),
+      experience_ids: referenceExperienceRows.filter((row) => row.referenceId === reference.id).map((row) => row.experienceId),
+      misconception_ids: referenceMisconceptionRows.filter((row) => row.referenceId === reference.id).map((row) => row.misconceptionId),
+    })),
+    modules: moduleRows.map((module) => ({
+      id: module.id,
+      title: module.title,
+      outcome_ids: by(moduleOutcomeRows, 'moduleId')(module.id).sort((a, b) => a.sortOrder - b.sortOrder).map((row) => row.outcomeId),
+      kc_ids: by(moduleKcRows, 'moduleId')(module.id).sort((a, b) => a.sortOrder - b.sortOrder).map((row) => row.kcId),
+      experience_ids: by(moduleExperienceRows, 'moduleId')(module.id).sort((a, b) => a.sortOrder - b.sortOrder).map((row) => row.experienceId),
+      sort_order: module.sortOrder,
+    })),
+  };
+}

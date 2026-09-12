@@ -92,7 +92,7 @@ describe('validateCourseDraft', () => {
   it.each([
     ['requires every outcome to target a KC', invalidDraft((draft) => { draft.outcomes[0].kc_ids = []; }), ['outcomes', 0, 'kc_ids']],
     ['requires a non-empty example collection', invalidDraft((draft) => { draft.examples = []; }), ['examples']],
-    ['requires evidence-producing experience for every KC', invalidDraft((draft) => { delete draft.experiences[0].evidence; }), ['kcs', 0]],
+    ['requires evidence-producing experience for every KC', invalidDraft((draft) => { delete (draft.experiences[0] as { evidence?: unknown }).evidence; }), ['kcs', 0]],
     ['requires intended processes on an experience', invalidDraft((draft) => { draft.experiences[0].intended_processes = []; }), ['experiences', 0, 'intended_processes']],
     ['rejects dangling references', invalidDraft((draft) => { draft.references[0].kc_ids = ['missing-kc']; }), ['references', 0, 'kc_ids', 0]],
     [
@@ -105,8 +105,8 @@ describe('validateCourseDraft', () => {
     [
       'rejects prerequisite cycles',
       invalidDraft((draft) => {
-        draft.kcs.push({ ...draft.kcs[0], id: 'another-kc', prerequisite_kc_ids: ['kc-evidence'] });
-        draft.kcs[0].prerequisite_kc_ids = ['another-kc'];
+        (draft.kcs as Array<Record<string, unknown>>).push({ ...draft.kcs[0], id: 'another-kc', prerequisite_kc_ids: ['kc-evidence'] });
+        (draft.kcs[0].prerequisite_kc_ids as string[]) = ['another-kc'];
       }),
       ['kcs'],
     ],

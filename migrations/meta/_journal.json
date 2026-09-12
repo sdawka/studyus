@@ -8,6 +8,13 @@
       "when": 1787233962238,
       "tag": "0000_lively_proteus",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789182000000,
+      "tag": "0014_general_learning_domain",
+      "breakpoints": true
     }
   ]
 }

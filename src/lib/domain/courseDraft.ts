@@ -60,7 +60,7 @@ export function validateCourseDraft(draft: unknown): CourseDraftV2 {
   const parsed = courseDraftV2Schema.safeParse(draft);
   if (!parsed.success) {
     throw new CourseDraftValidationError(parsed.error.issues.map((issue) => ({
-      path: issue.path,
+      path: issue.path.map((segment) => typeof segment === 'symbol' ? String(segment) : segment),
       code: 'schema_invalid',
       message: 'Invalid course draft value',
     })));

@@ -375,7 +375,7 @@ export async function applyTemplateUpdateActions(db: Db, userId: string, courseI
       statements.push(db.insert(branches).values(branch));
     }
     const kcId = crypto.randomUUID();
-    const row = { id: kcId, branchId: branch.id, courseId, name: authored.name, kcType: authored.kc_type, description: authored.description, practiceNotes: authored.practice_notes, slug: authored.slug, sortOrder: authored.sort_order, archivedAt: null, revision: 0, mastery: 0, status: 'not-started', lastEventAt: null, createdAt: now } satisfies KcRow;
+    const row = { id: kcId, branchId: branch.id, courseId, name: authored.name, kcType: authored.kc_type, kcForm: null, rationaleLevel: null, masteryRule: {}, description: authored.description, practiceNotes: authored.practice_notes, slug: authored.slug, sortOrder: authored.sort_order, archivedAt: null, revision: 0, mastery: 0, status: 'not-started', lastEventAt: null, createdAt: now } satisfies KcRow;
     kcByRef.set(ref, row);
     includedRefs.add(ref);
     statements.push(db.insert(kcs).values(row));

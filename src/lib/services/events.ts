@@ -302,6 +302,7 @@ export async function appendEventsAtomically(
       isAssessment,
       kcId: input.kc_id ?? null,
       courseId: input.course_id ?? null,
+      experienceId: null,
       sessionId: input.session_id ?? null,
       payload: input.payload ?? {},
       source,
