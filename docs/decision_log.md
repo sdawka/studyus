@@ -17,3 +17,17 @@
 - 2026-09-08T09:44:00-04:00 — Use the identity specialist to investigate the remaining Clerk Agent Tasks localhost diagnostic. Keep the investigation isolated to development credentials and environments; production smoke remains the release evidence.
 
 - 2026-09-08T10:18:00-04:00 — Use an isolated Cloudflare workers.dev deployment for real Clerk Agent Tasks E2E, keeping production unchanged.
+
+- 2026-09-11T15:53:42-04:00 — Generalize studyus from university-specific onboarding to courses for any learning goal. Manual course authoring must use the same KLI-inspired domain shape as optional generated courses.
+
+- 2026-09-11T15:53:42-04:00 — Make a short first-party “Learning How to Learn” course available as the usable default when onboarding is skipped.
+
+- 2026-09-11T15:59:53-04:00 — Offer “Learning How to Learn” to every new learner. Cover practical learning methods beyond KLI, including spaced repetition, scaffolding, and chunking.
+
+- 2026-09-11T16:00:46-04:00 — Automatically add “Learning How to Learn” to every newly created account. Assume there are no existing users, so no backfill is required.
+
+- 2026-09-11T16:10:07-04:00 — Enroll the first-party course as a learner-owned copy. New accounts receive the current template version and control their copy after provisioning.
+
+- 2026-09-11T16:34:33-04:00 — Permanently detach each enrolled “Learning How to Learn” course from its source template. Later revisions apply only to new accounts.
+
+- 2026-09-12T01:39:55-04:00 — Frame every “Learning How to Learn” module as a learner-facing question, progressing from evidence of learning through access, experience, effective practice, and continued improvement.
