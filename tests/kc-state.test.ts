@@ -62,4 +62,15 @@ describe('deriveKcState', () => {
     expect(complete.hasTransferEvidence).toBe(true);
     expect(complete.meetsMasteryRule).toBe(true);
   });
+
+  it('does not satisfy retention or transfer with a failed later tagged attempt', () => {
+    const state = deriveKcState([
+      evidence({ id: 'first', ts: now - 3 * DAY }),
+      evidence({ id: 'failed-later', ts: now, payload: { correct: false, evidence_tags: ['retention', 'transfer'] } }),
+    ], { requires_retention: true, requires_transfer: true }, now);
+
+    expect(state.hasRetentionEvidence).toBe(false);
+    expect(state.hasTransferEvidence).toBe(false);
+    expect(state.meetsMasteryRule).toBe(false);
+  });
 });

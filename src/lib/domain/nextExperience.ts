@@ -76,6 +76,7 @@ export function selectNextExperience(
 
     let score = 100;
     const reasons: string[] = [];
+    let hasExplicitReason = false;
     const unmet = targets.find((kc) => !stateFor(states, kc.id)?.meetsMasteryRule);
     if (unmet) reasons.push(`ready unmet KC ${unmet.id}`);
     const preferredProcess = unmet?.kcForm === 'constant_constant' ? 'memory_fluency'
@@ -85,6 +86,7 @@ export function selectNextExperience(
 
     const repairFor = blocked.find((kc) => kc.prerequisiteKcIds.some((id) => candidate.targetKcIds.includes(id)));
     if (repairFor) {
+      hasExplicitReason = true;
       score += 400;
       reasons.length = 0;
       reasons.push(`prerequisite repair for ${repairFor.id}`);
@@ -93,6 +95,7 @@ export function selectNextExperience(
     const misconception = targets.flatMap((kc) => stateFor(states, kc.id)?.activeMisconceptionIds ?? [])
       .find((id) => candidate.diagnosticMisconceptionIds?.includes(id));
     if (misconception) {
+      hasExplicitReason = true;
       score += 700;
       reasons.length = 0;
       reasons.push(`repairs misconception ${misconception}`);
@@ -101,10 +104,11 @@ export function selectNextExperience(
     const tags = new Set((candidate.evidenceTags ?? []).map((tag) => tag.toLowerCase()));
     const due = targets.find((kc) => {
       const state = stateFor(states, kc.id);
-      return tags.has('retention') && Boolean(state?.evidenceIds.length) && !state?.hasRetentionEvidence
+      return (tags.has('spacing') || (tags.has('retention') && !state?.hasRetentionEvidence)) && Boolean(state?.evidenceIds.length)
         && state?.lastUpdatedAt !== null && state?.lastUpdatedAt !== undefined && now - state.lastUpdatedAt >= SPACING_INTERVAL_MS;
     });
     if (due) {
+      hasExplicitReason = true;
       score += 600;
       reasons.length = 0;
       reasons.push(`spaced review due for ${due.id}`);
@@ -117,6 +121,7 @@ export function selectNextExperience(
         && !state?.hasTransferEvidence && (state?.masteryEstimate ?? 0) / 100 >= threshold && !isRecent(state, now);
     });
     if (transfer) {
+      hasExplicitReason = true;
       score += 550;
       reasons.length = 0;
       reasons.push(`transfer evidence required for ${transfer.id}`);
@@ -131,6 +136,7 @@ export function selectNextExperience(
       return previous?.supportLevel !== undefined && candidate.supportLevel > previous.supportLevel;
     });
     if (faded) {
+      hasExplicitReason = true;
       score += 450;
       reasons.length = 0;
       reasons.push(`fades support after success on ${faded.id}`);
@@ -143,7 +149,8 @@ export function selectNextExperience(
     if (immediateRepeat) score -= 1_000;
     else if (recentlyRepeatedExists && reasons[0]?.startsWith('ready unmet KC')) reasons.push('avoids immediate repetition');
 
-    if (reasons.length === 0) reasons.push(`ready unmet KC ${targets[0]?.id ?? 'unknown'}`);
+    if (!unmet && !hasExplicitReason) continue;
+    if (reasons.length === 0 && unmet) reasons.push(`ready unmet KC ${unmet.id}`);
     scored.push({ candidate, score, reasons });
   }
 

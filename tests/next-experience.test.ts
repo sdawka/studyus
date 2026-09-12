@@ -3,7 +3,7 @@ import { env } from 'cloudflare:test';
 import { selectNextExperience, type NextExperienceGraph } from '../src/lib/domain/nextExperience';
 import type { KcState } from '../src/lib/domain/kcState';
 import { getDb } from '../src/db/client';
-import { branches, courses, experienceKcs, experiences, kcs, users } from '../src/db/schema';
+import { branches, courses, experienceKcs, experiences, kcEdges, kcs, users } from '../src/db/schema';
 import { getNextExperience } from '../src/lib/services/mastery';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -105,6 +105,24 @@ describe('selectNextExperience', () => {
       { id: 'foreign', learnerId: 'other', targetKcIds: ['kc'], kind: 'exercise' },
     ] }), { kc: state() }, now)).toThrow('Cross-learner experience target');
   });
+
+  it('does not let an already-satisfied earlier experience outrank an unmet KC', () => {
+    const input = graph({
+      kcs: [
+        { id: 'mastered-a', learnerId: 'learner', prerequisiteKcIds: [], masteryRule: {} },
+        { id: 'unmet-b', learnerId: 'learner', prerequisiteKcIds: [], masteryRule: {} },
+      ],
+      experiences: [
+        { id: 'mastered-first', learnerId: 'learner', targetKcIds: ['mastered-a'], kind: 'exercise', sortOrder: 0 },
+        { id: 'unmet-second', learnerId: 'learner', targetKcIds: ['unmet-b'], kind: 'exercise', sortOrder: 1 },
+      ],
+    });
+
+    expect(selectNextExperience(input, {
+      'mastered-a': state({ meetsMasteryRule: true, masteryEstimate: 100 }),
+      'unmet-b': state(),
+    }, now)).toEqual({ experienceId: 'unmet-second', reasons: ['ready unmet KC unmet-b'] });
+  });
 });
 
 describe('getNextExperience', () => {
@@ -124,6 +142,60 @@ describe('getNextExperience', () => {
       content: { schema_version: 1, kind: 'worked', prompt: 'Try', solution: 'Answer' }, evidenceResponseType: 'constructed_response',
     });
     await db.insert(experienceKcs).values({ experienceId, kcId, courseId, isEvidenceTarget: true });
+
+    const result = await getNextExperience(db, learnerId, now);
+    expect(result.experience.id).toBe(experienceId);
+    expect(result.reasons).toEqual([`ready unmet KC ${kcId}`]);
+  });
+
+  it('ignores archived graph content and context-only KC links', async () => {
+    const db = getDb(env.DB);
+    const learnerId = crypto.randomUUID();
+    const courseId = crypto.randomUUID();
+    const branchId = crypto.randomUUID();
+    const kcId = crypto.randomUUID();
+    const contextKcId = crypto.randomUUID();
+    const missingPrereqId = crypto.randomUUID();
+    const archivedKcId = crypto.randomUUID();
+    const experienceId = crypto.randomUUID();
+    const archivedBranchId = crypto.randomUUID();
+    const archivedBranchKcId = crypto.randomUUID();
+    const archivedCourseId = crypto.randomUUID();
+    const archivedCourseBranchId = crypto.randomUUID();
+    const archivedCourseKcId = crypto.randomUUID();
+    const archivedExperienceId = crypto.randomUUID();
+    await db.insert(users).values({ id: learnerId, email: `${learnerId}@test.local`, passwordHash: 'x' });
+    await db.insert(courses).values({ id: courseId, userId: learnerId, code: 'ACTIVE', slug: `active-${courseId}`, title: 'Active' });
+    await db.insert(branches).values({ id: branchId, courseId, name: 'Active branch' });
+    await db.insert(branches).values({ id: archivedBranchId, courseId, name: 'Archived branch', archivedAt: now });
+    await db.insert(kcs).values([
+      { id: kcId, branchId, courseId, name: 'Active KC' },
+      { id: contextKcId, branchId, courseId, name: 'Context KC' },
+      { id: missingPrereqId, branchId, courseId, name: 'Missing prerequisite' },
+      { id: archivedKcId, branchId, courseId, name: 'Archived KC', archivedAt: now },
+      { id: archivedBranchKcId, branchId: archivedBranchId, courseId, name: 'KC on archived branch' },
+    ]);
+    await db.insert(kcEdges).values({ kcId: contextKcId, prereqKcId: missingPrereqId, source: 'user' });
+    await db.insert(experiences).values({
+      id: experienceId, courseId, kind: 'exercise', intendedProcesses: ['memory_fluency'],
+      content: { schema_version: 1, kind: 'worked', prompt: 'Try', solution: 'Answer' }, evidenceResponseType: 'constructed_response',
+    });
+    await db.insert(experienceKcs).values([
+      { experienceId, kcId, courseId, isEvidenceTarget: true },
+      { experienceId, kcId: contextKcId, courseId, isEvidenceTarget: false, sortOrder: 1 },
+    ]);
+    await db.insert(courses).values({
+      id: archivedCourseId, userId: learnerId, code: 'OLD', slug: `old-${archivedCourseId}`, title: 'Archived', archived: true,
+    });
+    await db.insert(branches).values({ id: archivedCourseBranchId, courseId: archivedCourseId, name: 'Old branch' });
+    await db.insert(kcs).values({ id: archivedCourseKcId, branchId: archivedCourseBranchId, courseId: archivedCourseId, name: 'Old KC' });
+    await db.insert(experiences).values({
+      id: archivedExperienceId, courseId: archivedCourseId, kind: 'exercise', intendedProcesses: ['memory_fluency'], sortOrder: -1,
+      content: { schema_version: 1, kind: 'worked', prompt: 'Old', solution: 'Old' }, evidenceResponseType: 'constructed_response',
+    });
+    await db.insert(experienceKcs).values({
+      experienceId: archivedExperienceId, kcId: archivedCourseKcId, courseId: archivedCourseId, isEvidenceTarget: true,
+    });
 
     const result = await getNextExperience(db, learnerId, now);
     expect(result.experience.id).toBe(experienceId);

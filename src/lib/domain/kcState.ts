@@ -1,4 +1,4 @@
-import { foldMastery, type FoldEvent, type KcStatus } from '../services/mastery';
+import { eventSuccess, foldMastery, type FoldEvent, type KcStatus } from '../services/mastery';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const CONFIDENCE_RECENCY_HALF_LIFE_MS = 30 * DAY_MS;
@@ -74,8 +74,10 @@ export function deriveKcState(allEvents: KcEvidence[], rule: MasteryRule = {}, n
     .sort((left, right) => left.ts - right.ts || left.id.localeCompare(right.id));
   const folded = foldMastery(evidence, now);
   const firstAt = evidence[0]?.ts ?? null;
+  const threshold = Math.max(0, Math.min(1, rule.threshold ?? 0.8));
   const hasLaterTagged = (tag: string, minimumDelay: number) => firstAt !== null && evidence.some((event) =>
-    event.isAssessment && event.ts >= firstAt + minimumDelay && evidenceTags(event).has(tag),
+    event.isAssessment && event.ts >= firstAt + minimumDelay && evidenceTags(event).has(tag)
+      && eventSuccess(event.payload) >= threshold,
   );
   const hasTransferEvidence = hasLaterTagged('transfer', 1);
   const hasRetentionEvidence = hasLaterTagged('retention', RETENTION_DELAY_MS);
@@ -85,7 +87,6 @@ export function deriveKcState(allEvents: KcEvidence[], rule: MasteryRule = {}, n
   const recencyScore = folded.lastEventAt === null ? 0 : Math.pow(0.5, Math.max(0, now - folded.lastEventAt) / CONFIDENCE_RECENCY_HALF_LIFE_MS);
   const confidence = Math.round(((countScore + diversityScore + recencyScore) / 3) * 100) / 100;
   const latest = evidence.at(-1);
-  const threshold = Math.max(0, Math.min(1, rule.threshold ?? 0.8));
   const enoughEvidence = evidence.length >= (rule.minimum_evidence ?? 1);
   const meetsMasteryRule = folded.mastery / 100 >= threshold && enoughEvidence
     && (!rule.requires_transfer || hasTransferEvidence)

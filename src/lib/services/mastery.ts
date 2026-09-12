@@ -22,10 +22,11 @@
 // Recomputation is just re-folding: because this function is pure and takes
 // the full event list, "edit an event" and "delete an event" both reduce to
 // "re-run this fold over what remains."
-import { and, eq, inArray, or } from 'drizzle-orm';
+import { and, eq, inArray, isNull, or } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import {
   courses,
+  branches,
   events,
   experienceKcs,
   experienceMisconceptions,
@@ -81,7 +82,7 @@ function recencyWeight(ts: number, now: number, halfLifeMs: number): number {
  *  neutral default when the payload carries no explicit outcome (e.g. a
  *  bare `quiz_taken` with no score attached yet). `correctness` has no
  *  emitter yet — reserved for graders that produce a continuous [0,1]. */
-function eventSuccess(payload: unknown): number {
+export function eventSuccess(payload: unknown): number {
   const p = (payload ?? {}) as Record<string, unknown>;
   if (typeof p.correct === 'boolean') return p.correct ? 1 : 0;
   if (typeof p.correctness === 'number') return clamp01(p.correctness);
@@ -199,21 +200,32 @@ function selectionTags(content: unknown): string[] {
 /** Owner-scoped query boundary: assemble data, invoke the pure policy, then resolve its row. */
 export async function getNextExperience(db: Db, userId: string, now: number = Date.now()) {
   const kcRows = await db.select({ kc: kcs }).from(kcs)
+    .innerJoin(branches, eq(kcs.branchId, branches.id))
     .innerJoin(courses, eq(kcs.courseId, courses.id))
-    .where(eq(courses.userId, userId))
+    .where(and(
+      eq(courses.userId, userId),
+      eq(courses.archived, false),
+      isNull(branches.archivedAt),
+      isNull(kcs.archivedAt),
+    ))
     .then((rows) => rows.map((row) => row.kc));
   const kcIds = kcRows.map((kc) => kc.id);
   const experienceRows = await db.select({ experience: experiences }).from(experiences)
     .innerJoin(courses, eq(experiences.courseId, courses.id))
-    .where(eq(courses.userId, userId))
+    .where(and(eq(courses.userId, userId), eq(courses.archived, false)))
     .then((rows) => rows.map((row) => row.experience));
   const experienceIds = experienceRows.map((experience) => experience.id);
   if (kcIds.length === 0 || experienceIds.length === 0) throw new Error('No eligible learner-owned experience');
 
   const [edges, links, diagnostics, scaffoldRows, exerciseRows, stateEntries] = await Promise.all([
-    db.select({ kcId: kcEdges.kcId, prerequisiteKcId: kcEdges.prereqKcId }).from(kcEdges).where(inArray(kcEdges.kcId, kcIds)),
+    db.select({ kcId: kcEdges.kcId, prerequisiteKcId: kcEdges.prereqKcId }).from(kcEdges)
+      .where(and(inArray(kcEdges.kcId, kcIds), inArray(kcEdges.prereqKcId, kcIds))),
     db.select({ experienceId: experienceKcs.experienceId, kcId: experienceKcs.kcId }).from(experienceKcs)
-      .where(inArray(experienceKcs.experienceId, experienceIds)),
+      .where(and(
+        inArray(experienceKcs.experienceId, experienceIds),
+        inArray(experienceKcs.kcId, kcIds),
+        eq(experienceKcs.isEvidenceTarget, true),
+      )),
     db.select({ experienceId: experienceMisconceptions.experienceId, misconceptionId: experienceMisconceptions.misconceptionId })
       .from(experienceMisconceptions).where(inArray(experienceMisconceptions.experienceId, experienceIds)),
     db.select({ experienceId: scaffolds.experienceId, level: scaffolds.level }).from(scaffolds)
@@ -245,7 +257,7 @@ export async function getNextExperience(db: Db, userId: string, now: number = Da
       diagnosticMisconceptionIds: diagnostics.filter((row) => row.experienceId === experience.id).map((row) => row.misconceptionId),
       intendedProcesses: experience.intendedProcesses,
       sortOrder: experience.sortOrder,
-    })),
+    })).filter((experience) => experience.targetKcIds.length > 0),
   }, states, now);
   const experience = experienceRows.find((row) => row.id === selection.experienceId);
   if (!experience) throw new Error('Selected experience is no longer learner-owned');
