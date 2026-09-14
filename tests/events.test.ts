@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
-import { branches, courses, eventIdempotencyKeys, events, kcs, studySessionFinalizations, studySessions, users } from '../src/db/schema';
+import { branches, courses, eventIdempotencyKeys, events, experienceKcs, experiences, kcs, studySessionFinalizations, studySessions, users } from '../src/db/schema';
 import {
   appendEventsAtomically,
   createEvent,
@@ -11,12 +11,37 @@ import {
   listEvents,
   updateEvent,
 } from '../src/lib/services/events';
+import { getKcState } from '../src/lib/services/mastery';
 
 const db = getDb(env.DB);
 
 let userId: string;
 let courseId: string;
 let kcId: string;
+
+async function experienceTargetFixture() {
+  const contextKcId = crypto.randomUUID();
+  const unrelatedKcId = crypto.randomUUID();
+  const experienceId = crypto.randomUUID();
+  const branch = (await db.select().from(branches).where(eq(branches.courseId, courseId)))[0];
+  await db.insert(kcs).values([
+    { id: contextKcId, branchId: branch.id, courseId, name: 'Context-only KC' },
+    { id: unrelatedKcId, branchId: branch.id, courseId, name: 'Unrelated KC' },
+  ]);
+  await db.insert(experiences).values({
+    id: experienceId,
+    courseId,
+    kind: 'exercise',
+    intendedProcesses: ['understanding_sensemaking'],
+    content: { schema_version: 1, kind: 'worked', prompt: 'Apply the target', solution: 'Use the target KC' },
+    evidenceResponseType: 'constructed_response',
+  });
+  await db.insert(experienceKcs).values([
+    { experienceId, kcId, courseId, isEvidenceTarget: true },
+    { experienceId, kcId: contextKcId, courseId, isEvidenceTarget: false, sortOrder: 1 },
+  ]);
+  return { contextKcId, unrelatedKcId, experienceId };
+}
 
 beforeEach(async () => {
   userId = crypto.randomUUID();
@@ -31,6 +56,93 @@ beforeEach(async () => {
 });
 
 describe('events service', () => {
+  it('links one experience observation to every learner-owned evidence target and no context-only target', async () => {
+    const secondKcId = crypto.randomUUID();
+    const contextKcId = crypto.randomUUID();
+    const experienceId = crypto.randomUUID();
+    const branch = (await db.select().from(branches).where(eq(branches.courseId, courseId)))[0];
+    await db.insert(kcs).values([
+      { id: secondKcId, branchId: branch.id, courseId, name: 'Second evidence KC' },
+      { id: contextKcId, branchId: branch.id, courseId, name: 'Context target' },
+    ]);
+    await db.insert(experiences).values({
+      id: experienceId, courseId, kind: 'project', intendedProcesses: ['understanding_sensemaking'],
+      content: { schema_version: 1, kind: 'project', title: 'Apply it', brief: 'Use both ideas' },
+      evidenceResponseType: 'observation',
+    });
+    await db.insert(experienceKcs).values([
+      { experienceId, kcId, courseId, isEvidenceTarget: true },
+      { experienceId, kcId: secondKcId, courseId, isEvidenceTarget: true, sortOrder: 1 },
+      { experienceId, kcId: contextKcId, courseId, isEvidenceTarget: false, sortOrder: 2 },
+    ]);
+
+    const eventId = crypto.randomUUID();
+    const input = { type: 'assignment_graded' as const, event_id: eventId, experience_id: experienceId, payload: { score: 90 } };
+    const result = await createEvent(db, userId, input);
+
+    expect(result.event.experienceId).toBe(experienceId);
+    expect(result.masteryDeltas.map((delta) => delta.kc_id).sort()).toEqual([kcId, secondKcId].sort());
+    expect((await getKcState(db, userId, kcId)).evidenceIds).toEqual([result.event.id]);
+    expect((await getKcState(db, userId, secondKcId)).evidenceIds).toEqual([result.event.id]);
+    expect((await db.select().from(kcs).where(eq(kcs.id, contextKcId)))[0].mastery).toBe(0);
+    expect((await createEvent(db, userId, input)).wasCreated).toBe(false);
+
+    await deleteEvent(db, userId, eventId);
+    expect((await getKcState(db, userId, kcId)).evidenceIds).toEqual([]);
+    expect((await getKcState(db, userId, secondKcId)).evidenceIds).toEqual([]);
+  });
+
+  it('rejects an experience belonging to another learner without disclosing it', async () => {
+    const foreignUserId = crypto.randomUUID();
+    const foreignCourseId = crypto.randomUUID();
+    const foreignExperienceId = crypto.randomUUID();
+    await db.insert(users).values({ id: foreignUserId, email: `${foreignUserId}@test.local`, passwordHash: 'x' });
+    await db.insert(courses).values({ id: foreignCourseId, userId: foreignUserId, code: 'OTHER', slug: `other-${foreignCourseId}`, title: 'Other' });
+    await db.insert(experiences).values({
+      id: foreignExperienceId, courseId: foreignCourseId, kind: 'project', intendedProcesses: ['understanding_sensemaking'],
+      content: { schema_version: 1, kind: 'project', title: 'Other', brief: 'Other' },
+    });
+
+    await expect(createEvent(db, userId, { type: 'practice_done', experience_id: foreignExperienceId }))
+      .rejects.toThrow('Experience not found');
+  });
+
+  it('rejects an explicit context-only or unrelated KC for an experience event', async () => {
+    const { contextKcId, unrelatedKcId, experienceId } = await experienceTargetFixture();
+
+    for (const invalidKcId of [contextKcId, unrelatedKcId]) {
+      await expect(createEvent(db, userId, {
+        type: 'practice_done',
+        kc_id: invalidKcId,
+        experience_id: experienceId,
+      })).rejects.toThrow('Experience not found');
+    }
+
+    expect(await db.select().from(events)).toHaveLength(0);
+  });
+
+  it('rejects an explicit context-only or unrelated KC in an atomic experience append', async () => {
+    const { contextKcId, unrelatedKcId, experienceId } = await experienceTargetFixture();
+
+    for (const invalidKcId of [contextKcId, unrelatedKcId]) {
+      await expect(appendEventsAtomically(db, userId, [{
+        type: 'practice_done',
+        kc_id: invalidKcId,
+        experience_id: experienceId,
+      }], 'session', [])).rejects.toThrow('Experience not found');
+    }
+
+    expect(await db.select().from(events)).toHaveLength(0);
+
+    const valid = await appendEventsAtomically(db, userId, [{
+      type: 'practice_done',
+      kc_id: kcId,
+      experience_id: experienceId,
+    }], 'session', []);
+    expect(valid.events).toHaveLength(1);
+    expect(valid.masteryDeltas.map((delta) => delta.kc_id)).toEqual([kcId]);
+  });
+
   it('creates an event with role flags derived from type, and updates the KC mastery cache atomically', async () => {
     const { event, masteryDeltas } = await createEvent(db, userId, {
       type: 'quiz_taken',

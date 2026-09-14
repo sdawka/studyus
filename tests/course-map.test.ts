@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '../src/db/client';
 import { branches, courses, events, kcEdges, kcs, users } from '../src/db/schema';
-import { getCourseMap, updateCourseMap } from '../src/lib/services/courseMap';
+import { applyTemplateUpdateActions, getCourseMap, syncReviewedTemplateContent, updateCourseMap } from '../src/lib/services/courseMap';
 
 const db = getDb(env.DB);
 let userId: string;
@@ -85,6 +85,37 @@ describe('course-map maintenance', () => {
     expect(saved.prerequisiteCandidates.some((candidate) => candidate.id === secondId)).toBe(false);
     expect(await db.select().from(events).where(eq(events.kcId, secondId))).toHaveLength(1);
     expect(await db.select().from(kcs).where(eq(kcs.id, secondId))).toHaveLength(1);
+  });
+
+  it('allows a legacy learner to archive the final active KC', async () => {
+    let map = await getCourseMap(db, userId, courseId);
+    let input = savedBranches(map);
+    input[0].kcs[1].archived = true;
+    input[0].kcs[1].prerequisite_kc_ids = [];
+    await updateCourseMap(db, userId, courseId, { expected_revision: map.course.mapRevision, branches: input });
+
+    map = await getCourseMap(db, userId, courseId);
+    input = savedBranches(map);
+    input[0].kcs[0].archived = true;
+    const saved = await updateCourseMap(db, userId, courseId, { expected_revision: map.course.mapRevision, branches: input });
+    expect(saved.branches[0].kcs.every((kc) => kc.archived)).toBe(true);
+  });
+
+  it('rejects legacy structural mutation of a V2 aggregate', async () => {
+    await db.update(courses).set({ domainVersion: 2 }).where(eq(courses.id, courseId));
+    const map = await getCourseMap(db, userId, courseId);
+    const input = savedBranches(map);
+    input[0].kcs.push({
+      client_id: crypto.randomUUID(), name: 'Bare KC', kc_type: 'concept', description: null,
+      practice_notes: null, sort_order: 2, archived: false, prerequisite_kc_ids: [],
+    } as never);
+    await expect(updateCourseMap(db, userId, courseId, { expected_revision: map.course.mapRevision, branches: input }))
+      .rejects.toThrow(/version 2/i);
+    await expect(applyTemplateUpdateActions(db, userId, courseId, {
+      expected_revision: map.course.mapRevision,
+      actions: [],
+    })).rejects.toThrow(/version 2/i);
+    await expect(syncReviewedTemplateContent(db, userId, courseId)).resolves.toBe(false);
   });
 
   it('allows prerequisites from another owned course', async () => {

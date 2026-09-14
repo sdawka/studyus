@@ -2,16 +2,17 @@
 // create/update/delete recomputes the affected KC's mastery cache in the
 // same db.batch as the event mutation, so the cache is never observably
 // stale relative to the log it's derived from.
-import { and, desc, eq, gte, inArray, lte, ne, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lte, ne, sql } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import type { Db } from '../../db/client';
-import { eventIdempotencyKeys, events, kcs, runtimeTutorSessionEvents, users } from '../../db/schema';
+import { courses, eventIdempotencyKeys, events, experienceKcs, experienceMisconceptions, experiences, kcs, runtimeTutorSessionEvents, users } from '../../db/schema';
 import type { CreateEventInput, EventSource, ListEventsQuery, UpdateEventInput } from '../schemas/events';
 import { EVENT_ROLE_FLAGS } from '../schemas/events';
 import { toEpochMs } from '../schemas/common';
-import { foldMastery } from './mastery';
+import { eventTargetsOwnedKc, foldMastery } from './mastery';
 import { ConflictError, NotFoundError, requireOwnedCourse, requireOwnedKc, runBatch } from './util';
 import { withSpan } from '../tracing';
+import type { ExperienceResponseInput } from '../schemas/experienceResponse';
 
 type EventRow = typeof events.$inferSelect;
 type EventIdempotencyRow = typeof eventIdempotencyKeys.$inferSelect;
@@ -75,6 +76,7 @@ async function eventRequestFingerprint(input: CreateEventInput, source: EventSou
     type: input.type,
     kc_id: input.kc_id ?? null,
     course_id: input.course_id ?? null,
+    experience_id: input.experience_id ?? null,
     ts: input.ts === undefined ? '__omitted__' : toEpochMs(input.ts),
     payload: input.payload ?? {},
   });
@@ -86,11 +88,41 @@ function eventMatchesSuppliedEvidence(existing: EventRow, input: CreateEventInpu
   return (
     existing.type === input.type &&
     existing.kcId === (input.kc_id ?? null) &&
-    existing.courseId === (input.course_id ?? null) &&
+    (existing.courseId === (input.course_id ?? null) || (input.experience_id !== undefined && input.course_id === undefined)) &&
+    existing.experienceId === (input.experience_id ?? null) &&
     existing.source === source &&
     (input.ts === undefined || existing.ts === toEpochMs(input.ts)) &&
     canonicalJson(existing.payload) === canonicalJson(input.payload ?? {})
   );
+}
+
+async function ownedExperienceEvidenceTargets(db: Db, userId: string, experienceId: string) {
+  const owner = await db.select({ courseId: experiences.courseId, userId: courses.userId })
+    .from(experiences)
+    .innerJoin(courses, eq(experiences.courseId, courses.id))
+    .where(eq(experiences.id, experienceId))
+    .limit(1);
+  if (!owner[0] || owner[0].userId !== userId) throw new NotFoundError('Experience');
+  const targets = await db.select({ kcId: experienceKcs.kcId })
+    .from(experienceKcs)
+    .where(and(eq(experienceKcs.experienceId, experienceId), eq(experienceKcs.isEvidenceTarget, true)));
+  return { courseId: owner[0].courseId, kcIds: targets.map((target) => target.kcId) };
+}
+
+async function targetKcIdsForEvent(db: Db, event: Pick<EventRow, 'kcId' | 'experienceId'>): Promise<string[]> {
+  const linked = event.experienceId
+    ? await db.select({ kcId: experienceKcs.kcId }).from(experienceKcs)
+      .where(and(eq(experienceKcs.experienceId, event.experienceId), eq(experienceKcs.isEvidenceTarget, true)))
+    : [];
+  return [...new Set([...(event.kcId ? [event.kcId] : []), ...linked.map((row) => row.kcId)])];
+}
+
+async function foldEventsForKc(db: Db, userId: string, kcId: string, excludedEventId?: string) {
+  const where = excludedEventId
+    ? and(eq(events.userId, userId), eventTargetsOwnedKc(db, kcId), ne(events.id, excludedEventId))
+    : and(eq(events.userId, userId), eventTargetsOwnedKc(db, kcId));
+  return db.select({ ts: events.ts, isInstructional: events.isInstructional, isAssessment: events.isAssessment, payload: events.payload })
+    .from(events).where(where);
 }
 
 async function loadIdempotencyRow(db: Db, userId: string, idempotencyKey: string): Promise<EventIdempotencyRow | undefined> {
@@ -179,7 +211,10 @@ export async function createEvent(
   }
 
   if (input.course_id) await requireOwnedCourse(db, userId, input.course_id);
-  if (input.kc_id) await requireOwnedKc(db, userId, input.kc_id);
+  const explicitKc = input.kc_id ? await requireOwnedKc(db, userId, input.kc_id) : null;
+  const experience = input.experience_id ? await ownedExperienceEvidenceTargets(db, userId, input.experience_id) : null;
+  if (experience && input.course_id && input.course_id !== experience.courseId) throw new NotFoundError('Experience');
+  if (experience && explicitKc && !experience.kcIds.includes(explicitKc.id)) throw new NotFoundError('Experience');
 
   const { isInstructional, isAssessment } = EVENT_ROLE_FLAGS[input.type];
   const now = Date.now();
@@ -191,7 +226,8 @@ export async function createEvent(
     isInstructional,
     isAssessment,
     kcId: input.kc_id ?? null,
-    courseId: input.course_id ?? null,
+    courseId: input.course_id ?? experience?.courseId ?? null,
+    experienceId: input.experience_id ?? null,
     sessionId: null as string | null,
     payload: input.payload ?? {},
     source,
@@ -212,24 +248,26 @@ export async function createEvent(
   const masteryDeltas: MasteryDelta[] = [];
 
   try {
-    if (newEvent.kcId) {
+    const targetKcIds = [...new Set([...(newEvent.kcId ? [newEvent.kcId] : []), ...(experience?.kcIds ?? [])])];
+    if (targetKcIds.length > 0) {
       for (let attempt = 0; attempt < 16; attempt += 1) {
-        const existing = await db
-          .select({ ts: events.ts, isInstructional: events.isInstructional, isAssessment: events.isAssessment, payload: events.payload })
-          .from(events)
-          .where(eq(events.kcId, newEvent.kcId));
-        const { updateStmt, delta } = await foldedKcUpdate(db, newEvent.kcId, [...existing, newEvent]);
+        const updates = await Promise.all(targetKcIds.map(async (kcId) => {
+          const existing = await foldEventsForKc(db, userId, kcId);
+          const folded = await foldedKcUpdate(db, kcId, [...existing, newEvent]);
+          return folded;
+        }));
         try {
+          const cacheStatements = updates.map((update) => update.updateStmt);
           if (ledgerStmt) {
-            await withSpan('events.append', { event_type: newEvent.type, kc_id: newEvent.kcId }, () =>
-              db.batch([activeEventUserFence(db, userId), insertStmt, updateStmt, ledgerStmt]),
+            await withSpan('events.append', { event_type: newEvent.type, kc_count: targetKcIds.length }, () =>
+              runBatch(db, [activeEventUserFence(db, userId), insertStmt, ...cacheStatements, ledgerStmt]),
             );
           } else {
-            await withSpan('events.append', { event_type: newEvent.type, kc_id: newEvent.kcId }, () =>
-              db.batch([activeEventUserFence(db, userId), insertStmt, updateStmt]),
+            await withSpan('events.append', { event_type: newEvent.type, kc_count: targetKcIds.length }, () =>
+              runBatch(db, [activeEventUserFence(db, userId), insertStmt, ...cacheStatements]),
             );
           }
-          masteryDeltas.push(delta);
+          masteryDeltas.push(...updates.map((update) => update.delta));
           break;
         } catch (error) {
           if (!isKcCacheConflict(error) || attempt === 15) throw error;
@@ -265,6 +303,55 @@ export async function createEvent(
   return { event: newEvent, masteryDeltas, wasCreated: true };
 }
 
+/** Scores supported authored responses server-side; unscored responses never claim correctness. */
+export async function respondToExperience(db: Db, userId: string, experienceId: string, input: ExperienceResponseInput, idempotencyKey?: string) {
+  const owned = await db.select({
+    courseId: experiences.courseId,
+    content: experiences.content,
+    responseType: experiences.evidenceResponseType,
+    scoringKind: experiences.evidenceScoringKind,
+    scoringDetails: experiences.evidenceScoringDetails,
+  })
+    .from(experiences).innerJoin(courses, eq(experiences.courseId, courses.id))
+    .where(and(eq(experiences.id, experienceId), eq(courses.userId, userId))).limit(1);
+  if (!owned[0]) throw new NotFoundError('Experience');
+  const targets = await db.select({ kcId: experienceKcs.kcId }).from(experienceKcs)
+    .where(and(eq(experienceKcs.experienceId, experienceId), eq(experienceKcs.isEvidenceTarget, true)));
+  const diagnosticMisconceptionIds = await db.select({ id: experienceMisconceptions.misconceptionId }).from(experienceMisconceptions)
+    .where(eq(experienceMisconceptions.experienceId, experienceId)).orderBy(asc(experienceMisconceptions.sortOrder))
+    .then((rows) => rows.map((row) => row.id));
+  const content = owned[0].content && typeof owned[0].content === 'object' ? owned[0].content as Record<string, unknown> : {};
+  const selectionPolicy = content.selection_policy && typeof content.selection_policy === 'object'
+    ? content.selection_policy as Record<string, unknown> : {};
+  const evidenceTags = Array.isArray(selectionPolicy.evidence_tags)
+    ? selectionPolicy.evidence_tags.filter((tag): tag is string => typeof tag === 'string' && ['spacing', 'retention', 'transfer'].includes(tag))
+    : [];
+  const trustedContext = { evidence_tags: evidenceTags, diagnostic_misconception_ids: diagnosticMisconceptionIds };
+  if (owned[0].responseType === 'selected_response' && content.kind === 'mcq') {
+    if (input.selected_index === undefined || !Array.isArray(content.options) || input.selected_index >= content.options.length) throw new ConflictError('Select one available answer.');
+    const scored = owned[0].scoringKind === 'binary';
+    return createEvent(db, userId, { type: scored ? 'quiz_taken' : 'practice_done', course_id: owned[0].courseId, experience_id: experienceId,
+      kc_id: targets[0]?.kcId, payload: { selected_index: input.selected_index, ...trustedContext, ...(scored ? { correct: input.selected_index === content.correct_index } : { observation: true }) } }, 'system', idempotencyKey);
+  }
+  if (!input.response) throw new ConflictError('Write a response before saving.');
+  if (owned[0].scoringKind === 'numeric') {
+    const details = owned[0].scoringDetails && typeof owned[0].scoringDetails === 'object'
+      ? owned[0].scoringDetails as Record<string, unknown> : {};
+    const answer = details.answer && typeof details.answer === 'object' ? details.answer as Record<string, unknown> : {};
+    const expected = answer.value;
+    const tolerancePct = answer.tolerance_pct ?? 0;
+    const actual = Number(input.response);
+    if (typeof expected !== 'number' || typeof tolerancePct !== 'number' || !Number.isFinite(actual)) {
+      throw new ConflictError('Enter a valid numeric response.');
+    }
+    const correct = Math.abs(actual - expected) <= Math.abs(expected) * tolerancePct / 100;
+    return createEvent(db, userId, { type: 'quiz_taken', course_id: owned[0].courseId, experience_id: experienceId,
+      kc_id: targets[0]?.kcId, payload: { response: input.response, correct, correctness: correct ? 1 : 0, ...trustedContext } }, 'system', idempotencyKey);
+  }
+  return createEvent(db, userId, { type: targets.length ? 'practice_done' : 'reading_done', course_id: owned[0].courseId,
+    experience_id: experienceId, kc_id: targets[0]?.kcId, payload: { response: input.response, ...trustedContext, observation: true } }, 'system', idempotencyKey);
+}
+
 export type AtomicEventInput = CreateEventInput & {
   event_id?: string;
   session_id?: string;
@@ -290,6 +377,17 @@ export async function appendEventsAtomically(
     if (input.kc_id) await requireOwnedKc(db, userId, input.kc_id);
   }
 
+  const experienceTargets = new Map<string, { courseId: string; kcIds: string[] }>();
+  for (const input of inputs) {
+    if (!input.experience_id || experienceTargets.has(input.experience_id)) continue;
+    experienceTargets.set(input.experience_id, await ownedExperienceEvidenceTargets(db, userId, input.experience_id));
+  }
+  for (const input of inputs) {
+    const linked = input.experience_id ? experienceTargets.get(input.experience_id)! : null;
+    if (linked && input.course_id && input.course_id !== linked.courseId) throw new NotFoundError('Experience');
+    if (linked && input.kc_id && !linked.kcIds.includes(input.kc_id)) throw new NotFoundError('Experience');
+  }
+
   const now = Date.now();
   const newEvents: EventRow[] = inputs.map((input) => {
     const { isInstructional, isAssessment } = EVENT_ROLE_FLAGS[input.type];
@@ -301,7 +399,8 @@ export async function appendEventsAtomically(
       isInstructional,
       isAssessment,
       kcId: input.kc_id ?? null,
-      courseId: input.course_id ?? null,
+      courseId: input.course_id ?? (input.experience_id ? experienceTargets.get(input.experience_id)?.courseId : null) ?? null,
+      experienceId: input.experience_id ?? null,
       sessionId: input.session_id ?? null,
       payload: input.payload ?? {},
       source,
@@ -309,17 +408,18 @@ export async function appendEventsAtomically(
     };
   });
 
-  const kcIds = [...new Set(newEvents.flatMap((event) => (event.kcId ? [event.kcId] : [])))];
+  const targetsByEvent = new Map(newEvents.map((event) => [event.id, [
+    ...(event.kcId ? [event.kcId] : []),
+    ...(event.experienceId ? experienceTargets.get(event.experienceId)?.kcIds ?? [] : []),
+  ]]));
+  const kcIds = [...new Set([...targetsByEvent.values()].flat())];
   for (let attempt = 0; attempt < 16; attempt += 1) {
     const statements: BatchItem<'sqlite'>[] = [activeEventUserFence(db, userId), ...companionStatements];
     if (newEvents.length > 0) statements.push(db.insert(events).values(newEvents));
     const masteryDeltas: MasteryDelta[] = [];
     for (const kcId of kcIds) {
-      const existing = await db
-        .select({ ts: events.ts, isInstructional: events.isInstructional, isAssessment: events.isAssessment, payload: events.payload })
-        .from(events)
-        .where(eq(events.kcId, kcId));
-      const additions = newEvents.filter((event) => event.kcId === kcId);
+      const existing = await foldEventsForKc(db, userId, kcId);
+      const additions = newEvents.filter((event) => targetsByEvent.get(event.id)?.includes(kcId));
       const { updateStmt, delta } = await foldedKcUpdate(db, kcId, [...existing, ...additions]);
       statements.push(updateStmt);
       masteryDeltas.push(delta);
@@ -489,15 +589,15 @@ export async function updateEvent(db: Db, userId: string, eventId: string, input
     .where(eq(events.id, eventId));
 
   const masteryDeltas: MasteryDelta[] = [];
-  if (existingEvent.kcId) {
+  const targetKcIds = await targetKcIdsForEvent(db, existingEvent);
+  if (targetKcIds.length > 0) {
     // Re-fold with every other event for this KC plus the updated version of this one.
-    const others = await db
-      .select({ ts: events.ts, isInstructional: events.isInstructional, isAssessment: events.isAssessment, payload: events.payload })
-      .from(events)
-      .where(and(eq(events.kcId, existingEvent.kcId), eq(events.userId, userId), ne(events.id, eventId)));
-    const { updateStmt, delta } = await foldedKcUpdate(db, existingEvent.kcId, [...others, updated]);
-    masteryDeltas.push(delta);
-    await db.batch([activeEventUserFence(db, userId), updateEventStmt, updateStmt]);
+    const updates = await Promise.all(targetKcIds.map(async (kcId) => {
+      const others = await foldEventsForKc(db, userId, kcId, eventId);
+      return foldedKcUpdate(db, kcId, [...others, updated]);
+    }));
+    masteryDeltas.push(...updates.map((update) => update.delta));
+    await runBatch(db, [activeEventUserFence(db, userId), updateEventStmt, ...updates.map((update) => update.updateStmt)]);
   } else {
     await db.batch([activeEventUserFence(db, userId), updateEventStmt]);
   }
@@ -511,15 +611,15 @@ export async function deleteEvent(db: Db, userId: string, eventId: string) {
   const deleteStmt = db.delete(events).where(eq(events.id, eventId));
 
   const masteryDeltas: MasteryDelta[] = [];
-  if (existingEvent.kcId) {
+  const targetKcIds = await targetKcIdsForEvent(db, existingEvent);
+  if (targetKcIds.length > 0) {
     // Re-fold with everything *except* the event being deleted.
-    const remaining = await db
-      .select({ ts: events.ts, isInstructional: events.isInstructional, isAssessment: events.isAssessment, payload: events.payload })
-      .from(events)
-      .where(and(eq(events.kcId, existingEvent.kcId), eq(events.userId, userId), ne(events.id, eventId)));
-    const { updateStmt, delta } = await foldedKcUpdate(db, existingEvent.kcId, remaining);
-    masteryDeltas.push(delta);
-    await db.batch([activeEventUserFence(db, userId), deleteStmt, updateStmt]);
+    const updates = await Promise.all(targetKcIds.map(async (kcId) => {
+      const remaining = await foldEventsForKc(db, userId, kcId, eventId);
+      return foldedKcUpdate(db, kcId, remaining);
+    }));
+    masteryDeltas.push(...updates.map((update) => update.delta));
+    await runBatch(db, [activeEventUserFence(db, userId), deleteStmt, ...updates.map((update) => update.updateStmt)]);
   } else {
     await db.batch([activeEventUserFence(db, userId), deleteStmt]);
   }

@@ -1,15 +1,15 @@
 # studyus Product Vision
 
-## Target User
+## Target Learner
 
-A university student (our pilot: a ChemEng undergrad at McGill with a typical course load). The student has:
-- A calendar of course schedules, assignment deadlines, and exams.
-- Grade records from assessments (quizzes, labs, midterms, finals).
-- Course material to study: textbooks, videos, problem sets, instructor notes.
-- KCs (knowledge components) they're building mastery in — concepts, equations, procedures, design principles.
-- External learning events: lectures attended, grades received, tutoring sessions, study groups.
+studyus is for someone pursuing a bounded learning goal: a language, craft,
+professional skill, personal project, or formal class. A course is the
+learner-owned container for that goal. Academic schedules, grades, instructors,
+and institutions remain supported metadata, but none is required to begin.
 
-The student faces **cognitive overload**: navigating multiple systems (learning management, email, calendar, gradebook, note-taking apps), forgetting when to study and what, losing track of which topics they're weak in.
+The learner faces **cognitive overload**: material is scattered, practice is
+easy to confuse with progress, and it is hard to decide what to do next or
+which ideas remain weak.
 
 ## Two Halves: Admin & Learning
 
@@ -32,9 +32,14 @@ The admin half is **minimal and administrative**: not a classroom — just a mir
 - **Rituals** (v1.9): a learner-authored study structure, either a recurring habit ("Sunday weekly review") or an in-session shape (warm-up → retrieval → new material → reflect) picked at the start of a study session, or both. Purely a scaffold the student opts into — the step rail is guidance, never an enforced gate, and adherence is shown as plain counts and a done/skipped/upcoming dot row, never a streak or badge to protect (see Design Vibe below).
 - **Capabilities** (v1.9): two layers beyond a single KC's mastery. Competencies aggregate KCs into a higher-order skill that can cross course boundaries (e.g. "quantitative modeling" spanning two engineering courses), with a derived mastery/coverage rollup. Meta-skills are a fixed, un-scored readout of *how* a student studies — retrieval practice, self-explanation, error analysis — reported as frequency and trend, never a score, since scoring how someone learns invites gaming the metric rather than the learning itself.
 
-### Future First-Party Course: Learning to Learn
+### First-Party Course: Learning How to Learn
 
-A later, opt-in **Learning to Learn** course will turn the existing meta-skill vocabulary into teachable KCs and ordinary study experiences: retrieval practice, spacing/interleaving, self-explanation, error analysis, calibration, planning, and reflection. It should use the same course/KC/exercise/ritual machinery as any academic course and model the coaching stance without becoming a compulsory onboarding tutorial. It is offered only after the learner has established at least one real course; it must never satisfy onboarding's real-course requirement by itself.
+Every new learner receives a detached, editable **Learning How to Learn**
+course during local account provisioning. It teaches retrieval, calibration,
+retention and transfer, self-explanation, error analysis, planning, and
+reflection through the same KC, Experience, Evidence, and KC-state machinery
+as any other course. Enrollment copies the current bundled version once; later
+template revisions never rewrite a learner's copy.
 
 ### The Identity Profile (v1.9)
 
@@ -46,12 +51,12 @@ The learning half is **low-distraction and mastery-focused**: what should I stud
 
 **Simple and minimal.** Chrome recedes and motion is brief, token-owned, and removable under reduced-motion preferences. Small completion celebrations may acknowledge an action, but the product does not use points, badges, guilt, loss aversion, or protected streaks to manufacture engagement. The vibe is **motivational-but-purely-informational**: show progress and activity history without coercion.
 
-**Student-friendly.** The student should feel like this is *their* tool, not another institutional system. Keyboard-navigable, fast, zero configuration.
+**Learner-friendly.** The learner should feel like this is *their* tool, not another institutional system. Keyboard-navigable, fast, zero configuration.
 
 **Frozen API contract** from day one. Webapp first; iPad app follows, consuming the same JSON API so features land once. The public API contract becomes our north star.
 
 ## TODO
 
-- Implement the first-run course-ingestion contract in `docs/product/onboarding.md`.
+- Add durable, provenance-preserving material ingestion beyond the current local extraction helper.
 - Reflection and coaching copy should follow the no-guilt stance; richer prompts remain post-onboarding polish.
 - Social features: cross-user study groups, shared resources, peer feedback, moderation, and discovery. Clerk makes accounts multi-user, but resources remain owner-scoped today.

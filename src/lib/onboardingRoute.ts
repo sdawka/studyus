@@ -1,12 +1,9 @@
 // Where an authenticated learner belongs relative to onboarding.
 //
 // Extracted from middleware.ts so the rule can be unit-tested: it decides
-// whether someone can reach the app at all, and it has to be symmetric. The
-// original only enforced one direction — a learner without a usable course was
-// pushed to /onboarding, but a learner who had already finished was never
-// pushed back out, so revisiting /onboarding ran the whole setup again and
-// created a duplicate course (clearDemoDraft() wipes the draft id on success,
-// so the per-draft idempotency check cannot catch that).
+// whether someone can reach the app at all. Completion is a one-way stamp:
+// signed-in learners may later empty their workspace without being sent back
+// through setup, while revisiting /onboarding must not create a duplicate.
 
 /** Paths a learner may visit while they still have no usable course. */
 export function isOnboardingAllowed(pathname: string): boolean {
@@ -34,11 +31,14 @@ export interface OnboardingRouteState {
  * hasUsableCourse query.
  */
 export function onboardingRedirect(pathname: string, state: OnboardingRouteState): string | null {
-  const setUp = state.onboarded && state.hasUsableCourse;
+  // Provisioning guarantees a default course for new learners. Completion is
+  // deliberately one-way: archiving every course later belongs to the normal
+  // course empty state and must never reopen setup.
+  const setUp = state.onboarded;
 
   // Finished learners have no business in setup: /onboarding would happily
   // build them a second course.
-  if (pathname === '/onboarding') return setUp ? '/dashboard' : null;
+  if (pathname === '/onboarding') return setUp ? (state.hasUsableCourse ? '/dashboard' : '/courses') : null;
 
   // Unfinished learners get pushed back to setup, except on the few pages that
   // must stay reachable (account, settings, auth).

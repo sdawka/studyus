@@ -2,7 +2,25 @@
 
 This document distills **Koedinger, Corbett & Perfetti's Knowledge-Learning-Instruction (KLI) Framework** (Cognitive Science 36(5), 2012; [PDF](http://pact.cs.cmu.edu/pubs/Koedinger,%20Corbett,%20Perfetti%202012-KLI.pdf)) and explains how studyus's event model and mastery inference implement it.
 
-## Ontology: KCs, Events, and Performance
+## Ontology: KCs, Experiences, Evidence, and State
+
+The general course model is:
+
+`Intent → KC graph → process hypotheses → Experiences → Evidence → KCState → next Experience`
+
+A `CourseDraftV2` authors the intent, outcomes, KC graph, examples,
+misconceptions, experiences, evidence contracts, references, and optional
+learner-facing modules. An **Experience** is what the learner encounters or
+does; its intended processes are hypotheses, not observations. **Evidence** is
+an instructional- or assessment-role event linked directly to a KC or to an
+experience's declared evidence targets. **KCState** is a recomputable read
+model inferred from those events, never a stored observation or claim that
+learning occurred.
+
+Modules and lessons are views over the graph. Their ordering may change without
+changing KC identity, evidence history, or inferred state.
+
+## KLI events and performance
 
 The foundational insight: **Knowledge Components (KCs) cause performance.** A KC is an "acquired unit of cognitive function inferable from performance on related tasks" — a fact, concept, procedure, or principle that a learner can apply.
 
@@ -126,7 +144,17 @@ Plot error rate vs. opportunity count. Typical pattern: exponential decay (fewer
 
 There is no first-attempt/opportunity-count logic, no per-type success-threshold table (quiz ≥80%, tutor `final_rating >= 3`, etc.) — every AE event's success value comes from whatever the payload actually carries, uniformly, regardless of event `type`.
 
-**Recomputation**: the fold is cached on the `kcs.mastery`/`kcs.status`/`kcs.last_event_at` columns. Every event write (create, edit, delete) re-queries the full event list for the affected KC and re-folds it in the same `db.batch` as the write — atomic, and correct for edits/deletes because the fold is pure and takes the complete list each time (`recomputeKcMastery` in `mastery.ts`; the events service inlines the same pure `foldMastery` call inside its own batch instead of calling that wrapper, since it needs the recompute atomic with the event mutation).
+**Recomputation**: the fold is cached on the `kcs.mastery`/`kcs.status`/`kcs.last_event_at` columns. Every event write (create, edit, delete) re-queries the full event list for every affected KC and re-folds it in the same `db.batch` as the write — atomic, and correct for edits/deletes because the fold is pure and takes the complete list each time. An event with `experience_id` may target several KCs, but only the learner-owned evidence targets declared by `experience_kcs` are eligible.
+
+`deriveKcState` layers transparent rule evaluation over the same evidence. It
+returns the fold's estimate/status, bounded heuristic confidence, contributing
+evidence IDs, last update and experience, active misconception IDs, and whether
+later retention/transfer evidence satisfies the KC's authored mastery rule.
+This state is recomputed on read; it is not BKT, IRT, or a probability that the
+learner knows the KC. `getNextExperience` uses these states, prerequisites,
+support/difficulty, process fit, timing, and misconception evidence to make a
+deterministic choice with inspectable reasons. It does not implement an
+optimized spaced-repetition schedule.
 
 ### assessment_kcs.qmatrix_version
 

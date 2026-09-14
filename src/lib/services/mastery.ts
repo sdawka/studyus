@@ -22,9 +22,23 @@
 // Recomputation is just re-folding: because this function is pure and takes
 // the full event list, "edit an event" and "delete an event" both reduce to
 // "re-run this fold over what remains."
-import { eq } from 'drizzle-orm';
+import { and, eq, exists, inArray, isNull, or } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { events, kcs } from '../../db/schema';
+import {
+  courses,
+  branches,
+  events,
+  experienceKcs,
+  experienceMisconceptions,
+  experiences,
+  exercises,
+  kcEdges,
+  kcs,
+  scaffolds,
+} from '../../db/schema';
+import { deriveKcState } from '../domain/kcState';
+import { selectNextExperience } from '../domain/nextExperience';
+import { requireOwnedKc } from './util';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -68,7 +82,7 @@ function recencyWeight(ts: number, now: number, halfLifeMs: number): number {
  *  neutral default when the payload carries no explicit outcome (e.g. a
  *  bare `quiz_taken` with no score attached yet). `correctness` has no
  *  emitter yet — reserved for graders that produce a continuous [0,1]. */
-function eventSuccess(payload: unknown): number {
+export function eventSuccess(payload: unknown): number {
   const p = (payload ?? {}) as Record<string, unknown>;
   if (typeof p.correct === 'boolean') return p.correct ? 1 : 0;
   if (typeof p.correctness === 'number') return clamp01(p.correctness);
@@ -90,7 +104,10 @@ export function foldMastery(events: FoldEvent[], now: number = Date.now()): Mast
   // The domain stream also holds a small number of durable context facts. Only
   // learning evidence may establish freshness or contribute to mastery; product
   // usage belongs in the separate behavioral stream.
-  const evidenceEvents = events.filter((event) => event.isInstructional || event.isAssessment);
+  const evidenceEvents = events.filter((event) => {
+    const payload = event.payload && typeof event.payload === 'object' ? event.payload as Record<string, unknown> : {};
+    return payload.observation !== true && (event.isInstructional || event.isAssessment);
+  });
 
   if (evidenceEvents.length === 0) {
     return { mastery: 0, status: 'not-started', lastEventAt: null };
@@ -127,6 +144,27 @@ export function foldMastery(events: FoldEvent[], now: number = Date.now()): Mast
   return { mastery, status: statusFor(mastery, true), lastEventAt };
 }
 
+/** Matches direct or experience-linked evidence only when the event owner also
+ * owns the target KC. Correlation keeps the predicate constant-size even when
+ * a KC has hundreds of evidence-producing experiences. */
+export function eventTargetsOwnedKc(db: Db, kcId: string) {
+  const ownedTarget = db.select({ id: kcs.id }).from(kcs)
+    .innerJoin(courses, eq(kcs.courseId, courses.id))
+    .where(and(eq(kcs.id, kcId), eq(courses.userId, events.userId)));
+  const linkedEvidence = db.select({ id: experienceKcs.experienceId }).from(experienceKcs)
+    .innerJoin(courses, eq(experienceKcs.courseId, courses.id))
+    .where(and(
+      eq(experienceKcs.kcId, kcId),
+      eq(experienceKcs.isEvidenceTarget, true),
+      eq(experienceKcs.experienceId, events.experienceId),
+      eq(courses.userId, events.userId),
+    ));
+  return and(
+    exists(ownedTarget),
+    or(eq(events.kcId, kcId), exists(linkedEvidence)),
+  )!;
+}
+
 /** Standalone (non-batched) recompute: query all events for a KC, fold, and
  *  write the derived cache back. Used for one-off recomputes (e.g. backfill,
  *  or ownership already established by the caller); the events service uses
@@ -136,7 +174,7 @@ export async function recomputeKcMastery(db: Db, kcId: string, now: number = Dat
   const rows = await db
     .select({ ts: events.ts, isInstructional: events.isInstructional, isAssessment: events.isAssessment, payload: events.payload })
     .from(events)
-    .where(eq(events.kcId, kcId));
+    .where(eventTargetsOwnedKc(db, kcId));
 
   const result = foldMastery(rows, now);
   await db
@@ -144,4 +182,122 @@ export async function recomputeKcMastery(db: Db, kcId: string, now: number = Dat
     .set({ mastery: result.mastery, status: result.status, lastEventAt: result.lastEventAt })
     .where(eq(kcs.id, kcId));
   return result;
+}
+
+/** Recomputes the auditable learner-owned KC read model from the event stream. */
+export async function getKcState(db: Db, userId: string, kcId: string, now: number = Date.now()) {
+  const kc = await requireOwnedKc(db, userId, kcId);
+  const rows = await db.select({
+    id: events.id,
+    ts: events.ts,
+    type: events.type,
+    isInstructional: events.isInstructional,
+    isAssessment: events.isAssessment,
+    experienceId: events.experienceId,
+    payload: events.payload,
+  }).from(events).where(and(eq(events.userId, userId), eventTargetsOwnedKc(db, kcId)));
+  return deriveKcState(rows, kc.masteryRule, now);
+}
+
+function selectionTags(content: unknown): string[] {
+  if (!content || typeof content !== 'object') return [];
+  const value = content as Record<string, unknown>;
+  const policy = value.selection_policy && typeof value.selection_policy === 'object'
+    ? value.selection_policy as Record<string, unknown> : {};
+  const candidates = [value.evidence_type, value.evidence_kind, value.purpose];
+  if (Array.isArray(policy.evidence_tags)) candidates.push(...policy.evidence_tags);
+  for (const key of ['evidence_tags', 'tags']) {
+    if (Array.isArray(value[key])) candidates.push(...value[key]);
+  }
+  return candidates.filter((candidate): candidate is string => typeof candidate === 'string');
+}
+
+/** Owner-scoped query boundary: assemble data, invoke the pure policy, then resolve its row. */
+export async function getNextExperience(db: Db, userId: string, now: number = Date.now()) {
+  const kcRows = await db.select({ kc: kcs }).from(kcs)
+    .innerJoin(branches, eq(kcs.branchId, branches.id))
+    .innerJoin(courses, eq(kcs.courseId, courses.id))
+    .where(and(
+      eq(courses.userId, userId),
+      eq(courses.archived, false),
+      isNull(branches.archivedAt),
+      isNull(kcs.archivedAt),
+    ))
+    .then((rows) => rows.map((row) => row.kc));
+  const kcIds = new Set(kcRows.map((kc) => kc.id));
+  const experienceRows = await db.select({ experience: experiences }).from(experiences)
+    .innerJoin(courses, eq(experiences.courseId, courses.id))
+    .where(and(eq(courses.userId, userId), eq(courses.archived, false)))
+    .then((rows) => rows.map((row) => row.experience));
+  const experienceIds = new Set(experienceRows.map((experience) => experience.id));
+  if (kcIds.size === 0 || experienceIds.size === 0) throw new Error('No eligible learner-owned experience');
+
+  const [edges, links, diagnostics, scaffoldRows, exerciseRows] = await Promise.all([
+    db.select({ kcId: kcEdges.kcId, prerequisiteKcId: kcEdges.prereqKcId }).from(kcEdges)
+      .innerJoin(kcs, eq(kcEdges.kcId, kcs.id)).innerJoin(courses, eq(kcs.courseId, courses.id))
+      .where(eq(courses.userId, userId)),
+    db.select({ experienceId: experienceKcs.experienceId, kcId: experienceKcs.kcId, isEvidenceTarget: experienceKcs.isEvidenceTarget, sortOrder: experienceKcs.sortOrder }).from(experienceKcs)
+      .innerJoin(courses, eq(experienceKcs.courseId, courses.id)).where(eq(courses.userId, userId)),
+    db.select({ experienceId: experienceMisconceptions.experienceId, misconceptionId: experienceMisconceptions.misconceptionId })
+      .from(experienceMisconceptions).innerJoin(courses, eq(experienceMisconceptions.courseId, courses.id)).where(eq(courses.userId, userId)),
+    db.select({ experienceId: scaffolds.experienceId, level: scaffolds.level }).from(scaffolds)
+      .innerJoin(kcs, eq(scaffolds.kcId, kcs.id)).innerJoin(courses, eq(kcs.courseId, courses.id)).where(eq(courses.userId, userId)),
+    db.select({ experienceId: exercises.experienceId, difficulty: exercises.difficulty }).from(exercises)
+      .innerJoin(kcs, eq(exercises.kcId, kcs.id)).innerJoin(courses, eq(kcs.courseId, courses.id)).where(eq(courses.userId, userId)),
+  ]);
+  const scopedEdges = edges.filter((edge) => kcIds.has(edge.kcId) && kcIds.has(edge.prerequisiteKcId));
+  const scopedLinks = links.filter((link) => experienceIds.has(link.experienceId) && kcIds.has(link.kcId));
+  const scopedDiagnostics = diagnostics.filter((row) => experienceIds.has(row.experienceId));
+  const scopedScaffolds = scaffoldRows.filter((row) => row.experienceId !== null && experienceIds.has(row.experienceId));
+  const scopedExercises = exerciseRows.filter((row) => row.experienceId !== null && experienceIds.has(row.experienceId));
+  const evidenceLinks = scopedLinks.filter((link) => link.isEvidenceTarget);
+  const activeCourseIds = db.select({ id: courses.id }).from(courses)
+    .where(and(eq(courses.userId, userId), eq(courses.archived, false)));
+  const activeKcIds = db.select({ id: kcs.id }).from(kcs)
+    .innerJoin(branches, eq(kcs.branchId, branches.id)).innerJoin(courses, eq(kcs.courseId, courses.id))
+    .where(and(eq(courses.userId, userId), eq(courses.archived, false), isNull(branches.archivedAt), isNull(kcs.archivedAt)));
+  const activeExperienceIds = db.select({ id: experiences.id }).from(experiences)
+    .innerJoin(courses, eq(experiences.courseId, courses.id))
+    .where(and(eq(courses.userId, userId), eq(courses.archived, false)));
+  const eventRows = await db.select({
+    id: events.id, ts: events.ts, type: events.type, isInstructional: events.isInstructional,
+    isAssessment: events.isAssessment, kcId: events.kcId, experienceId: events.experienceId, payload: events.payload,
+  }).from(events).where(and(eq(events.userId, userId), or(
+    inArray(events.courseId, activeCourseIds),
+    inArray(events.kcId, activeKcIds),
+    inArray(events.experienceId, activeExperienceIds),
+  )!));
+  const support = new Map<string, number>();
+  for (const row of scopedScaffolds) if (row.experienceId) support.set(row.experienceId, row.level);
+  for (const row of scopedExercises) if (row.experienceId) support.set(row.experienceId, row.difficulty);
+  const states = Object.fromEntries(kcRows.map((kc) => {
+    const linkedExperienceIds = new Set(evidenceLinks.filter((link) => link.kcId === kc.id).map((link) => link.experienceId));
+    const relevant = eventRows.filter((event) => event.kcId === kc.id || (event.experienceId !== null && linkedExperienceIds.has(event.experienceId)));
+    return [kc.id, deriveKcState(relevant, kc.masteryRule, now)];
+  }));
+  const selection = selectNextExperience({
+    learnerId: userId,
+    kcs: kcRows.map((kc) => ({
+      id: kc.id,
+      learnerId: userId,
+      prerequisiteKcIds: scopedEdges.filter((edge) => edge.kcId === kc.id).map((edge) => edge.prerequisiteKcId),
+      masteryRule: kc.masteryRule,
+      kcForm: kc.kcForm,
+    })),
+    experiences: experienceRows.map((experience) => ({
+      id: experience.id,
+      learnerId: userId,
+      targetKcIds: scopedLinks.filter((link) => link.experienceId === experience.id)
+        .sort((left, right) => left.sortOrder - right.sortOrder).map((link) => link.kcId),
+      kind: experience.kind,
+      supportLevel: support.get(experience.id),
+      evidenceTags: selectionTags(experience.content),
+      diagnosticMisconceptionIds: scopedDiagnostics.filter((row) => row.experienceId === experience.id).map((row) => row.misconceptionId),
+      intendedProcesses: experience.intendedProcesses,
+      sortOrder: experience.sortOrder,
+    })).filter((experience) => experience.targetKcIds.length > 0),
+  }, states, now);
+  const experience = experienceRows.find((row) => row.id === selection.experienceId);
+  if (!experience) throw new Error('Selected experience is no longer learner-owned');
+  return { experience, reasons: selection.reasons };
 }

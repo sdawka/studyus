@@ -17,7 +17,10 @@ import {
   users,
 } from '../src/db/schema';
 import { proposalFromReviewedTemplate } from '../src/lib/content/templateCatalog';
+import { loadDefaultCourse } from '../src/lib/content/defaultCourse';
 import { manualProposal } from '../src/lib/demo/catalog';
+import { BOOTSTRAP_COURSE_KEY } from '../src/lib/services/learnerBootstrap';
+import { persistCourseDraft } from '../src/lib/services/courseDraft';
 import { getOnboardingState, hasUsableCourse, importDemoSetup } from '../src/lib/services/onboarding';
 
 const db = getDb(env.DB);
@@ -46,6 +49,67 @@ function input(course = manualProposal('CHEE 314', 'Fluid Mechanics', ['Bernoull
 }
 
 describe('onboarding import', () => {
+  async function provisionDefaultCourse() {
+    return persistCourseDraft(db, userId, loadDefaultCourse(), { bootstrapKey: BOOTSTRAP_COURSE_KEY });
+  }
+
+  it('stamps an empty skip and returns the provisioned default course idempotently', async () => {
+    const defaultCourse = await provisionDefaultCourse();
+    const payload = { ...input(), courses: [] };
+
+    const first = await importDemoSetup(db, userId, payload);
+    const retry = await importDemoSetup(db, userId, payload);
+
+    expect(first).toMatchObject({ complete: true, course_id: defaultCourse.courseId, course_slug: defaultCourse.slug, imported: false });
+    expect(retry).toMatchObject({ complete: true, course_id: defaultCourse.courseId, course_slug: defaultCourse.slug, imported: false });
+    expect((await db.select().from(users).where(eq(users.id, userId)))[0].onboardedAt).not.toBeNull();
+    expect(await db.select().from(onboardingImports).where(eq(onboardingImports.userId, userId))).toHaveLength(1);
+  });
+
+  it('persists a non-academic any-topic CourseDraftV2 through the onboarding boundary', async () => {
+    await provisionDefaultCourse();
+    const course = loadDefaultCourse();
+    course.spec = { title: 'Making a short film', topic: 'Documentary filmmaking', level: 'first project', constraints: [] };
+    course.outcomes[0].title = 'Plan and shoot a coherent short documentary';
+    const payload = { ...input(), context: undefined, courses: [], course };
+
+    const result = await importDemoSetup(db, userId, payload);
+
+    expect(result).toMatchObject({ complete: true, imported: true });
+    const [stored] = await db.select().from(courses).where(eq(courses.id, result.course_id!));
+    expect(stored).toMatchObject({ title: 'Making a short film', topic: 'Documentary filmmaking', level: 'first project', domainVersion: 2 });
+    expect(await db.select().from(academicTerms).where(eq(academicTerms.userId, userId))).toHaveLength(0);
+  });
+
+  it('rolls back a V2 course, profile, context, and stamp on a late ledger failure, then retries idempotently', async () => {
+    await provisionDefaultCourse();
+    const course = loadDefaultCourse();
+    course.spec = { title: 'Field recording', topic: 'Recording natural sound', level: 'beginner', constraints: [] };
+    const payload = { ...input(), courses: [], course };
+    await env.DB.exec("CREATE TRIGGER fail_general_onboarding BEFORE INSERT ON onboarding_imports BEGIN SELECT RAISE(ABORT, 'late onboarding failure'); END");
+
+    let failure: unknown;
+    try { await importDemoSetup(db, userId, payload); } catch (cause) { failure = cause; }
+    const coursesAfterFailure = await db.select().from(courses).where(eq(courses.userId, userId));
+    const termsAfterFailure = await db.select().from(academicTerms).where(eq(academicTerms.userId, userId));
+    const userAfterFailure = (await db.select().from(users).where(eq(users.id, userId)))[0];
+    await env.DB.exec('DROP TRIGGER fail_general_onboarding');
+
+    expect(failure).toBeTruthy();
+    expect(coursesAfterFailure).toHaveLength(1);
+    expect(coursesAfterFailure[0].bootstrapKey).toBe(BOOTSTRAP_COURSE_KEY);
+    expect(termsAfterFailure).toHaveLength(0);
+    expect(userAfterFailure.onboardedAt).toBeNull();
+    expect(userAfterFailure.institutionName).toBeNull();
+
+    const retry = await importDemoSetup(db, userId, payload);
+    const replay = await importDemoSetup(db, userId, payload);
+    expect(retry).toMatchObject({ complete: true, imported: true });
+    expect(replay).toMatchObject({ complete: true, imported: false, course_id: retry.course_id });
+    expect(await db.select().from(courses).where(eq(courses.userId, userId))).toHaveLength(2);
+    expect(await db.select().from(onboardingImports).where(eq(onboardingImports.userId, userId))).toHaveLength(1);
+  });
+
   it('atomically creates learner context, a real course, KCs, and completion state', async () => {
     const result = await importDemoSetup(db, userId, input());
 
@@ -61,7 +125,7 @@ describe('onboarding import', () => {
 
     expect(await db.select().from(academicTerms).where(eq(academicTerms.userId, userId))).toHaveLength(1);
     expect(await db.select().from(courses).where(eq(courses.userId, userId))).toHaveLength(1);
-    expect(await db.select().from(kcs)).toHaveLength(2);
+    expect(await db.select().from(kcs).where(eq(kcs.courseId, result.course_id!))).toHaveLength(2);
     expect((await db.select().from(events).where(eq(events.userId, userId)))[0]).toMatchObject({ type: 'course_added', source: 'system' });
   });
 

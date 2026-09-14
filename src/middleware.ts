@@ -66,6 +66,8 @@ const authenticatedRequest = clerkMiddleware(async (auth, context, next) => {
         lastName: clerkUser.lastName,
       });
       user = resolution.user;
+      // `wasCreated` becomes observable only after the learner and detached
+      // default course commit together, so signup analytics cannot precede enrollment.
       if (resolution.wasCreated) {
         const correlation = readAnalyticsCorrelation(context.request.headers.get('cookie'));
         if (correlation.session_id) {

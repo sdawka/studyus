@@ -265,13 +265,13 @@ Flagged during the ZPD/capabilities/rituals verify pass, not fixed there because
 
 ### New Learner Onboarding & Course Ingestion
 
-**Core path shipped.** The two-minute public trial, browser-local draft,
-Clerk handoff, authenticated route gate, university/semester/preferences,
-template/manual/local-document paths, prerequisite-aware rich review, atomic
-full-template cloning, and the meaningful-KC completion invariant are
-implemented. Remaining work is durable R2 ingestion and extraction
-improvements; post-onboarding branch/KC maintenance is shipped. See
-`docs/product/onboarding.md`.
+**General core path shipped.** New Clerk identities atomically receive a
+detached Learning How to Learn V2 course. Onboarding can Skip directly to it or
+commit another manually authored any-topic V2 course; academic context is
+optional and never gates entry. Reviewed-template and local-document proposals
+still use the compatibility importer. Remaining work is durable R2 ingestion,
+conversion of those adapters to `CourseDraftV2`, and extraction quality;
+post-onboarding branch/KC maintenance is shipped. See `docs/product/onboarding.md`.
 
 Clerk now owns passwords, verification, reset, and sessions. PBKDF2/legacy
 session code is retained only to import old accounts. Role-based authorization
@@ -341,17 +341,17 @@ funnel/reporting conventions before relying on coach digests or product dashboar
 - **User-authored exercises UI**: `exercises.origin` is schema-ready for `'user'` (mirrors `misconceptions`/`scaffolds`' seed/user split), but there's no authoring route or form — a student can't add their own practice item to a KC yet.
 - **Difficulty-adaptive selection in shipped flows**: `src/lib/domain/pedagogy/exercise.ts` now selects bank items near a learner's mastery for the new exercise engine, but QuickQuiz and the KC-detail Exercises UI still use their older selection/display paths. Unify them behind the engine before calling adaptive difficulty learner-facing.
 
-### Learning to Learn Course
+### Learning How to Learn Course
 
-**Future, opt-in first-party content.** Build a normal studyus course whose KCs
-teach retrieval practice, spacing/interleaving, self-explanation, error
-analysis, calibration, planning, and reflection. It should use ordinary
-branches, prerequisite edges, scaffolds, exercises, rituals, and events so the
-student learns the system by practicing the strategies in it.
+**Shipped.** The bundled, versioned V2 course is atomically deep-copied for each
+new learner. It teaches retrieval, calibration, retention and transfer,
+self-explanation, error analysis, planning, and reflection through ordinary
+KCs, examples, experiences, evidence contracts, references, and deterministic
+mastery rules. Enrolled copies are editable and never synchronize.
 
-Offer it after a learner has established at least one real academic course. It
-must not be auto-enrolled, become a gamified compliance track, or satisfy the
-onboarding requirement in place of a real course.
+Still open: optional first-use orientation and a placement experience. Do not
+turn the course into a gamified compliance track or claim its deterministic
+selection policy is a personalized spaced-repetition scheduler.
 
 ### Global Knowledge Map
 
@@ -486,9 +486,10 @@ comparisons.
 
 ### Onboarding Depth
 
-Functional course provisioning and its completion invariant are implemented.
-Next add short contextual guidance on the newly created course and keep longer
-videos, tours, or FAQ content optional and dismissible.
+Atomic default-course provisioning, Skip, and manual any-topic creation are
+implemented. Next add short contextual guidance on the default course, convert
+reviewed-template/local-extraction adapters to V2, and keep longer videos,
+tours, or FAQ content optional and dismissible.
 
 ### Design Polish
 

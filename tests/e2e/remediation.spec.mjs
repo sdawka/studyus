@@ -4,6 +4,27 @@ async function waitForClientHydration(page) {
   await expect(page.locator('astro-island[ssr]')).toHaveCount(0);
 }
 
+function manualCourseDraft(title, code) {
+  const kcId = `kc-${crypto.randomUUID()}`;
+  const outcomeId = `outcome-${crypto.randomUUID()}`;
+  const exampleId = `example-${crypto.randomUUID()}`;
+  const experienceId = `experience-${crypto.randomUUID()}`;
+  return {
+    course: {
+      schema_version: 2,
+      spec: { title, topic: title, level: code, constraints: [] },
+      outcomes: [{ id: outcomeId, title: `Apply ${title}`, kc_ids: [kcId] }],
+      kcs: [{ id: kcId, name: `${title} foundations`, kc_form: 'variable_constant', rationale_level: 2, mastery_rule: { minimum_evidence: 2 }, prerequisite_kc_ids: [] }],
+      examples: [{ id: exampleId, kc_ids: [kcId], content: { schema_version: 1, kind: 'text', body: 'Add a concrete example from your own work.' } }],
+      misconceptions: [],
+      experiences: [{ id: experienceId, kind: 'exercise', target_kc_ids: [kcId], intended_processes: ['understanding_sensemaking'], evidence: { response_type: 'constructed_response', target_kc_ids: [kcId], diagnostic_misconception_ids: [] }, content: { schema_version: 1, kind: 'worked', prompt: `Explain one important idea in ${title}.`, solution: 'Describe what a strong response should include.' } }],
+      references: [],
+      modules: [{ id: `module-${crypto.randomUUID()}`, title: `What are the foundations of ${title}?`, outcome_ids: [outcomeId], kc_ids: [kcId], experience_ids: [experienceId], sort_order: 0 }],
+    },
+    context: {},
+  };
+}
+
 // This journey intentionally runs only against the isolated local remediation
 // server. It creates durable local fixtures and therefore must never be part
 // of a production or default browser run.
@@ -85,12 +106,12 @@ test.describe('authenticated groups remediation journey', () => {
       expect.objectContaining({ filename: groupFileName }),
     ]));
 
-    const courseResponse = await page.request.post('/api/v1/courses', {
-      data: { code: `AUDIT${runId.slice(-6)}`, title: `Synthetic attachment source ${runId}` },
+    const courseResponse = await page.request.post('/api/v1/course-drafts', {
+      data: manualCourseDraft(`Synthetic attachment source ${runId}`, `AUDIT${runId.slice(-6)}`),
     });
     expect(courseResponse.ok()).toBe(true);
     const courseBody = await courseResponse.json();
-    const courseId = courseBody.data.id;
+    const courseId = courseBody.data.courseId;
     expect(courseId).toBeTruthy();
     const attachmentResponse = await page.request.post(`/api/v1/courses/${courseId}/attachments`, {
       headers: { Origin: new URL(baseURL).origin },

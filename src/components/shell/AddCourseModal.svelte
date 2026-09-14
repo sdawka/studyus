@@ -77,15 +77,20 @@
     submitting = true;
     submitError = null;
     try {
-      const body: Record<string, unknown> = { code: code.trim(), title: title.trim() };
-      if (term.trim()) body.term = term.trim();
+      const kcId = `kc-${crypto.randomUUID()}`; const outcomeId = `outcome-${crypto.randomUUID()}`;
+      const exampleId = `example-${crypto.randomUUID()}`; const experienceId = `experience-${crypto.randomUUID()}`;
+      const course = { schema_version: 2, spec: { title: title.trim(), topic: title.trim(), level: code.trim(), constraints: [] },
+        outcomes: [{ id: outcomeId, title: `Apply ${title.trim()}`, kc_ids: [kcId] }],
+        kcs: [{ id: kcId, name: `${title.trim()} foundations`, kc_form: 'variable_constant', rationale_level: 2, mastery_rule: { minimum_evidence: 2 }, prerequisite_kc_ids: [] }],
+        examples: [{ id: exampleId, kc_ids: [kcId], content: { schema_version: 1, kind: 'text', body: 'Add a concrete example from your own work.' } }],
+        misconceptions: [],
+        experiences: [{ id: experienceId, kind: 'exercise', target_kc_ids: [kcId], intended_processes: ['understanding_sensemaking'], evidence: { response_type: 'constructed_response', target_kc_ids: [kcId], diagnostic_misconception_ids: [] }, content: { schema_version: 1, kind: 'worked', prompt: `Explain one important idea in ${title.trim()}.`, solution: 'Describe what a strong response should include.' } }],
+        references: [], modules: [{ id: `module-${crypto.randomUUID()}`, title: `What are the foundations of ${title.trim()}?`, outcome_ids: [outcomeId], kc_ids: [kcId], experience_ids: [experienceId], sort_order: 0 }] };
       const creditsValue = numericFieldValue(credits);
-      if (creditsValue !== null) body.credits = creditsValue;
-      if (instructor.trim()) body.instructor = instructor.trim();
-      if (selectedHue !== null) body.color_hue = selectedHue;
+      const body = { course, context: { ...(term.trim() ? { term: term.trim() } : {}), ...(creditsValue === null ? {} : { credits: creditsValue }), ...(instructor.trim() ? { instructor: instructor.trim() } : {}), ...(selectedHue === null ? {} : { color_hue: selectedHue }) } };
 
       const result = await apiFetch<{ slug: string }>(
-        '/api/v1/courses',
+        '/api/v1/course-drafts',
         { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
         'Failed to create course',
       );

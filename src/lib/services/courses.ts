@@ -4,8 +4,7 @@ import { branches, classSessions, courses, kcs } from '../../db/schema';
 import type { CreateCourseInput, UpdateCourseInput } from '../schemas/courses';
 import { isoWeekday, localNoon } from './classSessions';
 import { syncReviewedTemplateContent } from './courseMap';
-import { ConflictError, NotFoundError, requireOwnedCourse } from './util';
-import { hasUsableCourse } from './usableCourse';
+import { NotFoundError, requireOwnedCourse } from './util';
 
 // Spaced hue list (golden-angle-ish, not literal golden angle) new courses
 // cycle through when no `color_hue` is supplied, keyed off how many courses
@@ -85,6 +84,18 @@ function shapeCourse(row: typeof courses.$inferSelect) {
     colorHue: parsed !== null && Number.isFinite(parsed) ? parsed : null,
     meetingDays: parseMeetingDaysColumn(meetingDays),
   };
+}
+
+export async function getCourseById(db: Db, userId: string, courseId: string) {
+  const rows = await db.select().from(courses).where(and(eq(courses.id, courseId), eq(courses.userId, userId))).limit(1);
+  if (!rows[0]) throw new NotFoundError('Course');
+  return shapeCourse(rows[0]);
+}
+
+export async function colorHueForNewCourse(db: Db, userId: string, requestedHue?: number) {
+  if (requestedHue !== undefined) return requestedHue;
+  const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(courses).where(eq(courses.userId, userId));
+  return COLOR_HUES[Number(count) % COLOR_HUES.length];
 }
 
 export async function listCourses(
@@ -178,12 +189,7 @@ export async function getCourseBySlug(db: Db, userId: string, slug: string) {
 // exists without at least one branch.
 export async function createCourse(db: Db, userId: string, input: CreateCourseInput) {
   const slug = await uniqueSlug(db, userId, slugify(input.code));
-
-  let hue = input.color_hue;
-  if (hue === undefined) {
-    const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(courses).where(eq(courses.userId, userId));
-    hue = COLOR_HUES[Number(count) % COLOR_HUES.length];
-  }
+  const hue = await colorHueForNewCourse(db, userId, input.color_hue);
 
   const courseId = crypto.randomUUID();
   const branchId = crypto.randomUUID();
@@ -213,22 +219,6 @@ export async function createCourse(db: Db, userId: string, input: CreateCourseIn
 // code/slug — the slug is immutable once assigned.
 export async function updateCourse(db: Db, userId: string, courseId: string, input: UpdateCourseInput) {
   const existing = await requireOwnedCourse(db, userId, courseId);
-
-  // middleware.ts bounces a learner to /onboarding whenever they have no
-  // usable course, and /courses is not on its allowed list — so archiving the
-  // last one would strand them on a page that cannot unarchive it. The map
-  // editor already refuses the equivalent move one level down
-  // ('Keep at least one meaningful active concept.').
-  // Only blocks the archive that would *remove* access. A learner who already
-  // has no usable course (e.g. every course is still a placeholder map) loses
-  // nothing by archiving, so that stays allowed.
-  if (input.archived === true && !existing.archived) {
-    const usableBefore = await hasUsableCourse(db, userId);
-    const usableAfter = usableBefore && (await hasUsableCourse(db, userId, { excludeCourseId: courseId }));
-    if (usableBefore && !usableAfter) {
-      throw new ConflictError('Keep at least one active course — archiving this one would lock you out of the app.');
-    }
-  }
 
   const patch: Partial<typeof courses.$inferInsert> = {};
   if (input.title !== undefined) patch.title = input.title;

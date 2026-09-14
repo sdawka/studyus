@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { courseSetupProposalSchema, learnerContextSchema } from '../src/lib/schemas/onboarding';
+import { courseSetupProposalSchema, learnerContextSchema, onboardingCommitSchema } from '../src/lib/schemas/onboarding';
 import { onboardingSetupProblems, type OnboardingSetupState } from '../src/lib/onboardingValidation';
 
 const CLEAN: OnboardingSetupState = {
@@ -105,5 +105,70 @@ describe('problems name the field that is wrong', () => {
   it('flags a semester that ends before it starts', () => {
     expect(onboardingSetupProblems({ ...CLEAN, termStart: '2026-12-22', termEnd: '2026-08-31' }))
       .toEqual(['Semester end must be on or after its start.']);
+  });
+});
+
+describe('general onboarding commit validation', () => {
+  it('accepts a skip without academic context or another course', () => {
+    const parsed = onboardingCommitSchema.parse({
+      schema_version: 1,
+      draft_id: crypto.randomUUID(),
+      preferences: { weekly_hours: 7, guidance: 'balanced', depth: 'understand' },
+      courses: [],
+      review_metrics: { renamed: 0, reordered: 0, excluded: 0 },
+    });
+
+    expect(parsed.context).toBeUndefined();
+    expect(parsed.course).toBeUndefined();
+  });
+
+  it('discards incomplete optional context on Skip', () => {
+    const parsed = onboardingCommitSchema.parse({
+      schema_version: 1,
+      draft_id: crypto.randomUUID(),
+      preferences: { weekly_hours: 7, guidance: 'balanced', depth: 'understand' },
+      courses: [],
+      context: { institution_name: 'Partially entered' },
+      review_metrics: { renamed: 0, reordered: 0, excluded: 0 },
+    });
+    expect(parsed.context).toBeUndefined();
+  });
+
+  it('rejects partial academic context when finishing a valid V2 course', () => {
+    const course = {
+      schema_version: 2 as const,
+      spec: { title: 'Documentary filmmaking', topic: 'Documentary filmmaking', level: 'First project', constraints: [] },
+      outcomes: [{ id: 'outcome-story', title: 'Plan a coherent short documentary', kc_ids: ['kc-story'] }],
+      kcs: [{ id: 'kc-story', name: 'Visual story structure', kc_form: 'variable_constant' as const, rationale_level: 2, mastery_rule: { threshold: 0.8, minimum_evidence: 2 }, prerequisite_kc_ids: [] }],
+      examples: [{ id: 'example-story', kc_ids: ['kc-story'], content: { schema_version: 1 as const, kind: 'text' as const, body: 'A sequence connects subject, tension, and change.' } }],
+      misconceptions: [],
+      experiences: [{
+        id: 'experience-story', kind: 'exercise' as const, target_kc_ids: ['kc-story'], intended_processes: ['understanding_sensemaking' as const],
+        evidence: { response_type: 'constructed_response' as const, target_kc_ids: ['kc-story'], diagnostic_misconception_ids: [] },
+        content: { schema_version: 1 as const, kind: 'worked' as const, prompt: 'Outline a three-scene documentary.', solution: 'Each scene advances the same question.' },
+      }],
+      references: [], modules: [],
+    };
+
+    expect(() => onboardingCommitSchema.parse({
+      schema_version: 1,
+      draft_id: crypto.randomUUID(),
+      preferences: { weekly_hours: 7, guidance: 'balanced', depth: 'understand' },
+      courses: [],
+      course,
+      context: { institution_name: 'Partially entered' },
+      review_metrics: { renamed: 0, reordered: 0, excluded: 0 },
+    })).toThrow();
+  });
+
+  it('keeps simulated evidence outside the account import boundary', () => {
+    expect(() => onboardingCommitSchema.parse({
+      schema_version: 1,
+      draft_id: crypto.randomUUID(),
+      preferences: { weekly_hours: 7, guidance: 'balanced', depth: 'understand' },
+      courses: [],
+      simulated: true,
+      review_metrics: { renamed: 0, reordered: 0, excluded: 0 },
+    })).toThrow();
   });
 });

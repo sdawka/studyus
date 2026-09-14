@@ -6,11 +6,11 @@
 
 ## Current First-Time User Path
 
-1. **Try it publicly** at `/try`. Three skippable setup sections create a browser-local shadow workspace, followed by nine interactive university-life situations. No account is required and simulated evidence stays simulated.
-2. **Authenticate with Clerk** at `/sign-in` or `/sign-up`. A trial sign-up returns to `/onboarding?import=demo`; middleware resolves the verified Clerk identity to immutable local `users.id`.
-3. **Confirm import or start fresh.** The learner sees the exact context, preferences, and real course proposal eligible for import. Demo scores, scenarios, tasks, and grades are excluded.
-4. **Create the first useful course.** Choose a reviewed McGill template, manually enter topics, or locally extract suggestions from PDF/DOCX/text/Markdown. The learner reviews the proposed map before commit.
-5. **Enter the product only with usable content.** Middleware redirects unfinished or legacy-empty learners to `/onboarding`. Completion requires one active, non-archived course with a meaningful KC, and the learner lands on that course overview.
+1. **Try it publicly** at `/try`. Skippable setup creates a browser-local shadow workspace around a learning goal; formal-class situations remain available examples. No account is required and simulated evidence stays simulated.
+2. **Authenticate with Clerk** at `/sign-in` or `/sign-up`. Middleware resolves a new Clerk identity by atomically creating the local learner and a detached copy of **Learning How to Learn**.
+3. **Personalize or Skip.** `/onboarding` starts from the ready default course. Topic, level, and outcome can shape another course; institution and term details are optional. Skip stamps setup complete and opens the default course.
+4. **Review a manual course.** A learner who creates one reviews its outcomes, KCs, examples, experiences, evidence targets, and mastery rules before the shared `CourseDraftV2` commit boundary persists it.
+5. **Open the chosen course.** Finish opens the newly authored course; Skip opens the provisioned default. Existing pre-migration learners are not silently backfilled.
 
 ## Returning User: Sidebar Entry Points
 
@@ -85,6 +85,6 @@ The native per-learner Durable Object runtime is implemented for web tutor state
 
 ## TODO
 
-- Implement the gated onboarding and course-ingestion contract in `docs/product/onboarding.md`.
+- Add durable material ingestion and reviewed-template conversion to the V2 authoring boundary described in `docs/product/onboarding.md`.
 - Study-session organizer (Feed view): allow batching multiple resources into a session plan.
 - Reflection prompts: after study, after an assessment, weekly check-in.

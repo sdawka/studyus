@@ -16,14 +16,25 @@ import { toApi } from '../../../lib/serialize';
 import { hueFor } from '../../../lib/courseHue';
 import { NotFoundError, notFound } from '../../../lib/handleNotFound';
 import CourseHome from '../../../components/course/CourseHome.svelte';
+import { getCourseDomain } from '../../../lib/services/courseDraft';
+import { getNextExperience } from '../../../lib/services/mastery';
+import CourseModules from '../../../components/course/CourseModules.svelte';
 
 const db = getDb(env.DB);
 const userId = Astro.locals.user!.id;
 const slug = Astro.params.slug!;
 
 let course;
+let courseDomain: Awaited<ReturnType<typeof getCourseDomain>> | null = null;
+let recommendedExperienceId = null;
 try {
   course = await getCourseBySlug(db, userId, slug);
+  if (course.domainVersion === 2) {
+    courseDomain = await getCourseDomain(db, userId, course.id);
+    recommendedExperienceId = await getNextExperience(db, userId).then((result) =>
+      courseDomain!.experiences.some((experience) => experience.id === result.experience.id) ? result.experience.id : null,
+    ).catch(() => null);
+  }
 } catch (err) {
   if (err instanceof NotFoundError) return notFound(Astro);
   throw err;
@@ -53,6 +64,7 @@ const branches = course.branches.map((b) => ({
 }));
 ---
 <CourseLayout course={course} active="overview">
+  {courseDomain && courseDomain.modules.length > 0 && <CourseModules client:load courseId={course.id} draft={courseDomain} {recommendedExperienceId} />}
   <CourseHome
     client:load
     courseId={course.id}
