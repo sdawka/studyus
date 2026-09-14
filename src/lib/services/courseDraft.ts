@@ -33,6 +33,8 @@ import { courseSlugAllocator } from './courses';
 import { ConflictError, requireOwnedCourse, runBatch } from './util';
 
 export type PersistCourseDraftOptions = {
+  code?: string;
+  slugSeed?: string;
   sourceTemplateKey?: string;
   sourceTemplateVersion?: string;
   bootstrapKey?: string;
@@ -212,7 +214,7 @@ export async function buildCourseDraftStatements(
   const allocateSlug = await courseSlugAllocator(db, userId);
   const courseId = crypto.randomUUID();
   const branchId = crypto.randomUUID();
-  const slug = allocateSlug(draft.spec.title);
+  const slug = allocateSlug(options.slugSeed ?? draft.spec.title);
   const outcomeIds = ids(draft.outcomes);
   const kcIds = ids(draft.kcs);
   const exampleIds = ids(draft.examples);
@@ -225,7 +227,7 @@ export async function buildCourseDraftStatements(
   statements.push(db.insert(courses).values({
     id: courseId,
     userId,
-    code: draft.spec.title,
+    code: options.code ?? draft.spec.title,
     slug,
     title: draft.spec.title,
     overview: draft.spec.topic,

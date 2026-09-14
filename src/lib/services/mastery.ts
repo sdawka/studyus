@@ -22,7 +22,7 @@
 // Recomputation is just re-folding: because this function is pure and takes
 // the full event list, "edit an event" and "delete an event" both reduce to
 // "re-run this fold over what remains."
-import { and, eq, inArray, isNull, or } from 'drizzle-orm';
+import { and, eq, exists, inArray, isNull, or } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import {
   courses,
@@ -144,22 +144,37 @@ export function foldMastery(events: FoldEvent[], now: number = Date.now()): Mast
   return { mastery, status: statusFor(mastery, true), lastEventAt };
 }
 
+/** Matches direct or experience-linked evidence only when the event owner also
+ * owns the target KC. Correlation keeps the predicate constant-size even when
+ * a KC has hundreds of evidence-producing experiences. */
+export function eventTargetsOwnedKc(db: Db, kcId: string) {
+  const ownedTarget = db.select({ id: kcs.id }).from(kcs)
+    .innerJoin(courses, eq(kcs.courseId, courses.id))
+    .where(and(eq(kcs.id, kcId), eq(courses.userId, events.userId)));
+  const linkedEvidence = db.select({ id: experienceKcs.experienceId }).from(experienceKcs)
+    .innerJoin(courses, eq(experienceKcs.courseId, courses.id))
+    .where(and(
+      eq(experienceKcs.kcId, kcId),
+      eq(experienceKcs.isEvidenceTarget, true),
+      eq(experienceKcs.experienceId, events.experienceId),
+      eq(courses.userId, events.userId),
+    ));
+  return and(
+    exists(ownedTarget),
+    or(eq(events.kcId, kcId), exists(linkedEvidence)),
+  )!;
+}
+
 /** Standalone (non-batched) recompute: query all events for a KC, fold, and
  *  write the derived cache back. Used for one-off recomputes (e.g. backfill,
  *  or ownership already established by the caller); the events service uses
  *  the pure `foldMastery` directly inside its own db.batch instead, since it
  *  needs the write to be atomic with the event insert/update/delete. */
 export async function recomputeKcMastery(db: Db, kcId: string, now: number = Date.now()): Promise<MasteryResult> {
-  const linked = await db.select({ experienceId: experienceKcs.experienceId })
-    .from(experienceKcs)
-    .where(and(eq(experienceKcs.kcId, kcId), eq(experienceKcs.isEvidenceTarget, true)));
-  const target = linked.length > 0
-    ? or(eq(events.kcId, kcId), inArray(events.experienceId, linked.map((row) => row.experienceId)))!
-    : eq(events.kcId, kcId);
   const rows = await db
     .select({ ts: events.ts, isInstructional: events.isInstructional, isAssessment: events.isAssessment, payload: events.payload })
     .from(events)
-    .where(target);
+    .where(eventTargetsOwnedKc(db, kcId));
 
   const result = foldMastery(rows, now);
   await db
@@ -172,12 +187,6 @@ export async function recomputeKcMastery(db: Db, kcId: string, now: number = Dat
 /** Recomputes the auditable learner-owned KC read model from the event stream. */
 export async function getKcState(db: Db, userId: string, kcId: string, now: number = Date.now()) {
   const kc = await requireOwnedKc(db, userId, kcId);
-  const linked = await db.select({ experienceId: experienceKcs.experienceId })
-    .from(experienceKcs)
-    .where(and(eq(experienceKcs.kcId, kcId), eq(experienceKcs.isEvidenceTarget, true)));
-  const target = linked.length > 0
-    ? or(eq(events.kcId, kcId), inArray(events.experienceId, linked.map((row) => row.experienceId)))!
-    : eq(events.kcId, kcId);
   const rows = await db.select({
     id: events.id,
     ts: events.ts,
@@ -186,7 +195,7 @@ export async function getKcState(db: Db, userId: string, kcId: string, now: numb
     isAssessment: events.isAssessment,
     experienceId: events.experienceId,
     payload: events.payload,
-  }).from(events).where(and(eq(events.userId, userId), target));
+  }).from(events).where(and(eq(events.userId, userId), eventTargetsOwnedKc(db, kcId)));
   return deriveKcState(rows, kc.masteryRule, now);
 }
 

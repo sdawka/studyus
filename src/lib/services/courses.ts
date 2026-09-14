@@ -86,6 +86,18 @@ function shapeCourse(row: typeof courses.$inferSelect) {
   };
 }
 
+export async function getCourseById(db: Db, userId: string, courseId: string) {
+  const rows = await db.select().from(courses).where(and(eq(courses.id, courseId), eq(courses.userId, userId))).limit(1);
+  if (!rows[0]) throw new NotFoundError('Course');
+  return shapeCourse(rows[0]);
+}
+
+export async function colorHueForNewCourse(db: Db, userId: string, requestedHue?: number) {
+  if (requestedHue !== undefined) return requestedHue;
+  const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(courses).where(eq(courses.userId, userId));
+  return COLOR_HUES[Number(count) % COLOR_HUES.length];
+}
+
 export async function listCourses(
   db: Db,
   userId: string,
@@ -177,12 +189,7 @@ export async function getCourseBySlug(db: Db, userId: string, slug: string) {
 // exists without at least one branch.
 export async function createCourse(db: Db, userId: string, input: CreateCourseInput) {
   const slug = await uniqueSlug(db, userId, slugify(input.code));
-
-  let hue = input.color_hue;
-  if (hue === undefined) {
-    const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(courses).where(eq(courses.userId, userId));
-    hue = COLOR_HUES[Number(count) % COLOR_HUES.length];
-  }
+  const hue = await colorHueForNewCourse(db, userId, input.color_hue);
 
   const courseId = crypto.randomUUID();
   const branchId = crypto.randomUUID();

@@ -149,6 +149,27 @@ beforeEach(async () => {
 });
 
 describe('course draft persistence', () => {
+  it('folds evidence across more than 100 linked experiences without exceeding D1 parameter limits', async () => {
+    const wideDraft = structuredClone(draft) as CourseDraftV2;
+    wideDraft.experiences = Array.from({ length: 101 }, (_, index) => ({
+      ...structuredClone(draft.experiences[0]),
+      id: `experience-retrieval-${index}`,
+      evidence: {
+        ...structuredClone(draft.experiences[0].evidence!),
+        diagnostic_misconception_ids: [],
+      },
+    }));
+    wideDraft.references[0].experience_ids = [wideDraft.experiences[0].id];
+    wideDraft.modules[0].experience_ids = [wideDraft.experiences[0].id];
+
+    const saved = await persistCourseDraft(db, userId, wideDraft);
+    const author = await getCourseAuthoringDomain(db, userId, saved.courseId);
+    const response = await respondToExperience(db, userId, author.experiences[100].id, { selected_index: 1 });
+    const state = await getKcState(db, userId, author.kcs[0].id);
+
+    expect(state.evidenceIds).toEqual([response.event.id]);
+  });
+
   it('separates learner-safe content from full authoring content and scores MCQ responses server-side', async () => {
     const saved = await persistCourseDraft(db, userId, draft);
     const learner = await getCourseDomain(db, userId, saved.courseId);

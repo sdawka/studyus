@@ -2,14 +2,14 @@
 // create/update/delete recomputes the affected KC's mastery cache in the
 // same db.batch as the event mutation, so the cache is never observably
 // stale relative to the log it's derived from.
-import { and, asc, desc, eq, gte, inArray, lte, ne, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lte, ne, sql } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import type { Db } from '../../db/client';
 import { courses, eventIdempotencyKeys, events, experienceKcs, experienceMisconceptions, experiences, kcs, runtimeTutorSessionEvents, users } from '../../db/schema';
 import type { CreateEventInput, EventSource, ListEventsQuery, UpdateEventInput } from '../schemas/events';
 import { EVENT_ROLE_FLAGS } from '../schemas/events';
 import { toEpochMs } from '../schemas/common';
-import { foldMastery } from './mastery';
+import { eventTargetsOwnedKc, foldMastery } from './mastery';
 import { ConflictError, NotFoundError, requireOwnedCourse, requireOwnedKc, runBatch } from './util';
 import { withSpan } from '../tracing';
 import type { ExperienceResponseInput } from '../schemas/experienceResponse';
@@ -118,14 +118,9 @@ async function targetKcIdsForEvent(db: Db, event: Pick<EventRow, 'kcId' | 'exper
 }
 
 async function foldEventsForKc(db: Db, userId: string, kcId: string, excludedEventId?: string) {
-  const linked = await db.select({ experienceId: experienceKcs.experienceId }).from(experienceKcs)
-    .where(and(eq(experienceKcs.kcId, kcId), eq(experienceKcs.isEvidenceTarget, true)));
-  const target = linked.length > 0
-    ? or(eq(events.kcId, kcId), inArray(events.experienceId, linked.map((row) => row.experienceId)))!
-    : eq(events.kcId, kcId);
   const where = excludedEventId
-    ? and(eq(events.userId, userId), target, ne(events.id, excludedEventId))
-    : and(eq(events.userId, userId), target);
+    ? and(eq(events.userId, userId), eventTargetsOwnedKc(db, kcId), ne(events.id, excludedEventId))
+    : and(eq(events.userId, userId), eventTargetsOwnedKc(db, kcId));
   return db.select({ ts: events.ts, isInstructional: events.isInstructional, isAssessment: events.isAssessment, payload: events.payload })
     .from(events).where(where);
 }
