@@ -29,6 +29,12 @@
   --rd-spring: oklch(80% 0.14 155);
   --rd-on-accent: oklch(98% 0.01 350);
 
+  /* ---- error/danger pair (added for onboarding; computed the same way as
+     --rd-accent/--rd-accent-deep — dark ink on a pale tint, AA on both
+     directions: 7.77:1 ink-on-soft, 10.11:1 ink-on-white) ---- */
+  --rd-danger-ink: oklch(38% 0.18 20);
+  --rd-danger-soft: oklch(93% 0.06 20);
+
   /* ---- type ---- */
   --rd-display: 'Fraunces Variable', 'Fraunces', Georgia, serif;
   --rd-body: 'Nunito Variable', 'Nunito', -apple-system, system-ui, sans-serif;

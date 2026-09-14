@@ -68,7 +68,6 @@
   );
   const activeScenario = $derived(SCENARIOS.find((scenario) => scenario.id === selectedScenario) ?? SCENARIOS[0]);
   const activeCourse = $derived(draft.courses[0]);
-  const realCourseCount = $derived(draft.courses.filter((course) => course.source.kind !== 'simulated').length);
 
   function demoCourseFromProposal(course: typeof draft.courses[number]): DemoCourse {
     return {
@@ -470,7 +469,7 @@
               <div class="session-preview">
                 <strong>Here’s the session</strong>
                 <ol>{#each sessionStepsFor(previewPlan) as item}<li>{item}</li>{/each}</ol>
-                <a class="primary" href="/sign-up?from=demo" onclick={() => void track('signup_clicked')}>Use this with my courses →</a>
+                <a class="primary" href="/sign-up?from=demo" onclick={() => void track('signup_clicked')}>Create an account to do this for real →</a>
               </div>
               {:else}
               <button class="primary next-action" type="button" onclick={() => previewedScenario = activeScenario.id}>Open this {previewPlan.recommendation.minutes} minute session <b aria-hidden="true">→</b></button>
@@ -506,7 +505,7 @@
             <p>Run a situation to calculate a local schedule from your supplied topics and capacity.</p>
           {/if}
         </section>
-        <section class="proof-card"><p class="eyebrow">What this preview keeps</p><h2>{realCourseCount ? `${realCourseCount} real course draft ready` : 'Sample evidence stays sample'}</h2><p>Signup can import your context, preferences, and reviewed course map. These demo scores and actions are discarded.</p><a href="/sign-up?from=demo" onclick={() => void track('signup_clicked')}>Create account and review import →</a></section>
+        <section class="proof-card"><p class="eyebrow">What this preview keeps</p><h2>What carries over</h2><p>An account starts with Learning How to Learn and lets you create real courses. Trial practice and scores stay here and are never copied.</p><a href="/sign-up?from=demo" onclick={() => void track('signup_clicked')}>Start with a free account →</a></section>
       </div>
     </main>
   </div>

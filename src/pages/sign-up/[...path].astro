@@ -11,8 +11,8 @@ const signInUrl = `/sign-in${authQuery({ returnPath, fromDemo })}`;
 if (Astro.locals.user) return Astro.redirect(Astro.locals.user.onboardedAt ? (returnPath ?? '/dashboard') : destination);
 ---
 
-<MarketingLayout title="Create your account · studyus" description="Create an account and turn your trial into a real study plan.">
-  <AuthShell heading="Create your account" description="Turn your trial into a real study plan.">
+<MarketingLayout title="Create your account · studyus" description={fromDemo ? 'Your first course is ready as soon as you are in. Trial practice and scores stay in this browser and are not copied to your account.' : 'Your first course, Learning How to Learn, is ready as soon as you are in.'}>
+  <AuthShell heading="Create your account" description={fromDemo ? 'Your first course is ready as soon as you are in. Trial practice and scores stay in this browser and are not copied to your account.' : 'Your first course, Learning How to Learn, is ready as soon as you are in.'}>
     <ClerkUi
       component="sign-up"
       routing="path"

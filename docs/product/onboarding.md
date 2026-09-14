@@ -65,9 +65,14 @@ must create an academic course.
 - Trial calls to action use `/sign-up?from=demo`.
 - Clerk force/fallback redirects preserve the intended handoff to
   `/onboarding?import=demo`.
-- Authenticated onboarding shows exactly what can be imported and states that
-  demo evidence will be discarded. A handoff opens the same review step used by
-  fresh setup; import and start-fresh are explicit choices.
+- Authenticated onboarding reads `?import=demo` and shows a dismissible
+  `role="region"` banner stating that trial practice and scores stay in the
+  browser and are never copied to the account, and, when the trial draft has
+  a non-simulated course, that it cannot be brought in yet and must be
+  recreated by shaping a course. Nothing is imported automatically.
+- The trial's saved preferences (weekly hours, guidance, depth) are sent with
+  Skip and Finish when a trial draft is present, instead of the defaults, and
+  the server persists them to the account's learning preferences.
 - Import is idempotent per learner and browser draft. Retries return the
   existing course rather than duplicating courses, branches, KCs, or events.
 
@@ -76,8 +81,10 @@ must create an academic course.
 - Unfinished learners requesting authenticated product pages are redirected to
   `/onboarding`. Auth, account, settings, onboarding APIs, and public pages stay
   reachable.
-- The first screen announces the ready default course. A persistent native
-  button lets the learner Skip from every step.
+- The first screen announces the ready default course and offers a filled
+  primary "Open Learning How to Learn" button under the module list. A
+  persistent native "Skip to Learning How to Learn" button in the header lets
+  the learner take the same action from every step.
 - Manual creation starts from topic, level, and one outcome. The learner may
   review and edit the resulting V2 aggregate before Finish.
 - Academic context is behind an optional disclosure. Partial context is
@@ -171,6 +178,14 @@ These are intentional follow-ups, not current behavior:
    class-session/task generation from reviewed schedules.
 5. **Catalog expansion.** Add normalized institutions/programs and more
    university-reviewed course templates only when coverage warrants it.
+6. **Trial import.** Actually importing a completed trial draft (context and
+   a reviewed course, not just preferences) into an authenticated account.
+   Preferences already persist on a no-course commit; what remains is either
+   a `context`-only commit or the legacy `courses` path landing on the default
+   course when the trial has no meaningful KCs, plus a review UI for a legacy
+   `CourseSetupProposal`, since `CourseMapReview` only understands
+   `CourseDraftV2`. Import and start-fresh should become explicit choices once
+   this exists.
 
 ## Acceptance checks
 
