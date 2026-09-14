@@ -71,8 +71,8 @@ must create an academic course.
   a non-simulated course, that it cannot be brought in yet and must be
   recreated by shaping a course. Nothing is imported automatically.
 - The trial's saved preferences (weekly hours, guidance, depth) are sent with
-  Skip and Finish when a trial draft is present, instead of hardcoded
-  defaults.
+  Skip and Finish when a trial draft is present, instead of the defaults, and
+  the server persists them to the account's learning preferences.
 - Import is idempotent per learner and browser draft. Retries return the
   existing course rather than duplicating courses, branches, KCs, or events.
 
@@ -180,12 +180,12 @@ These are intentional follow-ups, not current behavior:
    university-reviewed course templates only when coverage warrants it.
 6. **Trial import.** Actually importing a completed trial draft (context and
    a reviewed course, not just preferences) into an authenticated account.
-   Needs `commitGeneralOnboarding` to accept `context` and non-default
-   `preferences` on a no-course commit, or the legacy `courses` path to stamp
-   `onboarded_at` and land on the default course when the trial has no
-   meaningful KCs; either way a review UI for a legacy `CourseSetupProposal`
-   is required, since `CourseMapReview` only understands `CourseDraftV2`.
-   Import and start-fresh should become explicit choices once this exists.
+   Preferences already persist on a no-course commit; what remains is either
+   a `context`-only commit or the legacy `courses` path landing on the default
+   course when the trial has no meaningful KCs, plus a review UI for a legacy
+   `CourseSetupProposal`, since `CourseMapReview` only understands
+   `CourseDraftV2`. Import and start-fresh should become explicit choices once
+   this exists.
 
 ## Acceptance checks
 

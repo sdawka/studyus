@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
   import type { CourseDraftV2 } from '../../lib/schemas/courseDraft';
-  import { loadDemoDraft } from '../../lib/demo/store';
+  import { freshDemoDraft, loadDemoDraft } from '../../lib/demo/store';
   import CourseMapReview from './CourseMapReview.svelte';
 
   const MODULES = ['How do you know you’ve learned something?', 'How do you access what you’ve learned?', 'What does learning feel like?', 'What helps you learn best?', 'How can you keep getting better at learning?'];
@@ -22,6 +22,8 @@
   let demoPreferences = $state<{ weekly_hours: number; guidance: string; depth: string } | null>(null);
   let headingEl = $state<HTMLHeadingElement | null>(null);
 
+  const busy = $derived(pending !== null);
+
   const statusText = $derived(
     pending === 'skip'
       ? (redirecting ? 'Done. Opening Learning How to Learn…' : 'Marking setup done and opening Learning How to Learn. Anything typed here is not saved.')
@@ -33,6 +35,12 @@
   );
 
   onMount(() => {
+    // Back from the new course can restore this page from the back-forward
+    // cache with its Svelte state intact; do not leave it disabled forever.
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) { pending = null; redirecting = false; commitError = null; }
+    };
+    window.addEventListener('pageshow', onPageShow);
     draftId = crypto.randomUUID();
     timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
     const params = new URLSearchParams(location.search);
@@ -47,6 +55,7 @@
         // falls back to the "nothing carries over" copy.
       }
     }
+    return () => window.removeEventListener('pageshow', onPageShow);
   });
 
   function focusHeading() {
@@ -60,6 +69,8 @@
   // else that reaches the catch block (a raw network failure, a JSON parse
   // error) is not learner-facing text and falls back to the generic message.
   class OnboardingError extends Error {}
+
+  type ImportResponse = { data?: { course_slug: string | null }; error?: { message: string } };
 
   function makeDraft(): CourseDraftV2 | null {
     if (!topic.trim() || !level.trim() || !outcome.trim()) return null;
@@ -78,24 +89,53 @@
   }
 
   function shapeCourse() {
-    const built = makeDraft();
-    if (!built) { error = 'Add a topic, a level, and one learning outcome, then shape the course.'; return; }
-    courseDraft = built; error = null; step = 2;
+    if (!topic.trim() || !level.trim() || !outcome.trim()) {
+      error = 'Add a topic, a level, and one learning outcome, then shape the course.';
+      return;
+    }
+    if (courseDraft) {
+      // Re-shaping after Back must keep every step 2 edit ("Your edits stay
+      // if you go back"): update the fields that came from step 1 in place
+      // and leave the rest of the structure alone.
+      const previousOutcome = courseDraft.outcomes[0]?.title;
+      const nextOutcome = outcome.trim();
+      courseDraft.spec.title = topic.trim();
+      courseDraft.spec.topic = topic.trim();
+      courseDraft.spec.level = level.trim();
+      if (courseDraft.outcomes[0]) courseDraft.outcomes[0].title = nextOutcome;
+      if (courseDraft.kcs[0] && courseDraft.kcs[0].name === previousOutcome) courseDraft.kcs[0].name = nextOutcome;
+      if (courseDraft.modules[0] && courseDraft.modules[0].title === previousOutcome) courseDraft.modules[0].title = nextOutcome;
+    } else {
+      courseDraft = makeDraft();
+    }
+    error = null; step = 2;
     focusHeading();
   }
 
+  type TermState = 'none' | 'incomplete' | 'invalid-dates' | 'complete';
+  // Single source of truth for the review summary and for Finish, so the
+  // summary never claims something Finish will then reject.
+  const termState = $derived.by((): TermState => {
+    if (![institution, program, termName, startsOn, endsOn].some((value) => value.trim())) return 'none';
+    if (!institution.trim() || !termName.trim() || !startsOn || !endsOn) return 'incomplete';
+    if (endsOn < startsOn) return 'invalid-dates';
+    return 'complete';
+  });
+
   function goToStep(next: 1 | 2 | 3) {
     step = next;
+    error = null;
+    commitError = null;
     focusHeading();
   }
 
   function context() {
-    if (![institution, program, termName, startsOn, endsOn].some((value) => value.trim())) return undefined;
-    if (!institution.trim() || !termName.trim() || !startsOn || !endsOn) {
+    if (termState === 'none') return undefined;
+    if (termState === 'incomplete') {
       termOpen = true;
       throw new OnboardingError('To save a term, fill in the institution, term name, and both dates. Or clear these fields to leave the term out.');
     }
-    if (endsOn < startsOn) {
+    if (termState === 'invalid-dates') {
       termOpen = true;
       throw new OnboardingError('The term end date must be on or after its start date.');
     }
@@ -105,14 +145,16 @@
   async function commit(course?: CourseDraftV2) {
     pending = course ? 'finish' : 'skip';
     commitError = null;
+    // The client cannot know whether the server's batch committed before a
+    // lost response, so never claim "nothing was saved".
     const fallback = course
-      ? 'We could not create the course. Nothing was saved. Check your connection and try again.'
-      : 'We could not open Learning How to Learn. Check your connection and try again.';
+      ? 'We could not confirm that the course saved. Reload the page: if it exists it will open, otherwise try again.'
+      : 'We could not confirm that this saved. Reload the page: if your course exists it will open, otherwise try again.';
     try {
       // Skip is intentionally lossy for optional scratch fields. Only Finish
       // validates and submits academic context.
       const academic = course ? context() : undefined;
-      const preferences = demoPreferences ?? { weekly_hours: 7, guidance: 'balanced', depth: 'understand' };
+      const preferences = demoPreferences ?? freshDemoDraft().preferences;
       const response = await fetch('/api/v1/onboarding/import-demo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -126,12 +168,16 @@
           review_metrics: { renamed: 0, reordered: 0, excluded: 0 },
         }),
       });
-      const payload = await response.json().catch(() => ({}) as Record<string, unknown>) as { data?: { course_slug: string | null }; error?: { message: string } };
-      if (!response.ok || !payload.data?.course_slug) {
+      const payload: ImportResponse = await response.json().catch(() => ({}));
+      if (!response.ok) {
         // Map by status, not by echoing raw server text: a bare "Authentication
-        // required" or an opaque 500 is not learner-facing copy.
+        // required", a joined Zod issue list, or an opaque 500 is not
+        // learner-facing copy.
         if (response.status === 401) {
           throw new OnboardingError('Your session ended. Sign in again to finish setup.');
+        }
+        if (response.status === 400) {
+          throw new OnboardingError('Some fields are empty or invalid. Check that every outcome, idea, example, and practice prompt has text, then try again.');
         }
         if (response.status >= 500) {
           throw new OnboardingError(fallback);
@@ -139,7 +185,12 @@
         throw new OnboardingError(payload.error?.message ?? fallback);
       }
       redirecting = true;
-      window.location.href = `/courses/${payload.data.course_slug}`;
+      // An idempotent replay whose earlier import has no course returns 200
+      // with a null slug: setup is complete, so land on the dashboard.
+      window.location.href = payload.data?.course_slug ? `/courses/${payload.data.course_slug}` : '/dashboard';
+      // A blocked or cancelled navigation (e.g. popup blocker, test harness,
+      // back-forward cache) should not leave every control disabled forever.
+      setTimeout(() => { pending = null; redirecting = false; }, 8000);
     } catch (cause) {
       commitError = cause instanceof OnboardingError ? cause.message : fallback;
       pending = null;
@@ -150,11 +201,11 @@
 <main class="page">
   <header>
     <a href="/" class="wordmark" aria-label="studyus home">studyus<span>.</span></a>
-    <button type="button" class="rd-btn-text" disabled={pending !== null} onclick={() => commit()} aria-describedby={step !== 1 ? 'skip-note' : undefined}>
+    <button type="button" class="rd-btn-text" disabled={busy} onclick={() => commit()} aria-describedby={step !== 1 ? 'skip-note' : undefined}>
       {pending === 'skip' ? 'Opening Learning How to Learn…' : 'Skip to Learning How to Learn'}
     </button>
   </header>
-  <section class="shell" aria-busy={pending !== null}>
+  <section class="shell" aria-busy={busy}>
     {#if step === 2 || step === 3}
       <ol class="steps" aria-label="New course: two steps">
         <li aria-current={step === 2 ? 'step' : undefined} class:done={step === 3}>
@@ -164,9 +215,7 @@
           <span class="visually-hidden">Step 2 of 2: </span>Review
         </li>
       </ol>
-    {/if}
-    {#if step === 2 || step === 3}
-      <p id="skip-note" class="skip-note">Skipping leaves this draft behind. You can create a course later from Add course.</p>
+      <p id="skip-note" class="visually-hidden">Skipping leaves this draft behind. You can create a course later from Add course.</p>
     {/if}
     <p role="status" class="status-region">{statusText}</p>
 
@@ -188,7 +237,7 @@
       <p class="lede">A short course on how learning actually works. Open it now, or shape a course around anything else you want to learn. Nothing is locked in; both stay editable.</p>
       <p class="module-preview-heading">Five short modules</p>
       <ol class="module-preview" aria-label="Modules in Learning How to Learn">{#each MODULES as module}<li>{module}</li>{/each}</ol>
-      <button type="button" class="rd-btn rd-btn-primary open-course" disabled={pending !== null} onclick={() => commit()}>
+      <button type="button" class="rd-btn rd-btn-primary open-course" disabled={busy} onclick={() => commit()}>
         {pending === 'skip' ? 'Opening Learning How to Learn…' : 'Open Learning How to Learn'}
       </button>
       {#if commitError}<p class="error" role="alert">{commitError}</p>{/if}
@@ -199,24 +248,24 @@
         <div class="fields">
           <div class="field-group">
             <label for="topic-input">Topic</label>
-            <input id="topic-input" bind:value={topic} placeholder="Documentary filmmaking" aria-describedby="topic-helper" disabled={pending !== null} />
+            <input id="topic-input" bind:value={topic} placeholder="Documentary filmmaking" aria-describedby="topic-helper" disabled={busy} />
             <p id="topic-helper" class="field-helper">What the course is about.</p>
           </div>
 
           <div class="field-group">
             <label for="level-input">Level</label>
-            <input id="level-input" bind:value={level} placeholder="Complete beginner" aria-describedby="level-helper" disabled={pending !== null} />
+            <input id="level-input" bind:value={level} placeholder="Complete beginner" aria-describedby="level-helper" disabled={busy} />
             <p id="level-helper" class="field-helper">Where you are starting from.</p>
           </div>
 
           <div class="field-group wide">
             <label for="outcome-input">Learning outcome</label>
-            <input id="outcome-input" bind:value={outcome} placeholder="Plan and shoot a short documentary" aria-describedby="outcome-helper" disabled={pending !== null} />
+            <input id="outcome-input" bind:value={outcome} placeholder="Plan and shoot a short documentary" aria-describedby="outcome-helper" disabled={busy} />
             <p id="outcome-helper" class="field-helper">One thing you want to be able to do by the end.</p>
           </div>
         </div>
         {#if error}<p class="error" role="alert">{error}</p>{/if}
-        <button type="button" class="rd-btn rd-btn-ghost" disabled={pending !== null} onclick={shapeCourse}>Shape course</button>
+        <button type="button" class="rd-btn rd-btn-ghost" disabled={busy} onclick={shapeCourse}>Shape course</button>
         <p class="section-helper term-pointer">Studying for a class with a term and dates? You can add that while shaping the course.</p>
       </div>
     {:else if step === 2 && courseDraft}
@@ -225,9 +274,10 @@
       <p class="lede">studyus turned your topic, level, and outcome into a starting structure. Edit anything here, or leave it as it is and review. Nothing is created until you finish.</p>
       <CourseMapReview draft={courseDraft} onchange={(next) => { courseDraft = next; }} />
       {@render academicContext()}
+      {#if commitError}<p class="error" role="alert">{commitError}</p>{/if}
       <div class="actions">
-        <button type="button" class="rd-btn rd-btn-ghost" disabled={pending !== null} onclick={() => goToStep(1)}>Back</button>
-        <button type="button" class="rd-btn rd-btn-primary" disabled={pending !== null} onclick={() => goToStep(3)}>Review and finish</button>
+        <button type="button" class="rd-btn rd-btn-ghost" disabled={busy} onclick={() => goToStep(1)}>Back</button>
+        <button type="button" class="rd-btn rd-btn-primary" disabled={busy} onclick={() => goToStep(3)}>Review and finish</button>
       </div>
       <p class="section-helper">Your edits stay if you go back.</p>
     {:else if step === 3 && courseDraft}
@@ -239,21 +289,28 @@
         <div><dt>Level</dt><dd>{courseDraft.spec.level}</dd></div>
         <div><dt>Outcomes</dt><dd>{courseDraft.outcomes.length}</dd></div>
         <div><dt>Ideas and skills</dt><dd>{courseDraft.kcs.length}</dd></div>
-        {#if institution.trim() && termName.trim() && startsOn && endsOn}
-          <div><dt>Term</dt><dd>{termName} at {institution}, {startsOn} to {endsOn}</dd></div>
-        {:else}
-          <div><dt>Term</dt><dd>None. This course is not tied to a term.</dd></div>
-        {/if}
+        <div>
+          <dt>Term</dt>
+          {#if termState === 'complete'}
+            <dd>{termName} at {institution}, {startsOn} to {endsOn}</dd>
+          {:else if termState === 'incomplete'}
+            <dd class="dd-warning">Incomplete. Fill in institution, term name, and both dates, or clear them to skip.</dd>
+          {:else if termState === 'invalid-dates'}
+            <dd class="dd-warning">Term end must be on or after its start.</dd>
+          {:else}
+            <dd>None. This course is not tied to a term.</dd>
+          {/if}
+        </div>
       </dl>
       <p class="section-helper">
         Finishing creates this course in your account and opens it. Learning How to Learn stays in your account too.
-        {#if institution.trim() && termName.trim() && startsOn && endsOn} Your institution and term are saved to your account as well.{/if}
+        {#if termState === 'complete'} Your institution and term are saved to your account as well.{/if}
       </p>
       {@render academicContext()}
       {#if commitError}<p class="error" role="alert">{commitError}</p>{/if}
       <div class="actions">
-        <button type="button" class="rd-btn rd-btn-ghost" disabled={pending !== null} onclick={() => goToStep(2)}>Back</button>
-        <button type="button" class="rd-btn rd-btn-primary" disabled={pending !== null} onclick={() => commit(courseDraft)}>
+        <button type="button" class="rd-btn rd-btn-ghost" disabled={busy} onclick={() => goToStep(2)}>Back</button>
+        <button type="button" class="rd-btn rd-btn-primary" disabled={busy} onclick={() => commit(courseDraft)}>
           {pending === 'finish' ? `Creating ${courseDraft.spec.title || 'your course'}…` : 'Finish and open course'}
         </button>
       </div>
@@ -262,40 +319,40 @@
 </main>
 
 {#snippet academicContext()}
-  <details class="academic" open={termOpen} ontoggle={(event) => { termOpen = (event.currentTarget as HTMLDetailsElement).open; }}>
+  <details class="academic" bind:open={termOpen}>
     <summary>Add a term and institution <span>optional</span></summary>
     <p>Only for a course tied to a class or formal schedule. Saved with the course when you finish; skipping leaves it out.</p>
     <div class="fields">
       <div class="field-group">
         <label for="institution-input">Institution</label>
-        <input id="institution-input" bind:value={institution} disabled={pending !== null} />
+        <input id="institution-input" bind:value={institution} disabled={busy} />
       </div>
 
       <div class="field-group">
         <label for="program-input">Program</label>
-        <input id="program-input" bind:value={program} aria-describedby="program-helper" disabled={pending !== null} />
+        <input id="program-input" bind:value={program} aria-describedby="program-helper" disabled={busy} />
         <p id="program-helper" class="field-helper">Optional.</p>
       </div>
 
       <div class="field-group">
         <label for="term-name-input">Term name</label>
-        <input id="term-name-input" bind:value={termName} placeholder="Fall 2026" disabled={pending !== null} />
+        <input id="term-name-input" bind:value={termName} placeholder="Fall 2026" disabled={busy} />
       </div>
 
       <div class="field-group">
         <label for="timezone-input">Time zone</label>
-        <input id="timezone-input" bind:value={timezone} aria-describedby="timezone-helper" disabled={pending !== null} />
+        <input id="timezone-input" bind:value={timezone} aria-describedby="timezone-helper" disabled={busy} />
         <p id="timezone-helper" class="field-helper">Detected from your device. Change it only if it is wrong.</p>
       </div>
 
       <div class="field-group">
         <label for="starts-input">Term starts</label>
-        <input id="starts-input" type="date" bind:value={startsOn} disabled={pending !== null} />
+        <input id="starts-input" type="date" bind:value={startsOn} disabled={busy} />
       </div>
 
       <div class="field-group">
         <label for="ends-input">Term ends</label>
-        <input id="ends-input" type="date" bind:value={endsOn} disabled={pending !== null} />
+        <input id="ends-input" type="date" bind:value={endsOn} disabled={busy} />
       </div>
     </div>
   </details>
@@ -307,6 +364,10 @@
     background: var(--rd-cream);
     color: var(--rd-ink);
   }
+  /* var(--rd-ink-faint) alone is 4.00:1 on white, below AA; this darker step
+     (oklch 57% vs the token's 60%) reaches 4.53:1 while staying in the same
+     ink-purple family. Every 12-13px faint label on this page uses it. */
+  .page { --ob-ink-faint-aa: oklch(57% 0.04 305); }
   .page { min-height: 100dvh; padding: 22px clamp(16px, 4vw, 48px) 70px; }
   .page > header {
     max-width: 920px;
@@ -338,11 +399,13 @@
   .shell {
     max-width: 920px;
     margin: clamp(34px, 6vh, 64px) auto 0;
-    background: oklch(100% 0 0 / 0.62);
+    /* Opaque: the body behind is flat --rd-cream, so .rd-card's translucent
+       white + backdrop blur would cost a page-tall compositor layer for no
+       visible difference. This is that blend precomputed. */
+    background: oklch(99% 0.008 85);
     border: 1.5px solid oklch(52% 0.06 305 / 0.14);
     border-radius: var(--rd-r-lg);
     box-shadow: var(--rd-shadow-card);
-    backdrop-filter: blur(10px);
     padding: clamp(24px, 5vw, 48px);
   }
 
@@ -356,14 +419,10 @@
     color: var(--rd-ink-faint);
     font-size: 13px;
   }
-  /* var(--rd-ink-faint) alone is 4.00:1 on white, below AA; this darker step
-     (oklch 57% vs the token's 60%) reaches 4.53:1 while staying in the same
-     ink-purple family. */
-  .steps li { color: oklch(57% 0.04 305); }
+  .steps li { color: var(--ob-ink-faint-aa); }
   .steps li[aria-current='step'] { color: var(--rd-grape); font-weight: 900; }
   .steps li.done::before { content: '✓ '; }
 
-  .skip-note { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .status-region:empty { display: none; }
   .status-region {
@@ -402,7 +461,7 @@
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--rd-ink-faint);
+    color: var(--ob-ink-faint-aa);
     margin: 28px 0 0;
   }
   .module-preview {
@@ -424,7 +483,7 @@
   .authoring-start h2 { margin: 0 0 8px; }
   .authoring-start h2 span, .academic summary span {
     font: 700 12px var(--rd-body);
-    color: var(--rd-ink-faint);
+    color: var(--ob-ink-faint-aa);
   }
   .section-helper { color: var(--rd-ink-soft); font-size: 14px; margin: 0 0 16px; overflow-wrap: anywhere; }
   .term-pointer { margin-top: 20px; margin-bottom: 0; }
@@ -457,9 +516,10 @@
   input:disabled { opacity: 0.6; cursor: not-allowed; }
   .field-helper {
     font-size: 12px;
-    color: var(--rd-ink-faint);
+    color: var(--ob-ink-faint-aa);
     margin: 4px 0 0;
   }
+  .dd-warning { color: var(--rd-danger-ink, oklch(38% 0.18 20)); }
 
   .rd-btn-primary, .rd-btn-ghost {
     margin-top: 24px;

@@ -46,7 +46,7 @@ test('public trial turns a sample decision into a session outline and signup han
   await page.getByRole('button', { name: 'Open this 25 minute session', exact: true }).click();
   await expect(page.getByText('Here’s the session')).toBeVisible();
 
-  const signup = page.getByRole('link', { name: /Use this with my courses/ });
+  const signup = page.getByRole('link', { name: /Create an account to do this for real/ });
   await expect(signup).toHaveAttribute('href', '/sign-up?from=demo');
 });
 
@@ -65,7 +65,7 @@ test('public trial has no horizontal page overflow at a 390px viewport', async (
 
   const ctas = [
     page.getByRole('link', { name: 'Create free account' }),
-    page.getByRole('link', { name: /Use this with my courses/ }),
+    page.getByRole('link', { name: /Create an account to do this for real/ }),
   ];
   for (const cta of ctas) {
     const box = await cta.boundingBox();

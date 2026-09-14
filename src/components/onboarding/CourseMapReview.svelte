@@ -16,7 +16,7 @@
     const experienceId = id('experience');
     draft.kcs.push({ id: kcId, name: 'New idea or skill', kc_form: 'variable_constant', rationale_level: 2, mastery_rule: { minimum_evidence: 2 }, prerequisite_kc_ids: [] });
     draft.examples.push({ id: id('example'), kc_ids: [kcId], content: { schema_version: 1, kind: 'text', body: 'Example: ' } });
-    draft.experiences.push({ id: experienceId, kind: 'exercise', target_kc_ids: [kcId], intended_processes: ['understanding_sensemaking'], evidence: { response_type: 'constructed_response', target_kc_ids: [kcId], diagnostic_misconception_ids: [] }, content: { schema_version: 1, kind: 'worked', prompt: `Explain ${draft.kcs[draft.kcs.length - 1]?.name ?? 'this idea'} in your own words.`, solution: 'A strong answer shows the idea with a concrete case.' } });
+    draft.experiences.push({ id: experienceId, kind: 'exercise', target_kc_ids: [kcId], intended_processes: ['understanding_sensemaking'], evidence: { response_type: 'constructed_response', target_kc_ids: [kcId], diagnostic_misconception_ids: [] }, content: { schema_version: 1, kind: 'worked', prompt: 'Explain this idea in your own words.', solution: 'A strong answer shows the idea with a concrete case.' } });
     draft.outcomes[0].kc_ids.push(kcId);
     emit();
   }
@@ -145,7 +145,7 @@
   }
   details[open] summary::before { transform: rotate(45deg); }
   label { display: block; font-size: 12px; font-weight: 900; color: var(--rd-ink-soft); margin: 0 0 6px; }
-  .field-helper { font-size: 12px; color: var(--rd-ink-faint); margin: 4px 0 0; }
+  .field-helper { font-size: 12px; color: oklch(57% 0.04 305); margin: 4px 0 0; } /* --rd-ink-faint is 4.00:1, below AA at 12px */
   .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
   .field { min-width: 0; margin-top: 10px; }
   input, select, textarea {

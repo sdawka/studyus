@@ -505,7 +505,7 @@
             <p>Run a situation to calculate a local schedule from your supplied topics and capacity.</p>
           {/if}
         </section>
-        <section class="proof-card"><p class="eyebrow">What this preview keeps</p><h2>What carries over</h2><p>An account starts with Learning How to Learn and lets you create real courses. Trial practice and scores stay here and are never copied.</p><a href="/sign-up?from=demo" onclick={() => void track('signup_clicked')}>Create free account →</a></section>
+        <section class="proof-card"><p class="eyebrow">What this preview keeps</p><h2>What carries over</h2><p>An account starts with Learning How to Learn and lets you create real courses. Trial practice and scores stay here and are never copied.</p><a href="/sign-up?from=demo" onclick={() => void track('signup_clicked')}>Start with a free account →</a></section>
       </div>
     </main>
   </div>

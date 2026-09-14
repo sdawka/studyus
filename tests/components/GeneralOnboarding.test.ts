@@ -118,4 +118,59 @@ describe('general onboarding', () => {
     const init = (vi.mocked(fetch).mock.calls[0]?.[1] ?? {}) as RequestInit;
     expect(JSON.parse(String(init.body))).not.toHaveProperty('context');
   });
+
+  it('shows the trial banner from ?import=demo and dismisses it with Got it', async () => {
+    const originalUrl = location.href;
+    window.history.replaceState(null, '', '/onboarding?import=demo');
+    try {
+      render(OnboardingSetup);
+      const banner = await screen.findByRole('region', { name: /About your trial/i });
+      expect(banner.textContent).toMatch(/Trial practice and scores stay in the browser/);
+
+      await fireEvent.click(screen.getByRole('button', { name: 'Got it' }));
+      expect(screen.queryByRole('region', { name: /About your trial/i })).toBeNull();
+    } finally {
+      window.history.replaceState(null, '', originalUrl);
+    }
+  });
+
+  it('renders an alert for a failed Skip on step 2, and Back clears it', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      error: { message: 'Authentication required' },
+    }), { status: 401, headers: { 'Content-Type': 'application/json' } })));
+    render(OnboardingSetup);
+    await shapeADraft();
+
+    await fireEvent.click(screen.getByRole('button', { name: /Skip to Learning How to Learn/i }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toMatch(/Your session ended\. Sign in again to finish setup\./);
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('keeps step 2 edits when the learner goes back to step 1 and shapes again', async () => {
+    render(OnboardingSetup);
+    await shapeADraft();
+    await fireEvent.click(screen.getByRole('button', { name: /Add idea or skill/i }));
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await fireEvent.input(screen.getByLabelText(/Topic/i), { target: { value: 'Documentary editing' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Shape course' }));
+
+    expect(screen.getByRole('heading', { name: 'Documentary editing' })).toBeTruthy();
+    await fireEvent.click(screen.getByRole('button', { name: 'Review and finish' }));
+    expect(screen.getByText('2', { selector: 'dd' })).toBeTruthy();
+  });
+
+  it('tells the truth about an incomplete term on the review step', async () => {
+    render(OnboardingSetup);
+    await shapeADraft();
+    await fireEvent.click(screen.getByText(/Add a term and institution/i));
+    await fireEvent.input(screen.getByLabelText(/Institution/i), { target: { value: 'A partial school' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Review and finish' }));
+
+    expect(screen.getByText(/Incomplete\. Fill in institution, term name, and both dates/)).toBeTruthy();
+    expect(screen.queryByText(/None\. This course is not tied to a term/)).toBeNull();
+  });
 });

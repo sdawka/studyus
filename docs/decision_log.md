@@ -39,3 +39,4 @@
 - 2026-09-14T11:19:31-04:00 — Proceed with final independent review and release of the general-learning onboarding branch; clean up obsolete audit-branch state only after merge evidence confirms it is safe.
 
 - 2026-09-14T11:43:45-04:00 — Push, independently review, merge, and deploy the general-learning onboarding release. A self-hosted CI path may be used if repository CI has problems, but merging still requires authoritative green checks.
+- 2026-09-14T19:07:45-04:00 — Review, merge, and deploy the onboarding polish branch (PR #42) after independent code review findings are fixed and CI is green.
