@@ -1,8 +1,8 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { courses, users } from '../../db/schema';
+import { users } from '../../db/schema';
 import { AccountInactiveError, assertClerkIdentityMayResolve, ensureActiveRuntimeRegistry } from '../services/accountLifecycle';
-import { BOOTSTRAP_COURSE_KEY, provisionLearner, type ClerkIdentity } from '../services/learnerBootstrap';
+import { ensureDefaultCourse, provisionLearner, type ClerkIdentity } from '../services/learnerBootstrap';
 
 export { AccountInactiveError } from '../services/accountLifecycle';
 export type { ClerkIdentity } from '../services/learnerBootstrap';
@@ -27,9 +27,7 @@ export async function resolveLocalUser(db: Db, identity: ClerkIdentity) {
   if (byClerkId[0]) {
     if (byClerkId[0].accountState !== 'active') throw new AccountInactiveError();
     await ensureActiveRuntimeRegistry(db, byClerkId[0].id);
-    const defaultCourse = (await db.select().from(courses)
-      .where(and(eq(courses.userId, byClerkId[0].id), eq(courses.bootstrapKey, BOOTSTRAP_COURSE_KEY)))
-      .limit(1))[0] ?? null;
+    const defaultCourse = await ensureDefaultCourse(db, byClerkId[0].id);
     return { user: byClerkId[0], wasCreated: false, defaultCourse };
   }
 
@@ -49,7 +47,8 @@ export async function resolveLocalUser(db: Db, identity: ClerkIdentity) {
       `);
       if (binding.meta.changes !== 1) throw new AccountInactiveError();
       await ensureActiveRuntimeRegistry(db, legacyUser.id);
-      return { user: { ...legacyUser, clerkUserId: identity.id }, wasCreated: false, defaultCourse: null };
+      const defaultCourse = await ensureDefaultCourse(db, legacyUser.id);
+      return { user: { ...legacyUser, clerkUserId: identity.id }, wasCreated: false, defaultCourse };
     }
   }
 

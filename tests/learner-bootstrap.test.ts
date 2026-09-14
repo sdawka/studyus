@@ -249,7 +249,7 @@ describe('learner bootstrap', () => {
     expect(storedSecond).toMatchObject({ title: 'Learning How to Learn, Revised', sourceTemplateVersion: 'test-v2' });
   });
 
-  it('does not backfill a default course for an existing learner', async () => {
+  it('backfills a complete default course for an existing learner', async () => {
     await db.insert(users).values({
       id: 'legacy-no-backfill',
       clerkUserId: 'clerk-no-backfill',
@@ -259,7 +259,40 @@ describe('learner bootstrap', () => {
 
     const result = await resolveLocalUser(db, { id: 'clerk-no-backfill', primaryEmailAddress: 'no-backfill@example.test' });
 
-    expect(result).toMatchObject({ wasCreated: false, defaultCourse: null });
-    expect(await db.select().from(courses).where(eq(courses.userId, result.user.id))).toEqual([]);
+    expect(result).toMatchObject({
+      wasCreated: false,
+      defaultCourse: {
+        userId: result.user.id,
+        bootstrapKey: BOOTSTRAP_COURSE_KEY,
+        sourceTemplateKey: DEFAULT_COURSE_KEY,
+        sourceTemplateVersion: String(DEFAULT_COURSE_VERSION),
+      },
+    });
+    expect(await hasUsableCourse(db, result.user.id)).toBe(true);
+
+    const repeated = await resolveLocalUser(db, { id: 'clerk-no-backfill', primaryEmailAddress: 'no-backfill@example.test' });
+    expect(repeated.defaultCourse?.id).toBe(result.defaultCourse?.id);
+    expect(await db.select().from(courses).where(eq(courses.userId, result.user.id))).toHaveLength(1);
+  });
+
+  it('backfills the default course while binding a legacy learner', async () => {
+    await db.insert(users).values({
+      id: 'legacy-external-backfill',
+      email: 'legacy-external@example.test',
+      passwordHash: 'legacy-password',
+    });
+
+    const result = await resolveLocalUser(db, {
+      id: 'clerk-external-backfill',
+      externalId: 'legacy-external-backfill',
+      primaryEmailAddress: 'legacy-external@example.test',
+    });
+
+    expect(result).toMatchObject({
+      wasCreated: false,
+      user: { id: 'legacy-external-backfill', clerkUserId: 'clerk-external-backfill' },
+      defaultCourse: { userId: 'legacy-external-backfill', bootstrapKey: BOOTSTRAP_COURSE_KEY },
+    });
+    expect(await hasUsableCourse(db, result.user.id)).toBe(true);
   });
 });

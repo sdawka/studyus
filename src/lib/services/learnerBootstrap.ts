@@ -47,6 +47,43 @@ async function committedBootstrap(db: Db, clerkUserId: string) {
   return defaultCourse ? { user, defaultCourse } : null;
 }
 
+/** Ensures an active learner owns the detached first-party starter course. */
+export async function ensureDefaultCourse(
+  db: Db,
+  userId: string,
+  template: BootstrapCourseTemplate = currentDefaultCourse(),
+) {
+  const existing = (await db.select().from(courses)
+    .where(and(eq(courses.userId, userId), eq(courses.bootstrapKey, BOOTSTRAP_COURSE_KEY)))
+    .limit(1))[0];
+  if (existing) return existing;
+
+  const course = await buildCourseDraftStatements(db, userId, template.draft, {
+    sourceTemplateKey: template.key,
+    sourceTemplateVersion: String(template.version),
+    bootstrapKey: BOOTSTRAP_COURSE_KEY,
+  });
+
+  try {
+    await runBatch(db, course.statements);
+  } catch (error) {
+    // Two requests can both observe an older account before either enrollment
+    // commits. The unique (user_id, bootstrap_key) index makes one the winner;
+    // return that complete aggregate rather than surfacing a transient 500.
+    const winner = (await db.select().from(courses)
+      .where(and(eq(courses.userId, userId), eq(courses.bootstrapKey, BOOTSTRAP_COURSE_KEY)))
+      .limit(1))[0];
+    if (winner) return winner;
+    throw error;
+  }
+
+  const committed = (await db.select().from(courses)
+    .where(and(eq(courses.userId, userId), eq(courses.bootstrapKey, BOOTSTRAP_COURSE_KEY)))
+    .limit(1))[0];
+  if (!committed) throw new Error('Default course enrollment did not commit');
+  return committed;
+}
+
 /** Creates a new local learner and its detached default course in one D1 transaction. */
 export async function provisionLearner(
   db: Db,
