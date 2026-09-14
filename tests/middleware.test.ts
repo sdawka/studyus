@@ -48,7 +48,9 @@ describe('Clerk local learner bridge', () => {
     expect(resolution.user.clerkUserId).toBe('user_clerk_imported');
     expect(resolution.user.email).toBe('legacy@example.test');
     expect(resolution.wasCreated).toBe(false);
-    expect(resolution.defaultCourse).toBeNull();
+    // Legacy learners are backfilled with the starter course on their first
+    // Clerk resolution (see learnerBootstrap.ensureDefaultCourse).
+    expect(resolution.defaultCourse?.userId).toBe('legacy-user-id');
   });
 
   it('refuses to relink a local learner to another Clerk account', async () => {
