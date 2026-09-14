@@ -13,7 +13,7 @@ import { isPlaceholderKcName } from '../placeholderKc';
 // onboarding form can import the browser-safe module directly.
 export { PLACEHOLDER_KC_NAMES, isPlaceholderKcName } from '../placeholderKc';
 
-/** Returns the detached course created with a new learner, without backfilling older accounts. */
+/** Returns the learner's detached first-party starter course, when provisioned. */
 export async function getProvisionedDefaultCourse(db: Db, userId: string) {
   const rows = await db.select({ id: courses.id, slug: courses.slug }).from(courses)
     // Kept local to this leaf module to avoid a service cycle through
