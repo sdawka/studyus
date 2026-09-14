@@ -54,7 +54,7 @@ test.describe('isolated general onboarding journeys', () => {
 
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/onboarding$/);
-    const skip = page.getByRole('button', { name: 'Skip to my course' });
+    const skip = page.getByRole('button', { name: 'Skip to Learning How to Learn' });
     await skip.focus();
     await expect(skip).toBeFocused();
     await page.keyboard.press('Enter');
@@ -94,7 +94,7 @@ test.describe('isolated general onboarding journeys', () => {
     await page.keyboard.press('Enter');
     await expect(page.getByRole('heading', { name: 'Documentary filmmaking' })).toBeVisible();
 
-    const review = page.getByRole('button', { name: 'Review' });
+    const review = page.getByRole('button', { name: 'Review and finish' });
     await review.focus();
     await page.keyboard.press('Enter');
     const finish = page.getByRole('button', { name: 'Finish and open course' });
