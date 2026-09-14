@@ -37,3 +37,5 @@
 - 2026-09-12T08:48:41-04:00 — Fix all release-blocking review findings before opening or merging the general-learning PR: score supported rubric/numeric evidence, make experience responses idempotent, and batch next-experience state loading within Worker limits.
 
 - 2026-09-14T11:19:31-04:00 — Proceed with final independent review and release of the general-learning onboarding branch; clean up obsolete audit-branch state only after merge evidence confirms it is safe.
+
+- 2026-09-14T11:43:45-04:00 — Push, independently review, merge, and deploy the general-learning onboarding release. A self-hosted CI path may be used if repository CI has problems, but merging still requires authoritative green checks.
