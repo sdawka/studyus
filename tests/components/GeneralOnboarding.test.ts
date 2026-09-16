@@ -20,7 +20,7 @@ describe('general onboarding', () => {
     render(OnboardingSetup);
 
     expect(screen.getByRole('heading', { name: /Learning How to Learn/i })).toBeTruthy();
-    expect(screen.getByText(/How do you know you.ve learned something/i)).toBeTruthy();
+    expect(screen.getByText(/What proves you.ve actually learned it/i)).toBeTruthy();
     expect(screen.getByLabelText(/Topic/i)).toBeTruthy();
     expect(screen.getByLabelText(/Level/i)).toBeTruthy();
     expect(screen.getByLabelText(/Learning outcome/i)).toBeTruthy();
