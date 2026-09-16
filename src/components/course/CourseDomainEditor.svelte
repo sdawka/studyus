@@ -3,7 +3,11 @@
   import { apiFetch } from '../../lib/apiClient';
   import CourseMapReview from '../onboarding/CourseMapReview.svelte';
   let { courseId, initialDraft, initialRevision } = $props<{ courseId: string; initialDraft: CourseDraftV2; initialRevision: number }>();
-  let draft = $state(structuredClone(initialDraft)); let saving = $state(false); let error = $state('');
+  // `$state.snapshot` first: on the client `$props()` hands back a reactive
+  // proxy, and `structuredClone` throws DataCloneError on proxies — which
+  // killed hydration here while SSR (plain object) rendered fine. Snapshot is
+  // a passthrough for non-proxies, so this is correct on both sides.
+  let draft = $state(structuredClone($state.snapshot(initialDraft))); let saving = $state(false); let error = $state('');
   async function save() {
     saving = true; error = '';
     const result = await apiFetch<{ slug: string }>(`/api/v1/courses/${courseId}/domain`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ course: draft, expected_revision: initialRevision }) }, 'Could not save this course');
