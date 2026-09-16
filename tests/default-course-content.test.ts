@@ -3,11 +3,11 @@ import { validateCourseDraft } from '../src/lib/domain/courseDraft';
 import { DEFAULT_COURSE_KEY, DEFAULT_COURSE_VERSION, loadDefaultCourse } from '../src/lib/content/defaultCourse';
 
 const approvedModuleTitles = [
-  'How do you know you’ve learned something?',
-  'How do you access what you’ve learned?',
-  'What does learning feel like?',
-  'What helps you learn best?',
-  'How can you keep getting better at learning?',
+  'What proves you’ve actually learned it?',
+  'How do you get it back when you need it?',
+  'What is the struggle actually telling you?',
+  'What kind of help actually helps?',
+  'How do you fix what isn’t working?',
 ];
 
 describe('bundled Learning How to Learn course', () => {

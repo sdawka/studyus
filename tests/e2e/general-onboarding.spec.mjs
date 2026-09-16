@@ -62,11 +62,11 @@ test.describe('isolated general onboarding journeys', () => {
     await expect(page.getByRole('heading', { name: 'Learning How to Learn' })).toBeVisible();
     const modules = page.getByRole('region', { name: 'Course modules' }).getByRole('heading', { level: 3 });
     await expect(modules).toHaveText([
-      'How do you know you’ve learned something?',
-      'How do you access what you’ve learned?',
-      'What does learning feel like?',
-      'What helps you learn best?',
-      'How can you keep getting better at learning?',
+      'What proves you’ve actually learned it?',
+      'How do you get it back when you need it?',
+      'What is the struggle actually telling you?',
+      'What kind of help actually helps?',
+      'How do you fix what isn’t working?',
     ]);
     await expect(page.getByLabel('Your response').first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save response' }).first()).toBeVisible();

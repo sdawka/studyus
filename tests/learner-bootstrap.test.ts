@@ -83,11 +83,11 @@ describe('learner bootstrap', () => {
       expect(scaffold.target_kc_ids).toHaveLength(module.kc_ids.length);
     }
     expect(domain.modules.map((module) => module.title)).toEqual([
-      'How do you know you’ve learned something?',
-      'How do you access what you’ve learned?',
-      'What does learning feel like?',
-      'What helps you learn best?',
-      'How can you keep getting better at learning?',
+      'What proves you’ve actually learned it?',
+      'How do you get it back when you need it?',
+      'What is the struggle actually telling you?',
+      'What kind of help actually helps?',
+      'How do you fix what isn’t working?',
     ]);
     const scaffold = domain.experiences.find((experience) => {
       const content = experience.content as { kind?: string; level?: number };

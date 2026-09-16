@@ -4,7 +4,7 @@
   import { freshDemoDraft, loadDemoDraft } from '../../lib/demo/store';
   import CourseMapReview from './CourseMapReview.svelte';
 
-  const MODULES = ['How do you know you’ve learned something?', 'How do you access what you’ve learned?', 'What does learning feel like?', 'What helps you learn best?', 'How can you keep getting better at learning?'];
+  const MODULES = ['What proves you’ve actually learned it?', 'How do you get it back when you need it?', 'What is the struggle actually telling you?', 'What kind of help actually helps?', 'How do you fix what isn’t working?'];
   let step = $state(1);
   let draftId = $state('00000000-0000-4000-8000-000000000000');
   let topic = $state(''); let level = $state(''); let outcome = $state('');
