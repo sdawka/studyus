@@ -43,3 +43,4 @@
 
 - 2026-09-23T08:25:31-04:00 — Use subagents to improve the app based on the audit and recently merged mainline work, prioritizing a reliable first-user experience.
 - 2026-09-23T08:51:09-04:00 — Defer authenticated Clerk testing if development test credentials are not available in a local file; complete the remaining local checks now.
+- 2026-09-23T09:29:04-04:00 — Merge PR #45 after green CI and deploy the first-user improvements to production; authenticated Clerk testing remains deferred.
