@@ -28,6 +28,7 @@
     "test:e2e": "playwright test --project=authenticated",
     "test:e2e:staging": "E2E_BASE_URL=https://staging.studyus.app playwright test --project=authenticated",
     "test:e2e:visual": "playwright test --project=visual",
+    "test:e2e:first-user": "playwright test --config playwright.first-user.config.mjs",
     "test": "vitest run",
     "check:types": "wrangler types && astro check",
     "check:layout": "node scripts/layout-check.cjs",

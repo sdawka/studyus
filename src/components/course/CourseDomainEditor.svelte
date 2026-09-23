@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { CourseDraftV2 } from '../../lib/schemas/courseDraft';
+  import { validateCourseDraft } from '../../lib/domain/courseDraft';
   import { apiFetch } from '../../lib/apiClient';
   import CourseMapReview from '../onboarding/CourseMapReview.svelte';
   let { courseId, initialDraft, initialRevision } = $props<{ courseId: string; initialDraft: CourseDraftV2; initialRevision: number }>();
@@ -7,15 +8,27 @@
   // proxy, and `structuredClone` throws DataCloneError on proxies — which
   // killed hydration here while SSR (plain object) rendered fine. Snapshot is
   // a passthrough for non-proxies, so this is correct on both sides.
-  let draft = $state(structuredClone($state.snapshot(initialDraft))); let saving = $state(false); let error = $state('');
+  let draft = $state(structuredClone($state.snapshot(initialDraft))); let saving = $state(false); let error = $state(''); let masteryValid = $state(true);
   async function save() {
+    if (saving) return;
+    error = '';
+    if (!masteryValid) {
+      error = 'Correct the highlighted mastery fields before saving.';
+      return;
+    }
+    try {
+      validateCourseDraft(draft);
+    } catch {
+      error = 'Some fields are empty or invalid. Check the course map before saving.';
+      return;
+    }
     saving = true; error = '';
     const result = await apiFetch<{ slug: string }>(`/api/v1/courses/${courseId}/domain`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ course: draft, expected_revision: initialRevision }) }, 'Could not save this course');
     saving = false;
     if (result.ok) window.location.href = `/courses/${result.data.slug}/concepts`; else error = result.error;
   }
 </script>
-<CourseMapReview {draft} allowStructural={false} onchange={(next) => { draft = next; }} />
+<CourseMapReview {draft} allowStructural={false} onchange={(next, nextMasteryValid) => { draft = next; masteryValid = nextMasteryValid !== false; }} />
 {#if error}<p role="alert">{error}</p>{/if}
 <button class="save" disabled={saving} onclick={save}>{saving ? 'Saving…' : 'Save course'}</button>
 <p class="note">Saving preserves this course’s learning history.</p>
