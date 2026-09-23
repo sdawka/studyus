@@ -1,6 +1,6 @@
 import { and, count, eq, gte, inArray, isNotNull, isNull, lte } from 'drizzle-orm';
 import type { Db } from '../../db/client';
-import { assessmentKcs, assessments, branches, courses, exercises, kcEdges, kcs } from '../../db/schema';
+import { assessmentKcs, assessments, branches, courseModules, courses, events, experienceKcs, experiences, exercises, kcEdges, kcs, moduleExperiences } from '../../db/schema';
 import { rankNextMoves, NEXT_MOVE_ASSESSMENT_HORIZON_DAYS, type NextMoveAssessmentInput, type NextMoveKcInput } from '../nextMove';
 import type { AvailableMinutes } from '../schemas/nextMove';
 import { chunk } from './util';
@@ -28,6 +28,7 @@ export async function getNextMove(
         courseCode: courses.code,
         courseTitle: courses.title,
         courseColor: courses.color,
+        domainVersion: courses.domainVersion,
         branchSortOrder: branches.sortOrder,
         kcSortOrder: kcs.sortOrder,
       })
@@ -120,5 +121,38 @@ export async function getNextMove(
     assessmentsById.set(row.id, assessment);
   }
 
-  return rankNextMoves(nextMoveKcs, [...assessmentsById.values()], availableMinutes, now);
+  const result = rankNextMoves(nextMoveKcs, [...assessmentsById.values()], availableMinutes, now);
+  const domainVersionByCourse = new Map(kcRows.map((row) => [row.courseId, row.domainVersion]));
+  const moduleMoves = [result.recommendation, ...result.alternatives].filter((move) =>
+    move !== null && move.method === 'understand' && domainVersionByCourse.get(move.course.course_id) === 2,
+  );
+  if (!moduleMoves.length) return result;
+
+  // Ranking still chooses the concept. For an authored V2 course, open its
+  // actual module content rather than sending the learner to an optional tutor.
+  // The recommendation list is bounded; these are two reads for the whole list.
+  const courseIds = [...new Set(moduleMoves.map((move) => move!.course.course_id))];
+  const [activities, recorded] = await Promise.all([
+    db.select({
+      id: experiences.id, kind: experiences.kind, courseId: experiences.courseId, kcId: experienceKcs.kcId,
+    }).from(experiences)
+      .innerJoin(courses, eq(experiences.courseId, courses.id))
+      .innerJoin(experienceKcs, eq(experienceKcs.experienceId, experiences.id))
+      .innerJoin(moduleExperiences, eq(moduleExperiences.experienceId, experiences.id))
+      .innerJoin(courseModules, eq(moduleExperiences.moduleId, courseModules.id))
+      .where(and(eq(courses.userId, userId), eq(courses.archived, false), inArray(courses.id, courseIds)))
+      .orderBy(courseModules.sortOrder, moduleExperiences.sortOrder, experiences.id),
+    db.selectDistinct({ experienceId: events.experienceId }).from(events)
+      .where(and(eq(events.userId, userId), inArray(events.courseId, courseIds), isNotNull(events.experienceId))),
+  ]);
+  const recordedIds = new Set(recorded.map((row) => row.experienceId));
+  for (const move of moduleMoves) {
+    if (!move) continue;
+    const matches = activities.filter((activity) => activity.courseId === move.course.course_id && activity.kcId === move.kc.kc_id);
+    const activity = matches.find((row) => !recordedIds.has(row.id)) ?? matches[0];
+    if (!activity) continue;
+    move.activity = { experience_id: activity.id, kind: activity.kind };
+    move.action_href = `/courses/${move.course.course_slug}#experience-${activity.id}`;
+  }
+  return result;
 }

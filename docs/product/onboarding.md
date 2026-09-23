@@ -87,6 +87,8 @@ must create an academic course.
   the learner take the same action from every step.
 - Manual creation starts from topic, level, and one outcome. The learner may
   review and edit the resulting V2 aggregate before Finish.
+- Added outcomes, ideas, and practice stay attached to a runnable module.
+  Empty or invalid mastery settings are explained inline before Review or Save.
 - Academic context is behind an optional disclosure. Partial context is
   discarded on Skip and rejected on Finish; it never gates entry.
 - Reviewed templates can be renamed, reordered, and selectively included.
@@ -97,6 +99,9 @@ must create an academic course.
   V2 aggregate, records the draft idempotency key, and stamps onboarding.
 - The learner lands on the authored course, or on Learning How to Learn after
   Skip.
+- Saving a course activity offers a keyboard-accessible continuation to the next
+  activity, including across modules. Dashboard recommendations open matching
+  V2 module activities directly; recorded responses are not mastery claims.
 
 ## Data model
 

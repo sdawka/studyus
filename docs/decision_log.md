@@ -40,3 +40,6 @@
 
 - 2026-09-14T11:43:45-04:00 — Push, independently review, merge, and deploy the general-learning onboarding release. A self-hosted CI path may be used if repository CI has problems, but merging still requires authoritative green checks.
 - 2026-09-14T19:07:45-04:00 — Review, merge, and deploy the onboarding polish branch (PR #42) after independent code review findings are fixed and CI is green.
+
+- 2026-09-23T08:25:31-04:00 — Use subagents to improve the app based on the audit and recently merged mainline work, prioritizing a reliable first-user experience.
+- 2026-09-23T08:51:09-04:00 — Defer authenticated Clerk testing if development test credentials are not available in a local file; complete the remaining local checks now.

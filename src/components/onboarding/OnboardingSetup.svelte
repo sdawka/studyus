@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
   import type { CourseDraftV2 } from '../../lib/schemas/courseDraft';
+  import { validateCourseDraft } from '../../lib/domain/courseDraft';
   import { freshDemoDraft, loadDemoDraft } from '../../lib/demo/store';
   import CourseMapReview from './CourseMapReview.svelte';
 
@@ -9,6 +10,7 @@
   let draftId = $state('00000000-0000-4000-8000-000000000000');
   let topic = $state(''); let level = $state(''); let outcome = $state('');
   let courseDraft = $state<CourseDraftV2 | null>(null);
+  let courseMapHasInvalidMastery = $state(false);
   let pending = $state<'skip' | 'finish' | null>(null);
   let redirecting = $state(false);
   let error = $state<string | null>(null);
@@ -63,6 +65,7 @@
   }
 
   const localId = (kind: string) => `${kind}-${crypto.randomUUID()}`;
+  const generatedPracticePrompt = (outcomeTitle: string) => `Explain or demonstrate: ${outcomeTitle}`;
 
   // Thrown for anything we already have learner-facing copy for (term
   // validation, mapped HTTP statuses, server-supplied messages). Anything
@@ -82,7 +85,7 @@
       kcs: [{ id: kcId, name: outcome.trim(), kc_form: 'variable_constant', rationale_level: 2, mastery_rule: { threshold: 0.8, minimum_evidence: 2 }, prerequisite_kc_ids: [] }],
       examples: [{ id: localId('example'), kc_ids: [kcId], content: { schema_version: 1, kind: 'text', body: `A concrete example of ${topic.trim()}.` } }],
       misconceptions: [],
-      experiences: [{ id: experienceId, kind: 'exercise', target_kc_ids: [kcId], intended_processes: ['understanding_sensemaking'], evidence: { response_type: 'constructed_response', target_kc_ids: [kcId], diagnostic_misconception_ids: [] }, content: { schema_version: 1, kind: 'worked', prompt: `Explain or demonstrate: ${outcome.trim()}`, solution: 'A strong response shows you can do this on a case you have not seen before.' } }],
+      experiences: [{ id: experienceId, kind: 'exercise', target_kc_ids: [kcId], intended_processes: ['understanding_sensemaking'], evidence: { response_type: 'constructed_response', target_kc_ids: [kcId], diagnostic_misconception_ids: [] }, content: { schema_version: 1, kind: 'worked', prompt: generatedPracticePrompt(outcome.trim()), solution: 'A strong response shows you can do this on a case you have not seen before.' } }],
       references: [],
       modules: [{ id: localId('module'), title: outcome.trim(), outcome_ids: [outcomeId], kc_ids: [kcId], experience_ids: [experienceId], sort_order: 0 }],
     };
@@ -105,6 +108,10 @@
       if (courseDraft.outcomes[0]) courseDraft.outcomes[0].title = nextOutcome;
       if (courseDraft.kcs[0] && courseDraft.kcs[0].name === previousOutcome) courseDraft.kcs[0].name = nextOutcome;
       if (courseDraft.modules[0] && courseDraft.modules[0].title === previousOutcome) courseDraft.modules[0].title = nextOutcome;
+      const firstPractice = courseDraft.experiences[0];
+      if (previousOutcome && firstPractice?.content.kind === 'worked' && firstPractice.content.prompt === generatedPracticePrompt(previousOutcome)) {
+        firstPractice.content.prompt = generatedPracticePrompt(nextOutcome);
+      }
     } else {
       courseDraft = makeDraft();
     }
@@ -129,6 +136,20 @@
     focusHeading();
   }
 
+  function canReviewCourse() {
+    if (courseMapHasInvalidMastery) {
+      commitError = 'Correct the highlighted mastery fields before reviewing.';
+      return false;
+    }
+    try {
+      validateCourseDraft(courseDraft);
+      return true;
+    } catch {
+      commitError = 'Some fields are empty or invalid. Check every outcome, idea, example, and practice prompt.';
+      return false;
+    }
+  }
+
   function context() {
     if (termState === 'none') return undefined;
     if (termState === 'incomplete') {
@@ -143,6 +164,15 @@
   }
 
   async function commit(course?: CourseDraftV2) {
+    if (pending) return;
+    if (course && !canReviewCourse()) {
+      if (step === 3) {
+        step = 2;
+        error = null;
+        focusHeading();
+      }
+      return;
+    }
     pending = course ? 'finish' : 'skip';
     commitError = null;
     // The client cannot know whether the server's batch committed before a
@@ -272,12 +302,12 @@
       <p class="kicker">Step 1 of 2 · Shape</p>
       <h1 tabindex="-1" bind:this={headingEl}>{courseDraft.spec.title}</h1>
       <p class="lede">studyus turned your topic, level, and outcome into a starting structure. Edit anything here, or leave it as it is and review. Nothing is created until you finish.</p>
-      <CourseMapReview draft={courseDraft} onchange={(next) => { courseDraft = next; }} />
+      <CourseMapReview draft={courseDraft} onchange={(next, masteryValid) => { courseDraft = next; courseMapHasInvalidMastery = masteryValid === false; }} />
       {@render academicContext()}
       {#if commitError}<p class="error" role="alert">{commitError}</p>{/if}
       <div class="actions">
         <button type="button" class="rd-btn rd-btn-ghost" disabled={busy} onclick={() => goToStep(1)}>Back</button>
-        <button type="button" class="rd-btn rd-btn-primary" disabled={busy} onclick={() => goToStep(3)}>Review and finish</button>
+        <button type="button" class="rd-btn rd-btn-primary" disabled={busy} onclick={() => { if (canReviewCourse()) goToStep(3); }}>Review and finish</button>
       </div>
       <p class="section-helper">Your edits stay if you go back.</p>
     {:else if step === 3 && courseDraft}

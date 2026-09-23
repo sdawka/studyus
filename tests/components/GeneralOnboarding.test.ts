@@ -98,6 +98,90 @@ describe('general onboarding', () => {
     expect((screen.getByLabelText(/Learning outcome/i) as HTMLInputElement).value).toBe('Edit a coherent short documentary');
   });
 
+  it('submits every structural addition through the starter module', async () => {
+    render(OnboardingSetup);
+    await shapeADraft();
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Add another outcome' }));
+    await fireEvent.click(screen.getByRole('button', { name: /Add idea or skill/i }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Add practice' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Review and finish' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Finish and open course' }));
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    const init = (vi.mocked(fetch).mock.calls[0]?.[1] ?? {}) as RequestInit;
+    const course = JSON.parse(String(init.body)).course;
+    const module = course.modules[0];
+
+    expect(module.outcome_ids).toEqual(course.outcomes.map((outcome: { id: string }) => outcome.id));
+    expect(module.kc_ids).toEqual(course.kcs.map((kc: { id: string }) => kc.id));
+    expect(module.experience_ids).toEqual(course.experiences.map((experience: { id: string }) => experience.id));
+  });
+
+  it('blocks review for blank and out-of-range mastery values, while allowing their boundaries', async () => {
+    render(OnboardingSetup);
+    await shapeADraft();
+
+    const evidence = screen.getByLabelText(/Times you must show it/i) as HTMLInputElement;
+    const threshold = screen.getByLabelText(/Success rate that counts/i) as HTMLInputElement;
+    await fireEvent.input(evidence, { target: { value: '' } });
+    expect(evidence.value).toBe('');
+    expect(evidence.getAttribute('aria-invalid')).toBe('true');
+    expect(screen.getByText(/Enter a whole number of at least 1/i)).toBeTruthy();
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Review and finish' }));
+    expect(screen.getByText(/Correct the highlighted mastery fields before reviewing/i)).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Documentary filmmaking' })).toBeTruthy();
+
+    await fireEvent.input(evidence, { target: { value: '1' } });
+    await fireEvent.input(threshold, { target: { value: '-0.01' } });
+    expect(threshold.getAttribute('aria-invalid')).toBe('true');
+    await fireEvent.input(threshold, { target: { value: '0' } });
+    expect(threshold.getAttribute('aria-invalid')).toBeNull();
+    await fireEvent.input(threshold, { target: { value: '1' } });
+    expect(threshold.getAttribute('aria-invalid')).toBeNull();
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Review and finish' }));
+    expect(screen.getByRole('heading', { name: 'Documentary filmmaking' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Finish and open course' })).toBeTruthy();
+  });
+
+  it('restores blank mastery validation after Back and Shape before blocking review', async () => {
+    render(OnboardingSetup);
+    await shapeADraft();
+    await fireEvent.input(screen.getByLabelText(/Times you must show it/i), { target: { value: '' } });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Shape course' }));
+
+    const evidence = screen.getByLabelText(/Times you must show it/i) as HTMLInputElement;
+    expect(evidence.value).toBe('');
+    expect(evidence.getAttribute('aria-invalid')).toBe('true');
+    expect(screen.getByText(/Enter a whole number of at least 1/i)).toBeTruthy();
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Review and finish' }));
+    expect(screen.getByText(/Correct the highlighted mastery fields before reviewing/i)).toBeTruthy();
+  });
+
+  it('updates only the untouched generated practice prompt when the outcome changes after Back', async () => {
+    render(OnboardingSetup);
+    await shapeADraft();
+    let prompt = screen.getByLabelText(/Practice prompt/i) as HTMLInputElement;
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await fireEvent.input(screen.getByLabelText(/Learning outcome/i), { target: { value: 'Edit a short documentary' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Shape course' }));
+    prompt = screen.getByLabelText(/Practice prompt/i) as HTMLInputElement;
+    expect(prompt.value).toBe('Explain or demonstrate: Edit a short documentary');
+
+    await fireEvent.input(prompt, { target: { value: 'Compare two rough cuts and justify your edit.' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await fireEvent.input(screen.getByLabelText(/Learning outcome/i), { target: { value: 'Direct a short documentary' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Shape course' }));
+    prompt = screen.getByLabelText(/Practice prompt/i) as HTMLInputElement;
+    expect(prompt.value).toBe('Compare two rough cuts and justify your edit.');
+  });
+
   it('states what will be created, where it lands, and that Learning How to Learn stays, on review', async () => {
     render(OnboardingSetup);
     await shapeADraft();

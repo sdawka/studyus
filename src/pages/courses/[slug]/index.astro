@@ -90,7 +90,7 @@ const branches = course.branches.map((b) => ({
   const target = HASH_ROUTES[hash];
   if (target) {
     location.replace(`${location.pathname.replace(/\/$/, '')}/${target}`);
-  } else if (hash) {
+  } else if (hash && !hash.startsWith('experience-') && !/^module-.+-experience-.+$/.test(hash)) {
     // #standing (or anything else) just strips the hash — overview is home.
     // (#assessments is real again — UpNextCard/GradeStatCard link to the
     // in-page assessments slot — but that's an element id the browser
