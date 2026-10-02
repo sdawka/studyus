@@ -1,4 +1,4 @@
-export const CANONICAL_APP_ORIGIN = 'https://studyus.app';
+export const CANONICAL_APP_ORIGIN = 'https://old.studyus.app';
 
 const RAW_DEPLOY_HOSTS = new Set(['studyus.dawka.workers.dev']);
 
