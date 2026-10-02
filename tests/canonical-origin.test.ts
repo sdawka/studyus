@@ -7,10 +7,11 @@ describe('canonical production origin', () => {
       new URL('https://studyus.dawka.workers.dev/tutor/kc-1?c=conversation-1'),
     );
 
-    expect(redirected?.href).toBe('https://studyus.app/tutor/kc-1?c=conversation-1');
+    expect(redirected?.href).toBe('https://old.studyus.app/tutor/kc-1?c=conversation-1');
   });
 
   it('leaves the canonical and local development hosts unchanged', () => {
+    expect(canonicalRedirectUrl(new URL('https://old.studyus.app/dashboard'))).toBeNull();
     expect(canonicalRedirectUrl(new URL('https://studyus.app/dashboard'))).toBeNull();
     expect(canonicalRedirectUrl(new URL('http://127.0.0.1:4321/dashboard'))).toBeNull();
   });

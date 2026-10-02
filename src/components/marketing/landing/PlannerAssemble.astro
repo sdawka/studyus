@@ -27,14 +27,14 @@
 
         <!-- Two crossfading copy beats stacked in the same box -->
         <div class="planner-heads">
-          <p class="rd-kicker">Student life can be a mess</p>
+          <p class="rd-kicker">Planning your week</p>
           <div class="planner-beats">
             <h2 class="planner-beat planner-beat--early" data-beat-early>
-              The deadline was <span class="rd-em">somewhere.</span><br />
-              The plan was nowhere.
+              Keeping track of deadlines across <span class="rd-em">different places</span><br />
+              can make your week harder to plan.
             </h2>
             <h2 id="planner-heading" class="planner-beat planner-beat--late" data-beat-late>
-              One place. The <span class="rd-em">next</span> best move.
+              Plan your study time and see what to work on <span class="rd-em">next</span>.
             </h2>
           </div>
         </div>
@@ -355,6 +355,7 @@
        even while GSAP transforms are active. */
     .planner-frame {
       width: 100%;
+      min-width: 0;
       padding-inline: max(24px, var(--rd-pad-x));
     }
     .planner-board,

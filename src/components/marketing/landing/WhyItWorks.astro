@@ -4,22 +4,22 @@
 const signals = [
   {
     label: 'Deadlines',
-    detail: 'What is due soon',
+    detail: 'Upcoming assessment dates',
     mark: '01',
   },
   {
     label: 'Mastery',
-    detail: 'What is still shaky',
+    detail: 'Progress from your recorded practice',
     mark: '02',
   },
   {
     label: 'Prerequisites',
-    detail: 'What unlocks the rest',
+    detail: 'Concepts you need to understand first',
     mark: '03',
   },
   {
     label: 'Memory decay',
-    detail: 'What you are starting to forget',
+    detail: 'Time since your last practice',
     mark: '04',
   },
 ];
@@ -30,10 +30,12 @@ const signals = [
     <div class="why-copy" data-reveal-item>
       <p class="rd-kicker"><span class="why-dot"></span>Why this comes next</p>
       <h2 class="rd-h2" id="why-title">
-        Not a guess. <span class="rd-em">A decision.</span>
+        Understand why a concept comes <span class="rd-em">next</span>.
       </h2>
       <p class="why-lead">
-        Studyus weighs four signals, then gives you one place to start.
+        Studyus ranks recommendations using assessment dates, recorded progress,
+        and time since your last practice. It also checks which concepts you
+        need to understand first.
       </p>
     </div>
 
@@ -49,7 +51,7 @@ const signals = [
       ))}
     </ol>
     <a class="why-link" href="/how-it-works" data-reveal-item>
-      See the learning design and implementation checklist <span aria-hidden="true">→</span>
+      Read about the learning methods behind Studyus <span aria-hidden="true">→</span>
     </a>
   </div>
 </section>
