@@ -54,3 +54,5 @@
 - 2026-10-02T10:29:27-04:00 — Rewrite the legacy homepage below the hero in straightforward, connected prose; preserve the hero.
 
 - 2026-10-02T10:29:27-04:00 — Fix the Clerk post-login flow so returning users enter the main app dashboard before archiving the app.
+
+- 2026-10-02T13:08:38-04:00 — Merge PR #46 after green CI and deploy the archived app.
