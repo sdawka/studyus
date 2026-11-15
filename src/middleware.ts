@@ -130,7 +130,12 @@ export const onRequest: MiddlewareHandler = async (context, next) => secureRespo
   const canonicalUrl = canonicalRedirectUrl(context.url);
   if (canonicalUrl) return Response.redirect(canonicalUrl, 308);
 
-  if (isAuthIndependentPath(context.url.pathname)) {
+  // A completed sign-in can return to `/`. Resolve an existing session there
+  // so index.astro can send the learner into the app; anonymous visits retain
+  // the auth-independent marketing page.
+  const hasHomepageSession = context.url.pathname === '/' &&
+    /(?:^|;\s*)__session=[^;\s]+/.test(context.request.headers.get('cookie') ?? '');
+  if (isAuthIndependentPath(context.url.pathname) && !hasHomepageSession) {
     context.locals.user = null;
     return next();
   }

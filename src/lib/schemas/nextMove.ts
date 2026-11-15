@@ -31,6 +31,7 @@ export type NextMove = {
   planned_minutes: AvailableMinutes;
   question_count: number | null;
   action_href: string;
+  activity?: { experience_id: string; kind: 'scaffold' | 'exercise' | 'project' };
   reasons: NextMoveReason[];
 };
 

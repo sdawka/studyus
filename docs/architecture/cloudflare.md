@@ -10,10 +10,14 @@ This document captures the Cloudflare Workers-specific details and gotchas from 
 - **SSR mode**: `output: 'server'` in `astro.config.mjs`.
 - **Dev server**: `npm run dev` runs Astro on a real workerd instance (via wrangler 4), not a Node.js process.
 - **Bindings**: D1, R2, KV, Durable Objects are injected via `wrangler.jsonc`, not Astro's platform/locals.
-- **Canonical origin**: `https://studyus.app`. Requests to the raw
+- **Legacy app origin**: `https://old.studyus.app`. Requests to the raw
   `studyus.dawka.workers.dev` deployment hostname redirect there before Clerk
   initializes, because the production Clerk Frontend API only accepts the
-  configured application origin.
+  configured root domain and its allowed subdomains.
+  The archive branch retains Worker `studyus` and its existing D1, R2, and
+  LearnerAgent namespace. `studyus.app` remains attached until the revamped app
+  is ready; deploy that app to a separate Worker and data resources to keep the
+  archived app available. The app skeleton and Clerk integration remain reusable.
 
 ## Configuration
 
@@ -231,6 +235,12 @@ entrypoint and uploading the Worker. It does **not** apply D1 migrations. Apply 
 verify migrations as an explicit operation (`npm run db:migrate:remote`) before a
 release that depends on them. `npm run deploy:staging` builds with the staging flag and
 deploys with `--env staging`; neither command supplies a promotion or rollback policy.
+
+While `studyus.app` still serves the legacy app, refresh the archive with
+`npm run build`, `wrangler versions upload`, then `wrangler versions deploy <version>@100`.
+Attach `old.studyus.app` independently; this preserves the transitional primary
+domain and existing cron triggers. The archive's route configuration owns only
+`old.studyus.app`, so future archive deploys cannot reclaim the revamped app's domain.
 
 The McGill catalogue is data, not schema, so migrating is not enough: run
 `npm run db:seed:catalog:remote` as well when standing up an environment or rebuilding

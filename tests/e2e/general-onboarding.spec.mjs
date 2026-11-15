@@ -60,7 +60,7 @@ test.describe('isolated general onboarding journeys', () => {
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/courses\/learning-how-to-learn$/);
     await expect(page.getByRole('heading', { name: 'Learning How to Learn' })).toBeVisible();
-    const modules = page.getByRole('region', { name: 'Course modules' }).getByRole('heading', { level: 3 });
+    const modules = page.getByRole('region', { name: 'Course modules' }).locator('details > summary');
     await expect(modules).toHaveText([
       'What proves you’ve actually learned it?',
       'How do you get it back when you need it?',
@@ -70,6 +70,25 @@ test.describe('isolated general onboarding journeys', () => {
     ]);
     await expect(page.getByLabel('Your response').first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save response' }).first()).toBeVisible();
+
+    // Complete an actual learning step, then follow the next action. Merely
+    // loading the course is not evidence that a new learner can use it.
+    const reading = page.getByRole('button', { name: 'Mark explanation read' }).first();
+    const activity = reading.locator('..');
+    await reading.click();
+    await expect(activity.getByRole('status')).toContainText('Reading recorded');
+    await activity.getByRole('button', { name: /^Continue/ }).click();
+    await expect(page.locator('article:focus').getByLabel('Your response')).toBeVisible();
+    const practiceId = await page.locator('article:focus').getAttribute('id');
+    const practice = page.locator(`[id="${practiceId}"]`);
+    await practice.getByLabel('Your response').fill('I will close my notes, explain the idea, and check what I missed.');
+    await practice.getByRole('button', { name: 'Save response' }).click();
+    await expect(practice.getByRole('status')).toContainText('Response saved');
+    const savedEvents = await page.request.get(`/api/v1/events?course=${body.data[0].id}`);
+    expect(savedEvents.ok()).toBe(true);
+    expect((await savedEvents.json()).data).toEqual(expect.arrayContaining([
+      expect.objectContaining({ experience_id: practiceId.slice('experience-'.length) }),
+    ]));
     await page.goto('/courses/learning-how-to-learn/concepts');
     await expect(page.getByRole('button', { name: 'Save course' })).toBeVisible();
   });

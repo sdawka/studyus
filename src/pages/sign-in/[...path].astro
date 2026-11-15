@@ -4,9 +4,13 @@ import ClerkUi from '../../components/auth/ClerkUi.astro';
 import { authQuery, safeReturnPath } from '../../components/auth/returnUrl';
 import MarketingLayout from '../../layouts/MarketingLayout.astro';
 
-const returnPath = safeReturnPath(Astro.url.searchParams.get('return'), Astro.url.origin);
+const requestedPath = safeReturnPath(
+  Astro.url.searchParams.get('return') ?? Astro.url.searchParams.get('redirect_url'),
+  Astro.url.origin,
+);
+const returnPath = requestedPath?.split(/[?#]/)[0] === '/' ? null : requestedPath;
 const fromDemo = Astro.url.searchParams.get('from') === 'demo';
-const destination = returnPath ?? (fromDemo ? '/onboarding?import=demo' : '/onboarding');
+const destination = returnPath ?? (fromDemo ? '/onboarding?import=demo' : '/dashboard');
 const signUpUrl = `/sign-up${authQuery({ returnPath, fromDemo })}`;
 
 if (Astro.locals.user) return Astro.redirect(Astro.locals.user.onboardedAt ? (returnPath ?? '/dashboard') : destination);

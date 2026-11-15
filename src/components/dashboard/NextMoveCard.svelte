@@ -62,6 +62,7 @@
   }
 
   function methodLabel(item: NextMove): string {
+    if (item.activity) return 'Open learning activity';
     return item.method === 'quick_quiz'
       ? `Start ${item.question_count}-question check`
       : 'Understand this concept';
@@ -96,7 +97,7 @@
       <p class="course-line"><span class="course-dot"></span>{move.course.course_code} · {move.course.course_title}</p>
       <h3>{move.title}</h3>
       <p class="method-line">
-        {move.method === 'quick_quiz' ? 'Retrieval practice' : 'Guided understanding'}
+        {move.activity ? 'Course activity' : move.method === 'quick_quiz' ? 'Retrieval practice' : 'Guided understanding'}
         <span>·</span> {move.planned_minutes} min
       </p>
 

@@ -62,11 +62,14 @@
   let assessments = $state<Assessment[]>([]);
   let weightedGrade = $state<number | null>(null);
   let events = $state<EventRow[]>([]);
+  let loadingAttempt = $state(false);
 
   let gradedCount = $derived(assessments.filter((a) => a.kind === 'official' && a.grade_received !== null).length);
   let officialCount = $derived(assessments.filter((a) => a.kind === 'official').length);
 
   async function loadAll() {
+    if (loadingAttempt) return;
+    loadingAttempt = true;
     loading = true;
     loadError = null;
     const [assessmentsResult, gradesResult, eventsResult] = await Promise.all([
@@ -77,12 +80,14 @@
     if (!assessmentsResult.ok || !gradesResult.ok || !eventsResult.ok) {
       loadError = 'Could not load course data.';
       loading = false;
+      loadingAttempt = false;
       return;
     }
     assessments = assessmentsResult.data;
     weightedGrade = gradesResult.data.by_course.find((c) => c.course_id === courseId)?.weighted_grade ?? null;
     events = eventsResult.data;
     loading = false;
+    loadingAttempt = false;
   }
 
   loadAll();
@@ -113,6 +118,9 @@
     <div class="card-head"><h2 class="card-title">{title}</h2></div>
     {#if loadError}
       <p class="load-error">{loadError}</p>
+      {#if title === 'Assessments'}
+        <button class="btn btn-secondary" type="button" onclick={loadAll} disabled={loadingAttempt}>Try again</button>
+      {/if}
     {:else}
       <div class="skeleton">
         <div class="skeleton-row"></div>

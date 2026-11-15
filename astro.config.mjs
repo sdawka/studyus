@@ -29,7 +29,12 @@ try {
 // the official integration's server config and component support, but defer its
 // client import entirely on the auth-independent marketing and trial routes.
 function routeAwareClerk() {
-  const integration = clerk();
+  const integration = clerk({
+    signInUrl: '/sign-in',
+    signUpUrl: '/sign-up',
+    signInFallbackRedirectUrl: '/dashboard',
+    signUpFallbackRedirectUrl: '/onboarding',
+  });
   const setup = integration.hooks?.['astro:config:setup'];
 
   if (!setup) throw new Error('The Clerk Astro integration is missing its setup hook.');

@@ -1149,6 +1149,12 @@ check.
 its reason codes. For `understand`, `question_count` is `null` and
 `action_href` is `/learn/:kcId?minutes=...`.
 
+For V2 courses with a module activity targeting that KC, `understand` instead
+includes `activity: { experience_id, kind }` and links to
+`/courses/:slug#experience-:id`. It chooses the first unrecorded matching activity
+in module order, or the first matching activity for review. This navigation
+uses owned records only and does not require AI or treat completion as mastery.
+
 ### Recommendation-launched learning flows
 
 `POST /flows/quick_quiz` additionally accepts `planned_minutes: 15|25|50`. An

@@ -40,3 +40,19 @@
 
 - 2026-09-14T11:43:45-04:00 — Push, independently review, merge, and deploy the general-learning onboarding release. A self-hosted CI path may be used if repository CI has problems, but merging still requires authoritative green checks.
 - 2026-09-14T19:07:45-04:00 — Review, merge, and deploy the onboarding polish branch (PR #42) after independent code review findings are fixed and CI is green.
+
+- 2026-09-23T08:25:31-04:00 — Use subagents to improve the app based on the audit and recently merged mainline work, prioritizing a reliable first-user experience.
+- 2026-09-23T08:51:09-04:00 — Defer authenticated Clerk testing if development test credentials are not available in a local file; complete the remaining local checks now.
+- 2026-09-23T09:29:04-04:00 — Merge PR #45 after green CI and deploy the first-user improvements to production; authenticated Clerk testing remains deferred.
+
+- 2026-10-02T10:25:24-04:00 — Archive the current course-focused app on a branch and deploy it to old.studyus.app before the complete revamp.
+
+- 2026-10-02T10:25:24-04:00 — Focus the revamp on KLI, knowledge and learning management, and time management, with less emphasis on courses.
+
+- 2026-10-02T10:25:24-04:00 — Keep the existing app skeleton and authentication infrastructure for the revamp.
+
+- 2026-10-02T10:29:27-04:00 — Rewrite the legacy homepage below the hero in straightforward, connected prose; preserve the hero.
+
+- 2026-10-02T10:29:27-04:00 — Fix the Clerk post-login flow so returning users enter the main app dashboard before archiving the app.
+
+- 2026-10-02T13:08:38-04:00 — Merge PR #46 after green CI and deploy the archived app.

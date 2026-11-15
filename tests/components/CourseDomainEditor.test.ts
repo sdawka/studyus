@@ -9,8 +9,8 @@
 //
 // Mounting the component here runs the client-side path, which is where the
 // crash lived. No test mounted this component before, which is how it shipped.
-import { render, screen } from '@testing-library/svelte';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/svelte';
+import { describe, expect, it, vi } from 'vitest';
 import CourseDomainEditor from '../../src/components/course/CourseDomainEditor.svelte';
 import { loadDefaultCourse } from '../../src/lib/content/defaultCourse';
 
@@ -43,5 +43,32 @@ describe('CourseDomainEditor', () => {
     })).not.toThrow();
 
     expect(screen.getByRole('button', { name: 'Save course' })).toBeTruthy();
+  });
+
+  it('does not expose onboarding structural additions for an existing course', () => {
+    render(CourseDomainEditor, {
+      courseId: 'course-id',
+      initialDraft: loadDefaultCourse(),
+      initialRevision: 0,
+    });
+
+    expect(screen.queryByRole('button', { name: /Add another outcome|Add idea or skill|Add example|Add practice/i })).toBeNull();
+  });
+
+  it('keeps an invalid mastery value inline and does not send it to the course API', async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    render(CourseDomainEditor, {
+      courseId: 'course-id',
+      initialDraft: loadDefaultCourse(),
+      initialRevision: 0,
+    });
+
+    await fireEvent.input(screen.getAllByLabelText(/Times you must show it/i)[0], { target: { value: '' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Save course' }));
+
+    expect(screen.getByText(/Enter a whole number of at least 1/i)).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toMatch(/Correct the highlighted mastery fields before saving/i);
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
