@@ -39,8 +39,9 @@
     }
   },
   "vars": {
-    "OPENROUTER_MODEL": "openrouter/auto",
-    "AI_FEATURES_ENABLED": "false",
+    "OPENROUTER_MODEL": "anthropic/claude-haiku-5.5",
+    "AI_FEATURES_ENABLED": "true",
+    "AI_GLOBAL_DAILY_CALL_LIMIT": "2000",
     "ANALYTICS_ENABLED": "true",
     "POSTHOG_HOST": "https://us.i.posthog.com"
   },
@@ -86,8 +87,9 @@
         ]
       },
       "vars": {
-        "OPENROUTER_MODEL": "openrouter/auto",
+        "OPENROUTER_MODEL": "anthropic/claude-haiku-5.5",
         "AI_FEATURES_ENABLED": "false",
+        "AI_GLOBAL_DAILY_CALL_LIMIT": "2000",
         "ANALYTICS_ENABLED": "true",
         "POSTHOG_HOST": "https://us.i.posthog.com"
       },
@@ -135,8 +137,9 @@
         ]
       },
       "vars": {
-        "OPENROUTER_MODEL": "openrouter/auto",
+        "OPENROUTER_MODEL": "anthropic/claude-haiku-5.5",
         "AI_FEATURES_ENABLED": "false",
+        "AI_GLOBAL_DAILY_CALL_LIMIT": "2000",
         "ANALYTICS_ENABLED": "false",
         "POSTHOG_HOST": "https://us.i.posthog.com"
       },

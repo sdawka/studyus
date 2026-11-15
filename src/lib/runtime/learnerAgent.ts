@@ -5,6 +5,7 @@ import { deliverBehavioralEventAwaited } from '../analytics/server';
 import { resolveSettings } from '../services/user';
 import { LEARNER_RUNTIME_NAME_PREFIX, learnerRuntimeObjectName } from '../services/accountLifecycle';
 import { AiBudgetExceededError } from '../ai/errors';
+import { globalDailyCallLimit, reserveGlobalAiCall } from '../ai/globalBudget';
 export { AiBudgetExceededError } from '../ai/errors';
 
 export const TUTOR_ABANDONMENT_IDLE_MS = 30 * 60 * 1000;
@@ -199,7 +200,7 @@ export class LearnerAgentDeletedError extends Error {
 
 type LearnerAgentEnv = Pick<
   Cloudflare.Env,
-  'AI_FEATURES_ENABLED' | 'OPENROUTER_API_KEY' | 'OPENROUTER_MODEL' | 'DB' | 'ANALYTICS_ENABLED' | 'POSTHOG_HOST' | 'POSTHOG_PROJECT_TOKEN' | 'ANALYTICS_EXCLUDED_USER_IDS'
+  'AI_FEATURES_ENABLED' | 'AI_GLOBAL_DAILY_CALL_LIMIT' | 'OPENROUTER_API_KEY' | 'OPENROUTER_MODEL' | 'DB' | 'ANALYTICS_ENABLED' | 'POSTHOG_HOST' | 'POSTHOG_PROJECT_TOKEN' | 'ANALYTICS_EXCLUDED_USER_IDS'
 >;
 
 type ConversationRow = {
@@ -799,27 +800,48 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
     const expiresAt = now + AI_PROVIDER_LEASE_MS;
 
     this.recoverExpiredAiProviderLease(now);
-    return this.ctx.storage.transactionSync(() => {
+    // Claim the learner's slot and charge the local budget synchronously, so
+    // concurrent requests see the lease and are refused before any of them
+    // touch the shared app-wide ceiling. Refund locally if that ceiling is spent.
+    const lease = this.ctx.storage.transactionSync(() => {
       const activeLease = this.ctx.storage.sql.exec<{ lease_id: string }>('SELECT lease_id FROM ai_provider_lease WHERE singleton = 1').toArray()[0];
       if (activeLease) throw new AiBudgetExceededError('concurrent_limit');
-
-      const usage = this.ctx.storage.sql.exec<{ attempted_calls: number }>('SELECT attempted_calls FROM ai_usage_daily WHERE utc_day = ?', utcDay).toArray()[0];
-      const attemptedCalls = usage?.attempted_calls ?? 0;
-      if (attemptedCalls >= AI_DAILY_CALL_LIMIT) throw new AiBudgetExceededError('daily_limit');
-
-      this.ctx.storage.sql.exec(
-        'INSERT INTO ai_usage_daily (utc_day, attempted_calls) VALUES (?, 1) ON CONFLICT(utc_day) DO UPDATE SET attempted_calls = attempted_calls + 1',
-        utcDay,
-      );
+      const attemptedCalls = this.chargeLocalAiBudget(utcDay);
       this.ctx.storage.sql.exec(
         'INSERT INTO ai_provider_lease (singleton, lease_id, acquired_at, expires_at) VALUES (1, ?, ?, ?)',
         id,
         now,
         expiresAt,
       );
-      this.ctx.storage.sql.exec('DELETE FROM ai_usage_daily WHERE utc_day <> ?', utcDay);
-      return { id, utcDay, attemptedCalls: attemptedCalls + 1, expiresAt };
+      return { id, utcDay, attemptedCalls, expiresAt };
     });
+    try {
+      await reserveGlobalAiCall(this.env.DB, globalDailyCallLimit(this.env), now);
+    } catch (error) {
+      this.ctx.storage.transactionSync(() => {
+        this.ctx.storage.sql.exec('DELETE FROM ai_provider_lease WHERE singleton = 1 AND lease_id = ?', id);
+        this.refundLocalAiBudget(utcDay);
+      });
+      throw error;
+    }
+    return lease;
+  }
+
+  /** Increment today's per-learner count or throw `daily_limit`. Call inside a transaction. */
+  private chargeLocalAiBudget(utcDay: string): number {
+    const usage = this.ctx.storage.sql.exec<{ attempted_calls: number }>('SELECT attempted_calls FROM ai_usage_daily WHERE utc_day = ?', utcDay).toArray()[0];
+    const attemptedCalls = usage?.attempted_calls ?? 0;
+    if (attemptedCalls >= AI_DAILY_CALL_LIMIT) throw new AiBudgetExceededError('daily_limit');
+    this.ctx.storage.sql.exec(
+      'INSERT INTO ai_usage_daily (utc_day, attempted_calls) VALUES (?, 1) ON CONFLICT(utc_day) DO UPDATE SET attempted_calls = attempted_calls + 1',
+      utcDay,
+    );
+    this.ctx.storage.sql.exec('DELETE FROM ai_usage_daily WHERE utc_day <> ?', utcDay);
+    return attemptedCalls + 1;
+  }
+
+  private refundLocalAiBudget(utcDay: string): void {
+    this.ctx.storage.sql.exec('UPDATE ai_usage_daily SET attempted_calls = attempted_calls - 1 WHERE utc_day = ? AND attempted_calls > 0', utcDay);
   }
 
   private recoverExpiredAiProviderLease(now = Date.now()): void {
@@ -850,21 +872,20 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
     assertNonBlank(leaseId, 'AI provider lease id', 200);
     const now = Date.now();
     const utcDay = new Date(now).toISOString().slice(0, 10);
-    return this.ctx.storage.transactionSync(() => {
+    const attemptedCalls = this.ctx.storage.transactionSync(() => {
       const lease = this.ctx.storage.sql
         .exec<{ lease_id: string; expires_at: number }>('SELECT lease_id, expires_at FROM ai_provider_lease WHERE singleton = 1')
         .toArray()[0];
       if (!lease || lease.lease_id !== leaseId || lease.expires_at <= now) throw new AiBudgetExceededError('concurrent_limit');
-      const usage = this.ctx.storage.sql.exec<{ attempted_calls: number }>('SELECT attempted_calls FROM ai_usage_daily WHERE utc_day = ?', utcDay).toArray()[0];
-      const attemptedCalls = usage?.attempted_calls ?? 0;
-      if (attemptedCalls >= AI_DAILY_CALL_LIMIT) throw new AiBudgetExceededError('daily_limit');
-      this.ctx.storage.sql.exec(
-        'INSERT INTO ai_usage_daily (utc_day, attempted_calls) VALUES (?, 1) ON CONFLICT(utc_day) DO UPDATE SET attempted_calls = attempted_calls + 1',
-        utcDay,
-      );
-      this.ctx.storage.sql.exec('DELETE FROM ai_usage_daily WHERE utc_day <> ?', utcDay);
-      return attemptedCalls + 1;
+      return this.chargeLocalAiBudget(utcDay);
     });
+    try {
+      await reserveGlobalAiCall(this.env.DB, globalDailyCallLimit(this.env), now);
+    } catch (error) {
+      this.ctx.storage.transactionSync(() => this.refundLocalAiBudget(utcDay));
+      throw error;
+    }
+    return attemptedCalls;
   }
 
   async releaseAiProviderCall(leaseId: string): Promise<void> {
