@@ -273,7 +273,7 @@ export async function streamRuntimeTutorReply(
   );
   if (!acceptanceResponse.ok) {
     const failure = await acceptanceResponse.json<{code?:string;error?:string}>().catch(()=>null);
-    if (failure?.code === 'daily_limit' || failure?.code === 'concurrent_limit') throw new AiBudgetExceededError(failure.code);
+    if (failure?.code === 'daily_limit' || failure?.code === 'concurrent_limit' || failure?.code === 'global_limit') throw new AiBudgetExceededError(failure.code);
     if (acceptanceResponse.status === 409) throw new ConflictError(typeof failure?.error==='string' && failure.error.trim() && failure.error.length<=300 ? failure.error : 'This conversation changed. Refresh and try again.');
     throw new Error('Tutor request was not accepted');
   }

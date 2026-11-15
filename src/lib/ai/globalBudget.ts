@@ -7,7 +7,8 @@ import { AiBudgetExceededError } from './errors';
 export const AI_GLOBAL_DAILY_CALL_LIMIT_FALLBACK = 500;
 
 export function globalDailyCallLimit(env: { AI_GLOBAL_DAILY_CALL_LIMIT?: string }): number {
-  const parsed = Number(env.AI_GLOBAL_DAILY_CALL_LIMIT);
+  const raw = env.AI_GLOBAL_DAILY_CALL_LIMIT?.trim();
+  const parsed = raw ? Number(raw) : Number.NaN;
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : AI_GLOBAL_DAILY_CALL_LIMIT_FALLBACK;
 }
 

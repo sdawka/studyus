@@ -54,6 +54,24 @@ describe('app-wide AI budget', () => {
     expect(await globalCalls()).toBe(before);
   });
 
+  it('charges the shared budget only for calls that win the learner slot under a burst', async () => {
+    const user = await learner('burst');
+    const burst = await Promise.allSettled(Array.from({ length: 20 }, () => withLearnerAiProviderLease(env, user.id, async () => 'ok')));
+    const won = burst.filter((r) => r.status === 'fulfilled').length;
+    expect(won).toBeGreaterThan(0);
+    expect(await globalCalls()).toBe(won);
+  });
+
+  it('refunds the learner when the app-wide ceiling refuses the call', async () => {
+    const user = await learner('refund');
+    await env.DB.prepare('INSERT INTO ai_usage_global (utc_day, attempted_calls) VALUES (?, ?)').bind(today(), globalDailyCallLimit(env)).run();
+    await expect(withLearnerAiProviderLease(env, user.id, async () => 'ok')).rejects.toMatchObject({ code: 'global_limit' });
+    await env.DB.prepare('DELETE FROM ai_usage_global').run();
+    // The refused attempt left neither a lease nor a charged local call behind.
+    for (let i = 0; i < AI_DAILY_CALL_LIMIT; i++) await withLearnerAiProviderLease(env, user.id, async () => 'ok');
+    await expect(withLearnerAiProviderLease(env, user.id, async () => 'ok')).rejects.toMatchObject({ code: 'daily_limit' });
+  });
+
   it('never overshoots the ceiling under concurrent reservations', async () => {
     const results = await Promise.allSettled(Array.from({ length: 25 }, () => reserveGlobalAiCall(env.DB, 10)));
     expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(10);
@@ -69,6 +87,7 @@ describe('app-wide AI budget', () => {
   it('fails closed to the fallback limit when the var is missing or malformed', () => {
     expect(globalDailyCallLimit({})).toBe(AI_GLOBAL_DAILY_CALL_LIMIT_FALLBACK);
     expect(globalDailyCallLimit({ AI_GLOBAL_DAILY_CALL_LIMIT: 'lots' })).toBe(AI_GLOBAL_DAILY_CALL_LIMIT_FALLBACK);
+    expect(globalDailyCallLimit({ AI_GLOBAL_DAILY_CALL_LIMIT: '' })).toBe(AI_GLOBAL_DAILY_CALL_LIMIT_FALLBACK);
     expect(globalDailyCallLimit({ AI_GLOBAL_DAILY_CALL_LIMIT: '0' })).toBe(0);
   });
 });
