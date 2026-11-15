@@ -16,6 +16,39 @@ export type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: stri
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 export const OPENROUTER_MAX_OUTPUT_TOKENS = 1_000;
 export const OPENROUTER_DEADLINE_MS = 30_000;
+/** Hard input ceiling (~8k tokens). With the output cap this bounds the
+ *  worst-case price of any single provider call, whatever the caller sends. */
+export const OPENROUTER_MAX_INPUT_CHARS = 32_000;
+
+const TRUNCATION_MARKER = '\n[…truncated]';
+
+/** Fit messages into `maxChars`: keep every system message and the latest
+ *  message, drop the oldest conversation turns first, and only truncate
+ *  content when the kept messages alone still exceed the budget. */
+export function boundPromptMessages(messages: ChatMessage[], maxChars = OPENROUTER_MAX_INPUT_CHARS): ChatMessage[] {
+  const size = (list: ChatMessage[]) => list.reduce((sum, m) => sum + m.content.length, 0);
+  if (size(messages) <= maxChars) return messages;
+
+  const lastIndex = messages.length - 1;
+  const keep = messages.map(() => true);
+  let total = size(messages);
+  // Drop oldest turns until under budget, then keep dropping while the
+  // surviving history would open with an assistant turn (some providers
+  // reject a conversation that does not start with the user).
+  for (let i = 0; i < lastIndex; i++) {
+    if (messages[i].role === 'system') continue;
+    if (total <= maxChars && messages[i].role === 'user') break;
+    keep[i] = false;
+    total -= messages[i].content.length;
+  }
+  let kept = messages.filter((_, j) => keep[j]);
+  if (total <= maxChars) return kept;
+
+  // Pathological input: share the budget evenly across what remains.
+  const share = Math.max(0, Math.floor(maxChars / kept.length) - TRUNCATION_MARKER.length);
+  kept = kept.map((m) => (m.content.length > share ? { ...m, content: m.content.slice(0, share) + TRUNCATION_MARKER } : m));
+  return kept;
+}
 
 export class OpenRouterError extends Error {
   status?: number;
@@ -56,7 +89,7 @@ async function callOpenRouter(opts: {
       body: JSON.stringify({
         model: opts.model,
         stream: opts.stream,
-        messages: opts.messages,
+        messages: boundPromptMessages(opts.messages),
         temperature: opts.temperature ?? 0.7,
         max_tokens: OPENROUTER_MAX_OUTPUT_TOKENS,
         ...(opts.responseFormatJson ? { response_format: { type: 'json_object' } } : {}),

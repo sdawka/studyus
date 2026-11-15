@@ -41,7 +41,7 @@ Each mode's system-prompt block (`MODE_INSTRUCTIONS` in `prompts.ts`) ends with 
 - `streamChatCompletion({apiKey, model, messages})` — plain `fetch` to `https://openrouter.ai/api/v1/chat/completions` with `stream: true`; returns the upstream `response.body` untouched.
 - `relayAsSSE(upstream, {onDone, onError})` — parses the upstream OpenAI-compatible SSE (`data: {choices:[{delta:{content}}]}` lines), re-emits our own minimal frames (`data: {"delta":"..."}\n\n`, then `data: {"done":true}\n\n`), and accumulates the full text. `onDone(fullText)` is **awaited before the stream closes** — on Workers, the response body isn't considered fully sent until the stream finishes, so this is how `conversations.ts` persists the assistant's message without an `ExecutionContext`/`waitUntil` wired up (that's still a TODO — see below).
 - `chatCompletionJSON({apiKey, model, messages})` — non-streaming call, tries `response_format: {type:"json_object"}` first and falls back to a plain call if the routed model rejects it, then always re-parses the content through `extractJsonBlock` (direct parse → fenced ` ```json ` block → first balanced `{...}` span) since routed models don't reliably honor the format hint. Used by the `quick_quiz` flow for MCQ generation.
-- Model: `env.OPENROUTER_MODEL` (wrangler var, default `openrouter/auto`). Key: `env.OPENROUTER_API_KEY` (`.dev.vars` locally, `wrangler secret` in deployment — **not set in this repo's `.dev.vars` as of M4**, see Verification below).
+- Model: `env.OPENROUTER_MODEL` (wrangler var, pinned to `anthropic/claude-haiku-5.5`). Key: `env.OPENROUTER_API_KEY` (`.dev.vars` locally, `wrangler secret` in deployment — **not set in this repo's `.dev.vars` as of M4**, see Verification below).
 - Cost bounding: `MAX_MESSAGES_PER_CONVERSATION = 30` in `conversations.ts` (user+assistant combined). Reaching it auto-ends the conversation after the capping exchange finishes; posting further returns `400 conversation_capped`.
 
 ## Context Assembly
@@ -87,7 +87,11 @@ Format, grammar, and the parser/evaluator live in `src/lib/services/tutor/modelS
 ## Cost & Safety
 
 - **Per-conversation cap**: 30 messages (configurable in `conversations.ts`), enforced server-side, not just a UI suggestion.
-- **Model selection**: `OPENROUTER_MODEL` var, default `openrouter/auto` (OpenRouter's own router) — swap to a fixed cheap model id if cost needs tighter control.
+- **Model selection**: `OPENROUTER_MODEL` is pinned to a cheap model. Never use `openrouter/auto`: it can route to frontier models and makes per-call price unbounded.
+- **Per-call ceiling** (`openrouter.ts`): output ≤ 1,000 tokens, input ≤ 32,000 chars (`boundPromptMessages` drops the oldest turns first), 30 s deadline.
+- **Per-learner ceiling** (`LearnerAgent`): 30 provider attempts per UTC day and one in-flight call at a time.
+- **App-wide ceiling** (`src/lib/ai/globalBudget.ts`, D1 `ai_usage_global`): `AI_GLOBAL_DAILY_CALL_LIMIT` attempts per UTC day across all learners, so new signups cannot multiply spend. Missing/invalid var fails closed to 500. Denied calls return `429 global_limit` with no provider request.
+- **External backstop**: set a credit limit on the OpenRouter API key. Code limits bound the expected bill; the key limit bounds the worst case even if code is wrong.
 - **Prompt injection**: user input is passed as a `user`-role chat message, never interpolated into the system prompt string or into an expression formula — the model-spec evaluator only ever sees LLM-authored formulas over declared parameter ids, and rejects anything else.
 - **Expression safety**: hand-rolled parser, no `eval`/`Function`/dynamic code execution anywhere in the request path (unit-tested in `tests/tutor-modelSpec.test.ts`, including that global identifiers like `globalThis` are rejected as unknown, not silently resolved).
 

@@ -67,7 +67,7 @@ the repo root); identifiers are placeholders:
     "LearnerAgent": { "type": "durable-object", "storage": "sqlite" }
   },
   "vars": {
-    "OPENROUTER_MODEL": "openrouter/auto",
+    "OPENROUTER_MODEL": "anthropic/claude-haiku-5.5",
     "AI_FEATURES_ENABLED": "true",
     "ANALYTICS_ENABLED": "true",
     "POSTHOG_HOST": "https://us.i.posthog.com"

@@ -5,6 +5,7 @@ import { deliverBehavioralEventAwaited } from '../analytics/server';
 import { resolveSettings } from '../services/user';
 import { LEARNER_RUNTIME_NAME_PREFIX, learnerRuntimeObjectName } from '../services/accountLifecycle';
 import { AiBudgetExceededError } from '../ai/errors';
+import { globalDailyCallLimit, reserveGlobalAiCall } from '../ai/globalBudget';
 export { AiBudgetExceededError } from '../ai/errors';
 
 export const TUTOR_ABANDONMENT_IDLE_MS = 30 * 60 * 1000;
@@ -199,7 +200,7 @@ export class LearnerAgentDeletedError extends Error {
 
 type LearnerAgentEnv = Pick<
   Cloudflare.Env,
-  'AI_FEATURES_ENABLED' | 'OPENROUTER_API_KEY' | 'OPENROUTER_MODEL' | 'DB' | 'ANALYTICS_ENABLED' | 'POSTHOG_HOST' | 'POSTHOG_PROJECT_TOKEN' | 'ANALYTICS_EXCLUDED_USER_IDS'
+  'AI_FEATURES_ENABLED' | 'AI_GLOBAL_DAILY_CALL_LIMIT' | 'OPENROUTER_API_KEY' | 'OPENROUTER_MODEL' | 'DB' | 'ANALYTICS_ENABLED' | 'POSTHOG_HOST' | 'POSTHOG_PROJECT_TOKEN' | 'ANALYTICS_EXCLUDED_USER_IDS'
 >;
 
 type ConversationRow = {
@@ -799,6 +800,11 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
     const expiresAt = now + AI_PROVIDER_LEASE_MS;
 
     this.recoverExpiredAiProviderLease(now);
+    // Refuse locally before touching the shared ceiling, so a busy or
+    // exhausted learner cannot drain the app-wide budget. The transaction
+    // below re-checks; a lost race only over-counts the global row by one.
+    this.assertLocalAiBudget(utcDay, { requireNoLease: true });
+    await reserveGlobalAiCall(this.env.DB, globalDailyCallLimit(this.env), now);
     return this.ctx.storage.transactionSync(() => {
       const activeLease = this.ctx.storage.sql.exec<{ lease_id: string }>('SELECT lease_id FROM ai_provider_lease WHERE singleton = 1').toArray()[0];
       if (activeLease) throw new AiBudgetExceededError('concurrent_limit');
@@ -820,6 +826,15 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
       this.ctx.storage.sql.exec('DELETE FROM ai_usage_daily WHERE utc_day <> ?', utcDay);
       return { id, utcDay, attemptedCalls: attemptedCalls + 1, expiresAt };
     });
+  }
+
+  private assertLocalAiBudget(utcDay: string, opts: { requireNoLease: boolean }): void {
+    if (opts.requireNoLease) {
+      const activeLease = this.ctx.storage.sql.exec('SELECT 1 FROM ai_provider_lease WHERE singleton = 1').toArray()[0];
+      if (activeLease) throw new AiBudgetExceededError('concurrent_limit');
+    }
+    const usage = this.ctx.storage.sql.exec<{ attempted_calls: number }>('SELECT attempted_calls FROM ai_usage_daily WHERE utc_day = ?', utcDay).toArray()[0];
+    if ((usage?.attempted_calls ?? 0) >= AI_DAILY_CALL_LIMIT) throw new AiBudgetExceededError('daily_limit');
   }
 
   private recoverExpiredAiProviderLease(now = Date.now()): void {
@@ -850,6 +865,8 @@ export class LearnerAgent extends DurableObject<LearnerAgentEnv> {
     assertNonBlank(leaseId, 'AI provider lease id', 200);
     const now = Date.now();
     const utcDay = new Date(now).toISOString().slice(0, 10);
+    this.assertLocalAiBudget(utcDay, { requireNoLease: false });
+    await reserveGlobalAiCall(this.env.DB, globalDailyCallLimit(this.env), now);
     return this.ctx.storage.transactionSync(() => {
       const lease = this.ctx.storage.sql
         .exec<{ lease_id: string; expires_at: number }>('SELECT lease_id, expires_at FROM ai_provider_lease WHERE singleton = 1')
